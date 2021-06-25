@@ -21,23 +21,37 @@ class AttackGraph:
 
     def reset(self):
         self.attack_steps = {}
-        self.attack_steps['capture_ftp_flag'] = AttackStep(reward=1000)
-        self.attack_steps['ftp_login'] = AttackStep(children={'capture_ftp_flag'})
-        self.attack_steps['dictionary_attack'] = AttackStep(ttc=100, children={'ftp_login'})
-        self.attack_steps['identify_ftp_server'] = AttackStep(children={'dictionary_attack'})
+        self.attack_steps['lazarus.flag_adcb1f.capture'] = AttackStep(reward=1000)
+        self.attack_steps['lazarus.ftp.login'] = AttackStep(children={'lazarus.flag_adcb1f.capture'})
+        self.attack_steps['lazarus.ftp.dictionary_attack'] = AttackStep(ttc=100, children={'lazarus.ftp.login'})
+        self.attack_steps['lazarus.ftp.identify'] = AttackStep(children={'lazarus.ftp.dictionary_attack'})
 
-        self.attack_steps['capture_root_flag'] = AttackStep(reward=2000)
-        self.attack_steps['capture_user_flag'] = AttackStep(reward=500)
-        self.attack_steps['capture_db_flag'] = AttackStep(reward=250)
-        self.attack_steps['escalate_to_root'] = AttackStep(ttc=20, children={'capture_root_flag'})
-        self.attack_steps['pop_shell'] = AttackStep(ttc=10, children={'escalate_to_root', 'capture_user_flag'})
-        self.attack_steps['exploit_sqli'] = AttackStep(ttc=20, children={'pop_shell', 'capture_db_flag'})
-        self.attack_steps['find_sqli'] = AttackStep(ttc=30, children={'exploit_sqli'})
-        self.attack_steps['crawl_http_server'] = AttackStep(ttc=10, children={'find_sqli'})
-        self.attack_steps['identify_http_server'] = AttackStep(children={'crawl_http_server'})
+        self.attack_steps['energetic_bear.flag_73cb43.capture'] = AttackStep(reward=1000)
+        self.attack_steps['energetic_bear.flag_3b2000.capture'] = AttackStep(reward=1000)
+        self.attack_steps['energetic_bear.flag_de3b1c.capture'] = AttackStep(reward=1000)
+        self.attack_steps['energetic_bear.flag_521bce.capture'] = AttackStep(reward=1000)
+        self.attack_steps['energetic_bear.escalate_to_root'] = AttackStep(ttc=20, children={'energetic_bear.flag_73cb43.capture'})
+        self.attack_steps['energetic_bear.apache.pop_shell'] = AttackStep(ttc=10, children={'energetic_bear.escalate_to_root', 'energetic_bear.flag_3b2000.capture'})
+        self.attack_steps['energetic_bear.apache.exploit_sqli'] = AttackStep(ttc=20, children={'energetic_bear.apache.pop_shell', 'energetic_bear.flag_de3b1c.capture'})
+        self.attack_steps['energetic_bear.apache.find_sqli'] = AttackStep(ttc=30, children={'energetic_bear.apache.exploit_sqli'})
+        self.attack_steps['energetic_bear.apache.crawl'] = AttackStep(ttc=10, children={'energetic_bear.apache.find_sqli'})
+        self.attack_steps['energetic_bear.apache.identify'] = AttackStep(children={'energetic_bear.apache.crawl', 'energetic_bear.flag_521bce.capture'})
 
-        self.attack_steps['map_network'] = AttackStep(ttc=10, children={'identify_ftp_server', 'identify_http_server'})
-        self.attack_steps['internet'] = AttackStep(children={'map_network'})
+        self.attack_steps['sea_turtle.telnet.login'] = AttackStep(step_type='and', ttc=100, children={})
+        self.attack_steps['sea_turtle.telnet.identify'] = AttackStep(children={'sea_turtle.telnet.login'})
+
+        self.attack_steps['lazarus.flag_90b353.capture'] = AttackStep(reward=1000)
+        self.attack_steps['lazarus.flag_cd699a.capture'] = AttackStep(reward=1000)
+        self.attack_steps['lazarus.tomcat.crack_hashes'] = AttackStep(ttc=100, children={'sea_turtle.telnet.login'})
+        self.attack_steps['lazarus.tomcat.dump_hashes'] = AttackStep(children={'lazarus.tomcat.crack_hashes'})
+        self.attack_steps['lazarus.tomcat.pop_shell'] = AttackStep(children={'lazarus.tomcat_dump_hashes', 'lazarus.flag_cd699a.capture'})
+        self.attack_steps['lazarus.tomcat.upload_war'] = AttackStep(ttc=10, children={'lazarus.tomcat.pop_shell'})
+        self.attack_steps['lazarus.tomcat.dictionary_attack'] = AttackStep(ttc=10, children={'lazarus.flag_90b353.capture'})
+        self.attack_steps['lazarus.tomcat.crawl'] = AttackStep(ttc=5, children={'lazarus.tomcat.dictionary_attack'})
+        self.attack_steps['lazarus.tomcat.identify'] = AttackStep(children={'lazarus.tomcat.crawl'})
+
+        self.attack_steps['office_network.map'] = AttackStep(ttc=10, children={'lazarus.ftp.identify', 'energetic_bear.apache.identify', 'lazarus.tomcat.identify'})
+        self.attack_steps['internet.connect'] = AttackStep(children={'office_network.map'})
         self.size = len(self.attack_steps)
 
 
@@ -98,7 +112,7 @@ class AttackSimulationEnv(gym.Env):
 
     def __init__(self):
         super(AttackSimulationEnv, self).__init__()
-        self.attacker = Attacker({'internet'})
+        self.attacker = Attacker({'internet.connect'})
         self.ftp_is_online = True
         self.http_is_online = True
         self.provision_reward = 0
@@ -142,14 +156,14 @@ class AttackSimulationEnv(gym.Env):
 
     def isolate_ftp(self):
         self.ftp_is_online = False
-        self.attacker.compromised_steps -= {'identify_ftp_server', 'dictionary_attack', 'ftp_login', 'capture_ftp_flag'}
-        self.attacker.get_step('map_network').children -= {'identify_ftp_server'}
+        self.attacker.compromised_steps -= {'lazarus.ftp.identify', 'lazarus.ftp.dictionary_attack', 'lazarus.ftp.login', 'lazarus.flag_adcb1f.capture'}
+        self.attacker.get_step('office_network.map').children -= {'lazarus.ftp.identify'}
         self.attacker.choose_next_step()
 
     def isolate_http(self):
         self.http_is_online = False
-        self.attacker.compromised_steps -= {'capture_root_flag', 'capture_user_flag', 'capture_db_flag', 'escalate_to_root', 'pop_shell', 'exploit_sqli', 'find_sqli', 'crawl_http_server', 'identify_http_server'}
-        self.attacker.get_step('map_network').children -= {'identify_http_server'}
+        self.attacker.compromised_steps -= {'energetic_bear.flag_73cb43.capture', 'energetic_bear.flag_3b2000.capture', 'energetic_bear.flag_521bce.capture', 'energetic_bear.flag_de3b1c.capture', 'energetic_bear.escalate_to_root', 'energetic_bear.apache.pop_shell', 'energetic_bear.apache.exploit_sqli', 'energetic_bear.apache.find_sqli', 'energetic_bear.apache.crawl', 'energetic_bear.apache.identify'}
+        self.attacker.get_step('office_network.map').children -= {'energetic_bear.apache.identify'}
         self.attacker.choose_next_step()
 
 
