@@ -12,7 +12,6 @@ class AttackStep:
         self.children = children
         self.true_positive = true_positive
         self.false_positive = false_positive
-        
 
 
 class AttackGraph:
@@ -46,32 +45,26 @@ class Attacker:
     
     def __init__(self, compromised_steps):
         self.attack_graph = AttackGraph()
-        print(self.attack_graph)
         self.compromised_steps = compromised_steps
         self.choose_next_step()
         self.time_on_current_step = 0
         self.total_time = 0
 
+    def get_step(self, name):
+        return self.attack_graph.attack_steps[name]
+    
     def attack_surface(self, debug=False):
-        surface =set()
-        for step_name in self.compromised_steps:
-            for child in self.attack_graph.attack_steps[step_name].children:
-                surface.add(child)
-        surface -= self.compromised_steps
-        return surface
-        # return set([child for step_name in self.compromised_steps for child in self.attack_graph.attack_steps[step_name].children]) - self.compromised_steps
+         return set([child for step_name in self.compromised_steps for child in self.get_step(step_name).children]) - self.compromised_steps
 
     def choose_next_step(self): 
-        at_surf = self.attack_surface()
-        if at_surf:
-            self.current_step = random.choice(list(at_surf))
-        else:
-            self.current_step = None
+        self.current_step = None
+        if self.attack_surface():
+            self.current_step = random.choice(list(self.attack_surface()))
 
     def attack(self):
         if not self.current_step:
             return False
-        if self.time_on_current_step >= self.attack_graph.attack_steps[self.current_step].ttc:
+        if self.time_on_current_step >= self.get_step(self.current_step).ttc:
             self.compromised_steps.add(self.current_step)
             if not self.attack_surface():
                 return False
@@ -84,18 +77,18 @@ class Attacker:
     def reward(self):
         r = 0
         for cs in self.compromised_steps:
-            r += self.attack_graph.attack_steps[cs].reward
+            r += self.get_step(cs).reward
         return r
 
     def observe(self, attack_step):
         rnd = random.uniform(0,1)
         if attack_step in self.compromised_steps:
-            if rnd <= self.attack_graph.attack_steps[attack_step].true_positive:
+            if rnd <= self.get_step(attack_step).true_positive:
                 return True
             else:
                 return False
         else:
-            if rnd <= self.attack_graph.attack_steps[attack_step].false_positive:
+            if rnd <= self.get_step(attack_step).false_positive:
                 return True
             else:
                 return False
@@ -104,42 +97,38 @@ class Attacker:
 class AttackSimulationEnv(gym.Env):
 
     def __init__(self):
-
         super(AttackSimulationEnv, self).__init__()
-
         self.attacker = Attacker({'internet'})
         self.ftp_is_online = True
         self.http_is_online = True
         self.provision_reward = 0
-
-
         self.observation_space = spaces.Box(low=0, high=1, shape=(self.attacker.attack_graph.size, 1), dtype=np.float32)
         self.action_space = spaces.Tuple((spaces.Discrete(2), spaces.Discrete(2)))
 
-    def step(self, action):
-        if action[0] == 0 and self.ftp_is_online:
-            self.isolate_ftp()
-        if action[1] == 0 and self.http_is_online:
-            self.isolate_http()
+    def get_info(self):
+        if self.attacker.current_step:
+            info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.get_step(env.attacker.current_step).ttc, "attack_surface": self.attacker.attack_surface(), "ftp_is_online": self.ftp_is_online, "http_is_online": self.http_is_online}
+        else:
+            info = {"time": self.attacker.total_time, "current_step": None, "time_on_current_step": None, "ttc_of_current_step": None, "attack_surface": self.attacker.attack_surface(), "ftp_is_online": self.ftp_is_online, "http_is_online": self.http_is_online}
+        return info
 
+    def step(self, action):
         if self.ftp_is_online:
             self.provision_reward += 1
+            if action[0] == 0:
+                self.isolate_ftp()
         if self.http_is_online:
             self.provision_reward += 1
+            if action[1] == 0:
+                self.isolate_http()
 
+        obs = self._next_observation()
+        reward = self.provision_reward - self.attacker.reward()
+        
         attacker_done = not self.attacker.attack()
         defender_done = action[0] + action[1] == 0        
 
-        obs = self._next_observation()
-
-        reward = self.provision_reward - self.attacker.reward()
-        if self.attacker.current_step:
-            info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.attack_graph.attack_steps[env.attacker.current_step].ttc, "attack_surface": self.attacker.attack_surface(), "ftp_is_online": self.ftp_is_online, "http_is_online": self.http_is_online}
-        else:
-            info = {"time": self.attacker.total_time, "current_step": None, "time_on_current_step": None, "ttc_of_current_step": None, "attack_surface": self.attacker.attack_surface(), "ftp_is_online": self.ftp_is_online, "http_is_online": self.http_is_online}
-
-
-        return obs, reward, attacker_done or defender_done, info
+        return obs, reward, attacker_done or defender_done, self.get_info()
 
     def reset(self):
         self.attacker.attack_graph.reset()
@@ -154,13 +143,13 @@ class AttackSimulationEnv(gym.Env):
     def isolate_ftp(self):
         self.ftp_is_online = False
         self.attacker.compromised_steps -= {'identify_ftp_server', 'dictionary_attack', 'ftp_login', 'capture_ftp_flag'}
-        self.attacker.attack_graph.attack_steps['map_network'].children -= {'identify_ftp_server'}
+        self.attacker.get_step('map_network').children -= {'identify_ftp_server'}
         self.attacker.choose_next_step()
 
     def isolate_http(self):
         self.http_is_online = False
         self.attacker.compromised_steps -= {'capture_root_flag', 'capture_user_flag', 'capture_db_flag', 'escalate_to_root', 'pop_shell', 'exploit_sqli', 'find_sqli', 'crawl_http_server', 'identify_http_server'}
-        self.attacker.attack_graph.attack_steps['map_network'].children -= {'identify_http_server'}
+        self.attacker.get_step('map_network').children -= {'identify_http_server'}
         self.attacker.choose_next_step()
 
 
