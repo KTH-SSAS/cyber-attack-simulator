@@ -5,9 +5,9 @@ import random
 
 class AttackStep:
 
-    def __init__(self, step_type='or', ttc=1, reward=0, children={}, true_positive=1, false_positive=0):
+    def __init__(self, step_type='or', ttc=1, reward=0, children={}, true_positive=0.95, false_positive=0.1):
         self.step_type = step_type
-        self.ttc = ttc
+        self.ttc = np.random.exponential(scale=ttc)
         self.reward = reward
         self.children = children
         self.true_positive = true_positive
