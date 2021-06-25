@@ -5,13 +5,14 @@ import random
 
 class AttackStep:
 
-    def __init__(self, step_type='or', ttc=1, reward=0, children={}, true_positive=0.95, false_positive=0.1):
+    def __init__(self, step_type='or', ttc=1, reward=0, children={}, isolator=None, true_positive=0.95, false_positive=0.1):
         self.step_type = step_type
         self.ttc = int(np.random.exponential(scale=ttc))
         self.reward = int(np.random.exponential(scale=reward))
         self.children = children
         self.true_positive = true_positive
         self.false_positive = false_positive
+        self.isolator = isolator
 
 
 class AttackGraph:
@@ -20,40 +21,57 @@ class AttackGraph:
         self.reset()
 
     def reset(self):
+
+        self.online = dict()
+        self.online['lazarus.ftp'] = True
+        self.online['lazarus.tomcat'] = True
+        self.online['energetic_bear.apache'] = True
+        self.online['sea_turtle.telnet'] = True
+        
         self.attack_steps = {}
-        self.attack_steps['lazarus.flag_adcb1f.capture'] = AttackStep(reward=1000)
-        self.attack_steps['lazarus.ftp.login'] = AttackStep(children={'lazarus.flag_adcb1f.capture'})
-        self.attack_steps['lazarus.ftp.dictionary_attack'] = AttackStep(ttc=100, children={'lazarus.ftp.login'})
-        self.attack_steps['lazarus.ftp.identify'] = AttackStep(children={'lazarus.ftp.dictionary_attack'})
+        self.attack_steps['lazarus.flag_adcb1f.capture'] = AttackStep(reward=1000, isolator='lazarus.ftp')
+        self.attack_steps['lazarus.ftp.login'] = AttackStep(isolator='lazarus.ftp', children={'lazarus.flag_adcb1f.capture'})
+        self.attack_steps['lazarus.ftp.dictionary_attack'] = AttackStep(ttc=100, isolator='lazarus.ftp', children={'lazarus.ftp.login'})
+        self.attack_steps['lazarus.ftp.identify'] = AttackStep(isolator='lazarus.ftp', children={'lazarus.ftp.dictionary_attack'})
 
-        self.attack_steps['energetic_bear.flag_73cb43.capture'] = AttackStep(reward=1000)
-        self.attack_steps['energetic_bear.flag_3b2000.capture'] = AttackStep(reward=1000)
-        self.attack_steps['energetic_bear.flag_de3b1c.capture'] = AttackStep(reward=1000)
-        self.attack_steps['energetic_bear.flag_521bce.capture'] = AttackStep(reward=1000)
-        self.attack_steps['energetic_bear.escalate_to_root'] = AttackStep(ttc=20, children={'energetic_bear.flag_73cb43.capture'})
-        self.attack_steps['energetic_bear.apache.pop_shell'] = AttackStep(ttc=10, children={'energetic_bear.escalate_to_root', 'energetic_bear.flag_3b2000.capture'})
-        self.attack_steps['energetic_bear.apache.exploit_sqli'] = AttackStep(ttc=20, children={'energetic_bear.apache.pop_shell', 'energetic_bear.flag_de3b1c.capture'})
-        self.attack_steps['energetic_bear.apache.find_sqli'] = AttackStep(ttc=30, children={'energetic_bear.apache.exploit_sqli'})
-        self.attack_steps['energetic_bear.apache.crawl'] = AttackStep(ttc=10, children={'energetic_bear.apache.find_sqli'})
-        self.attack_steps['energetic_bear.apache.identify'] = AttackStep(children={'energetic_bear.apache.crawl', 'energetic_bear.flag_521bce.capture'})
+        self.attack_steps['energetic_bear.flag_73cb43.capture'] = AttackStep(reward=1000, isolator='energetic_bear.apache')
+        self.attack_steps['energetic_bear.flag_3b2000.capture'] = AttackStep(reward=1000, isolator='energetic_bear.apache')
+        self.attack_steps['energetic_bear.flag_de3b1c.capture'] = AttackStep(reward=1000, isolator='energetic_bear.apache')
+        self.attack_steps['energetic_bear.flag_521bce.capture'] = AttackStep(reward=1000, isolator='energetic_bear.apache')
+        self.attack_steps['energetic_bear.apache.escalate_to_root'] = AttackStep(ttc=20, isolator='energetic_bear.apache', children={'energetic_bear.flag_73cb43.capture'})
+        self.attack_steps['energetic_bear.apache.pop_shell'] = AttackStep(ttc=10, isolator='energetic_bear.apache', children={'energetic_bear.apache.escalate_to_root', 'energetic_bear.flag_3b2000.capture'})
+        self.attack_steps['energetic_bear.apache.exploit_sqli'] = AttackStep(ttc=20, isolator='energetic_bear.apache', children={'energetic_bear.apache.pop_shell', 'energetic_bear.flag_de3b1c.capture'})
+        self.attack_steps['energetic_bear.apache.find_sqli'] = AttackStep(ttc=30, isolator='energetic_bear.apache', children={'energetic_bear.apache.exploit_sqli'})
+        self.attack_steps['energetic_bear.apache.crawl'] = AttackStep(ttc=10, isolator='energetic_bear.apache', children={'energetic_bear.apache.find_sqli'})
+        self.attack_steps['energetic_bear.apache.identify'] = AttackStep(isolator='energetic_bear.apache', children={'energetic_bear.apache.crawl', 'energetic_bear.flag_521bce.capture'})
 
-        self.attack_steps['sea_turtle.telnet.login'] = AttackStep(step_type='and', ttc=100, children={})
-        self.attack_steps['sea_turtle.telnet.identify'] = AttackStep(children={'sea_turtle.telnet.login'})
+        self.attack_steps['sea_turle.flag_f9038f.capture'] = AttackStep(reward=1000, isolator='sea_turtle.telnet')
+        self.attack_steps['sea_turtle.telnet.login'] = AttackStep(step_type='and', ttc=100, isolator='sea_turtle.telnet', children={'sea_turle.flag_f9038f.capture'})
+        self.attack_steps['sea_turtle.telnet.identify'] = AttackStep(isolator='sea_turtle.telnet', children={'sea_turtle.telnet.login'})
 
-        self.attack_steps['lazarus.flag_90b353.capture'] = AttackStep(reward=1000)
-        self.attack_steps['lazarus.flag_cd699a.capture'] = AttackStep(reward=1000)
-        self.attack_steps['lazarus.tomcat.crack_hashes'] = AttackStep(ttc=100, children={'sea_turtle.telnet.login'})
-        self.attack_steps['lazarus.tomcat.dump_hashes'] = AttackStep(children={'lazarus.tomcat.crack_hashes'})
-        self.attack_steps['lazarus.tomcat.pop_shell'] = AttackStep(children={'lazarus.tomcat_dump_hashes', 'lazarus.flag_cd699a.capture'})
-        self.attack_steps['lazarus.tomcat.upload_war'] = AttackStep(ttc=10, children={'lazarus.tomcat.pop_shell'})
-        self.attack_steps['lazarus.tomcat.dictionary_attack'] = AttackStep(ttc=10, children={'lazarus.flag_90b353.capture'})
-        self.attack_steps['lazarus.tomcat.crawl'] = AttackStep(ttc=5, children={'lazarus.tomcat.dictionary_attack'})
-        self.attack_steps['lazarus.tomcat.identify'] = AttackStep(children={'lazarus.tomcat.crawl'})
+        self.attack_steps['lazarus.flag_90b353.capture'] = AttackStep(reward=1000, isolator='lazarus.tomcat')
+        self.attack_steps['lazarus.flag_cd699a.capture'] = AttackStep(reward=1000, isolator='lazarus.tomcat')
+        self.attack_steps['lazarus.tomcat.crack_hashes'] = AttackStep(ttc=100, isolator='lazarus.tomcat', children={'sea_turtle.telnet.login'})
+        self.attack_steps['lazarus.tomcat.dump_hashes'] = AttackStep(isolator='lazarus.tomcat', children={'lazarus.tomcat.crack_hashes'})
+        self.attack_steps['lazarus.tomcat.pop_shell'] = AttackStep(isolator='lazarus.tomcat', children={'lazarus.tomcat_dump_hashes', 'lazarus.flag_cd699a.capture'})
+        self.attack_steps['lazarus.tomcat.upload_war'] = AttackStep(ttc=10, isolator='lazarus.tomcat', children={'lazarus.tomcat.pop_shell'})
+        self.attack_steps['lazarus.tomcat.dictionary_attack'] = AttackStep(ttc=10, isolator='lazarus.tomcat', children={'lazarus.flag_90b353.capture'})
+        self.attack_steps['lazarus.tomcat.crawl'] = AttackStep(ttc=5, isolator='lazarus.tomcat', children={'lazarus.tomcat.dictionary_attack'})
+        self.attack_steps['lazarus.tomcat.identify'] = AttackStep(isolator='lazarus.tomcat', children={'lazarus.tomcat.crawl'})
 
         self.attack_steps['office_network.map'] = AttackStep(ttc=10, children={'lazarus.ftp.identify', 'energetic_bear.apache.identify', 'lazarus.tomcat.identify'})
         self.attack_steps['internet.connect'] = AttackStep(children={'office_network.map'})
         self.size = len(self.attack_steps)
 
+    def steps_secured_by_isolating(self, service):
+        steps = [asn for asn in self.attack_steps.keys() if self.attack_steps[asn].isolator == service]
+        return steps
+
+    def isolate(self, service):
+        if service == 'lazarus.ftp':
+            self.attack_steps['office_network.map'].children -= {'lazarus.ftp.identify'}
+        if service == 'energetic_bear.apache':
+            self.attack_steps['office_network.map'].children -= {'energetic_bear.apache.identify'}
 
 class Attacker:
     
@@ -113,28 +131,26 @@ class AttackSimulationEnv(gym.Env):
     def __init__(self):
         super(AttackSimulationEnv, self).__init__()
         self.attacker = Attacker({'internet.connect'})
-        self.ftp_is_online = True
-        self.http_is_online = True
         self.provision_reward = 0
         self.observation_space = spaces.Box(low=0, high=1, shape=(self.attacker.attack_graph.size, 1), dtype=np.float32)
         self.action_space = spaces.Tuple((spaces.Discrete(2), spaces.Discrete(2)))
 
     def get_info(self):
         if self.attacker.current_step:
-            info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.get_step(env.attacker.current_step).ttc, "attack_surface": self.attacker.attack_surface(), "ftp_is_online": self.ftp_is_online, "http_is_online": self.http_is_online}
+            info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.get_step(env.attacker.current_step).ttc, "attack_surface": self.attacker.attack_surface(), "self.attacker.attack_graph.online": self.attacker.attack_graph.online}
         else:
-            info = {"time": self.attacker.total_time, "current_step": None, "time_on_current_step": None, "ttc_of_current_step": None, "attack_surface": self.attacker.attack_surface(), "ftp_is_online": self.ftp_is_online, "http_is_online": self.http_is_online}
+            info = {"time": self.attacker.total_time, "current_step": None, "time_on_current_step": None, "ttc_of_current_step": None, "attack_surface": self.attacker.attack_surface(), "self.attacker.attack_graph.online": self.attacker.attack_graph.online}
         return info
 
     def step(self, action):
-        if self.ftp_is_online:
+        if self.attacker.attack_graph.online['lazarus.ftp']:
             self.provision_reward += 1
             if action[0] == 0:
-                self.isolate_ftp()
-        if self.http_is_online:
+                self.isolate('lazarus.ftp')
+        if self.attacker.attack_graph.online['energetic_bear.apache']:
             self.provision_reward += 1
             if action[1] == 0:
-                self.isolate_http()
+                self.isolate('energetic_bear.apache')
 
         obs = self._next_observation()
         reward = self.provision_reward - self.attacker.reward()
@@ -154,18 +170,12 @@ class AttackSimulationEnv(gym.Env):
     def render(self, mode='human'):
         pass
 
-    def isolate_ftp(self):
-        self.ftp_is_online = False
-        self.attacker.compromised_steps -= {'lazarus.ftp.identify', 'lazarus.ftp.dictionary_attack', 'lazarus.ftp.login', 'lazarus.flag_adcb1f.capture'}
-        self.attacker.get_step('office_network.map').children -= {'lazarus.ftp.identify'}
+    def isolate(self, service):
+        self.attacker.attack_graph.online[service] = False
+        self.attacker.compromised_steps -= set(self.attacker.attack_graph.steps_secured_by_isolating(service))
+        self.attacker.attack_graph.isolate(service)
         self.attacker.choose_next_step()
-
-    def isolate_http(self):
-        self.http_is_online = False
-        self.attacker.compromised_steps -= {'energetic_bear.flag_73cb43.capture', 'energetic_bear.flag_3b2000.capture', 'energetic_bear.flag_521bce.capture', 'energetic_bear.flag_de3b1c.capture', 'energetic_bear.escalate_to_root', 'energetic_bear.apache.pop_shell', 'energetic_bear.apache.exploit_sqli', 'energetic_bear.apache.find_sqli', 'energetic_bear.apache.crawl', 'energetic_bear.apache.identify'}
-        self.attacker.get_step('office_network.map').children -= {'energetic_bear.apache.identify'}
-        self.attacker.choose_next_step()
-
+    
 
 env = AttackSimulationEnv()
 obs = env.reset()
