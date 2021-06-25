@@ -7,8 +7,8 @@ class AttackStep:
 
     def __init__(self, step_type='or', ttc=1, reward=0, children={}, true_positive=0.95, false_positive=0.1):
         self.step_type = step_type
-        self.ttc = np.random.exponential(scale=ttc)
-        self.reward = reward
+        self.ttc = int(np.random.exponential(scale=ttc))
+        self.reward = int(np.random.exponential(scale=reward))
         self.children = children
         self.true_positive = true_positive
         self.false_positive = false_positive
@@ -106,7 +106,7 @@ class AttackSimulationEnv(gym.Env):
 
         reward = self.provision_reward - self.attacker.reward()
 
-        info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.attack_graph.attack_steps[env.attacker.current_step].ttc}
+        info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.attack_graph.attack_steps[env.attacker.current_step].ttc, "ftp_is_online": self.ftp_is_online, "http_is_online": self.http_is_online}
         
         return obs, reward, attacker_done or defender_done, info
 
@@ -124,11 +124,9 @@ class AttackSimulationEnv(gym.Env):
         self.ftp_is_online = False
         self.attacker.compromised_steps -= {'identify_ftp', 'dictionary_attack', 'ftp_login', 'capture_ftp_flag', 'map_network'}
         self.attacker.current_step = "map_network"
-        print("Isolating ftp")
 
     def isolate_http(self):
         self.http_is_online = False
-        print("Isolating http")
 
     def reinstate_ftp(self):
         self.ftp_is_online = True
@@ -143,11 +141,14 @@ ftp_online = 1
 http_online = 1
 done = False
 while not done:
+    online_status_changed = False
     if ftp_online == 1 and random.uniform(0,1) > 0.99:
         ftp_online = 0
+        online_status_changed = True
     if http_online == 1 and random.uniform(0,1) > 0.99:
         http_online = 0
+        online_status_changed = True
     obs, reward, done, info = env.step((ftp_online, http_online))
-    if info["time_on_current_step"] == 1:
+    if info["time_on_current_step"] == 1 or online_status_changed:
         print("obs: " + str(obs) + " reward: " + str(reward) + " info: " + str(info))
 print("Final: obs: " + str(obs) + " reward: " + str(reward) + " info: " + str(info))
