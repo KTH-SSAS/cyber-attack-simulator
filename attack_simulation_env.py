@@ -94,10 +94,10 @@ class AttackSimulationEnv(gym.Env):
         if action[1] == 0 and self.http_is_online:
             self.isolate_http()
 
-        if not self.ftp_is_online:
-            self.provision_reward -= 1
-        if not self.http_is_online:
-            self.provision_reward -= 1
+        if self.ftp_is_online:
+            self.provision_reward += 1
+        if self.http_is_online:
+            self.provision_reward += 1
 
         attacker_done = not self.attacker.attack()
         defender_done = action[0] + action[1] == 0        
@@ -150,3 +150,4 @@ while not done:
     obs, reward, done, info = env.step((ftp_online, http_online))
     if info["time_on_current_step"] == 1:
         print("obs: " + str(obs) + " reward: " + str(reward) + " info: " + str(info))
+print("Final: obs: " + str(obs) + " reward: " + str(reward) + " info: " + str(info))
