@@ -134,9 +134,9 @@ class AttackSimulationEnv(gym.Env):
 
         reward = self.provision_reward - self.attacker.reward()
         if self.attacker.current_step:
-            info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.attack_graph.attack_steps[env.attacker.current_step].ttc, "ftp_is_online": self.ftp_is_online, "http_is_online": self.http_is_online}
+            info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.attack_graph.attack_steps[env.attacker.current_step].ttc, "attack_surface": self.attacker.attack_surface(), "ftp_is_online": self.ftp_is_online, "http_is_online": self.http_is_online}
         else:
-            info = {"time": self.attacker.total_time, "current_step": None, "time_on_current_step": None, "ttc_of_current_step": None, "ftp_is_online": self.ftp_is_online, "http_is_online": self.http_is_online}
+            info = {"time": self.attacker.total_time, "current_step": None, "time_on_current_step": None, "ttc_of_current_step": None, "attack_surface": self.attacker.attack_surface(), "ftp_is_online": self.ftp_is_online, "http_is_online": self.http_is_online}
 
 
         return obs, reward, attacker_done or defender_done, info
