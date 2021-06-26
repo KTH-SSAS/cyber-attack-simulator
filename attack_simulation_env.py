@@ -34,10 +34,13 @@ class AttackGraph:
         self.attack_steps['lazarus.flag_adcb1f.capture'] = AttackStep(reward=1000, isolator='lazarus.ftp')
         self.attack_steps['lazarus.ftp.login'] = AttackStep(isolator='lazarus.ftp', children={'lazarus.flag_adcb1f.capture'})
         self.attack_steps['lazarus.ftp.dictionary_attack'] = AttackStep(ttc=100, isolator='lazarus.ftp', children={'lazarus.ftp.login'})
-        self.attack_steps['lazarus.ftp.identify'] = AttackStep(isolator='lazarus.ftp', children={'lazarus.ftp.dictionary_attack'})
+        self.attack_steps['lazarus.ftp.connect'] = AttackStep(isolator='lazarus.ftp', children={'lazarus.ftp.dictionary_attack'})
 
         self.attack_steps['buckeye.flag_14ce18.capture'] = AttackStep(reward=1000, isolator='buckeye.firefox')
-        self.attack_steps['buckeye.firefox.connect'] = AttackStep(isolator='buckeye.firefox')
+        self.attack_steps['buckeye.flag_5d402e.capture'] = AttackStep(reward=1000, isolator='buckeye.firefox')
+        self.attack_steps['buckeye.firefox.exploit_vulnerability'] = AttackStep(ttc=5, isolator='energetic_bear.apache', children={'buckeye.flag_5d402e.capture'})
+        self.attack_steps['buckeye.firefox.find_vulnerability'] = AttackStep(ttc=10, isolator='buckeye.firefox', children={'buckeye.firefox.exploit_vulnerability'})
+        self.attack_steps['buckeye.firefox.connect'] = AttackStep(isolator='buckeye.firefox', children=['buckeye.firefox.find_vulnerability'])
 
         self.attack_steps['energetic_bear.flag_73cb43.capture'] = AttackStep(reward=1000, isolator='energetic_bear.apache')
         self.attack_steps['energetic_bear.flag_3b2000.capture'] = AttackStep(reward=1000, isolator='energetic_bear.apache')
@@ -49,14 +52,14 @@ class AttackGraph:
         self.attack_steps['energetic_bear.apache.exploit_vulnerability'] = AttackStep(ttc=20, isolator='energetic_bear.apache', children={'energetic_bear.pop_shell', 'energetic_bear.flag_de3b1c.capture'})
         self.attack_steps['energetic_bear.apache.find_vulnerability'] = AttackStep(ttc=30, isolator='energetic_bear.apache', children={'energetic_bear.apache.exploit_vulnerability'})
         self.attack_steps['energetic_bear.apache.crawl'] = AttackStep(ttc=10, isolator='energetic_bear.apache', children={'energetic_bear.apache.find_vulnerability'})
-        self.attack_steps['energetic_bear.apache.identify'] = AttackStep(isolator='energetic_bear.apache', children={'energetic_bear.apache.crawl', 'energetic_bear.flag_521bce.capture'})
+        self.attack_steps['energetic_bear.apache.connect'] = AttackStep(isolator='energetic_bear.apache', children={'energetic_bear.apache.crawl', 'energetic_bear.flag_521bce.capture'})
 
         self.attack_steps['sea_turle.flag_6be6ef.capture'] = AttackStep(reward=1000, isolator='sea_turtle.telnet')
         self.attack_steps['sea_turle.flag_f9038f.capture'] = AttackStep(reward=1000, isolator='sea_turtle.telnet')
         self.attack_steps['sea_turtle.escalate_to_root'] = AttackStep(ttc=50, isolator='sea_turtle.telnet', children={'sea_turle.flag_6be6ef.capture'})
         self.attack_steps['sea_turtle.telnet.login'] = AttackStep(step_type='and', ttc=100, isolator='sea_turtle.telnet', children={'sea_turtle.escalate_to_root', 'sea_turle.flag_f9038f.capture'})
         self.attack_steps['sea_turtle.telnet.obtain_credentials'] = AttackStep(isolator='lazarus.tomcat', children={'sea_turtle.telnet.login'})
-        self.attack_steps['sea_turtle.telnet.identify'] = AttackStep(isolator='sea_turtle.telnet', children={'sea_turtle.telnet.login'})
+        self.attack_steps['sea_turtle.telnet.connect'] = AttackStep(isolator='sea_turtle.telnet', children={'sea_turtle.telnet.login'})
 
         self.attack_steps['lazarus.flag_90b353.capture'] = AttackStep(reward=1000, isolator='lazarus.tomcat')
         self.attack_steps['lazarus.flag_cd699a.capture'] = AttackStep(reward=1000, isolator='lazarus.tomcat')
@@ -66,9 +69,9 @@ class AttackGraph:
         self.attack_steps['lazarus.tomcat.find_vulnerability'] = AttackStep(ttc=10, isolator='lazarus.tomcat', children={'lazarus.tomcat.exploit_vulnerability'})
         self.attack_steps['lazarus.tomcat.dictionary_attack'] = AttackStep(ttc=10, isolator='lazarus.tomcat', children={'lazarus.tomcat.find_vulnerability', 'lazarus.flag_90b353.capture'})
         self.attack_steps['lazarus.tomcat.crawl'] = AttackStep(ttc=5, isolator='lazarus.tomcat', children={'lazarus.tomcat.dictionary_attack'})
-        self.attack_steps['lazarus.tomcat.identify'] = AttackStep(isolator='lazarus.tomcat', children={'lazarus.tomcat.crawl'})
+        self.attack_steps['lazarus.tomcat.connect'] = AttackStep(isolator='lazarus.tomcat', children={'lazarus.tomcat.crawl'})
 
-        self.attack_steps['office_network.map'] = AttackStep(ttc=10, children={'lazarus.ftp.identify', 'energetic_bear.apache.identify', 'lazarus.tomcat.identify', 'sea_turtle.telnet.identify'})
+        self.attack_steps['office_network.map'] = AttackStep(ttc=10, children={'lazarus.ftp.connect', 'energetic_bear.apache.connect', 'lazarus.tomcat.connect', 'sea_turtle.telnet.connect'})
         self.attack_steps['internet.connect'] = AttackStep(children={'office_network.map'})
         
         self.record_parents()
@@ -85,13 +88,13 @@ class AttackGraph:
 
     def isolate(self, service):
         if service == 'lazarus.ftp':
-            self.attack_steps['office_network.map'].children -= {'lazarus.ftp.identify'}
+            self.attack_steps['office_network.map'].children -= {'lazarus.ftp.connect'}
         if service == 'lazarus.tomcat':
-            self.attack_steps['office_network.map'].children -= {'lazarus.tomcat.identify'}
+            self.attack_steps['office_network.map'].children -= {'lazarus.tomcat.connect'}
         if service == 'energetic_bear.apache':
-            self.attack_steps['office_network.map'].children -= {'energetic_bear.apache.identify'}
+            self.attack_steps['office_network.map'].children -= {'energetic_bear.apache.connect'}
         if service == 'sea_turtle.telnet':
-            self.attack_steps['office_network.map'].children -= {'sea_turtle.telnet.identify'}
+            self.attack_steps['office_network.map'].children -= {'sea_turtle.telnet.connect'}
             self.attack_steps['sea_turtle.telnet.obtain_credentials'].children -= {'sea_turtle.telnet.login'}
 
 class Attacker:
@@ -230,7 +233,7 @@ for service in env.attack_graph.online:
     online[service] = 1
 done = False
 # The probability that the defender will isolate a given service at a given step is given by ISOLATION_PROBABILITY.
-ISOLATION_PROBABILITY = 0.005
+ISOLATION_PROBABILITY = 0.0001
 while not done:
     online_status_changed = False
     for service in online:
