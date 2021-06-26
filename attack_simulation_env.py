@@ -3,19 +3,27 @@ from gym import spaces
 import numpy as np
 import random
 
+# The probability that the defender will disable a given service at a given step is given by DISABLE_PROBABILITY.
+DISABLE_PROBABILITY = 0.001
+DETERMINISTIC = True
+
 class AttackStep:
 
     def __init__(self, name='', step_type='or', ttc=1, reward=0, children={}, isolator=None, true_positive=0.95, false_positive=0.1):
         self.name = name
         self.step_type = step_type
-        self.ttc = int(np.random.exponential(scale=ttc))
-        self.reward = int(np.random.exponential(scale=reward))
+        if DETERMINISTIC:
+            self.ttc = ttc
+            self.reward = reward
+        else:
+            self.ttc = int(np.random.exponential(scale=ttc))
+            self.reward = int(np.random.exponential(scale=reward))
         self.children = children
         self.parents = set()
         self.true_positive = true_positive
         self.false_positive = false_positive
         self.isolator = isolator
-        self.disabled = False
+        self.enabled = True
 
 class AttackGraph:
 
@@ -24,12 +32,12 @@ class AttackGraph:
 
     def reset(self):
 
-        self.online = dict()
-        self.online['lazarus.ftp'] = True
-        self.online['lazarus.tomcat'] = True
-        self.online['energetic_bear.apache'] = True
-        self.online['sea_turtle.telnet'] = True
-        self.online['buckeye.firefox'] = True
+        self.enabled_services = dict()
+        self.enabled_services['lazarus.ftp'] = True
+        self.enabled_services['lazarus.tomcat'] = True
+        self.enabled_services['energetic_bear.apache'] = True
+        self.enabled_services['sea_turtle.telnet'] = True
+        self.enabled_services['buckeye.firefox'] = True
         
         self.attack_steps = {}
         self.attack_steps['lazarus.flag_adcb1f.capture'] = AttackStep(reward=1000, isolator='lazarus.ftp')
@@ -98,7 +106,7 @@ class AttackGraph:
         steps = [asn for asn in self.attack_steps.keys() if self.attack_steps[asn].isolator == service]
         return steps
 
-    def isolate(self, service):
+    def disable(self, service):
         # Disconnect all children that match the service.
         for step in self.attack_steps:
             pruned_children = [child for child in self.attack_steps[step].children if service not in child]
@@ -121,7 +129,7 @@ class Attacker:
         att_surf = set()
         for compromised_step_name in self.compromised_steps:
             for child_name in self.get_step(compromised_step_name).children:
-                if not self.get_step(child_name).disabled:
+                if self.get_step(child_name).enabled:
                     if self.get_step(child_name).step_type == 'or':
                         att_surf.add(child_name)
                     else:
@@ -191,24 +199,24 @@ class AttackSimulationEnv(gym.Env):
 
     def get_info(self):
         if self.attacker.current_step:
-            info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.get_step(env.attacker.current_step).ttc, "attack_surface": self.attacker.attack_surface(), "self.attack_graph.online": self.attack_graph.online}
+            info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.get_step(env.attacker.current_step).ttc, "attack_surface": self.attacker.attack_surface(), "self.attack_graph.enabled_services": self.attack_graph.enabled_services}
         else:
-            info = {"time": self.attacker.total_time, "current_step": None, "time_on_current_step": None, "ttc_of_current_step": None, "attack_surface": self.attacker.attack_surface(), "self.attack_graph.online": self.attack_graph.online}
+            info = {"time": self.attacker.total_time, "current_step": None, "time_on_current_step": None, "ttc_of_current_step": None, "attack_surface": self.attacker.attack_surface(), "self.attack_graph.enabled_services": self.attack_graph.enabled_services}
         return info
 
     def step(self, action):
-        # The order of actions follows self.attack_graph.online
+        # The order of actions follows self.attack_graph.enabled_services
         action_id = 0
         # Isolate services according to the actions provided
-        for service in self.attack_graph.online:
-            if self.attack_graph.online[service]:
+        for service in self.attack_graph.enabled_services:
+            if self.attack_graph.enabled_services[service]:
                 self.provision_reward += 1
                 if action[action_id] == 0:
-                    self.isolate(service)
+                    self.disable(service)
             action_id += 1
 
         obs = self._next_observation()
-        # Positive rewards for maintaining services online and negative for compromised flags.
+        # Positive rewards for maintaining services enabled_services and negative for compromised flags.
         reward = self.provision_reward - self.attacker.reward()
         
         # The attacker attacks. If the attacker's attack surface is empty, then the game ends.
@@ -226,34 +234,32 @@ class AttackSimulationEnv(gym.Env):
     def render(self, mode='human'):
         pass
 
-    def isolate(self, service):
-        self.attack_graph.online[service] = False
+    def disable(self, service):
+        self.attack_graph.enabled_services[service] = False
 
         to_remove = set(self.attack_graph.steps_secured_by_isolating(service))
         self.attacker.compromised_steps = [step for step in self.attacker.compromised_steps if not step in to_remove]
-        self.attack_graph.isolate(service)
+        self.attack_graph.disable(service)
         self.attacker.choose_next_step()
     
 
-# The probability that the defender will isolate a given service at a given step is given by ISOLATION_PROBABILITY.
-ISOLATION_PROBABILITY = 0.0001
-
 env = AttackSimulationEnv()
 obs = env.reset()
-online = dict()
-# Defender can act by isolating various services (found in env.attack_graph.online)
-for service in env.attack_graph.online:
-    online[service] = 1
+enabled_services = dict()
+# Defender can act by isolating various services (found in env.attack_graph.enabled_services)
+for service in env.attack_graph.enabled_services:
+    enabled_services[service] = 1
 done = False
 while not done:
-    online_status_changed = False
-    for service in online:
-        if online[service] == 1 and random.uniform(0,1) < ISOLATION_PROBABILITY:
-            online[service] = 0
-            online_status_changed = True
-    obs, reward, done, info = env.step(tuple(online.values()))
+    enabled_services_status_changed = False
+    for service in enabled_services:
+        if enabled_services[service] == 1 and random.uniform(0,1) < DISABLE_PROBABILITY:
+            enabled_services[service] = 0
+            enabled_services_status_changed = True
+    obs, reward, done, info = env.step(tuple(enabled_services.values()))
     assert env.attack_graph.attack_steps['office_network.map'].children == env.attacker.attack_graph.attack_steps['office_network.map'].children
-    if info["time_on_current_step"] == 1 or online_status_changed:
-        print("info: " + str(info) + " reward: " + str(reward))
+    if info["time_on_current_step"] == 1 or enabled_services_status_changed:
+       # print("info: " + str(info) + " reward: " + str(reward))
+       pass
 print("Final: info: " + str(info) + " reward: " + str(reward))
 print("Compromised attack steps: " + str(env.attacker.compromised_steps))
