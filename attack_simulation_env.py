@@ -52,15 +52,15 @@ class AttackGraph:
 
         self.attack_steps['lazarus.flag_90b353.capture'] = AttackStep(reward=1000, isolator='lazarus.tomcat')
         self.attack_steps['lazarus.flag_cd699a.capture'] = AttackStep(reward=1000, isolator='lazarus.tomcat')
-        self.attack_steps['lazarus.tomcat.crack_hashes'] = AttackStep(ttc=100, isolator='lazarus.tomcat', children={'sea_turtle.telnet.login'})
+        self.attack_steps['lazarus.tomcat.crack_hashes'] = AttackStep(ttc=10, isolator='lazarus.tomcat', children={'sea_turtle.telnet.login'})
         self.attack_steps['lazarus.tomcat.dump_hashes'] = AttackStep(isolator='lazarus.tomcat', children={'lazarus.tomcat.crack_hashes'})
         self.attack_steps['lazarus.tomcat.pop_shell'] = AttackStep(isolator='lazarus.tomcat', children={'lazarus.tomcat.dump_hashes', 'lazarus.flag_cd699a.capture'})
         self.attack_steps['lazarus.tomcat.upload_war'] = AttackStep(ttc=10, isolator='lazarus.tomcat', children={'lazarus.tomcat.pop_shell'})
-        self.attack_steps['lazarus.tomcat.dictionary_attack'] = AttackStep(ttc=10, isolator='lazarus.tomcat', children={'lazarus.flag_90b353.capture'})
+        self.attack_steps['lazarus.tomcat.dictionary_attack'] = AttackStep(ttc=10, isolator='lazarus.tomcat', children={'lazarus.tomcat.upload_war', 'lazarus.flag_90b353.capture'})
         self.attack_steps['lazarus.tomcat.crawl'] = AttackStep(ttc=5, isolator='lazarus.tomcat', children={'lazarus.tomcat.dictionary_attack'})
         self.attack_steps['lazarus.tomcat.identify'] = AttackStep(isolator='lazarus.tomcat', children={'lazarus.tomcat.crawl'})
 
-        self.attack_steps['office_network.map'] = AttackStep(ttc=10, children={'lazarus.ftp.identify', 'energetic_bear.apache.identify', 'lazarus.tomcat.identify'})
+        self.attack_steps['office_network.map'] = AttackStep(ttc=10, children={'lazarus.ftp.identify', 'energetic_bear.apache.identify', 'lazarus.tomcat.identify', 'sea_turtle.telnet.identify'})
         self.attack_steps['internet.connect'] = AttackStep(children={'office_network.map'})
         
         self.record_parents()
@@ -78,8 +78,12 @@ class AttackGraph:
     def isolate(self, service):
         if service == 'lazarus.ftp':
             self.attack_steps['office_network.map'].children -= {'lazarus.ftp.identify'}
+        if service == 'lazarus.tomcat':
+            self.attack_steps['office_network.map'].children -= {'lazarus.tomcat.identify'}
         if service == 'energetic_bear.apache':
             self.attack_steps['office_network.map'].children -= {'energetic_bear.apache.identify'}
+        if service == 'sea_turtle_telnet':
+            self.attack_steps['office_network.map'].children -= {'sea_turtle.telnet.identify'}
 
 class Attacker:
     
@@ -101,7 +105,7 @@ class Attacker:
                     att_surf.add(child_name)
                 else:
                     all_parents_are_compromised = True
-                    for parent_name in child.parents:
+                    for parent_name in self.get_step(child_name).parents:
                         if parent_name not in self.compromised_steps:
                             all_parents_are_compromised = False
                             break
@@ -217,3 +221,4 @@ while not done:
     if info["time_on_current_step"] == 1 or online_status_changed:
         print("info: " + str(info) + " reward: " + str(reward))
 print("Final: info: " + str(info) + " obs: " + str(obs) + " reward: " + str(reward))
+print("Compromised attacck steps: " + str(env.attacker.compromised_steps))
