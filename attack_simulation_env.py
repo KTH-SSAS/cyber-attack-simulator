@@ -4,7 +4,7 @@ import numpy as np
 import random
 
 # The probability that the defender will disable a given service at a given step is given by DISABLE_PROBABILITY.
-DISABLE_PROBABILITY = 0.001
+DISABLE_PROBABILITY = 0.0008
 DETERMINISTIC = True
 
 class AttackStep:
@@ -148,7 +148,10 @@ class Attacker:
         # The attacker strategy is to select a random attack step of the available ones (i.e. from the attack surface).
         self.current_step = None
         if self.attack_surface():
-            self.current_step = random.choice(list(self.attack_surface()))
+            if DETERMINISTIC:
+                self.current_step = sorted(list(self.attack_surface()))[0]
+            else:
+                self.current_step = random.choice(list(self.attack_surface()))
 
     def attack(self):
         # If the attacker has run out of attack steps, then terminate.
@@ -174,17 +177,14 @@ class Attacker:
         return r
 
     def observe(self, attack_step):
-        rnd = random.uniform(0,1)
-        if attack_step in self.compromised_steps:
-            if rnd <= self.get_step(attack_step).true_positive:
-                return True
-            else:
-                return False
+        if DETERMINISTIC:
+            return attack_step in self.compromised_steps
         else:
-            if rnd <= self.get_step(attack_step).false_positive:
-                return True
+            rnd = random.uniform(0,1)
+            if attack_step in self.compromised_steps:
+                return rnd <= self.get_step(attack_step).true_positive
             else:
-                return False
+                return rnd <= self.get_step(attack_step).false_positive
 
 
 class AttackSimulationEnv(gym.Env):
@@ -216,12 +216,12 @@ class AttackSimulationEnv(gym.Env):
             action_id += 1
 
         obs = self._next_observation()
-        # Positive rewards for maintaining services enabled_services and negative for compromised flags.
-        reward = self.provision_reward - self.attacker.reward()
-        
         # The attacker attacks. If the attacker's attack surface is empty, then the game ends.
         attacker_done = not self.attacker.attack()
 
+        # Positive rewards for maintaining services enabled_services and negative for compromised flags.
+        reward = self.provision_reward - self.attacker.reward()
+        
         return obs, reward, attacker_done, self.get_info()
 
     def reset(self):
@@ -242,6 +242,8 @@ class AttackSimulationEnv(gym.Env):
         self.attack_graph.disable(service)
         self.attacker.choose_next_step()
     
+if DETERMINISTIC:
+    random.seed(4)
 
 env = AttackSimulationEnv()
 obs = env.reset()
@@ -254,12 +256,10 @@ while not done:
     enabled_services_status_changed = False
     for service in enabled_services:
         if enabled_services[service] == 1 and random.uniform(0,1) < DISABLE_PROBABILITY:
+            print("Defender disabling " + service)
             enabled_services[service] = 0
             enabled_services_status_changed = True
     obs, reward, done, info = env.step(tuple(enabled_services.values()))
     assert env.attack_graph.attack_steps['office_network.map'].children == env.attacker.attack_graph.attack_steps['office_network.map'].children
     if info["time_on_current_step"] == 1 or enabled_services_status_changed:
-       # print("info: " + str(info) + " reward: " + str(reward))
-       pass
-print("Final: info: " + str(info) + " reward: " + str(reward))
-print("Compromised attack steps: " + str(env.attacker.compromised_steps))
+        print(str(info['time']) + ": Attacking " + str(info['current_step']) + ", reward=" + str(reward))
