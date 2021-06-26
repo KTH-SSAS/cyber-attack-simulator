@@ -15,7 +15,7 @@ class AttackStep:
         self.true_positive = true_positive
         self.false_positive = false_positive
         self.isolator = isolator
-
+        self.disabled = False
 
 class AttackGraph:
 
@@ -99,15 +99,10 @@ class AttackGraph:
         return steps
 
     def isolate(self, service):
-        if service == 'lazarus.ftp':
-            self.attack_steps['office_network.map'].children -= {'lazarus.ftp.connect'}
-        if service == 'lazarus.tomcat':
-            self.attack_steps['office_network.map'].children -= {'lazarus.tomcat.connect'}
-        if service == 'energetic_bear.apache':
-            self.attack_steps['office_network.map'].children -= {'energetic_bear.apache.connect'}
-        if service == 'sea_turtle.telnet':
-            self.attack_steps['office_network.map'].children -= {'sea_turtle.telnet.connect'}
-            self.attack_steps['sea_turtle.telnet.obtain_credentials'].children -= {'sea_turtle.telnet.login'}
+        # Disconnect all children that match the service.
+        for step in self.attack_steps:
+            pruned_children = [child for child in self.attack_steps[step].children if service not in child]
+            self.attack_steps[step].children = pruned_children
 
 class Attacker:
     
@@ -126,16 +121,17 @@ class Attacker:
         att_surf = set()
         for compromised_step_name in self.compromised_steps:
             for child_name in self.get_step(compromised_step_name).children:
-                if self.get_step(child_name).step_type == 'or':
-                    att_surf.add(child_name)
-                else:
-                    all_parents_are_compromised = True
-                    for parent_name in self.get_step(child_name).parents:
-                        if parent_name not in self.compromised_steps:
-                            all_parents_are_compromised = False
-                            break
-                    if all_parents_are_compromised:
+                if not self.get_step(child_name).disabled:
+                    if self.get_step(child_name).step_type == 'or':
                         att_surf.add(child_name)
+                    else:
+                        all_parents_are_compromised = True
+                        for parent_name in self.get_step(child_name).parents:
+                            if parent_name not in self.compromised_steps:
+                                all_parents_are_compromised = False
+                                break
+                        if all_parents_are_compromised:
+                            att_surf.add(child_name)
 
         att_surf -= set(self.compromised_steps)
         return att_surf
@@ -232,11 +228,15 @@ class AttackSimulationEnv(gym.Env):
 
     def isolate(self, service):
         self.attack_graph.online[service] = False
+
         to_remove = set(self.attack_graph.steps_secured_by_isolating(service))
         self.attacker.compromised_steps = [step for step in self.attacker.compromised_steps if not step in to_remove]
         self.attack_graph.isolate(service)
         self.attacker.choose_next_step()
     
+
+# The probability that the defender will isolate a given service at a given step is given by ISOLATION_PROBABILITY.
+ISOLATION_PROBABILITY = 0.0001
 
 env = AttackSimulationEnv()
 obs = env.reset()
@@ -245,8 +245,6 @@ online = dict()
 for service in env.attack_graph.online:
     online[service] = 1
 done = False
-# The probability that the defender will isolate a given service at a given step is given by ISOLATION_PROBABILITY.
-ISOLATION_PROBABILITY = 0.0001
 while not done:
     online_status_changed = False
     for service in online:
