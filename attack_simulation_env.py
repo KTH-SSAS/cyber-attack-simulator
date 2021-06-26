@@ -94,8 +94,8 @@ class AttackGraph:
 
 class Attacker:
     
-    def __init__(self, compromised_steps):
-        self.attack_graph = AttackGraph()
+    def __init__(self, attack_graph, compromised_steps):
+        self.attack_graph = attack_graph
         self.compromised_steps = compromised_steps
         self.choose_next_step()
         self.time_on_current_step = 0
@@ -105,6 +105,7 @@ class Attacker:
         return self.attack_graph.attack_steps[name]
     
     def attack_surface(self, debug=False):
+        # The attack surface consists of all reachable but uncompromised attack steps.
         att_surf = set()
         for compromised_step_name in self.compromised_steps:
             for child_name in self.get_step(compromised_step_name).children:
@@ -123,19 +124,24 @@ class Attacker:
         return att_surf
 
     def choose_next_step(self): 
+        # The attacker strategy is to select a random attack step of the available ones (i.e. from the attack surface).
         self.current_step = None
         if self.attack_surface():
             self.current_step = random.choice(list(self.attack_surface()))
 
     def attack(self):
+        # If the attacker has run out of attack steps, then terminate.
         if not self.current_step:
             return False
+        # If the attacker has spent the required time on the current attack step, then it becomes compromised.
         if self.time_on_current_step >= self.get_step(self.current_step).ttc:
             self.compromised_steps.add(self.current_step)
+            # If the attack surface (the available uncompromised attack steps) is empty, then terminate.
             if not self.attack_surface():
                 return False
             self.choose_next_step()
             self.time_on_current_step = 0
+        # Keep track of the time spent.
         self.time_on_current_step += 1
         self.total_time += 1
         return True
@@ -164,32 +170,35 @@ class AttackSimulationEnv(gym.Env):
 
     def __init__(self):
         super(AttackSimulationEnv, self).__init__()
-        self.attacker = Attacker({'internet.connect'})
+        self.attack_graph = AttackGraph()
+        self.attacker = Attacker(self.attack_graph, {'internet.connect'})
         self.provision_reward = 0
-        self.observation_space = spaces.Box(low=0, high=1, shape=(self.attacker.attack_graph.size, 1), dtype=np.float32)
+        self.observation_space = spaces.Box(low=0, high=1, shape=(self.attack_graph.size, 1), dtype=np.float32)
         self.action_space = spaces.Tuple((spaces.Discrete(2), spaces.Discrete(2)))
 
     def get_info(self):
         if self.attacker.current_step:
-            info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.get_step(env.attacker.current_step).ttc, "attack_surface": self.attacker.attack_surface(), "self.attacker.attack_graph.online": self.attacker.attack_graph.online}
+            info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.get_step(env.attacker.current_step).ttc, "attack_surface": self.attacker.attack_surface(), "self.attack_graph.online": self.attack_graph.online}
         else:
-            info = {"time": self.attacker.total_time, "current_step": None, "time_on_current_step": None, "ttc_of_current_step": None, "attack_surface": self.attacker.attack_surface(), "self.attacker.attack_graph.online": self.attacker.attack_graph.online}
+            info = {"time": self.attacker.total_time, "current_step": None, "time_on_current_step": None, "ttc_of_current_step": None, "attack_surface": self.attacker.attack_surface(), "self.attack_graph.online": self.attack_graph.online}
         return info
 
     def step(self, action):
-        # The order of actions follows self.attacker.attack_graph.online
+        # The order of actions follows self.attack_graph.online
         action_id = 0
-        for service in self.attacker.attack_graph.online:
-            if self.attacker.attack_graph.online[service]:
+        # Isolate services according to the actions provided
+        for service in self.attack_graph.online:
+            if self.attack_graph.online[service]:
                 self.provision_reward += 1
                 if action[action_id] == 0:
                     self.isolate(service)
             action_id += 1
 
         obs = self._next_observation()
+        # Positive rewards for maintaining services online and negative for compromised flags.
         reward = self.provision_reward - self.attacker.reward()
         
-        # If the attacker's attack surface is empty, then the game ends.
+        # The attacker attacks. If the attacker's attack surface is empty, then the game ends.
         attacker_done = not self.attacker.attack()
         # If all services have been isolated, then the game ends.
         defender_done = sum(action) == 0        
@@ -197,28 +206,30 @@ class AttackSimulationEnv(gym.Env):
         return obs, reward, attacker_done or defender_done, self.get_info()
 
     def reset(self):
-        self.attacker.attack_graph.reset()
+        self.attack_graph.reset()
         return self._next_observation()
 
     def _next_observation(self):
-        return np.array([self.attacker.observe(a) for a in self.attacker.attack_graph.attack_steps])
+        return np.array([self.attacker.observe(a) for a in self.attack_graph.attack_steps])
 
     def render(self, mode='human'):
         pass
 
     def isolate(self, service):
-        self.attacker.attack_graph.online[service] = False
-        self.attacker.compromised_steps -= set(self.attacker.attack_graph.steps_secured_by_isolating(service))
-        self.attacker.attack_graph.isolate(service)
+        self.attack_graph.online[service] = False
+        self.attacker.compromised_steps -= set(self.attack_graph.steps_secured_by_isolating(service))
+        self.attack_graph.isolate(service)
         self.attacker.choose_next_step()
     
 
 env = AttackSimulationEnv()
 obs = env.reset()
 online = dict()
-for service in env.attacker.attack_graph.online:
+# Defender can act by isolating various services (found in env.attack_graph.online)
+for service in env.attack_graph.online:
     online[service] = 1
 done = False
+# The probability that the defender will isolate a given service at a given step is given by ISOLATION_PROBABILITY.
 ISOLATION_PROBABILITY = 0.001
 while not done:
     online_status_changed = False
@@ -227,6 +238,7 @@ while not done:
             online[service] = 0
             online_status_changed = True
     obs, reward, done, info = env.step(tuple(online.values()))
+    assert env.attack_graph.attack_steps['office_network.map'].children == env.attacker.attack_graph.attack_steps['office_network.map'].children
     if info["time_on_current_step"] == 1 or online_status_changed:
         print("info: " + str(info) + " reward: " + str(reward))
 print("Final: info: " + str(info) + " reward: " + str(reward))
