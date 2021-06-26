@@ -10,6 +10,7 @@ class AttackStep:
         self.ttc = int(np.random.exponential(scale=ttc))
         self.reward = int(np.random.exponential(scale=reward))
         self.children = children
+        self.parents = set()
         self.true_positive = true_positive
         self.false_positive = false_positive
         self.isolator = isolator
@@ -53,7 +54,7 @@ class AttackGraph:
         self.attack_steps['lazarus.flag_cd699a.capture'] = AttackStep(reward=1000, isolator='lazarus.tomcat')
         self.attack_steps['lazarus.tomcat.crack_hashes'] = AttackStep(ttc=100, isolator='lazarus.tomcat', children={'sea_turtle.telnet.login'})
         self.attack_steps['lazarus.tomcat.dump_hashes'] = AttackStep(isolator='lazarus.tomcat', children={'lazarus.tomcat.crack_hashes'})
-        self.attack_steps['lazarus.tomcat.pop_shell'] = AttackStep(isolator='lazarus.tomcat', children={'lazarus.tomcat_dump_hashes', 'lazarus.flag_cd699a.capture'})
+        self.attack_steps['lazarus.tomcat.pop_shell'] = AttackStep(isolator='lazarus.tomcat', children={'lazarus.tomcat.dump_hashes', 'lazarus.flag_cd699a.capture'})
         self.attack_steps['lazarus.tomcat.upload_war'] = AttackStep(ttc=10, isolator='lazarus.tomcat', children={'lazarus.tomcat.pop_shell'})
         self.attack_steps['lazarus.tomcat.dictionary_attack'] = AttackStep(ttc=10, isolator='lazarus.tomcat', children={'lazarus.flag_90b353.capture'})
         self.attack_steps['lazarus.tomcat.crawl'] = AttackStep(ttc=5, isolator='lazarus.tomcat', children={'lazarus.tomcat.dictionary_attack'})
@@ -61,7 +62,14 @@ class AttackGraph:
 
         self.attack_steps['office_network.map'] = AttackStep(ttc=10, children={'lazarus.ftp.identify', 'energetic_bear.apache.identify', 'lazarus.tomcat.identify'})
         self.attack_steps['internet.connect'] = AttackStep(children={'office_network.map'})
+        
+        self.record_parents()
         self.size = len(self.attack_steps)
+
+    def record_parents(self):
+        for parent in self.attack_steps:
+            for child in self.attack_steps[parent].children:
+                self.attack_steps[child].parents.add(parent)
 
     def steps_secured_by_isolating(self, service):
         steps = [asn for asn in self.attack_steps.keys() if self.attack_steps[asn].isolator == service]
@@ -86,7 +94,22 @@ class Attacker:
         return self.attack_graph.attack_steps[name]
     
     def attack_surface(self, debug=False):
-         return set([child for step_name in self.compromised_steps for child in self.get_step(step_name).children]) - self.compromised_steps
+        att_surf = set()
+        for compromised_step_name in self.compromised_steps:
+            for child_name in self.get_step(compromised_step_name).children:
+                if self.get_step(child_name).step_type == 'or':
+                    att_surf.add(child_name)
+                else:
+                    all_parents_are_compromised = True
+                    for parent_name in child.parents:
+                        if parent_name not in self.compromised_steps:
+                            all_parents_are_compromised = False
+                            break
+                    if all_parents_are_compromised:
+                        att_surf.add(child_name)
+
+        att_surf -= self.compromised_steps
+        return att_surf
 
     def choose_next_step(self): 
         self.current_step = None
