@@ -4,7 +4,8 @@ import numpy as np
 import random
 
 # The probability that the defender will disable a given service at a given step is given by DISABLE_PROBABILITY.
-DISABLE_PROBABILITY = 0.0008
+DISABLE_PROBABILITY = 0.002
+RANDOM_SEED = 1
 DETERMINISTIC = True
 
 class AttackStep:
@@ -33,10 +34,14 @@ class AttackGraph:
     def reset(self):
 
         self.enabled_services = dict()
+        self.enabled_services['lazarus'] = True
         self.enabled_services['lazarus.ftp'] = True
         self.enabled_services['lazarus.tomcat'] = True
+        self.enabled_services['energetic_bear'] = True
         self.enabled_services['energetic_bear.apache'] = True
+        self.enabled_services['sea_turtle'] = True
         self.enabled_services['sea_turtle.telnet'] = True
+        self.enabled_services['buckeye'] = True
         self.enabled_services['buckeye.firefox'] = True
         
         self.attack_steps = {}
@@ -102,15 +107,11 @@ class AttackGraph:
             for child in self.attack_steps[parent].children:
                 self.attack_steps[child].parents.add(parent)
 
-    def steps_secured_by_isolating(self, service):
-        steps = [asn for asn in self.attack_steps.keys() if self.attack_steps[asn].isolator == service]
-        return steps
-
     def disable(self, service):
         # Disconnect all children that match the service.
-        for step in self.attack_steps:
-            pruned_children = [child for child in self.attack_steps[step].children if service not in child]
-            self.attack_steps[step].children = pruned_children
+        for step_name in self.attack_steps:
+            if self.attack_steps[step_name].enabled and service in step_name:
+                self.attack_steps[step_name].enabled = False
 
 class Attacker:
     
@@ -235,15 +236,11 @@ class AttackSimulationEnv(gym.Env):
         pass
 
     def disable(self, service):
-        self.attack_graph.enabled_services[service] = False
-
-        to_remove = set(self.attack_graph.steps_secured_by_isolating(service))
-        self.attacker.compromised_steps = [step for step in self.attacker.compromised_steps if not step in to_remove]
         self.attack_graph.disable(service)
         self.attacker.choose_next_step()
     
 if DETERMINISTIC:
-    random.seed(4)
+    random.seed(RANDOM_SEED)
 
 env = AttackSimulationEnv()
 obs = env.reset()
