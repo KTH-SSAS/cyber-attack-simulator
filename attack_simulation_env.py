@@ -38,8 +38,9 @@ class AttackGraph:
 
         self.attack_steps['buckeye.flag_14ce18.capture'] = AttackStep(reward=1000, isolator='buckeye.firefox')
         self.attack_steps['buckeye.flag_5d402e.capture'] = AttackStep(reward=1000, isolator='buckeye.firefox')
-        self.attack_steps['buckeye.firefox.exploit_vulnerability'] = AttackStep(ttc=5, isolator='energetic_bear.apache', children={'buckeye.flag_5d402e.capture'})
-        self.attack_steps['buckeye.firefox.find_vulnerability'] = AttackStep(ttc=10, isolator='buckeye.firefox', children={'buckeye.firefox.exploit_vulnerability'})
+        self.attack_steps['buckeye.pop_shell'] = AttackStep(isolator='buckeye.firefox', children={'buckeye.flag_5d402e.capture'})
+        self.attack_steps['buckeye.firefox.exploit_vulnerability'] = AttackStep(ttc=10, isolator='buckeye.firefox', children={'buckeye.pop_shell'})
+        self.attack_steps['buckeye.firefox.find_vulnerability'] = AttackStep(ttc=5, isolator='buckeye.firefox', children={'buckeye.firefox.exploit_vulnerability'})
         self.attack_steps['buckeye.firefox.connect'] = AttackStep(isolator='buckeye.firefox', children=['buckeye.firefox.find_vulnerability'])
 
         self.attack_steps['energetic_bear.flag_73cb43.capture'] = AttackStep(reward=1000, isolator='energetic_bear.apache')
@@ -56,6 +57,7 @@ class AttackGraph:
 
         self.attack_steps['sea_turle.flag_6be6ef.capture'] = AttackStep(reward=1000, isolator='sea_turtle.telnet')
         self.attack_steps['sea_turle.flag_f9038f.capture'] = AttackStep(reward=1000, isolator='sea_turtle.telnet')
+        self.attack_steps['sea_turtle.capture_traffic'] = AttackStep(ttc=10, isolator='sea_turtle.telnet', children={'buckeye.firefox.connect', 'buckeye.flag_14ce18.capture'})
         self.attack_steps['sea_turtle.escalate_to_root'] = AttackStep(ttc=50, isolator='sea_turtle.telnet', children={'sea_turle.flag_6be6ef.capture'})
         self.attack_steps['sea_turtle.telnet.login'] = AttackStep(step_type='and', ttc=100, isolator='sea_turtle.telnet', children={'sea_turtle.escalate_to_root', 'sea_turle.flag_f9038f.capture'})
         self.attack_steps['sea_turtle.telnet.obtain_credentials'] = AttackStep(isolator='lazarus.tomcat', children={'sea_turtle.telnet.login'})
@@ -125,7 +127,7 @@ class Attacker:
                     if all_parents_are_compromised:
                         att_surf.add(child_name)
 
-        att_surf -= self.compromised_steps
+        att_surf -= set(self.compromised_steps)
         return att_surf
 
     def choose_next_step(self): 
@@ -140,7 +142,7 @@ class Attacker:
             return False
         # If the attacker has spent the required time on the current attack step, then it becomes compromised.
         if self.time_on_current_step >= self.get_step(self.current_step).ttc:
-            self.compromised_steps.add(self.current_step)
+            self.compromised_steps.append(self.current_step)
             # If the attack surface (the available uncompromised attack steps) is empty, then terminate.
             if not self.attack_surface():
                 return False
@@ -176,7 +178,7 @@ class AttackSimulationEnv(gym.Env):
     def __init__(self):
         super(AttackSimulationEnv, self).__init__()
         self.attack_graph = AttackGraph()
-        self.attacker = Attacker(self.attack_graph, {'internet.connect'})
+        self.attacker = Attacker(self.attack_graph, ['internet.connect'])
         self.provision_reward = 0
         self.observation_space = spaces.Box(low=0, high=1, shape=(self.attack_graph.size, 1), dtype=np.float32)
         self.action_space = spaces.Tuple((spaces.Discrete(2), spaces.Discrete(2)))
