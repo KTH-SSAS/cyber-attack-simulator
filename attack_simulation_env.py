@@ -10,7 +10,7 @@ DETERMINISTIC = True
 
 class AttackStep:
 
-    def __init__(self, name='', step_type='or', ttc=1, reward=0, children={}, isolator=None, true_positive=0.95, false_positive=0.1):
+    def __init__(self, name='', step_type='or', ttc=1, reward=0, children={}, true_positive=0.95, false_positive=0.1):
         self.name = name
         self.step_type = step_type
         if DETERMINISTIC:
@@ -23,7 +23,6 @@ class AttackStep:
         self.parents = set()
         self.true_positive = true_positive
         self.false_positive = false_positive
-        self.isolator = isolator
         self.enabled = True
 
 class AttackGraph:
@@ -45,56 +44,56 @@ class AttackGraph:
         self.enabled_services['buckeye.firefox'] = True
         
         self.attack_steps = {}
-        self.attack_steps['lazarus.flag_adcb1f.capture'] = AttackStep(reward=1000, isolator='lazarus.ftp')
-        self.attack_steps['lazarus.ftp.login'] = AttackStep(isolator='lazarus.ftp', children={'lazarus.flag_adcb1f.capture'})
-        self.attack_steps['lazarus.ftp.dictionary_attack'] = AttackStep(ttc=100, isolator='lazarus.ftp', children={'lazarus.ftp.login'})
-        self.attack_steps['lazarus.ftp.connect'] = AttackStep(isolator='lazarus.ftp', children={'lazarus.ftp.dictionary_attack'})
+        self.attack_steps['lazarus.flag_adcb1f.capture'] = AttackStep(reward=1000)
+        self.attack_steps['lazarus.ftp.login'] = AttackStep(children={'lazarus.flag_adcb1f.capture'})
+        self.attack_steps['lazarus.ftp.dictionary_attack'] = AttackStep(ttc=100, children={'lazarus.ftp.login'})
+        self.attack_steps['lazarus.ftp.connect'] = AttackStep(children={'lazarus.ftp.dictionary_attack'})
 
-        self.attack_steps['buckeye.flag_2362e5.capture'] = AttackStep(reward=1000, isolator='buckeye.firefox')
-        self.attack_steps['buckeye.flag_5d402e.capture'] = AttackStep(reward=1000, isolator='buckeye.firefox')
-        self.attack_steps['buckeye.flag_14ce18.capture'] = AttackStep(reward=1000, isolator='buckeye.firefox')
-        self.attack_steps['buckeye.escalate_to_root'] = AttackStep(isolator='buckeye.firefox', children={'buckeye.flag_2362e5.capture'})
+        self.attack_steps['buckeye.flag_2362e5.capture'] = AttackStep(reward=1000)
+        self.attack_steps['buckeye.flag_5d402e.capture'] = AttackStep(reward=1000)
+        self.attack_steps['buckeye.flag_14ce18.capture'] = AttackStep(reward=1000)
+        self.attack_steps['buckeye.escalate_to_root'] = AttackStep(children={'buckeye.flag_2362e5.capture'})
 
-        self.attack_steps['buckeye.exploit_vulnerability'] = AttackStep(ttc=10, isolator='buckeye.firefox', children={'buckeye.escalate_to_root'})
-        self.attack_steps['buckeye.find_vulnerability'] = AttackStep(ttc=5, isolator='buckeye.firefox', children={'buckeye.exploit_vulnerability'})
-        self.attack_steps['buckeye.terminal_access'] = AttackStep(isolator='buckeye.firefox', children={'buckeye.find_vulnerability', 'buckeye.flag_5d402e.capture'})
-        self.attack_steps['buckeye.firefox.exploit_vulnerability'] = AttackStep(ttc=10, isolator='buckeye.firefox', children={'buckeye.terminal_access'})
-        self.attack_steps['buckeye.firefox.find_vulnerability'] = AttackStep(ttc=5, isolator='buckeye.firefox', children={'buckeye.firefox.exploit_vulnerability'})
-        self.attack_steps['buckeye.firefox.connect'] = AttackStep(isolator='buckeye.firefox', children=['buckeye.firefox.find_vulnerability'])
+        self.attack_steps['buckeye.exploit_vulnerability'] = AttackStep(ttc=10, children={'buckeye.escalate_to_root'})
+        self.attack_steps['buckeye.find_vulnerability'] = AttackStep(ttc=5, children={'buckeye.exploit_vulnerability'})
+        self.attack_steps['buckeye.terminal_access'] = AttackStep(children={'buckeye.find_vulnerability', 'buckeye.flag_5d402e.capture'})
+        self.attack_steps['buckeye.firefox.exploit_vulnerability'] = AttackStep(ttc=10, children={'buckeye.terminal_access'})
+        self.attack_steps['buckeye.firefox.find_vulnerability'] = AttackStep(ttc=5, children={'buckeye.firefox.exploit_vulnerability'})
+        self.attack_steps['buckeye.firefox.connect'] = AttackStep(children=['buckeye.firefox.find_vulnerability'])
 
-        self.attack_steps['energetic_bear.flag_73cb43.capture'] = AttackStep(reward=1000, isolator='energetic_bear.apache')
-        self.attack_steps['energetic_bear.flag_3b2000.capture'] = AttackStep(reward=1000, isolator='energetic_bear.apache')
-        self.attack_steps['energetic_bear.flag_de3b1c.capture'] = AttackStep(reward=1000, isolator='energetic_bear.apache')
-        self.attack_steps['energetic_bear.flag_521bce.capture'] = AttackStep(reward=1000, isolator='energetic_bear.apache')
-        self.attack_steps['energetic_bear.capture_traffic'] = AttackStep(ttc=5, isolator='energetic_bear.apache', children={'buckeye.firefox.connect', 'buckeye.flag_14ce18.capture'})
-        self.attack_steps['energetic_bear.escalate_to_root'] = AttackStep(ttc=20, isolator='energetic_bear.apache', children={'energetic_bear.capture_traffic', 'energetic_bear.flag_73cb43.capture'})
-        self.attack_steps['energetic_bear.exploit_vulnerability'] = AttackStep(ttc=50, isolator='energetic_bear.apache', children={'energetic_bear.escalate_to_root'})
-        self.attack_steps['energetic_bear.find_vulnerability'] = AttackStep(ttc=50, isolator='energetic_bear.apache', children={'energetic_bear.exploit_vulnerability'})
-        self.attack_steps['energetic_bear.terminal_access'] = AttackStep(ttc=10, isolator='energetic_bear.apache', children={'energetic_bear.find_vulnerability', 'energetic_bear.flag_3b2000.capture'})
-        self.attack_steps['energetic_bear.apache.exploit_vulnerability'] = AttackStep(ttc=20, isolator='energetic_bear.apache', children={'energetic_bear.terminal_access', 'energetic_bear.flag_de3b1c.capture'})
-        self.attack_steps['energetic_bear.apache.find_vulnerability'] = AttackStep(ttc=30, isolator='energetic_bear.apache', children={'energetic_bear.apache.exploit_vulnerability'})
-        self.attack_steps['energetic_bear.apache.gather_information'] = AttackStep(ttc=10, isolator='energetic_bear.apache', children={'energetic_bear.apache.find_vulnerability'})
-        self.attack_steps['energetic_bear.apache.connect'] = AttackStep(isolator='energetic_bear.apache', children={'energetic_bear.apache.gather_information', 'energetic_bear.flag_521bce.capture'})
+        self.attack_steps['energetic_bear.flag_73cb43.capture'] = AttackStep(reward=1000)
+        self.attack_steps['energetic_bear.flag_3b2000.capture'] = AttackStep(reward=1000)
+        self.attack_steps['energetic_bear.flag_de3b1c.capture'] = AttackStep(reward=1000)
+        self.attack_steps['energetic_bear.flag_521bce.capture'] = AttackStep(reward=1000)
+        self.attack_steps['energetic_bear.capture_traffic'] = AttackStep(ttc=5, children={'buckeye.firefox.connect', 'buckeye.flag_14ce18.capture'})
+        self.attack_steps['energetic_bear.escalate_to_root'] = AttackStep(ttc=20, children={'energetic_bear.capture_traffic', 'energetic_bear.flag_73cb43.capture'})
+        self.attack_steps['energetic_bear.exploit_vulnerability'] = AttackStep(ttc=50, children={'energetic_bear.escalate_to_root'})
+        self.attack_steps['energetic_bear.find_vulnerability'] = AttackStep(ttc=50, children={'energetic_bear.exploit_vulnerability'})
+        self.attack_steps['energetic_bear.terminal_access'] = AttackStep(ttc=10, children={'energetic_bear.find_vulnerability', 'energetic_bear.flag_3b2000.capture'})
+        self.attack_steps['energetic_bear.apache.exploit_vulnerability'] = AttackStep(ttc=20, children={'energetic_bear.terminal_access', 'energetic_bear.flag_de3b1c.capture'})
+        self.attack_steps['energetic_bear.apache.find_vulnerability'] = AttackStep(ttc=30, children={'energetic_bear.apache.exploit_vulnerability'})
+        self.attack_steps['energetic_bear.apache.gather_information'] = AttackStep(ttc=10, children={'energetic_bear.apache.find_vulnerability'})
+        self.attack_steps['energetic_bear.apache.connect'] = AttackStep(children={'energetic_bear.apache.gather_information', 'energetic_bear.flag_521bce.capture'})
 
-        self.attack_steps['sea_turle.flag_6be6ef.capture'] = AttackStep(reward=1000, isolator='sea_turtle.telnet')
-        self.attack_steps['sea_turle.flag_f9038f.capture'] = AttackStep(reward=1000, isolator='sea_turtle.telnet')
-        self.attack_steps['sea_turtle.capture_traffic'] = AttackStep(ttc=10, isolator='sea_turtle.telnet', children={'buckeye.firefox.connect', 'buckeye.flag_14ce18.capture'})
-        self.attack_steps['sea_turtle.escalate_to_root'] = AttackStep(ttc=50, isolator='sea_turtle.telnet', children={'sea_turle.flag_6be6ef.capture'})
-        self.attack_steps['sea_turtle.exploit_vulnerability'] = AttackStep(ttc=50, isolator='sea_turtle.telnet', children={'sea_turtle.escalate_to_root'})
-        self.attack_steps['sea_turtle.find_vulnerability'] = AttackStep(ttc=50, isolator='sea_turtle.telnet', children={'sea_turtle.exploit_vulnerability'})
-        self.attack_steps['sea_turtle.telnet.login'] = AttackStep(step_type='and', ttc=100, isolator='sea_turtle.telnet', children={'sea_turtle.find_vulnerability', 'sea_turle.flag_f9038f.capture'})
-        self.attack_steps['sea_turtle.telnet.obtain_credentials'] = AttackStep(isolator='lazarus.tomcat', children={'sea_turtle.telnet.login'})
-        self.attack_steps['sea_turtle.telnet.connect'] = AttackStep(isolator='sea_turtle.telnet', children={'sea_turtle.telnet.login'})
+        self.attack_steps['sea_turle.flag_6be6ef.capture'] = AttackStep(reward=1000)
+        self.attack_steps['sea_turle.flag_f9038f.capture'] = AttackStep(reward=1000)
+        self.attack_steps['sea_turtle.capture_traffic'] = AttackStep(ttc=10, children={'buckeye.firefox.connect', 'buckeye.flag_14ce18.capture'})
+        self.attack_steps['sea_turtle.escalate_to_root'] = AttackStep(ttc=50, children={'sea_turle.flag_6be6ef.capture'})
+        self.attack_steps['sea_turtle.exploit_vulnerability'] = AttackStep(ttc=50, children={'sea_turtle.escalate_to_root'})
+        self.attack_steps['sea_turtle.find_vulnerability'] = AttackStep(ttc=50, children={'sea_turtle.exploit_vulnerability'})
+        self.attack_steps['sea_turtle.telnet.login'] = AttackStep(step_type='and', ttc=100, children={'sea_turtle.find_vulnerability', 'sea_turle.flag_f9038f.capture'})
+        self.attack_steps['sea_turtle.telnet.obtain_credentials'] = AttackStep(children={'sea_turtle.telnet.login'})
+        self.attack_steps['sea_turtle.telnet.connect'] = AttackStep(children={'sea_turtle.telnet.login'})
 
-        self.attack_steps['lazarus.flag_90b353.capture'] = AttackStep(reward=1000, isolator='lazarus.tomcat')
-        self.attack_steps['lazarus.flag_cd699a.capture'] = AttackStep(reward=1000, isolator='lazarus.tomcat')
-        self.attack_steps['lazarus.find_credentials'] = AttackStep(ttc=10, isolator='lazarus.tomcat', children={'sea_turtle.telnet.obtain_credentials'})
-        self.attack_steps['lazarus.terminal_access'] = AttackStep(isolator='lazarus.tomcat', children={'lazarus.find_credentials', 'lazarus.flag_cd699a.capture'})
-        self.attack_steps['lazarus.tomcat.exploit_vulnerability'] = AttackStep(ttc=10, isolator='lazarus.tomcat', children={'lazarus.terminal_access'})
-        self.attack_steps['lazarus.tomcat.find_vulnerability'] = AttackStep(ttc=10, isolator='lazarus.tomcat', children={'lazarus.tomcat.exploit_vulnerability'})
-        self.attack_steps['lazarus.tomcat.dictionary_attack'] = AttackStep(ttc=10, isolator='lazarus.tomcat', children={'lazarus.tomcat.find_vulnerability', 'lazarus.flag_90b353.capture'})
-        self.attack_steps['lazarus.tomcat.gather_information'] = AttackStep(ttc=5, isolator='lazarus.tomcat', children={'lazarus.tomcat.dictionary_attack'})
-        self.attack_steps['lazarus.tomcat.connect'] = AttackStep(isolator='lazarus.tomcat', children={'lazarus.tomcat.gather_information'})
+        self.attack_steps['lazarus.flag_90b353.capture'] = AttackStep(reward=1000)
+        self.attack_steps['lazarus.flag_cd699a.capture'] = AttackStep(reward=1000)
+        self.attack_steps['lazarus.find_credentials'] = AttackStep(ttc=10, children={'sea_turtle.telnet.obtain_credentials'})
+        self.attack_steps['lazarus.terminal_access'] = AttackStep(children={'lazarus.find_credentials', 'lazarus.flag_cd699a.capture'})
+        self.attack_steps['lazarus.tomcat.exploit_vulnerability'] = AttackStep(ttc=10, children={'lazarus.terminal_access'})
+        self.attack_steps['lazarus.tomcat.find_vulnerability'] = AttackStep(ttc=10, children={'lazarus.tomcat.exploit_vulnerability'})
+        self.attack_steps['lazarus.tomcat.dictionary_attack'] = AttackStep(ttc=10, children={'lazarus.tomcat.find_vulnerability', 'lazarus.flag_90b353.capture'})
+        self.attack_steps['lazarus.tomcat.gather_information'] = AttackStep(ttc=5, children={'lazarus.tomcat.dictionary_attack'})
+        self.attack_steps['lazarus.tomcat.connect'] = AttackStep(children={'lazarus.tomcat.gather_information'})
 
         self.attack_steps['office_network.map'] = AttackStep(ttc=10, children={'lazarus.ftp.connect', 'energetic_bear.apache.connect', 'lazarus.tomcat.connect', 'sea_turtle.telnet.connect'})
         self.attack_steps['internet.connect'] = AttackStep(children={'office_network.map'})
@@ -245,7 +244,7 @@ if DETERMINISTIC:
 env = AttackSimulationEnv()
 obs = env.reset()
 enabled_services = dict()
-# Defender can act by isolating various services (found in env.attack_graph.enabled_services)
+# Defender can act by disabling various services (found in env.attack_graph.enabled_services)
 for service in env.attack_graph.enabled_services:
     enabled_services[service] = 1
 done = False
@@ -259,4 +258,4 @@ while not done:
     obs, reward, done, info = env.step(tuple(enabled_services.values()))
     assert env.attack_graph.attack_steps['office_network.map'].children == env.attacker.attack_graph.attack_steps['office_network.map'].children
     if info["time_on_current_step"] == 1 or enabled_services_status_changed:
-        print(str(info['time']) + ": Attacking " + str(info['current_step']) + ", reward=" + str(reward))
+        print(str(info['time']) + ": reward=" + str(reward) + ". Attacking " + str(info['current_step']))
