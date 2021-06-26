@@ -82,8 +82,9 @@ class AttackGraph:
             self.attack_steps['office_network.map'].children -= {'lazarus.tomcat.identify'}
         if service == 'energetic_bear.apache':
             self.attack_steps['office_network.map'].children -= {'energetic_bear.apache.identify'}
-        if service == 'sea_turtle_telnet':
+        if service == 'sea_turtle.telnet':
             self.attack_steps['office_network.map'].children -= {'sea_turtle.telnet.identify'}
+            self.attack_steps['lazarus.tomcat.crack_hashes'].children -= {'sea_turtle.telnet.login'}
 
 class Attacker:
     
@@ -170,20 +171,22 @@ class AttackSimulationEnv(gym.Env):
         return info
 
     def step(self, action):
-        if self.attacker.attack_graph.online['lazarus.ftp']:
-            self.provision_reward += 1
-            if action[0] == 0:
-                self.isolate('lazarus.ftp')
-        if self.attacker.attack_graph.online['energetic_bear.apache']:
-            self.provision_reward += 1
-            if action[1] == 0:
-                self.isolate('energetic_bear.apache')
+        # The order of actions follows self.attacker.attack_graph.online
+        action_id = 0
+        for service in self.attacker.attack_graph.online:
+            if self.attacker.attack_graph.online[service]:
+                self.provision_reward += 1
+                if action[action_id] == 0:
+                    self.isolate(service)
+            action_id += 1
 
         obs = self._next_observation()
         reward = self.provision_reward - self.attacker.reward()
         
+        # If the attacker's attack surface is empty, then the game ends.
         attacker_done = not self.attacker.attack()
-        defender_done = action[0] + action[1] == 0        
+        # If all services have been isolated, then the game ends.
+        defender_done = sum(action) == 0        
 
         return obs, reward, attacker_done or defender_done, self.get_info()
 
@@ -206,19 +209,21 @@ class AttackSimulationEnv(gym.Env):
 
 env = AttackSimulationEnv()
 obs = env.reset()
-ftp_online = 1
-http_online = 1
+online = dict()
+online['lazarus.ftp'] = 1
+online['lazarus.tomcat'] = 1
+online['energetic_bear.apache'] = 1
+online['sea_turtle.telnet'] = 1
 done = False
+ISOLATION_PROBABILITY = 0.001
 while not done:
     online_status_changed = False
-    if ftp_online == 1 and random.uniform(0,1) > 0.99:
-        ftp_online = 0
-        online_status_changed = True
-    if http_online == 1 and random.uniform(0,1) > 0.99:
-        http_online = 0
-        online_status_changed = True
-    obs, reward, done, info = env.step((ftp_online, http_online))
+    for service in online:
+        if online[service] == 1 and random.uniform(0,1) < ISOLATION_PROBABILITY:
+            online[service] = 0
+            online_status_changed = True
+    obs, reward, done, info = env.step((online['lazarus.ftp'], online['lazarus.tomcat'], online['energetic_bear.apache'], online['sea_turtle.telnet']))
     if info["time_on_current_step"] == 1 or online_status_changed:
         print("info: " + str(info) + " reward: " + str(reward))
-print("Final: info: " + str(info) + " obs: " + str(obs) + " reward: " + str(reward))
-print("Compromised attacck steps: " + str(env.attacker.compromised_steps))
+print("Final: info: " + str(info) + " reward: " + str(reward))
+print("Compromised attack steps: " + str(env.attacker.compromised_steps))
