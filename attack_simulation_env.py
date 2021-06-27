@@ -4,7 +4,7 @@ import numpy as np
 import random
 
 # The probability that the defender will disable a given service at a given step is given by DISABLE_PROBABILITY.
-DISABLE_PROBABILITY = 0.0001
+DISABLE_PROBABILITY = 0.001
 # For debugging convenience, simulations can be made deterministic, only dependent on the random seed.
 DETERMINISTIC = False
 RANDOM_SEED = 4
@@ -162,10 +162,16 @@ class AttackGraph:
                 self.attack_steps[child].parents.add(parent)
 
     def disable(self, service):
-        # Disconnect all children that match the service.
+        # Disconnect all attack steps that match the service.
         for step_name in self.attack_steps:
             if self.attack_steps[step_name].enabled and service in step_name:
                 self.attack_steps[step_name].enabled = False
+        # Also disable subservices (e.g. fancy_bear.ssh should be disabled when fancy_bear is)
+        for subservice in self.enabled_services:
+            if self.enabled_services[subservice] and service in subservice and service != subservice:
+                self.enabled_services[subservice] = False
+                print("Disabling subservice " + subservice)
+
 
 class Attacker:
     
