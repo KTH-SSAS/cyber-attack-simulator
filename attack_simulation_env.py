@@ -26,46 +26,6 @@ class AttackStep:
         self.enabled = True
 
 
-class Asset:
-
-    def __init__(self, name):
-        self.name = name
-        self.attack_steps = {}
-
-
-class Host(Asset):
-
-    def __init__(self, name):
-        super.__init__(name)
-
-
-class AuthenticatedService(Asset):
-
-    def __init__(self, name):
-        super.__init__(name)
-        self.attack_steps['login'] = AttackStep()
-        self.attack_steps['dictionary_attack'] = AttackStep(ttc=100, children={('lazarus', 'ftp.login')})
-        self.attack_steps['connect'] = AttackStep(children={('lazarus', 'ftp.dictionary_attack')})
-
-
-class EN2720:
-
-    def __init__(self):
-        self.assets = {}
-
-        self.assets['lazarus'] = Asset('lazarus')
-        self.assets['lazarus'].attack_steps['flag_adcb1f.capture'] = AttackStep(reward=1000)
-        self.assets['lazarus'].attack_steps['ftp.login'] = AttackStep(children={('lazarus', 'flag_adcb1f.capture')})
-        self.assets['lazarus'].attack_steps['ftp.dictionary_attack'] = AttackStep(ttc=100, children={('lazarus', 'ftp.login')})
-        self.assets['lazarus'].attack_steps['ftp.connect'] = AttackStep(children={('lazarus', 'ftp.dictionary_attack')})
-        
-        self.assets['office_network'] = Asset('office_network')
-        self.assets['office_network'].attack_steps['map'] = AttackStep(ttc=10, children={('lazarus', 'ftp.connect'), ('energetic_bear', 'apache.connect'), ('lazarus', 'tomcat.connect'), ('sea_turtle', 'telnet.connect')})
-
-        self.assets['internet'] = Asset('internet')
-        self.assets['internet'].attack_steps['connect'] = AttackStep(children={('office_network', 'map')})
-
-
 class AttackGraph:
 
     def __init__(self):
