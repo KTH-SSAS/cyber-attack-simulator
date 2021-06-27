@@ -5,8 +5,9 @@ import random
 
 # The probability that the defender will disable a given service at a given step is given by DISABLE_PROBABILITY.
 DISABLE_PROBABILITY = 0.0001
-RANDOM_SEED = 4
+# For debugging convenience, simulations can be made deterministic, only dependent on the random seed.
 DETERMINISTIC = False
+RANDOM_SEED = 4
 
 class AttackStep:
 
@@ -32,9 +33,11 @@ class AttackGraph:
         self.reset()
 
     def reset(self):
-
+        # These are the services and hosts that the defender is at liberty to disable in order to protect the computer network.
         self.enabled_services = dict()
+        # Disabling a host, e.g. lazarus, will also disable all of its services
         self.enabled_services['lazarus'] = True
+        # The defender can limit disablement to a single service, such as the ftp server on lazarus
         self.enabled_services['lazarus.ftp'] = True
         self.enabled_services['lazarus.tomcat'] = True
         self.enabled_services['energetic_bear'] = True
@@ -51,9 +54,10 @@ class AttackGraph:
         self.enabled_services['wifi_host.http_server'] = True
         self.enabled_services['wifi_host'] = True
         
+        
         self.attack_steps = {}
 
-        
+        # Here the attack logic is defined. The below is a model of the EN2720 course.
         self.attack_steps['wifi_host.http_server.flag_18dd8f.capture'] = AttackStep(reward=1000)
         self.attack_steps['wifi_host.http_server.gather_information'] = AttackStep(ttc=3, children={'wifi_host.http_server.flag_18dd8f.capture'})
         self.attack_steps['wifi_host.http_server.connect'] = AttackStep(children={'wifi_host.http_server.gather_information'})
@@ -152,6 +156,7 @@ class AttackGraph:
         self.size = len(self.attack_steps)
 
     def record_parents(self):
+        #And steps need to know which their parents are.
         for parent in self.attack_steps:
             for child in self.attack_steps[parent].children:
                 self.attack_steps[child].parents.add(parent)
@@ -166,6 +171,7 @@ class Attacker:
     
     def __init__(self, attack_graph, compromised_steps):
         self.attack_graph = attack_graph
+        # self.compromised_steps keeps track of which attack steps have been reached by that attacker.
         self.compromised_steps = compromised_steps
         self.choose_next_step()
         self.time_on_current_step = 0
@@ -195,7 +201,7 @@ class Attacker:
         return att_surf
 
     def choose_next_step(self): 
-        # The attacker strategy is to select a random attack step of the available ones (i.e. from the attack surface).
+        # The attacker strategy is currently simply to select a random attack step of the available ones (i.e. from the attack surface).
         self.current_step = None
         if self.attack_surface():
             if DETERMINISTIC:
@@ -221,12 +227,15 @@ class Attacker:
         return True
 
     def reward(self):
+        # The attacker is rewarded by compromising valuable attack steps, as defined in the attack graph.
         r = 0
         for cs in self.compromised_steps:
             r += self.get_step(cs).reward
         return r
 
     def observe(self, attack_step):
+        # Observations of the attacker are made by an intrusion detection system. 
+        # The accuracy of observations is given for each attack step by the true and false positive rates respectively.
         if DETERMINISTIC:
             return attack_step in self.compromised_steps
         else:
@@ -243,9 +252,14 @@ class AttackSimulationEnv(gym.Env):
         super(AttackSimulationEnv, self).__init__()
         self.attack_graph = AttackGraph()
         self.attacker = Attacker(self.attack_graph, ['internet.connect'])
+        # provision_reward is the defender reward for maintaining services online. 
         self.provision_reward = 0
+        # An observation informs the defender of which attack steps have been compromised.
+        # Observations are imperfect.
         self.observation_space = spaces.Box(low=0, high=1, shape=(self.attack_graph.size, 1), dtype=np.float32)
-        self.action_space = spaces.Tuple((spaces.Discrete(2), spaces.Discrete(2)))
+        # The defender action space consists of the disablement of services and hosts.        
+        n_defender_actions = len(self.attack_graph.enabled_services)        
+        self.action_space = spaces.Tuple(([spaces.Discrete(2)]*n_defender_actions))
 
     def get_info(self):
         if self.attacker.current_step:
@@ -279,6 +293,7 @@ class AttackSimulationEnv(gym.Env):
         return self._next_observation()
 
     def _next_observation(self):
+        # Imperfect observations by intrusion detection system
         return np.array([self.attacker.observe(a) for a in self.attack_graph.attack_steps])
 
     def render(self, mode='human'):
@@ -294,18 +309,18 @@ if DETERMINISTIC:
 env = AttackSimulationEnv()
 obs = env.reset()
 enabled_services = dict()
-# Defender can act by disabling various services (found in env.attack_graph.enabled_services)
+# Defender can act by disabling various services and hosts (found in env.attack_graph.enabled_services)
 for service in env.attack_graph.enabled_services:
     enabled_services[service] = 1
 done = False
 while not done:
     enabled_services_status_changed = False
     for service in enabled_services:
+        # Current strategy is to disable any service with a given probability each step.
         if enabled_services[service] == 1 and random.uniform(0,1) < DISABLE_PROBABILITY:
             print("Defender disabling " + service)
             enabled_services[service] = 0
             enabled_services_status_changed = True
     obs, reward, done, info = env.step(tuple(enabled_services.values()))
-    assert env.attack_graph.attack_steps['office_network.map'].children == env.attacker.attack_graph.attack_steps['office_network.map'].children
     if info["time_on_current_step"] == 1 or enabled_services_status_changed:
         print(str(info['time']) + ": reward=" + str(reward) + ". Attacking " + str(info['current_step']))
