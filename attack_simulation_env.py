@@ -50,13 +50,20 @@ class AttackGraph:
         
         self.attack_steps = {}
 
-        self.attack_steps['wifi_network.map'] = AttackStep(ttc=10, children={})
-        self.attack_steps['wifi_network.connect'] = AttackStep(children={})
-        self.attack_steps['wifi_network.obtain_credentials'] = AttackStep(ttc=10, children={'wifi_network.connect'})
-        self.attack_steps['wifi_network.find_credentials'] = AttackStep(ttc=5, children={'wifi_network.obtain_credentials'})
-        self.attack_steps['wifi_network.gather_information'] = AttackStep(ttc=5, children={'wifi_network.find_credentials'})
+        
+        self.attack_steps['wifi_host.http_server.flag_18dd8f.capture'] = AttackStep(reward=1000)
+        self.attack_steps['wifi_host.http_server.gather_information'] = AttackStep(ttc=3, children={'wifi_host.http_server.flag_18dd8f.capture'})
+        self.attack_steps['wifi_host.http_server.connect'] = AttackStep(children={'wifi_host.http_server.gather_information'})
 
-        self.attack_steps['fancy_bear.gather_information'] = AttackStep(ttc=5, children={'wifi_network.gather_information'})
+        self.attack_steps['wifi_network.map'] = AttackStep(ttc=10, children={'wifi_host.http_server.connect'})
+        self.attack_steps['wifi_network.connect'] = AttackStep(step_type='and', children={'wifi_network.map'})
+        self.attack_steps['wifi_network.flag_d582aa.capture'] = AttackStep(reward=1000)
+        self.attack_steps['wifi_network.decrypt_traffic'] = AttackStep(step_type='and', ttc=5, children={'wifi_network.flag_d582aa.capture'})
+        self.attack_steps['wifi_network.obtain_credentials'] = AttackStep(ttc=10, children={'wifi_network.connect', 'wifi_network.decrypt_traffic'})
+        self.attack_steps['wifi_network.find_credentials'] = AttackStep(children={'wifi_network.obtain_credentials'})
+        self.attack_steps['wifi_network.capture_traffic'] = AttackStep(ttc=5, children={'wifi_network.connect', 'wifi_network.find_credentials', 'wifi_network.decrypt_traffic'})
+
+        self.attack_steps['fancy_bear.gather_information'] = AttackStep(ttc=5, children={'wifi_network.capture_traffic'})
         
         self.attack_steps['fancy_bear.ssh.login'] = AttackStep(step_type='and', children={'fancy_bear.gather_information'})
         self.attack_steps['fancy_bear.ssh.obtain_credentials'] = AttackStep(children={'fancy_bear.ssh.login'})
@@ -84,7 +91,7 @@ class AttackGraph:
 
         self.attack_steps['buckeye.flag_2362e5.capture'] = AttackStep(reward=1000)
         self.attack_steps['buckeye.flag_5d402e.capture'] = AttackStep(reward=1000)
-        self.attack_steps['buckeye.flag_14ce18.capture'] = AttackStep(reward=1000)
+        self.attack_steps['buckeye.firefox.flag_14ce18.capture'] = AttackStep(reward=1000)
         self.attack_steps['buckeye.escalate_to_root'] = AttackStep(children={'hidden_network.connect', 'buckeye.flag_2362e5.capture'})
         self.attack_steps['buckeye.exploit_vulnerability'] = AttackStep(ttc=10, children={'buckeye.escalate_to_root'})
         self.attack_steps['buckeye.find_vulnerability'] = AttackStep(ttc=5, children={'buckeye.exploit_vulnerability'})
@@ -96,20 +103,21 @@ class AttackGraph:
         self.attack_steps['energetic_bear.flag_73cb43.capture'] = AttackStep(reward=1000)
         self.attack_steps['energetic_bear.flag_3b2000.capture'] = AttackStep(reward=1000)
         self.attack_steps['energetic_bear.flag_de3b1c.capture'] = AttackStep(reward=1000)
-        self.attack_steps['energetic_bear.flag_521bce.capture'] = AttackStep(reward=1000)
-        self.attack_steps['energetic_bear.capture_traffic'] = AttackStep(ttc=5, children={'buckeye.firefox.connect', 'buckeye.flag_14ce18.capture'})
+        self.attack_steps['energetic_bear.capture_traffic'] = AttackStep(ttc=5, children={'buckeye.firefox.connect', 'buckeye.firefox.flag_14ce18.capture'})
         self.attack_steps['energetic_bear.escalate_to_root'] = AttackStep(ttc=20, children={'energetic_bear.capture_traffic', 'energetic_bear.flag_73cb43.capture'})
         self.attack_steps['energetic_bear.exploit_vulnerability'] = AttackStep(ttc=50, children={'energetic_bear.escalate_to_root'})
         self.attack_steps['energetic_bear.find_vulnerability'] = AttackStep(ttc=50, children={'energetic_bear.exploit_vulnerability'})
         self.attack_steps['energetic_bear.terminal_access'] = AttackStep(ttc=10, children={'energetic_bear.find_vulnerability', 'energetic_bear.flag_3b2000.capture'})
+        
+        self.attack_steps['energetic_bear.apache.flag_521bce.capture'] = AttackStep(reward=1000)
         self.attack_steps['energetic_bear.apache.exploit_vulnerability'] = AttackStep(ttc=20, children={'energetic_bear.terminal_access', 'energetic_bear.flag_de3b1c.capture'})
         self.attack_steps['energetic_bear.apache.find_vulnerability'] = AttackStep(ttc=30, children={'energetic_bear.apache.exploit_vulnerability'})
-        self.attack_steps['energetic_bear.apache.gather_information'] = AttackStep(ttc=10, children={'energetic_bear.apache.find_vulnerability'})
-        self.attack_steps['energetic_bear.apache.connect'] = AttackStep(children={'energetic_bear.apache.gather_information', 'energetic_bear.flag_521bce.capture'})
+        self.attack_steps['energetic_bear.apache.gather_information'] = AttackStep(ttc=10, children={'energetic_bear.apache.find_vulnerability', 'energetic_bear.apache.flag_521bce.capture'})
+        self.attack_steps['energetic_bear.apache.connect'] = AttackStep(children={'energetic_bear.apache.gather_information'})
 
         self.attack_steps['sea_turle.flag_6be6ef.capture'] = AttackStep(reward=1000)
         self.attack_steps['sea_turle.flag_f9038f.capture'] = AttackStep(reward=1000)
-        self.attack_steps['sea_turtle.capture_traffic'] = AttackStep(ttc=10, children={'buckeye.firefox.connect', 'buckeye.flag_14ce18.capture'})
+        self.attack_steps['sea_turtle.capture_traffic'] = AttackStep(ttc=10, children={'buckeye.firefox.connect', 'buckeye.firefox.flag_14ce18.capture'})
         self.attack_steps['sea_turtle.escalate_to_root'] = AttackStep(ttc=50, children={'sea_turle.flag_6be6ef.capture'})
         self.attack_steps['sea_turtle.exploit_vulnerability'] = AttackStep(ttc=50, children={'sea_turtle.escalate_to_root'})
         self.attack_steps['sea_turtle.find_vulnerability'] = AttackStep(ttc=50, children={'sea_turtle.exploit_vulnerability'})
@@ -117,18 +125,19 @@ class AttackGraph:
         self.attack_steps['sea_turtle.telnet.obtain_credentials'] = AttackStep(children={'sea_turtle.telnet.login'})
         self.attack_steps['sea_turtle.telnet.connect'] = AttackStep(children={'sea_turtle.telnet.login'})
 
-        self.attack_steps['lazarus.flag_90b353.capture'] = AttackStep(reward=1000)
         self.attack_steps['lazarus.flag_cd699a.capture'] = AttackStep(reward=1000)
         self.attack_steps['lazarus.find_credentials'] = AttackStep(ttc=10, children={'sea_turtle.telnet.obtain_credentials'})
         self.attack_steps['lazarus.terminal_access'] = AttackStep(children={'lazarus.find_credentials', 'lazarus.flag_cd699a.capture'})
+        
+        self.attack_steps['lazarus.tomcat.flag_90b353.capture'] = AttackStep(reward=1000)
         self.attack_steps['lazarus.tomcat.exploit_vulnerability'] = AttackStep(ttc=10, children={'lazarus.terminal_access'})
         self.attack_steps['lazarus.tomcat.find_vulnerability'] = AttackStep(ttc=10, children={'lazarus.tomcat.exploit_vulnerability'})
-        self.attack_steps['lazarus.tomcat.dictionary_attack'] = AttackStep(ttc=10, children={'lazarus.tomcat.find_vulnerability', 'lazarus.flag_90b353.capture'})
+        self.attack_steps['lazarus.tomcat.dictionary_attack'] = AttackStep(ttc=10, children={'lazarus.tomcat.find_vulnerability', 'lazarus.tomcat.flag_90b353.capture'})
         self.attack_steps['lazarus.tomcat.gather_information'] = AttackStep(ttc=5, children={'lazarus.tomcat.dictionary_attack'})
         self.attack_steps['lazarus.tomcat.connect'] = AttackStep(children={'lazarus.tomcat.gather_information'})
 
-        self.attack_steps['lazarus.flag_adcb1f.capture'] = AttackStep(reward=1000)
-        self.attack_steps['lazarus.ftp.login'] = AttackStep(children={'lazarus.flag_adcb1f.capture'})
+        self.attack_steps['lazarus.ftp.flag_adcb1f.capture'] = AttackStep(reward=1000)
+        self.attack_steps['lazarus.ftp.login'] = AttackStep(children={'lazarus.ftp.flag_adcb1f.capture'})
         self.attack_steps['lazarus.ftp.dictionary_attack'] = AttackStep(ttc=100, children={'lazarus.ftp.login'})
         self.attack_steps['lazarus.ftp.connect'] = AttackStep(children={'lazarus.ftp.dictionary_attack'})
 
