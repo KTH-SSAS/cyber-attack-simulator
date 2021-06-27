@@ -54,7 +54,8 @@ class AttackGraph:
         self.enabled_services['wifi_host.http_server'] = True
         self.enabled_services['wifi_host'] = True
         
-        
+        print(str(len(self.enabled_services)) + " possible defender actions.")
+
         self.attack_steps = {}
 
         # Here the attack logic is defined. The below is a model of the EN2720 course.
@@ -155,6 +156,8 @@ class AttackGraph:
         self.record_parents()
         self.size = len(self.attack_steps)
 
+        print(str(self.size) + " attack steps.")
+
     def record_parents(self):
         #And steps need to know which their parents are.
         for parent in self.attack_steps:
@@ -219,9 +222,11 @@ class Attacker:
         # If the attacker has run out of attack steps, then terminate.
         if not self.current_step:
             return False
+        self.reward = 0
         # If the attacker has spent the required time on the current attack step, then it becomes compromised.
         if self.time_on_current_step >= self.get_step(self.current_step).ttc:
             self.compromised_steps.append(self.current_step)
+            self.reward = self.attack_graph.attack_steps[self.current_step].reward
             # If the attack surface (the available uncompromised attack steps) is empty, then terminate.
             if not self.attack_surface():
                 return False
@@ -231,13 +236,6 @@ class Attacker:
         self.time_on_current_step += 1
         self.total_time += 1
         return True
-
-    def reward(self):
-        # The attacker is rewarded by compromising valuable attack steps, as defined in the attack graph.
-        r = 0
-        for cs in self.compromised_steps:
-            r += self.get_step(cs).reward
-        return r
 
     def observe(self, attack_step):
         # Observations of the attacker are made by an intrusion detection system. 
@@ -258,8 +256,6 @@ class AttackSimulationEnv(gym.Env):
         super(AttackSimulationEnv, self).__init__()
         self.attack_graph = AttackGraph()
         self.attacker = Attacker(self.attack_graph, ['internet.connect'])
-        # provision_reward is the defender reward for maintaining services online. 
-        self.provision_reward = 0
         # An observation informs the defender of which attack steps have been compromised.
         # Observations are imperfect.
         self.observation_space = spaces.Box(low=0, high=1, shape=(self.attack_graph.size, 1), dtype=np.float32)
@@ -277,6 +273,8 @@ class AttackSimulationEnv(gym.Env):
     def step(self, action):
         # The order of actions follows self.attack_graph.enabled_services
         action_id = 0
+        # provision_reward is the defender reward for maintaining services online. 
+        self.provision_reward = 0
         # Isolate services according to the actions provided
         for service in self.attack_graph.enabled_services:
             if self.attack_graph.enabled_services[service]:
@@ -290,7 +288,7 @@ class AttackSimulationEnv(gym.Env):
         attacker_done = not self.attacker.attack()
 
         # Positive rewards for maintaining services enabled_services and negative for compromised flags.
-        reward = self.provision_reward - self.attacker.reward()
+        reward = self.provision_reward - self.attacker.reward
         
         return obs, reward, attacker_done, self.get_info()
 
@@ -313,7 +311,6 @@ if DETERMINISTIC:
     random.seed(RANDOM_SEED)
 
 env = AttackSimulationEnv()
-obs = env.reset()
 enabled_services = dict()
 # Defender can act by disabling various services and hosts (found in env.attack_graph.enabled_services)
 for service in env.attack_graph.enabled_services:
