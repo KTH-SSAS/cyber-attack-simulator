@@ -4,8 +4,8 @@ import numpy as np
 import random
 
 # The probability that the defender will disable a given service at a given step is given by DISABLE_PROBABILITY.
-DISABLE_PROBABILITY = 0.002
-RANDOM_SEED = 1
+DISABLE_PROBABILITY = 0.0007
+RANDOM_SEED = 4
 DETERMINISTIC = True
 
 class AttackStep:
@@ -25,6 +25,47 @@ class AttackStep:
         self.false_positive = false_positive
         self.enabled = True
 
+
+class Asset:
+
+    def __init__(self, name):
+        self.name = name
+        self.attack_steps = {}
+
+
+class Host(Asset):
+
+    def __init__(self, name):
+        super.__init__(name)
+
+
+class AuthenticatedService(Asset):
+
+    def __init__(self, name):
+        super.__init__(name)
+        self.attack_steps['login'] = AttackStep()
+        self.attack_steps['dictionary_attack'] = AttackStep(ttc=100, children={('lazarus', 'ftp.login')})
+        self.attack_steps['connect'] = AttackStep(children={('lazarus', 'ftp.dictionary_attack')})
+
+
+class EN2720:
+
+    def __init__(self):
+        self.assets = {}
+
+        self.assets['lazarus'] = Asset('lazarus')
+        self.assets['lazarus'].attack_steps['flag_adcb1f.capture'] = AttackStep(reward=1000)
+        self.assets['lazarus'].attack_steps['ftp.login'] = AttackStep(children={('lazarus', 'flag_adcb1f.capture')})
+        self.assets['lazarus'].attack_steps['ftp.dictionary_attack'] = AttackStep(ttc=100, children={('lazarus', 'ftp.login')})
+        self.assets['lazarus'].attack_steps['ftp.connect'] = AttackStep(children={('lazarus', 'ftp.dictionary_attack')})
+        
+        self.assets['office_network'] = Asset('office_network')
+        self.assets['office_network'].attack_steps['map'] = AttackStep(ttc=10, children={('lazarus', 'ftp.connect'), ('energetic_bear', 'apache.connect'), ('lazarus', 'tomcat.connect'), ('sea_turtle', 'telnet.connect')})
+
+        self.assets['internet'] = Asset('internet')
+        self.assets['internet'].attack_steps['connect'] = AttackStep(children={('office_network', 'map')})
+
+
 class AttackGraph:
 
     def __init__(self):
@@ -42,24 +83,29 @@ class AttackGraph:
         self.enabled_services['sea_turtle.telnet'] = True
         self.enabled_services['buckeye'] = True
         self.enabled_services['buckeye.firefox'] = True
+        self.enabled_services['cloud_hopper'] = True
+        self.enabled_services['cloud_hopper.smb'] = True
         
         self.attack_steps = {}
-        self.attack_steps['lazarus.flag_adcb1f.capture'] = AttackStep(reward=1000)
-        self.attack_steps['lazarus.ftp.login'] = AttackStep(children={'lazarus.flag_adcb1f.capture'})
-        self.attack_steps['lazarus.ftp.dictionary_attack'] = AttackStep(ttc=100, children={'lazarus.ftp.login'})
-        self.attack_steps['lazarus.ftp.connect'] = AttackStep(children={'lazarus.ftp.dictionary_attack'})
+
+        self.attack_steps['cloud_hopper.flag_93b00a.capture'] = AttackStep(reward=1000)
+        self.attack_steps['cloud_hopper.terminal_access'] = AttackStep(children={'cloud_hopper.flag_93b00a.capture'})
+        self.attack_steps['cloud_hopper.smb.exploit_vulnerability'] = AttackStep(ttc=10, children={'cloud_hopper.terminal_access'})
+        self.attack_steps['cloud_hopper.smb.find_vulnerability'] = AttackStep(ttc=5, children={'cloud_hopper.smb.exploit_vulnerability'})
+        self.attack_steps['cloud_hopper.smb.connect'] = AttackStep(children={'cloud_hopper.smb.find_vulnerability'})
+        
+        self.attack_steps['hidden_network.map'] = AttackStep(ttc=10, children={'cloud_hopper.smb.connect'})
 
         self.attack_steps['buckeye.flag_2362e5.capture'] = AttackStep(reward=1000)
         self.attack_steps['buckeye.flag_5d402e.capture'] = AttackStep(reward=1000)
         self.attack_steps['buckeye.flag_14ce18.capture'] = AttackStep(reward=1000)
-        self.attack_steps['buckeye.escalate_to_root'] = AttackStep(children={'buckeye.flag_2362e5.capture'})
-
+        self.attack_steps['buckeye.escalate_to_root'] = AttackStep(children={'hidden_network.map', 'buckeye.flag_2362e5.capture'})
         self.attack_steps['buckeye.exploit_vulnerability'] = AttackStep(ttc=10, children={'buckeye.escalate_to_root'})
         self.attack_steps['buckeye.find_vulnerability'] = AttackStep(ttc=5, children={'buckeye.exploit_vulnerability'})
         self.attack_steps['buckeye.terminal_access'] = AttackStep(children={'buckeye.find_vulnerability', 'buckeye.flag_5d402e.capture'})
         self.attack_steps['buckeye.firefox.exploit_vulnerability'] = AttackStep(ttc=10, children={'buckeye.terminal_access'})
         self.attack_steps['buckeye.firefox.find_vulnerability'] = AttackStep(ttc=5, children={'buckeye.firefox.exploit_vulnerability'})
-        self.attack_steps['buckeye.firefox.connect'] = AttackStep(children=['buckeye.firefox.find_vulnerability'])
+        self.attack_steps['buckeye.firefox.connect'] = AttackStep(children={'buckeye.firefox.find_vulnerability'})
 
         self.attack_steps['energetic_bear.flag_73cb43.capture'] = AttackStep(reward=1000)
         self.attack_steps['energetic_bear.flag_3b2000.capture'] = AttackStep(reward=1000)
@@ -94,6 +140,11 @@ class AttackGraph:
         self.attack_steps['lazarus.tomcat.dictionary_attack'] = AttackStep(ttc=10, children={'lazarus.tomcat.find_vulnerability', 'lazarus.flag_90b353.capture'})
         self.attack_steps['lazarus.tomcat.gather_information'] = AttackStep(ttc=5, children={'lazarus.tomcat.dictionary_attack'})
         self.attack_steps['lazarus.tomcat.connect'] = AttackStep(children={'lazarus.tomcat.gather_information'})
+
+        self.attack_steps['lazarus.flag_adcb1f.capture'] = AttackStep(reward=1000)
+        self.attack_steps['lazarus.ftp.login'] = AttackStep(children={'lazarus.flag_adcb1f.capture'})
+        self.attack_steps['lazarus.ftp.dictionary_attack'] = AttackStep(ttc=100, children={'lazarus.ftp.login'})
+        self.attack_steps['lazarus.ftp.connect'] = AttackStep(children={'lazarus.ftp.dictionary_attack'})
 
         self.attack_steps['office_network.map'] = AttackStep(ttc=10, children={'lazarus.ftp.connect', 'energetic_bear.apache.connect', 'lazarus.tomcat.connect', 'sea_turtle.telnet.connect'})
         self.attack_steps['internet.connect'] = AttackStep(children={'office_network.map'})
