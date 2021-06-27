@@ -48,8 +48,14 @@ class AttackGraph:
         
         self.attack_steps = {}
 
+        self.attack_steps['cloud_bucket.flag_21077e.capture'] = AttackStep(reward=1000)
+        self.attack_steps['cloud_bucket.obtain_credentials'] = AttackStep(children={'cloud_bucket.flag_21077e.capture'})
+        self.attack_steps['cloud_bucket.find_credentials'] = AttackStep(children={'cloud_bucket.obtain_credentials'})
+        self.attack_steps['cloud_bucket.list'] = AttackStep(children={'cloud_bucket.find_credentials'})
+
+        self.attack_steps['cloud_hopper.gather_information'] = AttackStep(ttc=5, children={'cloud_bucket.list'})
         self.attack_steps['cloud_hopper.flag_93b00a.capture'] = AttackStep(reward=1000)
-        self.attack_steps['cloud_hopper.terminal_access'] = AttackStep(children={'cloud_hopper.flag_93b00a.capture'})
+        self.attack_steps['cloud_hopper.terminal_access'] = AttackStep(children={'cloud_hopper.gather_information', 'cloud_hopper.flag_93b00a.capture'})
         self.attack_steps['cloud_hopper.smb.exploit_vulnerability'] = AttackStep(ttc=10, children={'cloud_hopper.terminal_access'})
         self.attack_steps['cloud_hopper.smb.find_vulnerability'] = AttackStep(ttc=5, children={'cloud_hopper.smb.exploit_vulnerability'})
         self.attack_steps['cloud_hopper.smb.connect'] = AttackStep(children={'cloud_hopper.smb.find_vulnerability'})
