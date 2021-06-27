@@ -4,7 +4,7 @@ import numpy as np
 import random
 
 # The probability that the defender will disable a given service at a given step is given by DISABLE_PROBABILITY.
-DISABLE_PROBABILITY = 0.0007
+DISABLE_PROBABILITY = 0.0001
 RANDOM_SEED = 4
 DETERMINISTIC = True
 
@@ -45,13 +45,32 @@ class AttackGraph:
         self.enabled_services['buckeye.firefox'] = True
         self.enabled_services['cloud_hopper'] = True
         self.enabled_services['cloud_hopper.smb'] = True
+        self.enabled_services['cloud_function'] = True
+        self.enabled_services['fancy_bear'] = True
         
         self.attack_steps = {}
 
+        self.attack_steps['wifi_network.map'] = AttackStep(ttc=10, children={})
+        self.attack_steps['wifi_network.connect'] = AttackStep(children={})
+        self.attack_steps['wifi_network.obtain_credentials'] = AttackStep(ttc=10, children={'wifi_network.connect'})
+        self.attack_steps['wifi_network.find_credentials'] = AttackStep(ttc=5, children={'wifi_network.obtain_credentials'})
+        self.attack_steps['wifi_network.gather_information'] = AttackStep(ttc=5, children={'wifi_network.find_credentials'})
+
+        self.attack_steps['fancy_bear.gather_information'] = AttackStep(ttc=5, children={'wifi_network.gather_information'})
+        
+        self.attack_steps['fancy_bear.ssh.login'] = AttackStep(step_type='and', children={'fancy_bear.gather_information'})
+        self.attack_steps['fancy_bear.ssh.obtain_credentials'] = AttackStep(children={'fancy_bear.ssh.login'})
+        self.attack_steps['fancy_bear.ssh.connect'] = AttackStep(children={'fancy_bear.ssh.login'})
+        
+        self.attack_steps['cloud_function.flag_831865.capture'] = AttackStep(reward=1000)
+        self.attack_steps['cloud_function.flag_d8d9da.capture'] = AttackStep(reward=1000)
+        self.attack_steps['cloud_function.exploit_vulnerability'] = AttackStep(children={'cloud_function.flag_831865.capture'})
+        self.attack_steps['cloud_function.find_vulnerability'] = AttackStep(children={'cloud_function.exploit_vulnerability'})
+        self.attack_steps['cloud_function.gather_information'] = AttackStep(children={'cloud_function.find_vulnerability', 'cloud_function.flag_d8d9da.capture'})
+
         self.attack_steps['cloud_bucket.flag_21077e.capture'] = AttackStep(reward=1000)
-        self.attack_steps['cloud_bucket.obtain_credentials'] = AttackStep(children={'cloud_bucket.flag_21077e.capture'})
-        self.attack_steps['cloud_bucket.find_credentials'] = AttackStep(children={'cloud_bucket.obtain_credentials'})
-        self.attack_steps['cloud_bucket.list'] = AttackStep(children={'cloud_bucket.find_credentials'})
+        self.attack_steps['cloud_bucket.find_credentials'] = AttackStep(children={'fancy_bear.ssh.obtain_credentials'})
+        self.attack_steps['cloud_bucket.list'] = AttackStep(children={'cloud_function.gather_information', 'cloud_bucket.find_credentials', 'cloud_bucket.flag_21077e.capture'})
 
         self.attack_steps['cloud_hopper.gather_information'] = AttackStep(ttc=5, children={'cloud_bucket.list'})
         self.attack_steps['cloud_hopper.flag_93b00a.capture'] = AttackStep(reward=1000)
@@ -60,12 +79,13 @@ class AttackGraph:
         self.attack_steps['cloud_hopper.smb.find_vulnerability'] = AttackStep(ttc=5, children={'cloud_hopper.smb.exploit_vulnerability'})
         self.attack_steps['cloud_hopper.smb.connect'] = AttackStep(children={'cloud_hopper.smb.find_vulnerability'})
         
-        self.attack_steps['hidden_network.map'] = AttackStep(ttc=10, children={'cloud_hopper.smb.connect'})
+        self.attack_steps['hidden_network.map'] = AttackStep(ttc=10, children={'cloud_hopper.smb.connect', 'fancy_bear.ssh.connect'})
+        self.attack_steps['hidden_network.connect'] = AttackStep(children={'hidden_network.map'})
 
         self.attack_steps['buckeye.flag_2362e5.capture'] = AttackStep(reward=1000)
         self.attack_steps['buckeye.flag_5d402e.capture'] = AttackStep(reward=1000)
         self.attack_steps['buckeye.flag_14ce18.capture'] = AttackStep(reward=1000)
-        self.attack_steps['buckeye.escalate_to_root'] = AttackStep(children={'hidden_network.map', 'buckeye.flag_2362e5.capture'})
+        self.attack_steps['buckeye.escalate_to_root'] = AttackStep(children={'hidden_network.connect', 'buckeye.flag_2362e5.capture'})
         self.attack_steps['buckeye.exploit_vulnerability'] = AttackStep(ttc=10, children={'buckeye.escalate_to_root'})
         self.attack_steps['buckeye.find_vulnerability'] = AttackStep(ttc=5, children={'buckeye.exploit_vulnerability'})
         self.attack_steps['buckeye.terminal_access'] = AttackStep(children={'buckeye.find_vulnerability', 'buckeye.flag_5d402e.capture'})
@@ -93,7 +113,7 @@ class AttackGraph:
         self.attack_steps['sea_turtle.escalate_to_root'] = AttackStep(ttc=50, children={'sea_turle.flag_6be6ef.capture'})
         self.attack_steps['sea_turtle.exploit_vulnerability'] = AttackStep(ttc=50, children={'sea_turtle.escalate_to_root'})
         self.attack_steps['sea_turtle.find_vulnerability'] = AttackStep(ttc=50, children={'sea_turtle.exploit_vulnerability'})
-        self.attack_steps['sea_turtle.telnet.login'] = AttackStep(step_type='and', ttc=100, children={'sea_turtle.find_vulnerability', 'sea_turle.flag_f9038f.capture'})
+        self.attack_steps['sea_turtle.telnet.login'] = AttackStep(step_type='and', children={'sea_turtle.find_vulnerability', 'sea_turle.flag_f9038f.capture'})
         self.attack_steps['sea_turtle.telnet.obtain_credentials'] = AttackStep(children={'sea_turtle.telnet.login'})
         self.attack_steps['sea_turtle.telnet.connect'] = AttackStep(children={'sea_turtle.telnet.login'})
 
@@ -113,7 +133,8 @@ class AttackGraph:
         self.attack_steps['lazarus.ftp.connect'] = AttackStep(children={'lazarus.ftp.dictionary_attack'})
 
         self.attack_steps['office_network.map'] = AttackStep(ttc=10, children={'lazarus.ftp.connect', 'energetic_bear.apache.connect', 'lazarus.tomcat.connect', 'sea_turtle.telnet.connect'})
-        self.attack_steps['internet.connect'] = AttackStep(children={'office_network.map'})
+        self.attack_steps['office_network.connect'] = AttackStep(children={'office_network.map'})
+        self.attack_steps['internet.connect'] = AttackStep(children={'office_network.connect'})
         
         self.record_parents()
         self.size = len(self.attack_steps)
