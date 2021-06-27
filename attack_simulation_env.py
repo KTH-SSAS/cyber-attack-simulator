@@ -6,7 +6,7 @@ import random
 # The probability that the defender will disable a given service at a given step is given by DISABLE_PROBABILITY.
 DISABLE_PROBABILITY = 0.0001
 RANDOM_SEED = 4
-DETERMINISTIC = True
+DETERMINISTIC = False
 
 class AttackStep:
 
@@ -46,7 +46,10 @@ class AttackGraph:
         self.enabled_services['cloud_hopper'] = True
         self.enabled_services['cloud_hopper.smb'] = True
         self.enabled_services['cloud_function'] = True
+        self.enabled_services['fancy_bear.ssh'] = True
         self.enabled_services['fancy_bear'] = True
+        self.enabled_services['wifi_host.http_server'] = True
+        self.enabled_services['wifi_host'] = True
         
         self.attack_steps = {}
 
