@@ -3,6 +3,7 @@ import gym
 from gym import spaces
 import numpy as np
 import random
+import logging
 
 # The probability that the defender will disable a given service at a given step is given by DISABLE_PROBABILITY.
 DISABLE_PROBABILITY = 0.001
@@ -166,6 +167,7 @@ class AttackGraph:
                 self.attack_steps[child].parents.add(parent)
 
     def disable(self, service):
+        logger = logging.getLogger('simulator')
         # Disconnect all attack steps that match the service.
         for step_name in self.attack_steps:
             if self.attack_steps[step_name].enabled and service in step_name:
@@ -174,7 +176,7 @@ class AttackGraph:
         for subservice in self.enabled_services:
             if self.enabled_services[subservice] and service in subservice and service != subservice:
                 self.enabled_services[subservice] = False
-                print("Disabling subservice " + subservice)
+                logger.debug("Disabling subservice " + subservice)
 
 
 class Attacker:
@@ -261,12 +263,12 @@ class AttackSimulationEnv(gym.Env):
         # Observations are imperfect.
         self.observation_space = spaces.Box(low=0, high=1, shape=(self.attack_graph.size, 1), dtype=np.float32)
         # The defender action space consists of the disablement of services and hosts.        
-        n_defender_actions = len(self.attack_graph.enabled_services)        
-        self.action_space = spaces.Tuple(([spaces.Discrete(2)]*n_defender_actions))
+        self.n_defender_actions = len(self.attack_graph.enabled_services)        
+        self.action_space = spaces.Tuple(([spaces.Discrete(2)]*self.n_defender_actions))
 
     def get_info(self):
         if self.attacker.current_step:
-            info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.get_step(env.attacker.current_step).ttc, "attack_surface": self.attacker.attack_surface(), "self.attack_graph.enabled_services": self.attack_graph.enabled_services}
+            info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.get_step(self.attacker.current_step).ttc, "attack_surface": self.attacker.attack_surface(), "self.attack_graph.enabled_services": self.attack_graph.enabled_services}
         else:
             info = {"time": self.attacker.total_time, "current_step": None, "time_on_current_step": None, "ttc_of_current_step": None, "attack_surface": self.attacker.attack_surface(), "self.attack_graph.enabled_services": self.attack_graph.enabled_services}
         return info
