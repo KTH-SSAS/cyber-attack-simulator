@@ -1,3 +1,4 @@
+from typing import Dict, List
 import gym
 from gym import spaces
 import numpy as np
@@ -56,7 +57,7 @@ class AttackGraph:
         
         print(str(len(self.enabled_services)) + " possible defender actions.")
 
-        self.attack_steps = {}
+        self.attack_steps: Dict[str, AttackStep] = {}
 
         # Here the attack logic is defined. The below is a model of the EN2720 course.
         self.attack_steps['wifi_host.http_server.flag_18dd8f.capture'] = AttackStep(reward=1000)
@@ -178,7 +179,7 @@ class AttackGraph:
 
 class Attacker:
     
-    def __init__(self, attack_graph, compromised_steps):
+    def __init__(self, attack_graph: AttackGraph, compromised_steps: List[str]):
         self.attack_graph = attack_graph
         # self.compromised_steps keeps track of which attack steps have been reached by that attacker.
         self.compromised_steps = compromised_steps
@@ -186,7 +187,7 @@ class Attacker:
         self.time_on_current_step = 0
         self.total_time = 0
 
-    def get_step(self, name):
+    def get_step(self, name) -> AttackStep:
         return self.attack_graph.attack_steps[name]
     
     def attack_surface(self, debug=False):
@@ -306,24 +307,26 @@ class AttackSimulationEnv(gym.Env):
     def disable(self, service):
         self.attack_graph.disable(service)
         self.attacker.choose_next_step()
-    
-if DETERMINISTIC:
-    random.seed(RANDOM_SEED)
 
-env = AttackSimulationEnv()
-enabled_services = dict()
-# Defender can act by disabling various services and hosts (found in env.attack_graph.enabled_services)
-for service in env.attack_graph.enabled_services:
-    enabled_services[service] = 1
-done = False
-while not done:
-    enabled_services_status_changed = False
-    for service in enabled_services:
-        # Current strategy is to disable any service with a given probability each step.
-        if enabled_services[service] == 1 and random.uniform(0,1) < DISABLE_PROBABILITY:
-            print("Defender disabling " + service)
-            enabled_services[service] = 0
-            enabled_services_status_changed = True
-    obs, reward, done, info = env.step(tuple(enabled_services.values()))
-    if info["time_on_current_step"] == 1 or enabled_services_status_changed:
-        print(str(info['time']) + ": reward=" + str(reward) + ". Attacking " + str(info['current_step']))
+
+if __name__ == '__main__':
+    if DETERMINISTIC:
+        random.seed(RANDOM_SEED)
+
+    env = AttackSimulationEnv()
+    enabled_services = dict()
+    # Defender can act by disabling various services and hosts (found in env.attack_graph.enabled_services)
+    for service in env.attack_graph.enabled_services:
+        enabled_services[service] = 1
+    done = False
+    while not done:
+        enabled_services_status_changed = False
+        for service in enabled_services:
+            # Current strategy is to disable any service with a given probability each step.
+            if enabled_services[service] == 1 and random.uniform(0,1) < DISABLE_PROBABILITY:
+                print("Defender disabling " + service)
+                enabled_services[service] = 0
+                enabled_services_status_changed = True
+        obs, reward, done, info = env.step(tuple(enabled_services.values()))
+        if info["time_on_current_step"] == 1 or enabled_services_status_changed:
+            print(str(info['time']) + ": reward=" + str(reward) + ". Attacking " + str(info['current_step']))
