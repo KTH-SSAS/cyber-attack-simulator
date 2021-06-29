@@ -3,11 +3,10 @@ from attack_simulator.attack_simulation_env import AttackSimulationEnv
 import matplotlib.pyplot as plt
 import logging
 import numpy.random as random
+import numpy as np
 
 def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False):
 	enabled_services: dict = {}
-	logger = logging.getLogger("simulator")
-	#twin1.spines.right.set_position(("axes", 1.2))
 	done = False
 	for service in env.attack_graph.enabled_services:
 		enabled_services[service] = 1
@@ -15,20 +14,22 @@ def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False)
 	rewards = []
 	num_services = []
 	state = env._next_observation()  # Intial state
+	#state = np.concatenate((state,np.array(list(enabled_services.values()))))
 	while not done:
 		action = agent.act(state)
 		for i, key in enumerate(enabled_services):
 			if i == action:
 				enabled_services[key] = 0
 				break
-		_, reward, done, _ = env.step(tuple(enabled_services.values()))
+		new_state, reward, done, info = env.step(tuple(enabled_services.values()))
 		rewards.append(reward)
 		# count number of running services
 		num_services.append(sum(list(enabled_services.values())))
-
+		state = new_state
 		#if info["time_on_current_step"] == 1:
 		#	logger.debug(str(info['time']) + ": reward=" + str(reward) +
 		#			  ". Attacking " + str(info['current_step']))
+
 
 	if plot_results:
 		_, ax = plt.subplots()
@@ -36,29 +37,35 @@ def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False)
 		ax.plot(rewards, "b")
 		twin1.plot(num_services, "r")
 		plt.show()
-
 	
-	return rewards
+	return rewards, info['time']
 
 
 def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: ReinforceAgent):
 
 	log = logging.getLogger("trainer")
-	returns = []
-	losses = []
-	for i in range(episodes):
-		rewards = run_sim(env, agent)
-		loss = agent.update(rewards)
-		losses.append(loss)
-		returns.append(sum(rewards))
-		env.reset()		
-		log.debug(f"Episode: {i+1}/{episodes}, Return: {sum(rewards)}")
-
-	plt.plot(returns)
-	plt.xlabel("Episode")
-	plt.ylabel("Return")
-	plt.show()
-	plt.plot(losses)
-	plt.ylabel('Loss')
-	plt.xlabel('Episode')
+	returns = np.zeros(episodes)
+	losses = np.zeros(episodes)
+	lengths = np.zeros(episodes)
+	try:
+		for i in range(episodes):
+			rewards, episode_length = run_sim(env, agent)
+			loss = agent.update(rewards)
+			losses[i] = loss
+			returns[i] = sum(rewards)
+			lengths[i] = episode_length
+			env.reset()		
+			log.debug(f"Episode: {i+1}/{episodes}, Return: {sum(rewards)}")
+	except KeyboardInterrupt:
+		print("Stopping...")
+	fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
+	ax1.plot(returns)
+	#ax1.set_xlabel("Episode")
+	ax1.set_ylabel("Return")
+	ax2.plot(losses)
+	ax2.set_ylabel('Loss')
+	#ax2.set_xlabel('Episode')
+	ax3.plot(lengths)
+	ax3.set_xlabel("Episode")
+	ax3.set_ylabel("Episode Length")
 	plt.show()

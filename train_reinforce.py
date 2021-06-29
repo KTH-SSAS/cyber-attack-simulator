@@ -14,4 +14,4 @@ if __name__ == '__main__':
 	logging.getLogger("trainer").addHandler(logging.FileHandler("trainer.log", mode="w"))
 	env = AttackSimulationEnv()
 	agent = ReinforceAgent(78, 16, 64)
-	run_multiple_simulations(1000, env, agent)
+	run_multiple_simulations(5000, env, agent)

@@ -18,8 +18,9 @@ class Reinforce(nn.Module):
 		self.model = nn.Sequential(
 			nn.Linear(input_dim, hidden_dim),
 			nn.ReLU(),
+			nn.Dropout(0.1),
 			nn.Linear(hidden_dim, num_actions),
-			nn.Softmax()
+			nn.Softmax(dim=0)
 		)
 
 
