@@ -35,6 +35,7 @@ class AttackGraph:
         self.reset()
 
     def reset(self):
+        logger = logging.getLogger("simulator")
         # These are the services and hosts that the defender is at liberty to disable in order to protect the computer network.
         self.enabled_services = dict()
         # Disabling a host, e.g. lazarus, will also disable all of its services
@@ -56,7 +57,7 @@ class AttackGraph:
         self.enabled_services['wifi_host.http_server'] = True
         self.enabled_services['wifi_host'] = True
         
-        print(str(len(self.enabled_services)) + " possible defender actions.")
+        logger.info(str(len(self.enabled_services)) + " possible defender actions.")
 
         self.attack_steps: Dict[str, AttackStep] = {}
 
@@ -158,7 +159,7 @@ class AttackGraph:
         self.record_parents()
         self.size = len(self.attack_steps)
 
-        print(str(self.size) + " attack steps.")
+        logger.info(str(self.size) + " attack steps.")
 
     def record_parents(self):
         #And steps need to know which their parents are.
@@ -174,9 +175,10 @@ class AttackGraph:
                 self.attack_steps[step_name].enabled = False
         # Also disable subservices (e.g. fancy_bear.ssh should be disabled when fancy_bear is)
         for subservice in self.enabled_services:
-            if self.enabled_services[subservice] and service in subservice and service != subservice:
-                self.enabled_services[subservice] = False
-                logger.debug("Disabling subservice " + subservice)
+            if self.enabled_services[subservice]: # service is enabled
+                if service in subservice and service != subservice:
+                    self.enabled_services[subservice] = False
+                    logger.debug("Disabling subservice " + subservice)
 
 
 class Attacker:
@@ -274,6 +276,7 @@ class AttackSimulationEnv(gym.Env):
         return info
 
     def step(self, action):
+        logger = logging.getLogger("simulator")
         # The order of actions follows self.attack_graph.enabled_services
         action_id = 0
         # provision_reward is the defender reward for maintaining services online. 
@@ -292,10 +295,15 @@ class AttackSimulationEnv(gym.Env):
 
         # Positive rewards for maintaining services enabled_services and negative for compromised flags.
         reward = self.provision_reward - self.attacker.reward
-        
-        return obs, reward, attacker_done, self.get_info()
+        info = self.get_info()
+        logger.debug(str(info['time']) + ": reward=" + str(reward) + ". Attacking " + str(info['current_step']))
+        if attacker_done:
+            logger.debug("Attacker is done.")
+        return obs, reward, attacker_done, info
 
     def reset(self):
+        logger = logging.getLogger("simulator")
+        logger.debug("Starting new simulation.")
         self.attack_graph.reset()
         self.attacker = Attacker(self.attack_graph, ['internet.connect'])
         return self._next_observation()
