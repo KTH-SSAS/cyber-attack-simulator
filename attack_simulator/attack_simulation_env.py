@@ -297,6 +297,7 @@ class AttackSimulationEnv(gym.Env):
 
     def reset(self):
         self.attack_graph.reset()
+        self.attacker = Attacker(self.attack_graph, ['internet.connect'])
         return self._next_observation()
 
     def _next_observation(self):
