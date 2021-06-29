@@ -14,7 +14,6 @@ def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False)
 	rewards = []
 	num_services = []
 	state = env._next_observation()  # Intial state
-	#state = np.concatenate((state,np.array(list(enabled_services.values()))))
 	while not done:
 		action = agent.act(state)
 		for i, key in enumerate(enabled_services):
@@ -55,12 +54,13 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
 			returns[i] = sum(rewards)
 			lengths[i] = episode_length
 			env.reset()		
-			log.debug(f"Episode: {i+1}/{episodes}, Return: {sum(rewards)}")
+			log.debug(f"Episode: {i+1}/{episodes}, Return: {sum(rewards)}, Episode Length: {episode_length}")
 	except KeyboardInterrupt:
 		print("Stopping...")
 	fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
 	ax1.plot(returns)
 	#ax1.set_xlabel("Episode")
+	ax1.set_xlim(0, i) # Cut off graph at stopping point
 	ax1.set_ylabel("Return")
 	ax2.plot(losses)
 	ax2.set_ylabel('Loss')
