@@ -68,4 +68,5 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
 	ax3.plot(lengths)
 	ax3.set_xlabel("Episode")
 	ax3.set_ylabel("Episode Length")
+	fig.savefig('plot.pdf', dpi=200)
 	plt.show()

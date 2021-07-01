@@ -90,7 +90,7 @@ class AttackSimulationEnv(gym.Env):
 
     def __init__(self):
         super(AttackSimulationEnv, self).__init__()
-        self.attack_graph = AttackGraph()
+        self.attack_graph = AttackGraph(deterministic=DETERMINISTIC)
         self.attacker = Attacker(self.attack_graph, ['internet.connect'])
         # An observation informs the defender of which attack steps have been compromised.
         # Observations are imperfect.
