@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import logging
 
 class AttackStep:
 
@@ -26,6 +27,7 @@ class AttackGraph:
 
 
     def reset(self):
+        logger = logging.getLogger("simulator")
         # These are the services and hosts that the defender is at liberty to disable in order to protect the computer network.
         self.enabled_services = dict()
         # Disabling a host, e.g. lazarus, will also disable all of its services
@@ -47,9 +49,9 @@ class AttackGraph:
         self.enabled_services['wifi_host.http_server'] = True
         self.enabled_services['wifi_host'] = True
         
-        # print(str(len(self.enabled_services)) + " possible defender actions.")
+        logger.info(str(len(self.enabled_services)) + " possible defender actions.")
 
-        self.attack_steps = {}
+        self.attack_steps: Dict[str, AttackStep] = {}
 
         # Here the attack logic is defined. The below is a model of the EN2720 course.
         self.attack_steps['wifi_host.http_server.flag_18dd8f.capture'] = AttackStep(reward=1000)
@@ -149,7 +151,7 @@ class AttackGraph:
         self.record_parents()
         self.size = len(self.attack_steps)
 
-        # print(str(self.size) + " attack steps.")
+        logger.info(str(self.size) + " attack steps.")
 
     def record_parents(self):
         #And steps need to know which their parents are.
@@ -158,6 +160,7 @@ class AttackGraph:
                 self.attack_steps[child].parents.add(parent)
 
     def disable(self, service):
+        logger = logging.getLogger('simulator')
         # Disconnect all attack steps that match the service.
         for step_name in self.attack_steps:
             if self.attack_steps[step_name].enabled and service in step_name:
@@ -166,5 +169,5 @@ class AttackGraph:
         for subservice in self.enabled_services:
             if self.enabled_services[subservice] and service in subservice and service != subservice:
                 self.enabled_services[subservice] = False
-                # print("Disabling subservice " + subservice)
+                logger.debug("Disabling subservice " + subservice)
 
