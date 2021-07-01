@@ -16,4 +16,4 @@ if __name__ == '__main__':
 	attack_steps = 78
 	services = 16
 	agent = ReinforceAgent(attack_steps, services, hidden_dim=64)
-	run_multiple_simulations(500, env, agent)
+	run_multiple_simulations(1000, env, agent)
