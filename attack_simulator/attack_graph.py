@@ -47,7 +47,7 @@ class AttackGraph:
         self.enabled_services['wifi_host.http_server'] = True
         self.enabled_services['wifi_host'] = True
         
-        print(str(len(self.enabled_services)) + " possible defender actions.")
+        # print(str(len(self.enabled_services)) + " possible defender actions.")
 
         self.attack_steps = {}
 
@@ -149,7 +149,7 @@ class AttackGraph:
         self.record_parents()
         self.size = len(self.attack_steps)
 
-        print(str(self.size) + " attack steps.")
+        # print(str(self.size) + " attack steps.")
 
     def record_parents(self):
         #And steps need to know which their parents are.
@@ -166,5 +166,5 @@ class AttackGraph:
         for subservice in self.enabled_services:
             if self.enabled_services[subservice] and service in subservice and service != subservice:
                 self.enabled_services[subservice] = False
-                print("Disabling subservice " + subservice)
+                # print("Disabling subservice " + subservice)
 

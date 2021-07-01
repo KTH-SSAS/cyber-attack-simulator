@@ -1,19 +1,20 @@
+from typing import Dict, List
 import gym
 from gym import spaces
 import numpy as np
 import random
-from attack_graph import AttackGraph
+from attack_simulator.attack_graph import AttackGraph, AttackStep
+import logging
 
 # The probability that the defender will disable a given service at a given step is given by DISABLE_PROBABILITY.
 DISABLE_PROBABILITY = 0.001
 # For debugging convenience, simulations can be made deterministic, only dependent on the random seed.
-DETERMINISTIC = False
+DETERMINISTIC = True
 RANDOM_SEED = 4
-
 
 class Attacker:
     
-    def __init__(self, attack_graph, compromised_steps):
+    def __init__(self, attack_graph: AttackGraph, compromised_steps: List[str]):
         self.attack_graph = attack_graph
         # self.compromised_steps keeps track of which attack steps have been reached by that attacker.
         self.compromised_steps = compromised_steps
@@ -21,8 +22,7 @@ class Attacker:
         self.time_on_current_step = 0
         self.total_time = 0
 
-
-    def get_step(self, name):
+    def get_step(self, name) -> AttackStep:
         return self.attack_graph.attack_steps[name]
     
     def attack_surface(self, debug=False):
@@ -96,18 +96,19 @@ class AttackSimulationEnv(gym.Env):
         # Observations are imperfect.
         self.observation_space = spaces.Box(low=0, high=1, shape=(self.attack_graph.size, 1), dtype=np.float32)
         # The defender action space consists of the disablement of services and hosts.        
-        n_defender_actions = len(self.attack_graph.enabled_services)        
-        self.action_space = spaces.Tuple(([spaces.Discrete(2)]*n_defender_actions))
+        self.n_defender_actions = len(self.attack_graph.enabled_services)        
+        self.action_space = spaces.Tuple(([spaces.Discrete(2)]*self.n_defender_actions))
 
     def get_info(self):
         if self.attacker.current_step:
-            info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.get_step(env.attacker.current_step).ttc, "attack_surface": self.attacker.attack_surface(), "self.attack_graph.enabled_services": self.attack_graph.enabled_services}
+            info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.get_step(self.attacker.current_step).ttc, "attack_surface": self.attacker.attack_surface(), "self.attack_graph.enabled_services": self.attack_graph.enabled_services}
         else:
             info = {"time": self.attacker.total_time, "current_step": None, "time_on_current_step": None, "ttc_of_current_step": None, "attack_surface": self.attacker.attack_surface(), "self.attack_graph.enabled_services": self.attack_graph.enabled_services}
         return info
 
 
     def step(self, action):
+        logger = logging.getLogger("simulator")
         # The order of actions follows self.attack_graph.enabled_services
         action_id = 0
         # provision_reward is the defender reward for maintaining services online. 
@@ -126,11 +127,17 @@ class AttackSimulationEnv(gym.Env):
 
         # Positive rewards for maintaining services enabled_services and negative for compromised flags.
         reward = self.provision_reward - self.attacker.reward
-        
-        return obs, reward, attacker_done, self.get_info()
+        info = self.get_info()
+        logger.debug(str(info['time']) + ": reward=" + str(reward) + ". Attacking " + str(info['current_step']))
+        if attacker_done:
+            logger.debug("Attacker is done.")
+        return obs, reward, attacker_done, info
 
     def reset(self):
+        logger = logging.getLogger("simulator")
+        logger.debug("Starting new simulation.")
         self.attack_graph.reset()
+        self.attacker = Attacker(self.attack_graph, ['internet.connect'])
         return self._next_observation()
 
     def _next_observation(self):
@@ -143,26 +150,26 @@ class AttackSimulationEnv(gym.Env):
     def disable(self, service):
         self.attack_graph.disable(service)
         self.attacker.choose_next_step()
-    
-if DETERMINISTIC:
-    random.seed(RANDOM_SEED)
 
 
-env = AttackSimulationEnv()
-enabled_services = dict()
+if __name__ == '__main__':
+    if DETERMINISTIC:
+        random.seed(RANDOM_SEED)
 
-# Defender can act by disabling various services and hosts (found in env.attack_graph.enabled_services)
-for service in env.attack_graph.enabled_services:
-    enabled_services[service] = 1
-done = False
-while not done:
-    enabled_services_status_changed = False
-    for service in enabled_services:
-        # Current strategy is to disable any service with a given probability each step.
-        if enabled_services[service] == 1 and random.uniform(0,1) < DISABLE_PROBABILITY:
-            print("Defender disabling " + service)
-            enabled_services[service] = 0
-            enabled_services_status_changed = True
-    obs, reward, done, info = env.step(tuple(enabled_services.values()))
-    if info["time_on_current_step"] == 1 or enabled_services_status_changed:
-        print(str(info['time']) + ": reward=" + str(reward) + ". Attacking " + str(info['current_step']))
+    env = AttackSimulationEnv()
+    enabled_services = dict()
+    # Defender can act by disabling various services and hosts (found in env.attack_graph.enabled_services)
+    for service in env.attack_graph.enabled_services:
+        enabled_services[service] = 1
+    done = False
+    while not done:
+        enabled_services_status_changed = False
+        for service in enabled_services:
+            # Current strategy is to disable any service with a given probability each step.
+            if enabled_services[service] == 1 and random.uniform(0,1) < DISABLE_PROBABILITY:
+                # print("Defender disabling " + service)
+                enabled_services[service] = 0
+                enabled_services_status_changed = True
+        obs, reward, done, info = env.step(tuple(enabled_services.values()))
+        # if info["time_on_current_step"] == 1 or enabled_services_status_changed:
+            # print(str(info['time']) + ": reward=" + str(reward) + ". Attacking " + str(info['current_step']))
