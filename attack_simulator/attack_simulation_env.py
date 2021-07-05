@@ -9,15 +9,16 @@ import logging
 # The probability that the defender will disable a given service at a given step is given by DISABLE_PROBABILITY.
 DISABLE_PROBABILITY = 0.001
 # For debugging convenience, simulations can be made deterministic, only dependent on the random seed.
-DETERMINISTIC = True
+DETERMINISTIC = False
 RANDOM_SEED = 4
 
 class Attacker:
     
-    def __init__(self, attack_graph: AttackGraph, compromised_steps: List[str]):
+    def __init__(self, attack_graph: AttackGraph, compromised_steps: List[str], deterministic=False):
         self.attack_graph = attack_graph
         # self.compromised_steps keeps track of which attack steps have been reached by that attacker.
         self.compromised_steps = compromised_steps
+        self.deterministic = deterministic
         self.choose_next_step()
         self.time_on_current_step = 0
         self.total_time = 0
@@ -49,7 +50,7 @@ class Attacker:
         # The attacker strategy is currently simply to select a random attack step of the available ones (i.e. from the attack surface).
         self.current_step = None
         if self.attack_surface():
-            if DETERMINISTIC:
+            if self.deterministic:
                 self.current_step = sorted(list(self.attack_surface()))[0]
             else:
                 self.current_step = random.choice(list(self.attack_surface()))
@@ -63,6 +64,7 @@ class Attacker:
         if self.time_on_current_step >= self.get_step(self.current_step).ttc:
             self.compromised_steps.append(self.current_step)
             self.reward = self.attack_graph.attack_steps[self.current_step].reward
+            # print(f"Compromised attack step with reward {self.reward}")
             # If the attack surface (the available uncompromised attack steps) is empty, then terminate.
             if not self.attack_surface():
                 return False
@@ -76,7 +78,7 @@ class Attacker:
     def observe(self, attack_step):
         # Observations of the attacker are made by an intrusion detection system. 
         # The accuracy of observations is given for each attack step by the true and false positive rates respectively.
-        if DETERMINISTIC:
+        if self.deterministic:
             return attack_step in self.compromised_steps
         else:
             rnd = random.uniform(0,1)
@@ -88,10 +90,13 @@ class Attacker:
 
 class AttackSimulationEnv(gym.Env):
 
-    def __init__(self):
+    def __init__(self, deterministic=False, flag_reward=1000):
         super(AttackSimulationEnv, self).__init__()
-        self.attack_graph = AttackGraph(deterministic=DETERMINISTIC)
-        self.attacker = Attacker(self.attack_graph, ['internet.connect'])
+        self.deterministic = deterministic
+        self.flag_reward = flag_reward
+        print(f"AttackSimulationEnv's flag reward is {self.flag_reward}")
+        self.attack_graph = AttackGraph(deterministic=deterministic, flag_reward=flag_reward)
+        self.attacker = Attacker(self.attack_graph, ['internet.connect'], deterministic=deterministic)
         # An observation informs the defender of which attack steps have been compromised.
         # Observations are imperfect.
         self.observation_space = spaces.Box(low=0, high=1, shape=(self.attack_graph.size, 1), dtype=np.float32)
@@ -113,7 +118,7 @@ class AttackSimulationEnv(gym.Env):
         action_id = 0
         # provision_reward is the defender reward for maintaining services online. 
         self.provision_reward = 0
-        # Isolate services according to the actions provided
+        # Disable services according to the actions provided
         for service in self.attack_graph.enabled_services:
             if self.attack_graph.enabled_services[service]:
                 self.provision_reward += 1
@@ -131,12 +136,14 @@ class AttackSimulationEnv(gym.Env):
         logger.debug(str(info['time']) + ": reward=" + str(reward) + ". Attacking " + str(info['current_step']))
         if attacker_done:
             logger.debug("Attacker is done.")
+            logger.debug(f"Compromised steps: {self.attacker.compromised_steps}")
         return obs, reward, attacker_done, info
 
     def reset(self):
         logger = logging.getLogger("simulator")
         logger.debug("Starting new simulation.")
-        self.attack_graph.reset()
+        logger.debug(f"self.flag_reward = {self.flag_reward}")
+        self.attack_graph.reset(deterministic=self.deterministic, flag_reward=self.flag_reward)
         self.attacker = Attacker(self.attack_graph, ['internet.connect'])
         return self._next_observation()
 
@@ -148,6 +155,9 @@ class AttackSimulationEnv(gym.Env):
         pass
 
     def disable(self, service):
+        logger = logging.getLogger('simulator')
+        if self.attack_graph.enabled_services[service]:
+                logger.debug(f"Disabling {service}")
         self.attack_graph.disable(service)
         self.attacker.choose_next_step()
 
