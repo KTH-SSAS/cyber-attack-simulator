@@ -4,3 +4,5 @@ __pycache__
 *.txt
 *.log
 PKG-INFO
+plot.pdf
+.DS_Store
