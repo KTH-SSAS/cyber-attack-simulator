@@ -17,9 +17,12 @@ def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False)
 	while not done:
 		action = agent.act(state)
 		for i, key in enumerate(enabled_services):
-			if i == action:
+			if i == action + 1:
 				enabled_services[key] = 0
 				break
+#		if action == 0:
+#			print(f"action={action}")
+#			print(f"enabled_services = {enabled_services}")
 		new_state, reward, done, info = env.step(tuple(enabled_services.values()))
 		rewards.append(reward)
 		# count number of running services
