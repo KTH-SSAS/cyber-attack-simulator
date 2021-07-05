@@ -67,5 +67,4 @@ class ReinforceAgent(Agent):
         torch.nn.utils.clip_grad_value_(self.policy.parameters(), 1)
         self.optimizer.step()
         self.saved_log_probs = []
-        self.rewards = []
         return loss.item()

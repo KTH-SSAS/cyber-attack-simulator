@@ -143,6 +143,7 @@ class AttackSimulationEnv(gym.Env):
             logger.debug("Attacker is done.")
             logger.debug(
                 f"Compromised steps: {self.attacker.compromised_steps}")
+        info['compromised_steps'] = self.attacker.compromised_steps
         return obs, reward, attacker_done, info
 
     def reset(self):

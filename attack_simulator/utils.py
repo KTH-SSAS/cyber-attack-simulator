@@ -41,7 +41,7 @@ def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False)
         twin1.plot(num_services, "r")
         plt.show()
 
-    return rewards, info['time']
+    return rewards, info['time'], info['compromised_steps']
 
 
 def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: ReinforceAgent):
@@ -50,16 +50,18 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
     returns = np.zeros(episodes)
     losses = np.zeros(episodes)
     lengths = np.zeros(episodes)
+    num_compromised_steps = np.zeros(episodes)
     max_patience = 50
     patience = max_patience
     prev_loss = 1E6
     try:
         for i in range(episodes):
-            rewards, episode_length = run_sim(env, agent)
+            rewards, episode_length, compromised_steps = run_sim(env, agent)
             loss = agent.update(rewards)
             losses[i] = loss
             returns[i] = sum(rewards)
             lengths[i] = episode_length
+            num_compromised_steps[i] = len(compromised_steps)
             env.reset()
             log.debug(
                 f"Episode: {i+1}/{episodes}, Loss: {loss}, Return: {sum(rewards)}, Episode Length: {episode_length}")
@@ -77,7 +79,7 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
 
     except KeyboardInterrupt:
         print("Stopping...")
-    fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, sharex=True)
     ax1.plot(returns)
     # ax1.set_xlabel("Episode")
     ax1.set_xlim(0, i)  # Cut off graph at stopping point
@@ -86,7 +88,11 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
     ax2.set_ylabel('Loss')
     # ax2.set_xlabel('Episode')
     ax3.plot(lengths)
-    ax3.set_xlabel("Episode")
     ax3.set_ylabel("Episode Length")
+
+    ax4.plot(num_compromised_steps)
+    ax4.set_ylabel("Compromised steps")
+
+    ax4.set_xlabel("Episode")
     fig.savefig('plot.pdf', dpi=200)
     plt.show()
