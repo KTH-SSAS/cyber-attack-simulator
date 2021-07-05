@@ -10,7 +10,7 @@ import numpy as np
 
 
 # design influenced by https://github.com/pytorch/examples/tree/master/reinforcement_learning
-class Reinforce(nn.Module):
+class PolicyModel(nn.Module):
 
     def __init__(self, input_dim, num_actions, hidden_dim):
         super().__init__()
@@ -30,7 +30,7 @@ class Reinforce(nn.Module):
 class ReinforceAgent(Agent):
 
     def __init__(self, input_dim, num_actions, hidden_dim, gamma=0.9) -> None:
-        self.policy = Reinforce(input_dim, num_actions, hidden_dim)
+        self.policy = PolicyModel(input_dim, num_actions, hidden_dim)
         self.saved_log_probs = []
         self.gamma = gamma
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=1e-2)
