@@ -54,7 +54,7 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
 			returns[i] = sum(rewards)
 			lengths[i] = episode_length
 			env.reset()		
-			log.debug(f"Episode: {i+1}/{episodes}, Return: {sum(rewards)}, Episode Length: {episode_length}")
+			log.debug(f"Episode: {i+1}/{episodes}, Loss: {loss}, Return: {sum(rewards)}, Episode Length: {episode_length}")
 	except KeyboardInterrupt:
 		print("Stopping...")
 	fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
