@@ -22,12 +22,13 @@ class AttackStep:
 
 class AttackGraph:
 
-    def __init__(self, deterministic=False):
-        self.reset(deterministic)
+    def __init__(self, deterministic=False, flag_reward=1000):
+        self.reset(deterministic=deterministic, flag_reward=flag_reward)
 
 
-    def reset(self, deterministic=False):
+    def reset(self, flag_reward=1000, deterministic=False):
         logger = logging.getLogger("simulator")
+        logger.debug(f"reset(): flag_reward = {flag_reward}")
         # These are the services and hosts that the defender is at liberty to disable in order to protect the computer network.
         self.enabled_services = dict()
         # Disabling a host, e.g. lazarus, will also disable all of its services
@@ -54,13 +55,13 @@ class AttackGraph:
         self.attack_steps: Dict[str, AttackStep] = {}
 
         # Here the attack logic is defined. The below is a model of the EN2720 course.
-        self.attack_steps['wifi_host.http_server.flag_18dd8f.capture'] = AttackStep(reward=1000, deterministic=deterministic)
+        self.attack_steps['wifi_host.http_server.flag_18dd8f.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
         self.attack_steps['wifi_host.http_server.gather_information'] = AttackStep(ttc=3, children={'wifi_host.http_server.flag_18dd8f.capture'}, deterministic=deterministic)
         self.attack_steps['wifi_host.http_server.connect'] = AttackStep(children={'wifi_host.http_server.gather_information'}, deterministic=deterministic)
 
         self.attack_steps['wifi_network.map'] = AttackStep(ttc=10, children={'wifi_host.http_server.connect'}, deterministic=deterministic)
         self.attack_steps['wifi_network.connect'] = AttackStep(step_type='and', children={'wifi_network.map'}, deterministic=deterministic)
-        self.attack_steps['wifi_network.flag_d582aa.capture'] = AttackStep(reward=1000, deterministic=deterministic)
+        self.attack_steps['wifi_network.flag_d582aa.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
         self.attack_steps['wifi_network.decrypt_traffic'] = AttackStep(step_type='and', ttc=5, children={'wifi_network.flag_d582aa.capture'}, deterministic=deterministic)
         self.attack_steps['wifi_network.obtain_credentials'] = AttackStep(ttc=10, children={'wifi_network.connect', 'wifi_network.decrypt_traffic'}, deterministic=deterministic)
         self.attack_steps['wifi_network.find_credentials'] = AttackStep(children={'wifi_network.obtain_credentials'}, deterministic=deterministic)
@@ -72,18 +73,18 @@ class AttackGraph:
         self.attack_steps['fancy_bear.ssh.obtain_credentials'] = AttackStep(children={'fancy_bear.ssh.login'}, deterministic=deterministic)
         self.attack_steps['fancy_bear.ssh.connect'] = AttackStep(children={'fancy_bear.ssh.login'}, deterministic=deterministic)
         
-        self.attack_steps['cloud_function.flag_831865.capture'] = AttackStep(reward=1000, deterministic=deterministic)
-        self.attack_steps['cloud_function.flag_d8d9da.capture'] = AttackStep(reward=1000, deterministic=deterministic)
+        self.attack_steps['cloud_function.flag_831865.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
+        self.attack_steps['cloud_function.flag_d8d9da.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
         self.attack_steps['cloud_function.exploit_vulnerability'] = AttackStep(children={'cloud_function.flag_831865.capture'}, deterministic=deterministic)
         self.attack_steps['cloud_function.find_vulnerability'] = AttackStep(children={'cloud_function.exploit_vulnerability'}, deterministic=deterministic)
         self.attack_steps['cloud_function.gather_information'] = AttackStep(children={'cloud_function.find_vulnerability', 'cloud_function.flag_d8d9da.capture'}, deterministic=deterministic)
 
-        self.attack_steps['cloud_bucket.flag_21077e.capture'] = AttackStep(reward=1000, deterministic=deterministic)
+        self.attack_steps['cloud_bucket.flag_21077e.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
         self.attack_steps['cloud_bucket.find_credentials'] = AttackStep(children={'fancy_bear.ssh.obtain_credentials'}, deterministic=deterministic)
         self.attack_steps['cloud_bucket.list'] = AttackStep(children={'cloud_function.gather_information', 'cloud_bucket.find_credentials', 'cloud_bucket.flag_21077e.capture'}, deterministic=deterministic)
 
         self.attack_steps['cloud_hopper.gather_information'] = AttackStep(ttc=5, children={'cloud_bucket.list'}, deterministic=deterministic)
-        self.attack_steps['cloud_hopper.flag_93b00a.capture'] = AttackStep(reward=1000, deterministic=deterministic)
+        self.attack_steps['cloud_hopper.flag_93b00a.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
         self.attack_steps['cloud_hopper.terminal_access'] = AttackStep(children={'cloud_hopper.gather_information', 'cloud_hopper.flag_93b00a.capture'}, deterministic=deterministic)
         self.attack_steps['cloud_hopper.smb.exploit_vulnerability'] = AttackStep(ttc=10, children={'cloud_hopper.terminal_access'}, deterministic=deterministic)
         self.attack_steps['cloud_hopper.smb.find_vulnerability'] = AttackStep(ttc=5, children={'cloud_hopper.smb.exploit_vulnerability'}, deterministic=deterministic)
@@ -92,9 +93,9 @@ class AttackGraph:
         self.attack_steps['hidden_network.map'] = AttackStep(ttc=10, children={'cloud_hopper.smb.connect', 'fancy_bear.ssh.connect'}, deterministic=deterministic)
         self.attack_steps['hidden_network.connect'] = AttackStep(children={'hidden_network.map'}, deterministic=deterministic)
 
-        self.attack_steps['buckeye.flag_2362e5.capture'] = AttackStep(reward=1000, deterministic=deterministic)
-        self.attack_steps['buckeye.flag_5d402e.capture'] = AttackStep(reward=1000, deterministic=deterministic)
-        self.attack_steps['buckeye.firefox.flag_14ce18.capture'] = AttackStep(reward=1000, deterministic=deterministic)
+        self.attack_steps['buckeye.flag_2362e5.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
+        self.attack_steps['buckeye.flag_5d402e.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
+        self.attack_steps['buckeye.firefox.flag_14ce18.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
         self.attack_steps['buckeye.escalate_to_root'] = AttackStep(children={'hidden_network.connect', 'buckeye.flag_2362e5.capture'}, deterministic=deterministic)
         self.attack_steps['buckeye.exploit_vulnerability'] = AttackStep(ttc=10, children={'buckeye.escalate_to_root'}, deterministic=deterministic)
         self.attack_steps['buckeye.find_vulnerability'] = AttackStep(ttc=5, children={'buckeye.exploit_vulnerability'}, deterministic=deterministic)
@@ -103,23 +104,23 @@ class AttackGraph:
         self.attack_steps['buckeye.firefox.find_vulnerability'] = AttackStep(ttc=5, children={'buckeye.firefox.exploit_vulnerability'}, deterministic=deterministic)
         self.attack_steps['buckeye.firefox.connect'] = AttackStep(children={'buckeye.firefox.find_vulnerability'}, deterministic=deterministic)
 
-        self.attack_steps['energetic_bear.flag_73cb43.capture'] = AttackStep(reward=1000, deterministic=deterministic)
-        self.attack_steps['energetic_bear.flag_3b2000.capture'] = AttackStep(reward=1000, deterministic=deterministic)
-        self.attack_steps['energetic_bear.flag_de3b1c.capture'] = AttackStep(reward=1000, deterministic=deterministic)
+        self.attack_steps['energetic_bear.flag_73cb43.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
+        self.attack_steps['energetic_bear.flag_3b2000.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
+        self.attack_steps['energetic_bear.flag_de3b1c.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
         self.attack_steps['energetic_bear.capture_traffic'] = AttackStep(ttc=5, children={'buckeye.firefox.connect', 'buckeye.firefox.flag_14ce18.capture'}, deterministic=deterministic)
         self.attack_steps['energetic_bear.escalate_to_root'] = AttackStep(ttc=20, children={'energetic_bear.capture_traffic', 'energetic_bear.flag_73cb43.capture'}, deterministic=deterministic)
         self.attack_steps['energetic_bear.exploit_vulnerability'] = AttackStep(ttc=50, children={'energetic_bear.escalate_to_root'}, deterministic=deterministic)
         self.attack_steps['energetic_bear.find_vulnerability'] = AttackStep(ttc=50, children={'energetic_bear.exploit_vulnerability'}, deterministic=deterministic)
         self.attack_steps['energetic_bear.terminal_access'] = AttackStep(ttc=10, children={'energetic_bear.find_vulnerability', 'energetic_bear.flag_3b2000.capture'}, deterministic=deterministic)
         
-        self.attack_steps['energetic_bear.apache.flag_521bce.capture'] = AttackStep(reward=1000, deterministic=deterministic)
+        self.attack_steps['energetic_bear.apache.flag_521bce.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
         self.attack_steps['energetic_bear.apache.exploit_vulnerability'] = AttackStep(ttc=20, children={'energetic_bear.terminal_access', 'energetic_bear.flag_de3b1c.capture'}, deterministic=deterministic)
         self.attack_steps['energetic_bear.apache.find_vulnerability'] = AttackStep(ttc=30, children={'energetic_bear.apache.exploit_vulnerability'}, deterministic=deterministic)
         self.attack_steps['energetic_bear.apache.gather_information'] = AttackStep(ttc=10, children={'energetic_bear.apache.find_vulnerability', 'energetic_bear.apache.flag_521bce.capture'}, deterministic=deterministic)
         self.attack_steps['energetic_bear.apache.connect'] = AttackStep(children={'energetic_bear.apache.gather_information'}, deterministic=deterministic)
 
-        self.attack_steps['sea_turle.flag_6be6ef.capture'] = AttackStep(reward=1000, deterministic=deterministic)
-        self.attack_steps['sea_turle.flag_f9038f.capture'] = AttackStep(reward=1000, deterministic=deterministic)
+        self.attack_steps['sea_turle.flag_6be6ef.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
+        self.attack_steps['sea_turle.flag_f9038f.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
         self.attack_steps['sea_turtle.capture_traffic'] = AttackStep(ttc=10, children={'buckeye.firefox.connect', 'buckeye.firefox.flag_14ce18.capture'}, deterministic=deterministic)
         self.attack_steps['sea_turtle.escalate_to_root'] = AttackStep(ttc=50, children={'sea_turle.flag_6be6ef.capture'}, deterministic=deterministic)
         self.attack_steps['sea_turtle.exploit_vulnerability'] = AttackStep(ttc=50, children={'sea_turtle.escalate_to_root'}, deterministic=deterministic)
@@ -128,18 +129,18 @@ class AttackGraph:
         self.attack_steps['sea_turtle.telnet.obtain_credentials'] = AttackStep(children={'sea_turtle.telnet.login'}, deterministic=deterministic)
         self.attack_steps['sea_turtle.telnet.connect'] = AttackStep(children={'sea_turtle.telnet.login'}, deterministic=deterministic)
 
-        self.attack_steps['lazarus.flag_cd699a.capture'] = AttackStep(reward=1000, deterministic=deterministic)
+        self.attack_steps['lazarus.flag_cd699a.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
         self.attack_steps['lazarus.find_credentials'] = AttackStep(ttc=10, children={'sea_turtle.telnet.obtain_credentials'}, deterministic=deterministic)
-        self.attack_steps['lazarus.terminal_access'] = AttackStep(children={'lazarus.find_credentials', 'lazarus.flag_cd699a.capture'}, deterministic=deterministic)
+        self.attack_steps['lazarus.terminal_access'] = AttackStep(children={'lazarus.find_credentials', 'lazarus.flag_cd699a.capture', 'lazarus.ftp.flag_adcb1f.capture'}, deterministic=deterministic)
         
-        self.attack_steps['lazarus.tomcat.flag_90b353.capture'] = AttackStep(reward=1000, deterministic=deterministic)
+        self.attack_steps['lazarus.tomcat.flag_90b353.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
         self.attack_steps['lazarus.tomcat.exploit_vulnerability'] = AttackStep(ttc=10, children={'lazarus.terminal_access'}, deterministic=deterministic)
         self.attack_steps['lazarus.tomcat.find_vulnerability'] = AttackStep(ttc=10, children={'lazarus.tomcat.exploit_vulnerability'}, deterministic=deterministic)
         self.attack_steps['lazarus.tomcat.dictionary_attack'] = AttackStep(ttc=10, children={'lazarus.tomcat.find_vulnerability', 'lazarus.tomcat.flag_90b353.capture'}, deterministic=deterministic)
         self.attack_steps['lazarus.tomcat.gather_information'] = AttackStep(ttc=5, children={'lazarus.tomcat.dictionary_attack'}, deterministic=deterministic)
         self.attack_steps['lazarus.tomcat.connect'] = AttackStep(children={'lazarus.tomcat.gather_information'}, deterministic=deterministic)
 
-        self.attack_steps['lazarus.ftp.flag_adcb1f.capture'] = AttackStep(reward=1000, deterministic=deterministic)
+        self.attack_steps['lazarus.ftp.flag_adcb1f.capture'] = AttackStep(reward=flag_reward, deterministic=deterministic)
         self.attack_steps['lazarus.ftp.login'] = AttackStep(children={'lazarus.ftp.flag_adcb1f.capture'}, deterministic=deterministic)
         self.attack_steps['lazarus.ftp.dictionary_attack'] = AttackStep(ttc=100, children={'lazarus.ftp.login'}, deterministic=deterministic)
         self.attack_steps['lazarus.ftp.connect'] = AttackStep(children={'lazarus.ftp.dictionary_attack'}, deterministic=deterministic)
@@ -160,7 +161,8 @@ class AttackGraph:
                 self.attack_steps[child].parents.add(parent)
 
     def disable(self, service):
-        logger = logging.getLogger('simulator')
+        # Disable service
+        self.enabled_services[service] = False
         # Disconnect all attack steps that match the service.
         for step_name in self.attack_steps:
             if self.attack_steps[step_name].enabled and service in step_name:
@@ -169,5 +171,4 @@ class AttackGraph:
         for subservice in self.enabled_services:
             if self.enabled_services[subservice] and service in subservice and service != subservice:
                 self.enabled_services[subservice] = False
-                logger.debug("Disabling subservice " + subservice)
 
