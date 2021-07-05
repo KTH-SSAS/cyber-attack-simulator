@@ -5,7 +5,7 @@ from torch import Tensor
 from torch.optim import optimizer
 from attack_simulator.tabular_agents import Agent
 import torch
-
+import logging
 import numpy as np
 
 
@@ -30,7 +30,7 @@ class Reinforce(nn.Module):
 
 class ReinforceAgent(Agent):
 
-	def __init__(self, input_dim, num_actions, hidden_dim, gamma=0.1) -> None:
+	def __init__(self, input_dim, num_actions, hidden_dim, gamma=0.9) -> None:
 		self.policy = Reinforce(input_dim, num_actions, hidden_dim)
 		self.saved_log_probs = []
 		self.gamma = gamma
@@ -49,8 +49,8 @@ class ReinforceAgent(Agent):
 		R = 0 # Return at t=0
 		returns = torch.zeros((len(rewards))) # Array to store returns
 		loss = torch.zeros((len(rewards)))
-		for i, reward in enumerate(rewards):
-			R = reward + self.gamma * R
+		for i in reversed(range(len(rewards))):
+			R = rewards[i] + self.gamma * R
 			returns[i] = R
 		
 		returns = torch.Tensor(returns)
@@ -59,7 +59,6 @@ class ReinforceAgent(Agent):
 		#	returns = (returns-returns.mean())/(returns.std()+eps) # normalize returns
 		#else:
 		#	returns = (returns-returns.mean())/(eps) # normalize returns
-
 		for i, (log_prob, R) in enumerate(zip(self.saved_log_probs, returns)):
 			loss[i] = -log_prob * R # minus sign on loss for gradient ascent
 
