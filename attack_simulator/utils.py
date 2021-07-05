@@ -50,6 +50,9 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
     returns = np.zeros(episodes)
     losses = np.zeros(episodes)
     lengths = np.zeros(episodes)
+    max_patience = 50
+    patience = max_patience
+    prev_loss = 1E6
     try:
         for i in range(episodes):
             rewards, episode_length = run_sim(env, agent)
@@ -60,6 +63,18 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
             env.reset()
             log.debug(
                 f"Episode: {i+1}/{episodes}, Loss: {loss}, Return: {sum(rewards)}, Episode Length: {episode_length}")
+
+            if (prev_loss - loss) < 0.01:
+                patience -= 1
+            else:
+                patience = (patience+1) if patience < max_patience else max_patience
+            
+            if patience == 0:
+                log.debug("Stopping due to insignicant loss changes.")
+                break
+            
+            prev_loss = loss
+
     except KeyboardInterrupt:
         print("Stopping...")
     fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
