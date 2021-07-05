@@ -64,7 +64,6 @@ class Attacker:
         if self.time_on_current_step >= self.get_step(self.current_step).ttc:
             self.compromised_steps.append(self.current_step)
             self.reward = self.attack_graph.attack_steps[self.current_step].reward
-            # print(f"Compromised attack step with reward {self.reward}")
             # If the attack surface (the available uncompromised attack steps) is empty, then terminate.
             if not self.attack_surface():
                 return False
@@ -94,7 +93,6 @@ class AttackSimulationEnv(gym.Env):
         super(AttackSimulationEnv, self).__init__()
         self.deterministic = deterministic
         self.flag_reward = flag_reward
-        print(f"AttackSimulationEnv's flag reward is {self.flag_reward}")
         self.attack_graph = AttackGraph(deterministic=deterministic, flag_reward=flag_reward)
         self.attacker = Attacker(self.attack_graph, ['internet.connect'], deterministic=deterministic)
         # An observation informs the defender of which attack steps have been compromised.
@@ -177,9 +175,6 @@ if __name__ == '__main__':
         for service in enabled_services:
             # Current strategy is to disable any service with a given probability each step.
             if enabled_services[service] == 1 and random.uniform(0,1) < DISABLE_PROBABILITY:
-                # print("Defender disabling " + service)
                 enabled_services[service] = 0
                 enabled_services_status_changed = True
         obs, reward, done, info = env.step(tuple(enabled_services.values()))
-        # if info["time_on_current_step"] == 1 or enabled_services_status_changed:
-            # print(str(info['time']) + ": reward=" + str(reward) + ". Attacking " + str(info['current_step']))
