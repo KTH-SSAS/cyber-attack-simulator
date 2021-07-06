@@ -180,7 +180,7 @@ class AttackGraph:
         self.attack_steps['sea_turtle.capture_traffic'] = AttackStep(ttc=10, children={
                                                                      'buckeye.firefox.connect', 'buckeye.firefox.flag_14ce18.capture'}, deterministic=deterministic)
         self.attack_steps['sea_turtle.escalate_to_root'] = AttackStep(
-            ttc=50, children={'sea_turle.flag_6be6ef.capture'}, deterministic=deterministic)
+            ttc=50, children={'sea_turtle.capture_traffic', 'sea_turle.flag_6be6ef.capture'}, deterministic=deterministic)
         self.attack_steps['sea_turtle.exploit_vulnerability'] = AttackStep(
             ttc=50, children={'sea_turtle.escalate_to_root'}, deterministic=deterministic)
         self.attack_steps['sea_turtle.find_vulnerability'] = AttackStep(
