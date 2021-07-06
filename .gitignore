@@ -3,6 +3,8 @@
 __pycache__
 *.txt
 *.log
+*.swp
+graphviz.*
 PKG-INFO
 plot.pdf
 .DS_Store
