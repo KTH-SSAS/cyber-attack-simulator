@@ -164,6 +164,9 @@ class AttackSimulationEnv(gym.Env):
         else:
             return list(self.attack_graph.enabled_services)[action-1]
 
+    def observation_from_compromised_steps(self, compromised_steps):
+        return np.array([a in compromised_steps for a in self.attack_graph.attack_steps])
+
     def _next_observation(self):
         # Imperfect observations by intrusion detection system
         return np.array([self.attacker.observe(a) for a in self.attack_graph.attack_steps])
