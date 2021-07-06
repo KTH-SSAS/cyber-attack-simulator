@@ -4,7 +4,7 @@ import logging
 
 class AttackStep:
 
-    def __init__(self, name='', step_type='or', ttc=1, reward=0, children={}, true_positive=0.95, false_positive=0.1, deterministic=False):
+    def __init__(self, name='', step_type='or', ttc=1, reward=0, children={}, true_positive=1.0, false_positive=0.0, deterministic=False):
         self.name = name
         self.step_type = step_type
         if deterministic:
