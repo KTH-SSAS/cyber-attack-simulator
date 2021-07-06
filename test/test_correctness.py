@@ -2,7 +2,6 @@ import logging
 from attack_simulator.attack_simulation_env import AttackSimulationEnv
 
 def test(env, agent):
-	print("Running test")
 	# Testing a specific state action. If 'lazarus.ftp.login', 'lazarus.ftp.dictionary_attack', 'lazarus.ftp.connect', 'office_network.map', 'office_network.connect' and 'internet.connect' are compromised, then the best action must be to disable 'lazarus'.
 	log = logging.getLogger("trainer")
 	compromised_steps = ['lazarus.ftp.login', 'lazarus.ftp.dictionary_attack', 'lazarus.ftp.connect', 'office_network.map', 'office_network.connect', 'internet.connect']
