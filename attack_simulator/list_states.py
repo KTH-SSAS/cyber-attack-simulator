@@ -1,11 +1,10 @@
 import numpy as np
 import random
-from attack_graph import AttackGraph
-
+from attack_simulator.attack_graph import AttackGraph
 
 
 class Attacker:
-    
+
     def __init__(self, attack_graph, compromised_steps):
         self.attack_graph = attack_graph
         self.compromised_steps = compromised_steps
@@ -16,7 +15,7 @@ class Attacker:
         for step_name in compromised:
             state[attack_step_names.index(step_name)] = 1
         return "".join(str(x) for x in state)
-            
+
     def explore(self):
         self.states = set()
         self.counter = 0
@@ -26,7 +25,8 @@ class Attacker:
     def explore_recursive(self, parent, compromised):
         self.compromised_steps = compromised
         self.counter += 1
-        print("Number of states: " + str(len(self.states)) +".  State: " + self.binary_state(compromised))
+        print("Number of states: " + str(len(self.states)) +
+              ".  State: " + self.binary_state(compromised))
         self.states.add(self.binary_state(compromised))
         for child in sorted(list(self.attack_surface())):
             new_compromised = set(compromised)
@@ -34,12 +34,9 @@ class Attacker:
             if self.binary_state(new_compromised) not in self.states:
                 self.explore_recursive(child, new_compromised)
 
-
-
-
     def get_step(self, name):
         return self.attack_graph.attack_steps[name]
-    
+
     def attack_surface(self, debug=False):
         # The attack surface consists of all reachable but uncompromised attack steps.
         att_surf = set()
@@ -60,9 +57,8 @@ class Attacker:
         att_surf -= set(self.compromised_steps)
         return att_surf
 
-
-
-attack_graph = AttackGraph()
-attacker = Attacker(attack_graph, ['internet.connect'])
-attacker.explore()
+if __name__ == '__main__':
+    attack_graph = AttackGraph()
+    attacker = Attacker(attack_graph, ['internet.connect'])
+    attacker.explore()
 
