@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import logging
 import numpy.random as random
 import numpy as np
+import torch
 
 def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False):
 	enabled_services: dict = {}
@@ -17,20 +18,15 @@ def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False)
 	while not done:
 		action = agent.act(state)
 		for i, key in enumerate(enabled_services):
-			if i == action + 1:
+			# If action == 0, then no service will be disabled.
+			if i == action - 1:
 				enabled_services[key] = 0
 				break
-#		if action == 0:
-#			print(f"action={action}")
-#			print(f"enabled_services = {enabled_services}")
 		new_state, reward, done, info = env.step(tuple(enabled_services.values()))
 		rewards.append(reward)
 		# count number of running services
 		num_services.append(sum(list(enabled_services.values())))
 		state = new_state
-		#if info["time_on_current_step"] == 1:
-		#	logger.debug(str(info['time']) + ": reward=" + str(reward) +
-		#			  ". Attacking " + str(info['current_step']))
 
 
 	if plot_results:
@@ -58,6 +54,7 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
 			lengths[i] = episode_length
 			env.reset()		
 			log.debug(f"Episode: {i+1}/{episodes}, Loss: {loss}, Return: {sum(rewards)}, Episode Length: {episode_length}")
+
 	except KeyboardInterrupt:
 		print("Stopping...")
 	fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
@@ -73,3 +70,4 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
 	ax3.set_ylabel("Episode Length")
 	fig.savefig('plot.pdf', dpi=200)
 	plt.show()
+
