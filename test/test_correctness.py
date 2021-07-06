@@ -1,14 +1,14 @@
 import logging
 from attack_simulator.attack_simulation_env import AttackSimulationEnv
 
-def test_state_action_response(env, agent, compromised_steps, correct_action):
+def test_state_action_response(env, agent, test_no, compromised_steps, correct_action):
 	log = logging.getLogger("trainer")
 	state = env.observation_from_compromised_steps(compromised_steps)
 	action = env.interpret_action(agent.act(state))
 	if action == correct_action: 
-		log.debug("Test succeeded: Selected correct action in test lazarus.")
+		log.debug("Test {test_no} succeeded: Selected correct action in test lazarus.")
 	else:   
-		log.debug(f"Test failed: Selected action {action} instead of {correct_action}.")
+		log.debug(f"Test {test_no} failed: Selected action {action} instead of {correct_action}.")
 
 
 def test(env, agent):
@@ -25,4 +25,4 @@ def test(env, agent):
 	correct_actions.append('energetic_bear')
 
 	for i in range(0,len(compromised_steps)):
-		test_state_action_response(env, agent, compromised_steps[i], correct_actions[i])
+		test_state_action_response(env, agent, i, compromised_steps[i], correct_actions[i])
