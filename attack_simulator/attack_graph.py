@@ -172,3 +172,14 @@ class AttackGraph:
             if self.enabled_services[subservice] and service in subservice and service != subservice:
                 self.enabled_services[subservice] = False
 
+    def generate_graphviz_file(self):
+        f = open("graphviz.dot", "w")
+        f.write("digraph G {\n")
+
+        for parent in self.attack_steps:
+            for child in self.attack_steps[parent].children:
+                f.write(f"\"{parent}\" -> \"{child}\";\n") 
+        f.write("}\n")
+        f.close()
+        print("Generated a GraphViz file of the attack graph which, e.g., can be viewed at https://dreampuf.github.io/GraphvizOnline.")
+                
