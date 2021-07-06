@@ -145,6 +145,25 @@ class AttackSimulationEnv(gym.Env):
         self.attacker = Attacker(self.attack_graph, ['internet.connect'])
         return self._next_observation()
 
+    def interpret_observation(self, observations):
+        compromised = []
+        for i in range(0,len(observations)):
+            if observations[i]:
+                compromised.append(list(self.attack_graph.attack_steps)[i])
+        return compromised
+
+    def interpret_action_probabilities(self, action_probs):
+        act_prob_dict = {"no action": f"{action_probs[0]:.2f}"}
+        for i in range(1,len(action_probs)):
+            act_prob_dict[list(self.attack_graph.enabled_services)[i-1]] = f"{action_probs[i]:.2f}"
+        return act_prob_dict
+
+    def interpret_action(self, action):
+        if action == 0:
+            return "no action"
+        else:
+            return list(self.attack_graph.enabled_services)[action-1]
+
     def _next_observation(self):
         # Imperfect observations by intrusion detection system
         return np.array([self.attacker.observe(a) for a in self.attack_graph.attack_steps])
