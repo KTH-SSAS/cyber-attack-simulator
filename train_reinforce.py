@@ -16,20 +16,24 @@ if __name__ == '__main__':
 	parser.add_argument('-s', '--small', action='store_true', help='Run simulations on a small attack graph.')
 	parser.add_argument('-n', '--n_simulations', type=int, default=100, help='Number of simulations.')
 	parser.add_argument('-f', '--flag_rewards', type=int, default=1000, help='Flag rewards for the attacker (use positive values).')
+	parser.add_argument('-r', '--random_seed', type=int, default=0, help='Random seed for both numpy and torch.')
 	args = parser.parse_args()
 
-	random.seed(0)
-	torch.manual_seed(0)
 	logging.getLogger("simulator").setLevel(logging.DEBUG)
 	logging.getLogger("simulator").addHandler(logging.FileHandler("simulator.log", mode="w"))
 	logging.getLogger("trainer").setLevel(logging.DEBUG)
 	logging.getLogger("trainer").addHandler(logging.FileHandler("trainer.log", mode="w"))
+
 	if args.small:
 		graph_size = 'small'
 		attack_steps = 7
 	else:
 		graph_size = 'large'
 		attack_steps = 78
+
+	if args.deterministic:
+		random.seed(args.random_seed)
+		torch.manual_seed(args.random_seed)
 
 	env = AttackSimulationEnv(deterministic=args.deterministic, flag_reward=args.flag_rewards, graph_size=graph_size)
 
