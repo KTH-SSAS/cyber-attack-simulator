@@ -58,6 +58,7 @@ class Attacker:
                 self.current_step = random.choice(list(self.attack_surface()))
 
     def attack(self):
+        logger = logging.getLogger("simulator")
         # If the attacker has run out of attack steps, then terminate.
         if not self.current_step:
             return False
@@ -71,6 +72,7 @@ class Attacker:
                 return False
             self.choose_next_step()
             self.time_on_current_step = 0
+            logger.debug(f"{self.total_time}: reward={self.reward}. Attacking {self.current_step}.")
         # Keep track of the time spent.
         self.time_on_current_step += 1
         self.total_time += 1
@@ -138,8 +140,6 @@ class AttackSimulationEnv(gym.Env):
         # Positive rewards for maintaining services enabled_services and negative for compromised flags.
         reward = self.provision_reward - self.attacker.reward
         info = self.get_info()
-        logger.debug(str(info['time']) + ": reward=" +
-                     str(reward) + ". Attacking " + str(info['current_step']))
         if attacker_done:
             logger.debug("Attacker is done.")
             logger.debug(
@@ -186,7 +186,7 @@ class AttackSimulationEnv(gym.Env):
     def disable(self, service):
         logger = logging.getLogger('simulator')
         if self.attack_graph.enabled_services[service]:
-            logger.debug(f"Disabling {service}")
+            logger.debug(f"Disabling {service} while attacker is attacking {self.attacker.current_step}")
         self.attack_graph.disable(service)
         self.attacker.choose_next_step()
 
