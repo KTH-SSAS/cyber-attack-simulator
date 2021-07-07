@@ -239,7 +239,7 @@ class AttackGraph:
         if self.graph_size == 'medium':
                 self.attack_steps['office_network.map'] = AttackStep(ttc=10, children={
                                                              'lazarus.ftp.connect', 'energetic_bear.apache.connect', 'lazarus.tomcat.connect'}, deterministic=self.deterministic)
-        else:
+        if self.graph_size == 'small':
                 self.attack_steps['office_network.map'] = AttackStep(ttc=10, children={
                                                              'lazarus.ftp.connect'}, deterministic=self.deterministic)
 
