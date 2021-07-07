@@ -72,7 +72,7 @@ class Attacker:
                 return False
             self.choose_next_step()
             self.time_on_current_step = 0
-            logger.debug(f"{self.total_time}: reward={self.reward}. Attacking {self.current_step}.")
+            logger.debug(f"Step {self.total_time}: Attacking {self.current_step}.")
         # Keep track of the time spent.
         self.time_on_current_step += 1
         self.total_time += 1
@@ -93,12 +93,12 @@ class Attacker:
 
 class AttackSimulationEnv(gym.Env):
 
-    def __init__(self, deterministic=False, flag_reward=1000, graph_size='large'):
+    def __init__(self, deterministic=False, early_flag_reward=1000, late_flag_reward=10000, graph_size='large'):
         super(AttackSimulationEnv, self).__init__()
         self.deterministic = deterministic
-        self.flag_reward = flag_reward
-        self.attack_graph = AttackGraph(
-            deterministic=deterministic, flag_reward=flag_reward, graph_size=graph_size)
+        self.early_flag_reward = early_flag_reward
+        self.late_flag_reward = late_flag_reward
+        self.attack_graph = AttackGraph(deterministic=deterministic, early_flag_reward=self.early_flag_reward, late_flag_reward=self.late_flag_reward, graph_size=graph_size)
         self.attacker = Attacker(
             self.attack_graph, ['internet.connect'], deterministic=self.deterministic)
         # An observation informs the defender of which attack steps have been compromised.
@@ -141,9 +141,8 @@ class AttackSimulationEnv(gym.Env):
         reward = self.provision_reward - self.attacker.reward
         info = self.get_info()
         if attacker_done:
-            logger.debug("Attacker is done.")
-            logger.debug(
-                f"Compromised steps: {self.attacker.compromised_steps}")
+            logger.debug(f"Attacker is done. Reward was {reward}, of which captured flags constituted -{self.attacker.reward}.")
+            logger.debug(f"Compromised steps: {self.attacker.compromised_steps}")
         info['compromised_steps'] = self.attacker.compromised_steps
         return obs, reward, attacker_done, info
 
