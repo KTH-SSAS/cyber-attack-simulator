@@ -40,7 +40,7 @@ def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False)
     return rewards, info['time'], info['compromised_steps']
 
 
-def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: ReinforceAgent):
+def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: ReinforceAgent, evaluation=False):
 
     log = logging.getLogger("trainer")
     returns = np.zeros(episodes)
@@ -50,10 +50,19 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
     max_patience = 50
     patience = max_patience
     prev_loss = 1E6
+
+    if evaluation:
+        agent.eval()
+    else:
+        agent.train()
+
     try:
         for i in range(episodes):
             rewards, episode_length, compromised_steps = run_sim(env, agent)
-            loss = agent.update(rewards)
+            if evaluation:
+                loss = agent.calculate_loss(rewards).item()
+            else:
+                loss = agent.update(rewards)
             losses[i] = loss
             returns[i] = sum(rewards)
             lengths[i] = episode_length
