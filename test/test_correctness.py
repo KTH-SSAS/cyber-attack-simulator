@@ -23,7 +23,7 @@ def test(env, agent, graph_size='large'):
 	compromised_steps.append(['lazarus.ftp.dictionary_attack', 'lazarus.ftp.connect', 'office_network.map', 'office_network.connect', 'internet.connect'])
 	correct_actions.append(['lazarus', 'lazarus.ftp'])
 
-	if graph_size == 'large':
+	if graph_size == 'large' or graph_size == 'medium':
 		compromised_steps.append(['lazarus.terminal_access', 'lazarus.tomcat.exploit_vulnerability', 'lazarus.tomcat.find_vulnerability', 'lazarus.tomcat.dictionary_attack', 'lazarus.tomcat.gather_information', 'lazarus.tomcat.connect', 'office_network.map', 'office_network.connect', 'internet.connect'])
 		correct_actions.append(['lazarus'])
 

@@ -148,14 +148,38 @@ class AttackGraph:
                 self.attack_steps['buckeye.firefox.connect'] = AttackStep(
                     children={'buckeye.firefox.find_vulnerability'}, deterministic=self.deterministic)
 
+                self.attack_steps['sea_turle.flag_6be6ef.capture'] = AttackStep(
+                    reward=self.flag_reward, deterministic=self.deterministic)
+                self.attack_steps['sea_turle.flag_f9038f.capture'] = AttackStep(
+                    reward=self.flag_reward, deterministic=self.deterministic)
+                self.attack_steps['sea_turtle.capture_traffic'] = AttackStep(ttc=10, children={
+                                                                             'buckeye.firefox.connect', 'buckeye.firefox.flag_14ce18.capture'}, deterministic=self.deterministic)
+                self.attack_steps['sea_turtle.escalate_to_root'] = AttackStep(
+                    ttc=50, children={'sea_turtle.capture_traffic', 'sea_turle.flag_6be6ef.capture'}, deterministic=self.deterministic)
+                self.attack_steps['sea_turtle.exploit_vulnerability'] = AttackStep(
+                    ttc=50, children={'sea_turtle.escalate_to_root'}, deterministic=self.deterministic)
+                self.attack_steps['sea_turtle.find_vulnerability'] = AttackStep(
+                    ttc=50, children={'sea_turtle.exploit_vulnerability'}, deterministic=self.deterministic)
+                self.attack_steps['sea_turtle.telnet.login'] = AttackStep(step_type='and', children={
+                                                                          'sea_turtle.find_vulnerability', 'sea_turle.flag_f9038f.capture'}, deterministic=self.deterministic)
+                self.attack_steps['sea_turtle.telnet.obtain_credentials'] = AttackStep(
+                    children={'sea_turtle.telnet.login'}, deterministic=self.deterministic)
+                self.attack_steps['sea_turtle.telnet.connect'] = AttackStep(
+                    children={'sea_turtle.telnet.login'}, deterministic=self.deterministic)
+
+        if self.graph_size == 'medium' or self.graph_size == 'large':
                 self.attack_steps['energetic_bear.flag_73cb43.capture'] = AttackStep(
                     reward=self.flag_reward, deterministic=self.deterministic)
                 self.attack_steps['energetic_bear.flag_3b2000.capture'] = AttackStep(
                     reward=self.flag_reward, deterministic=self.deterministic)
                 self.attack_steps['energetic_bear.flag_de3b1c.capture'] = AttackStep(
                     reward=self.flag_reward, deterministic=self.deterministic)
-                self.attack_steps['energetic_bear.capture_traffic'] = AttackStep(ttc=5, children={
+                if self.graph_size == 'large':
+                        self.attack_steps['energetic_bear.capture_traffic'] = AttackStep(ttc=5, children={
                                                                                  'buckeye.firefox.connect', 'buckeye.firefox.flag_14ce18.capture'}, deterministic=self.deterministic)
+                else:
+                        self.attack_steps['energetic_bear.capture_traffic'] = AttackStep(ttc=5, children={}, deterministic=self.deterministic)
+
                 self.attack_steps['energetic_bear.escalate_to_root'] = AttackStep(ttc=20, children={
                                                                                   'energetic_bear.capture_traffic', 'energetic_bear.flag_73cb43.capture'}, deterministic=self.deterministic)
                 self.attack_steps['energetic_bear.exploit_vulnerability'] = AttackStep(
@@ -176,29 +200,14 @@ class AttackGraph:
                 self.attack_steps['energetic_bear.apache.connect'] = AttackStep(
                     children={'energetic_bear.apache.gather_information'}, deterministic=self.deterministic)
 
-                self.attack_steps['sea_turle.flag_6be6ef.capture'] = AttackStep(
-                    reward=self.flag_reward, deterministic=self.deterministic)
-                self.attack_steps['sea_turle.flag_f9038f.capture'] = AttackStep(
-                    reward=self.flag_reward, deterministic=self.deterministic)
-                self.attack_steps['sea_turtle.capture_traffic'] = AttackStep(ttc=10, children={
-                                                                             'buckeye.firefox.connect', 'buckeye.firefox.flag_14ce18.capture'}, deterministic=self.deterministic)
-                self.attack_steps['sea_turtle.escalate_to_root'] = AttackStep(
-                    ttc=50, children={'sea_turtle.capture_traffic', 'sea_turle.flag_6be6ef.capture'}, deterministic=self.deterministic)
-                self.attack_steps['sea_turtle.exploit_vulnerability'] = AttackStep(
-                    ttc=50, children={'sea_turtle.escalate_to_root'}, deterministic=self.deterministic)
-                self.attack_steps['sea_turtle.find_vulnerability'] = AttackStep(
-                    ttc=50, children={'sea_turtle.exploit_vulnerability'}, deterministic=self.deterministic)
-                self.attack_steps['sea_turtle.telnet.login'] = AttackStep(step_type='and', children={
-                                                                          'sea_turtle.find_vulnerability', 'sea_turle.flag_f9038f.capture'}, deterministic=self.deterministic)
-                self.attack_steps['sea_turtle.telnet.obtain_credentials'] = AttackStep(
-                    children={'sea_turtle.telnet.login'}, deterministic=self.deterministic)
-                self.attack_steps['sea_turtle.telnet.connect'] = AttackStep(
-                    children={'sea_turtle.telnet.login'}, deterministic=self.deterministic)
-
                 self.attack_steps['lazarus.flag_cd699a.capture'] = AttackStep(
                     reward=self.flag_reward, deterministic=self.deterministic)
-                self.attack_steps['lazarus.find_credentials'] = AttackStep(
-                    ttc=10, children={'sea_turtle.telnet.obtain_credentials'}, deterministic=self.deterministic)
+                if self.graph_size == 'large':
+                        self.attack_steps['lazarus.find_credentials'] = AttackStep(
+                                ttc=10, children={'sea_turtle.telnet.obtain_credentials'}, deterministic=self.deterministic)
+                else:
+                        self.attack_steps['lazarus.find_credentials'] = AttackStep(
+                                ttc=10, deterministic=self.deterministic)
                 self.attack_steps['lazarus.terminal_access'] = AttackStep(
                     children={'lazarus.find_credentials', 'lazarus.flag_cd699a.capture', 'lazarus.ftp.flag_adcb1f.capture'}, deterministic=self.deterministic)
 
@@ -227,6 +236,9 @@ class AttackGraph:
         if self.graph_size == 'large':
                 self.attack_steps['office_network.map'] = AttackStep(ttc=10, children={
                                                              'lazarus.ftp.connect', 'energetic_bear.apache.connect', 'lazarus.tomcat.connect', 'sea_turtle.telnet.connect'}, deterministic=self.deterministic)
+        if self.graph_size == 'medium':
+                self.attack_steps['office_network.map'] = AttackStep(ttc=10, children={
+                                                             'lazarus.ftp.connect', 'energetic_bear.apache.connect', 'lazarus.tomcat.connect'}, deterministic=self.deterministic)
         else:
                 self.attack_steps['office_network.map'] = AttackStep(ttc=10, children={
                                                              'lazarus.ftp.connect'}, deterministic=self.deterministic)
