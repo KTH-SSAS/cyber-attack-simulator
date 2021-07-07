@@ -13,7 +13,7 @@ if __name__ == '__main__':
 	parser.add_argument('-g', '--graph', action='store_true', help='Generate a GraphViz .dot file.')
 	parser.add_argument('-d', '--deterministic', action='store_true', help='Make environment deterministic.')
 	parser.add_argument('-t', '--test', action='store_true', help='Run tests.')
-	parser.add_argument('-s', '--graph_size', type=str, default='large', help='Run simulations on a small, medium or large attack graph.')
+	parser.add_argument('-s', '--graph_size', choices=['small', 'medium', 'large'], type=str, default='large', help='Run simulations on a small, medium or large attack graph.')
 	parser.add_argument('-n', '--n_simulations', type=int, default=10000, help='Number of simulations.')
 	parser.add_argument('-f', '--flag_rewards', type=int, default=10000, help='Flag rewards for the attacker (use positive values).')
 	parser.add_argument('-r', '--random_seed', type=int, default=0, help='Random seed for both numpy and torch.')
@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
 	if args.graph_size == 'small':
 		attack_steps = 7
-	if args.graph_size == 'medium':
+	elif args.graph_size == 'medium':
 		attack_steps = 29
 	else:
 		attack_steps = 78
