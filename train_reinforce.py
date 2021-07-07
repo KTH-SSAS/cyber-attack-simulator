@@ -11,6 +11,7 @@ if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser(description='Reinforcement learning of a computer network defender.')
 	parser.add_argument('-g', '--graph', action='store_true', help='Generate a GraphViz .dot file.')
+	parser.add_argument('-d', '--deterministic', action='store_true', help='Make environment deterministic.')
 	parser.add_argument('-t', '--test', action='store_true', help='Run tests.')
 	parser.add_argument('-s', '--small', action='store_true', help='Run simulations on a small attack graph.')
 	parser.add_argument('-n', '--n_simulations', type=int, default=100, help='Number of simulations.')
@@ -30,7 +31,7 @@ if __name__ == '__main__':
 		graph_size = 'large'
 		attack_steps = 78
 
-	env = AttackSimulationEnv(deterministic=False, flag_reward=args.flag_rewards, graph_size=graph_size)
+	env = AttackSimulationEnv(deterministic=args.deterministic, flag_reward=args.flag_rewards, graph_size=graph_size)
 
 	if args.graph:
 		env.attack_graph.generate_graphviz_file()

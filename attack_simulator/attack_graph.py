@@ -31,7 +31,6 @@ class AttackGraph:
 
     def reset(self):
         logger = logging.getLogger("simulator")
-        logger.debug(f"reset(): flag_reward = {self.flag_reward}")
         # These are the services and hosts that the defender is at liberty to disable in order to protect the computer network.
         self.enabled_services = dict()
         # Disabling a host, e.g. lazarus, will also disable all of its services

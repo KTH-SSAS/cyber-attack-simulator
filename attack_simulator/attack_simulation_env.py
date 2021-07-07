@@ -128,6 +128,7 @@ class AttackSimulationEnv(gym.Env):
                 self.provision_reward += 1
                 if action[action_id] == 0:
                     self.disable(service)
+                    logger.debug(self.interpret_observation(self._next_observation()))
             action_id += 1
 
         obs = self._next_observation()
@@ -149,7 +150,6 @@ class AttackSimulationEnv(gym.Env):
     def reset(self):
         logger = logging.getLogger("simulator")
         logger.debug("Starting new simulation.")
-        logger.debug(f"self.flag_reward = {self.flag_reward}")
         self.attack_graph.reset()
         self.attacker = Attacker(self.attack_graph, ['internet.connect'])
         return self._next_observation()

@@ -36,9 +36,9 @@ class ReinforceAgent(Agent):
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=1e-2)
 
     def act(self, state):
-        action_probabilties = self.policy.forward(torch.Tensor(state))
+        action_probabilities = self.policy.forward(torch.Tensor(state))
         # Create a distribution from the action probabilities...
-        m = Categorical(action_probabilties)
+        m = Categorical(action_probabilities)
         action: Tensor = m.sample()  # and sample an action from it.
         self.saved_log_probs.append(m.log_prob(action))
         return action.item()

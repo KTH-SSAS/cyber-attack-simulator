@@ -18,10 +18,11 @@ def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False)
     state = env._next_observation()  # Intial state
     while not done:
         action = agent.act(state)
-        for i, key in enumerate(enabled_services):
-            if i == action + 1:
-                enabled_services[key] = 0
-                break
+        if action > 0:
+                for i, key in enumerate(enabled_services):
+                    if i == action - 1:
+                        enabled_services[key] = 0
+                        break
         new_state, reward, done, info = env.step(
             tuple(enabled_services.values()))
         rewards.append(reward)
