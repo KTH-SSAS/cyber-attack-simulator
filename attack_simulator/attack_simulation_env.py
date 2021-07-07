@@ -52,7 +52,8 @@ class Attacker:
         self.current_step = None
         if self.attack_surface():
             if self.deterministic:
-                self.current_step = sorted(list(self.attack_surface()))[0]
+                sorted_surface =  sorted(list(self.attack_surface()))
+                self.current_step =sorted_surface[0]
             else:
                 self.current_step = random.choice(list(self.attack_surface()))
 
@@ -97,7 +98,7 @@ class AttackSimulationEnv(gym.Env):
         self.attack_graph = AttackGraph(
             deterministic=deterministic, flag_reward=flag_reward, graph_size=graph_size)
         self.attacker = Attacker(
-            self.attack_graph, ['internet.connect'], deterministic=deterministic)
+            self.attack_graph, ['internet.connect'], deterministic=self.deterministic)
         # An observation informs the defender of which attack steps have been compromised.
         # Observations are imperfect.
         self.observation_space = spaces.Box(low=0, high=1, shape=(
@@ -128,7 +129,6 @@ class AttackSimulationEnv(gym.Env):
                 self.provision_reward += 1
                 if action[action_id] == 0:
                     self.disable(service)
-                    logger.debug(self.interpret_observation(self._next_observation()))
             action_id += 1
 
         obs = self._next_observation()
@@ -151,7 +151,7 @@ class AttackSimulationEnv(gym.Env):
         logger = logging.getLogger("simulator")
         logger.debug("Starting new simulation.")
         self.attack_graph.reset()
-        self.attacker = Attacker(self.attack_graph, ['internet.connect'])
+        self.attacker = Attacker(self.attack_graph, ['internet.connect'], deterministic=self.deterministic)
         return self._next_observation()
 
     def interpret_observation(self, observations):

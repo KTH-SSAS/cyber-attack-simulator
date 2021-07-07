@@ -17,6 +17,7 @@ if __name__ == '__main__':
 	parser.add_argument('-n', '--n_simulations', type=int, default=100, help='Number of simulations.')
 	parser.add_argument('-f', '--flag_rewards', type=int, default=1000, help='Flag rewards for the attacker (use positive values).')
 	parser.add_argument('-r', '--random_seed', type=int, default=0, help='Random seed for both numpy and torch.')
+	parser.add_argument('-l', '--hidden_linear', type=int, default=64, help='Dimension of the hidden linear layers.')
 	args = parser.parse_args()
 
 	logging.getLogger("simulator").setLevel(logging.DEBUG)
@@ -42,7 +43,7 @@ if __name__ == '__main__':
 
 	
 	services = 17
-	agent = ReinforceAgent(attack_steps, services, hidden_dim=64)
+	agent = ReinforceAgent(attack_steps, services, hidden_dim=args.hidden_linear)
 
 	run_multiple_simulations(args.n_simulations, env, agent)
 	if args.test:

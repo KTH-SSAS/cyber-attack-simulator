@@ -10,7 +10,7 @@ def test_state_action_response(env, agent, test_no, compromised_steps, correct_a
 	action_id = agent.act(state)
 	action = env.interpret_action(action_id)
 	if action in correct_action: 
-		log.debug(f"Test {test_no} succeeded: Selected correct action in test lazarus.")
+		log.debug(f"Test {test_no} succeeded: Selected correct action {action}.")
 	else:   
 		log.debug(f"Test {test_no} failed: Selected action {action} instead of {correct_action}.")
 
