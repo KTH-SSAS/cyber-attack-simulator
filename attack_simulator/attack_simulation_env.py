@@ -90,12 +90,12 @@ class Attacker:
 
 class AttackSimulationEnv(gym.Env):
 
-    def __init__(self, deterministic=False, flag_reward=1000):
+    def __init__(self, deterministic=False, flag_reward=1000, graph_size='large'):
         super(AttackSimulationEnv, self).__init__()
         self.deterministic = deterministic
         self.flag_reward = flag_reward
         self.attack_graph = AttackGraph(
-            deterministic=deterministic, flag_reward=flag_reward)
+            deterministic=deterministic, flag_reward=flag_reward, graph_size=graph_size)
         self.attacker = Attacker(
             self.attack_graph, ['internet.connect'], deterministic=deterministic)
         # An observation informs the defender of which attack steps have been compromised.
@@ -150,8 +150,7 @@ class AttackSimulationEnv(gym.Env):
         logger = logging.getLogger("simulator")
         logger.debug("Starting new simulation.")
         logger.debug(f"self.flag_reward = {self.flag_reward}")
-        self.attack_graph.reset(
-            deterministic=self.deterministic, flag_reward=self.flag_reward)
+        self.attack_graph.reset()
         self.attacker = Attacker(self.attack_graph, ['internet.connect'])
         return self._next_observation()
 

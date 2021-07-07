@@ -12,7 +12,8 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Reinforcement learning of a computer network defender.')
 	parser.add_argument('-g', '--graph', action='store_true', help='Generate a GraphViz .dot file.')
 	parser.add_argument('-t', '--test', action='store_true', help='Run tests.')
-	parser.add_argument('-s', '--simulations', type=int, default=100, help='Number of simulations.')
+	parser.add_argument('-s', '--small', action='store_true', help='Run simulations on a small attack graph.')
+	parser.add_argument('-n', '--n_simulations', type=int, default=100, help='Number of simulations.')
 	parser.add_argument('-f', '--flag_rewards', type=int, default=1000, help='Flag rewards for the attacker (use positive values).')
 	args = parser.parse_args()
 
@@ -22,14 +23,23 @@ if __name__ == '__main__':
 	logging.getLogger("simulator").addHandler(logging.FileHandler("simulator.log", mode="w"))
 	logging.getLogger("trainer").setLevel(logging.DEBUG)
 	logging.getLogger("trainer").addHandler(logging.FileHandler("trainer.log", mode="w"))
-	env = AttackSimulationEnv(deterministic=False, flag_reward=args.flag_rewards)
+	if args.small:
+		graph_size = 'small'
+		attack_steps = 7
+	else:
+		graph_size = 'large'
+		attack_steps = 78
+
+	env = AttackSimulationEnv(deterministic=False, flag_reward=args.flag_rewards, graph_size=graph_size)
+
 	if args.graph:
 		env.attack_graph.generate_graphviz_file()
-	attack_steps = 78
+
+	
 	services = 17
 	agent = ReinforceAgent(attack_steps, services, hidden_dim=64)
 
-	run_multiple_simulations(args.simulations, env, agent)
+	run_multiple_simulations(args.n_simulations, env, agent)
 	if args.test:
-		test(env, agent)
+		test(env, agent, graph_size=graph_size)
 
