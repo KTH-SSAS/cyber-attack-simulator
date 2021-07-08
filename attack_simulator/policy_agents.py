@@ -29,7 +29,9 @@ class PolicyModel(nn.Module):
 
 class ReinforceAgent(Agent):
 
-    def __init__(self, input_dim, num_actions, hidden_dim, gamma=0.9) -> None:
+    def __init__(self, input_dim, num_actions, hidden_dim, gamma=0.9, allow_skip=True) -> None:
+        num_actions = num_actions + 1 if allow_skip else num_actions
+        self.can_skip = allow_skip
         self.policy = PolicyModel(input_dim, num_actions, hidden_dim)
         self.saved_log_probs = []
         self.gamma = gamma

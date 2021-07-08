@@ -7,28 +7,37 @@ import numpy as np
 import torch
 
 
-def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False):
-    enabled_services: dict = {}
+def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False, include_services_in_state=False):
+    services = {} # Serves as a key for which services belong to which index
     done = False
-    for service in env.attack_graph.enabled_services:
-        enabled_services[service] = 1
+    for service, i in enumerate(env.attack_graph.enabled_services):
+        services[service] = i
+   
+    enabled_services = np.ones(len(services), dtype=np.int8)
 
     rewards = []
     num_services = []
     compromised_steps = []
     state = env._next_observation()  # Intial state
     while not done:
+
+        if include_services_in_state:
+            state = np.concatenate([state, enabled_services])
+
         action = agent.act(state)
-        if action > 0:
-                for i, key in enumerate(enabled_services):
-                    if i == action - 1:
-                        enabled_services[key] = 0
-                        break
-        new_state, reward, done, info = env.step(
-            tuple(enabled_services.values()))
+
+        if agent.can_skip:
+            if action > 0:
+                enabled_services[action - 1] = 0 # Shift action by 1 since action==0 is treated as skip
+            else:
+                pass # Skip action and don't disable a service
+        else:
+            enabled_services[action] = 0
+                        
+        new_state, reward, done, info = env.step(enabled_services)
         rewards.append(reward)
         # count number of running services
-        num_services.append(sum(list(enabled_services.values())))
+        num_services.append(sum(enabled_services))
         compromised_steps.append(len(info['compromised_steps']))
         state = new_state
 
@@ -46,7 +55,7 @@ def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False)
     return rewards, info['time'], info['compromised_steps']
 
 
-def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: ReinforceAgent, evaluation=False):
+def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: ReinforceAgent, evaluation=False, include_services=False):
 
     log = logging.getLogger("trainer")
     returns = np.zeros(episodes)
@@ -64,7 +73,7 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
 
     try:
         for i in range(episodes):
-            rewards, episode_length, compromised_steps = run_sim(env, agent)
+            rewards, episode_length, compromised_steps = run_sim(env, agent, include_services_in_state=include_services)
             if evaluation:
                 loss = agent.calculate_loss(rewards).item()
             else:

@@ -21,6 +21,8 @@ if __name__ == '__main__':
 	parser.add_argument('-r', '--random_seed', type=int, default=0, help='Random seed for both numpy and torch. Default is 0.')
 	parser.add_argument('-w', '--hidden_width', type=int, default=64, help='Dimension of the hidden linear layers. Defult is 64.')
 	parser.add_argument('--evaluation_rounds', type=int, default=0, help='Number of simulations to run after training, for evaluation.')
+	parser.add_argument('--no_skipping', action='store_true', help="Do not add a skip action for the agent.")
+	parser.add_argument('--include_services', action='store_true', help="Include enabled services in the state.")
 	args = parser.parse_args()
 
 	logging.getLogger("simulator").setLevel(logging.DEBUG)
@@ -45,16 +47,24 @@ if __name__ == '__main__':
 		env.attack_graph.generate_graphviz_file()
 
 	
-	services = 17
-	agent = ReinforceAgent(attack_steps, services, hidden_dim=args.hidden_width)
+	services = 16
+	allow_skip = not args.no_skipping # allowing skipping will add an additional 'skip' action
+	include_services_in_state = args.include_services
+	
+	if include_services_in_state:
+		input_dim = attack_steps + services
+	else:
+	 	input_dim = attack_steps
+
+	agent = ReinforceAgent(input_dim, services, hidden_dim=args.hidden_width, allow_skip=allow_skip)
 
 	#Train
 	run_multiple_simulations(args.n_simulations, env, agent)
 
 	#Evaluate
 	if args.evaluation_rounds > 0:
-		run_multiple_simulations(args.evaluation_rounds, env, agent, evaluation=True)
+		run_multiple_simulations(args.evaluation_rounds, env, agent, evaluation=True, include_services=include_services_in_state)
 
 	if args.test:
-		test_correctness(env, agent, graph_size=args.graph_size)
+		test_correctness(env, agent, graph_size=args.graph_size, include_services=include_services_in_state)
 
