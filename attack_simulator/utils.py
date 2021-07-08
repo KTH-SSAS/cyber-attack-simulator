@@ -8,11 +8,11 @@ import torch
 
 
 def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False, include_services_in_state=False):
-    services = {} # Serves as a key for which services belong to which index
+    services = {}  # Serves as a key for which services belong to which index
     done = False
     for service, i in enumerate(env.attack_graph.enabled_services):
         services[service] = i
-   
+
     enabled_services = np.ones(len(services), dtype=np.int8)
 
     rewards = []
@@ -28,12 +28,13 @@ def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False,
 
         if agent.can_skip:
             if action > 0:
-                enabled_services[action - 1] = 0 # Shift action by 1 since action==0 is treated as skip
+                # Shift action by 1 since action==0 is treated as skip
+                enabled_services[action - 1] = 0
             else:
-                pass # Skip action and don't disable a service
+                pass  # Skip action and don't disable a service
         else:
             enabled_services[action] = 0
-                        
+
         new_state, reward, done, info = env.step(enabled_services)
         rewards.append(reward)
         # count number of running services
@@ -73,7 +74,8 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
 
     try:
         for i in range(episodes):
-            rewards, episode_length, compromised_steps = run_sim(env, agent, include_services_in_state=include_services)
+            rewards, episode_length, compromised_steps = run_sim(
+                env, agent, include_services_in_state=include_services)
             if evaluation:
                 loss = agent.calculate_loss(rewards).item()
             else:
@@ -89,17 +91,18 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
             if (prev_loss - loss) < 0.01 and not evaluation:
                 patience -= 1
             else:
-                patience = (patience+1) if patience < max_patience else max_patience
-            
+                patience = (
+                    patience+1) if patience < max_patience else max_patience
+
             if patience == 0:
                 log.debug("Stopping due to insignicant loss changes.")
                 break
-            
+
             prev_loss = loss
 
     except KeyboardInterrupt:
         print("Stopping...")
-        
+
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, sharex=True)
     title = "Training Results" if not evaluation else "Evaluation Results"
     ax1.set_title(title)

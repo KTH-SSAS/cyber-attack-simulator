@@ -52,8 +52,8 @@ class Attacker:
         self.current_step = None
         if self.attack_surface():
             if self.deterministic:
-                sorted_surface =  sorted(list(self.attack_surface()))
-                self.current_step =sorted_surface[0]
+                sorted_surface = sorted(list(self.attack_surface()))
+                self.current_step = sorted_surface[0]
             else:
                 self.current_step = random.choice(list(self.attack_surface()))
 
@@ -72,7 +72,8 @@ class Attacker:
                 return False
             self.choose_next_step()
             self.time_on_current_step = 0
-            logger.debug(f"Step {self.total_time}: Attacking {self.current_step}.")
+            logger.debug(
+                f"Step {self.total_time}: Attacking {self.current_step}.")
         # Keep track of the time spent.
         self.time_on_current_step += 1
         self.total_time += 1
@@ -99,7 +100,8 @@ class AttackSimulationEnv(gym.Env):
         self.early_flag_reward = early_flag_reward
         self.late_flag_reward = late_flag_reward
         self.final_flag_reward = final_flag_reward
-        self.attack_graph = AttackGraph(deterministic=deterministic, early_flag_reward=self.early_flag_reward, late_flag_reward=self.late_flag_reward, final_flag_reward=self.final_flag_reward, graph_size=graph_size)
+        self.attack_graph = AttackGraph(deterministic=deterministic, early_flag_reward=self.early_flag_reward,
+                                        late_flag_reward=self.late_flag_reward, final_flag_reward=self.final_flag_reward, graph_size=graph_size)
         self.attacker = Attacker(
             self.attack_graph, ['internet.connect'], deterministic=self.deterministic)
         # An observation informs the defender of which attack steps have been compromised.
@@ -142,8 +144,10 @@ class AttackSimulationEnv(gym.Env):
         reward = self.provision_reward - self.attacker.reward
         info = self.get_info()
         if attacker_done:
-            logger.debug(f"Attacker is done. Reward was {reward}, of which captured flags constituted -{self.attacker.reward}.")
-            logger.debug(f"Compromised steps: {self.attacker.compromised_steps}")
+            logger.debug(
+                f"Attacker is done. Reward was {reward}, of which captured flags constituted -{self.attacker.reward}.")
+            logger.debug(
+                f"Compromised steps: {self.attacker.compromised_steps}")
         info['compromised_steps'] = self.attacker.compromised_steps
         return obs, reward, attacker_done, info
 
@@ -151,20 +155,22 @@ class AttackSimulationEnv(gym.Env):
         logger = logging.getLogger("simulator")
         logger.debug("Starting new simulation.")
         self.attack_graph.reset()
-        self.attacker = Attacker(self.attack_graph, ['internet.connect'], deterministic=self.deterministic)
+        self.attacker = Attacker(
+            self.attack_graph, ['internet.connect'], deterministic=self.deterministic)
         return self._next_observation()
 
     def interpret_observation(self, observations):
         compromised = []
-        for i in range(0,len(observations)):
+        for i in range(0, len(observations)):
             if observations[i]:
                 compromised.append(list(self.attack_graph.attack_steps)[i])
         return compromised
 
     def interpret_action_probabilities(self, action_probs):
         act_prob_dict = {"no action": f"{action_probs[0]:.2f}"}
-        for i in range(1,len(action_probs)):
-            act_prob_dict[list(self.attack_graph.enabled_services)[i-1]] = f"{action_probs[i]:.2f}"
+        for i in range(1, len(action_probs)):
+            act_prob_dict[list(self.attack_graph.enabled_services)[
+                i-1]] = f"{action_probs[i]:.2f}"
         return act_prob_dict
 
     def interpret_action(self, action):
@@ -186,7 +192,8 @@ class AttackSimulationEnv(gym.Env):
     def disable(self, service):
         logger = logging.getLogger('simulator')
         if self.attack_graph.enabled_services[service]:
-            logger.debug(f"Disabling {service} while attacker is attacking {self.attacker.current_step}")
+            logger.debug(
+                f"Disabling {service} while attacker is attacking {self.attacker.current_step}")
         self.attack_graph.disable(service)
         self.attacker.choose_next_step()
 

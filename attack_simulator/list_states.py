@@ -57,8 +57,8 @@ class Attacker:
         att_surf -= set(self.compromised_steps)
         return att_surf
 
+
 if __name__ == '__main__':
     attack_graph = AttackGraph()
     attacker = Attacker(attack_graph, ['internet.connect'])
     attacker.explore()
-

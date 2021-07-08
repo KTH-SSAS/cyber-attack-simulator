@@ -68,9 +68,10 @@ class ReinforceAgent(Agent):
 
         if normalize_returns:
             if len(returns) > 1:
-        	    returns = (returns-returns.mean())/(returns.std()+eps) # normalize returns
+                returns = (returns-returns.mean()) / \
+                    (returns.std()+eps)  # normalize returns
             else:
-        	    returns = returns/returns
+                returns = returns/returns
 
         for i, (log_prob, R) in enumerate(zip(self.saved_log_probs, returns)):
             loss[i] = -log_prob * R  # minus sign on loss for gradient ascent
@@ -79,6 +80,6 @@ class ReinforceAgent(Agent):
 
     def eval(self):
         self.policy.eval()
-    
+
     def train(self):
         self.policy.train()
