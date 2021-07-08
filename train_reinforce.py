@@ -1,5 +1,5 @@
 from attack_simulator.utils import run_multiple_simulations
-from attack_simulator.policy_agents import ReinforceAgent
+from attack_simulator.agents.policy_agents import ReinforceAgent
 from attack_simulator.attack_simulation_env import AttackSimulationEnv
 from test.test_correctness import test_correctness
 import logging

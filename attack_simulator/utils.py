@@ -1,4 +1,4 @@
-from attack_simulator.policy_agents import ReinforceAgent
+from attack_simulator.agents.policy_agents import ReinforceAgent
 from attack_simulator.attack_simulation_env import AttackSimulationEnv
 import matplotlib.pyplot as plt
 import logging

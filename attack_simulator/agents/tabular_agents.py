@@ -3,7 +3,6 @@ import numpy as np
 from numpy.core.fromnumeric import argmax
 import numpy.random as random
 
-
 class Agent(ABC):
 
     @abstractmethod

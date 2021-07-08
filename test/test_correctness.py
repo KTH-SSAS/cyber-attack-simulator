@@ -1,4 +1,4 @@
-from attack_simulator.policy_agents import ReinforceAgent
+from attack_simulator.agents.policy_agents import ReinforceAgent
 import logging
 import torch
 from torch.distributions import Categorical
