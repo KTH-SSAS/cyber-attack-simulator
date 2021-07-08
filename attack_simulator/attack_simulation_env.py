@@ -48,6 +48,9 @@ class Attacker:
         return att_surf
 
     def choose_next_step(self):
+        self.choose_next_step_randomly()
+
+    def choose_next_step_randomly(self):
         # The attacker strategy is currently simply to select a random attack step of the available ones (i.e. from the attack surface).
         self.current_step = None
         if self.attack_surface():
@@ -56,6 +59,12 @@ class Attacker:
                 self.current_step =sorted_surface[0]
             else:
                 self.current_step = random.choice(list(self.attack_surface()))
+
+    def choose_next_step_optimally(self):
+        pass
+
+    def shortest_path(self):
+        pass
 
     def attack(self):
         logger = logging.getLogger("simulator")
