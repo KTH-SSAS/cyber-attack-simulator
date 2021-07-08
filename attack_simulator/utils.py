@@ -15,6 +15,7 @@ def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False)
 
     rewards = []
     num_services = []
+    compromised_steps = []
     state = env._next_observation()  # Intial state
     while not done:
         action = agent.act(state)
@@ -28,13 +29,18 @@ def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False)
         rewards.append(reward)
         # count number of running services
         num_services.append(sum(list(enabled_services.values())))
+        compromised_steps.append(len(info['compromised_steps']))
         state = new_state
 
     if plot_results:
-        _, ax = plt.subplots()
-        twin1 = ax.twinx()
-        ax.plot(rewards, "b")
-        twin1.plot(num_services, "r")
+        _, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
+        ax1.plot(rewards, "b")
+        ax1.set_ylabel("Reward")
+        ax2.plot(num_services, "r")
+        ax2.set_ylabel("Number of services")
+        ax3.plot(compromised_steps)
+        ax3.set_ylabel("Compromised steps")
+        ax3.set_xlabel("Step")
         plt.show()
 
     return rewards, info['time'], info['compromised_steps']
@@ -71,7 +77,7 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
             log.debug(
                 f"Episode: {i+1}/{episodes}, Loss: {loss}, Return: {sum(rewards)}, Episode Length: {episode_length}")
 
-            if (prev_loss - loss) < 0.01:
+            if (prev_loss - loss) < 0.01 and not evaluation:
                 patience -= 1
             else:
                 patience = (patience+1) if patience < max_patience else max_patience
@@ -84,7 +90,10 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
 
     except KeyboardInterrupt:
         print("Stopping...")
+        
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, sharex=True)
+    title = "Training Results" if not evaluation else "Evaluation Results"
+    ax1.set_title(title)
     ax1.plot(returns)
     # ax1.set_xlabel("Episode")
     ax1.set_xlim(0, i)  # Cut off graph at stopping point

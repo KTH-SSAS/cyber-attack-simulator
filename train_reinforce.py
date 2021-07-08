@@ -20,6 +20,7 @@ if __name__ == '__main__':
 	parser.add_argument('-f', '--final_flag_reward', type=int, default=100000, help='Flag reward for the attacker when capturing the final flag in the attack graph (use positive values). Default is 100000.')
 	parser.add_argument('-r', '--random_seed', type=int, default=0, help='Random seed for both numpy and torch. Default is 0.')
 	parser.add_argument('-w', '--hidden_width', type=int, default=64, help='Dimension of the hidden linear layers. Defult is 64.')
+	parser.add_argument('--evaluation_rounds', type=int, default=0, help='Number of simulations to run after training, for evaluation.')
 	args = parser.parse_args()
 
 	logging.getLogger("simulator").setLevel(logging.DEBUG)
@@ -47,7 +48,13 @@ if __name__ == '__main__':
 	services = 17
 	agent = ReinforceAgent(attack_steps, services, hidden_dim=args.hidden_width)
 
+	#Train
 	run_multiple_simulations(args.n_simulations, env, agent)
+
+	#Evaluate
+	if args.evaluation_rounds > 0:
+		run_multiple_simulations(args.evaluation_rounds, env, agent, evaluation=True)
+
 	if args.test:
 		test_correctness(env, agent, graph_size=args.graph_size)
 
