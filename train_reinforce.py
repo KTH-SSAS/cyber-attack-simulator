@@ -56,7 +56,7 @@ if __name__ == '__main__':
 	else:
 	 	input_dim = attack_steps
 
-	agent = ReinforceAgent(input_dim, services, hidden_dim=args.hidden_width, allow_skip=allow_skip)
+	agent = ReinforceAgent(input_dim, services, hidden_dim=args.hidden_width, allow_skip=allow_skip, baseline=True)
 
 	#Train
 	run_multiple_simulations(args.n_simulations, env, agent)

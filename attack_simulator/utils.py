@@ -59,7 +59,10 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
 
     log = logging.getLogger("trainer")
     returns = np.zeros(episodes)
-    losses = np.zeros(episodes)
+    if agent.baseline:
+        losses = np.zeros((episodes, 3))
+    else:
+        losses = np.zeros(episodes)
     lengths = np.zeros(episodes)
     num_compromised_steps = np.zeros(episodes)
     max_patience = 50
@@ -75,7 +78,8 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
         for i in range(episodes):
             rewards, episode_length, compromised_steps = run_sim(env, agent, include_services_in_state=include_services)
             if evaluation:
-                loss = agent.calculate_loss(rewards).item()
+                loss = agent.calculate_loss(rewards)
+                loss = [l.item() for l in loss]
             else:
                 loss = agent.update(rewards)
             losses[i] = loss
@@ -86,7 +90,7 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
             log.debug(
                 f"Episode: {i+1}/{episodes}, Loss: {loss}, Return: {sum(rewards)}, Episode Length: {episode_length}")
 
-            if (prev_loss - loss) < 0.01 and not evaluation:
+            if (prev_loss - loss[0]) < 0.01 and not evaluation:
                 patience -= 1
             else:
                 patience = (patience+1) if patience < max_patience else max_patience
@@ -95,7 +99,7 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
                 log.debug("Stopping due to insignicant loss changes.")
                 break
             
-            prev_loss = loss
+            prev_loss = loss[0]
 
     except KeyboardInterrupt:
         print("Stopping...")
@@ -107,7 +111,8 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
     # ax1.set_xlabel("Episode")
     ax1.set_xlim(0, i)  # Cut off graph at stopping point
     ax1.set_ylabel("Return")
-    ax2.plot(losses)
+    ax2.plot(losses[:, 1:])
+    ax2.legend(["Policy Loss", "Value Loss"])
     ax2.set_ylabel('Loss')
     # ax2.set_xlabel('Episode')
     ax3.plot(lengths)
