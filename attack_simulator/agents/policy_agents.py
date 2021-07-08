@@ -3,7 +3,7 @@ from torch.nn.modules.activation import Softmax
 from torch.distributions import Categorical
 from torch import Tensor
 from torch.optim import optimizer
-from attack_simulator.tabular_agents import Agent
+from attack_simulator.agents.tabular_agents import Agent
 import torch
 import logging
 import numpy as np
@@ -29,7 +29,9 @@ class PolicyModel(nn.Module):
 
 class ReinforceAgent(Agent):
 
-    def __init__(self, input_dim, num_actions, hidden_dim, gamma=0.9) -> None:
+    def __init__(self, input_dim, num_actions, hidden_dim, gamma=0.9, allow_skip=True) -> None:
+        num_actions = num_actions + 1 if allow_skip else num_actions
+        self.can_skip = allow_skip
         self.policy = PolicyModel(input_dim, num_actions, hidden_dim)
         self.saved_log_probs = []
         self.gamma = gamma
@@ -66,9 +68,10 @@ class ReinforceAgent(Agent):
 
         if normalize_returns:
             if len(returns) > 1:
-        	    returns = (returns-returns.mean())/(returns.std()+eps) # normalize returns
+                returns = (returns-returns.mean()) / \
+                    (returns.std()+eps)  # normalize returns
             else:
-        	    returns = returns/returns
+                returns = returns/returns
 
         for i, (log_prob, R) in enumerate(zip(self.saved_log_probs, returns)):
             loss[i] = -log_prob * R  # minus sign on loss for gradient ascent
@@ -77,6 +80,6 @@ class ReinforceAgent(Agent):
 
     def eval(self):
         self.policy.eval()
-    
+
     def train(self):
         self.policy.train()

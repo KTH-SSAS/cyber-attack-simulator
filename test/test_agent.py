@@ -1,5 +1,5 @@
 from attack_simulator.attack_simulation_env import AttackSimulationEnv
-from attack_simulator.tabular_agents import Agent
+from attack_simulator.agents.tabular_agents import Agent
 import unittest
 import matplotlib.pyplot as plt
 import logging
@@ -67,18 +67,18 @@ class TestAgents(unittest.TestCase):
 		self.env=AttackSimulationEnv()
 
 	def test_random_agent(self):
-		from attack_simulator.tabular_agents import RandomAgent
+		from attack_simulator.agents.tabular_agents import RandomAgent
 		agent = RandomAgent(0.001)
 		run_sim(self.env, agent)
 
 	def test_bandit(self):
-		from attack_simulator.tabular_agents import BanditAgent
+		from attack_simulator.agents.tabular_agents import BanditAgent
 		agent = BanditAgent(self.env.n_defender_actions)
 
 		run_sim(self.env, agent)
 
 	def test_q_learner(self):
-		from attack_simulator.tabular_agents import QLearningAgent
+		from attack_simulator.agents.tabular_agents import QLearningAgent
 		agent = QLearningAgent(self.env.n_defender_actions)
 		run_multiple_simulations(1000, self.env, agent)
 

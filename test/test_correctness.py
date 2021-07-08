@@ -1,13 +1,17 @@
-from attack_simulator.policy_agents import ReinforceAgent
+from attack_simulator.agents.policy_agents import ReinforceAgent
 import logging
 import torch
 from torch.distributions import Categorical
 from attack_simulator.attack_simulation_env import AttackSimulationEnv
+import numpy as np
 
-def test_state_action_response(env: AttackSimulationEnv, agent: ReinforceAgent, test_no, compromised_steps, correct_action):
+def test_state_action_response(env: AttackSimulationEnv, agent: ReinforceAgent, test_no, compromised_steps, correct_action, include_services_in_state=False):
 	log = logging.getLogger("trainer")
 	state = env.observation_from_compromised_steps(compromised_steps)
-	action_probabilities = agent.policy.forward(torch.Tensor(state))
+	if include_services_in_state:
+		enabled_services = list(env.attack_graph.enabled_services.values())
+		state = np.concatenate([state, enabled_services])
+	#action_probabilities = agent.policy.forward(torch.Tensor(state))
 	action_id = agent.act(state)
 	action = env.interpret_action(action_id)
 	if action in correct_action: 
@@ -16,7 +20,7 @@ def test_state_action_response(env: AttackSimulationEnv, agent: ReinforceAgent, 
 		log.debug(f"Test {test_no} failed: Selected action {action} instead of {correct_action}.")
 
 
-def test_correctness(env, agent: ReinforceAgent, graph_size='large'):
+def test_correctness(env, agent: ReinforceAgent, graph_size='large', include_services=False):
 	agent.eval()
 	# Testing a specific state action. If 'lazarus.ftp.login', 'lazarus.ftp.dictionary_attack', 'lazarus.ftp.connect', 'office_network.map', 'office_network.connect' and 'internet.connect' are compromised, then the best action must be to disable 'lazarus'.
 	compromised_steps = []
@@ -33,4 +37,4 @@ def test_correctness(env, agent: ReinforceAgent, graph_size='large'):
 		correct_actions.append(['energetic_bear'])
 
 	for i in range(0,len(compromised_steps)):
-		test_state_action_response(env, agent, i, compromised_steps[i], correct_actions[i])
+		test_state_action_response(env, agent, i, compromised_steps[i], correct_actions[i], include_services_in_state=include_services)
