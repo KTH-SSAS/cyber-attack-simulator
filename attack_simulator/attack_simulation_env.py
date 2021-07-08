@@ -93,12 +93,13 @@ class Attacker:
 
 class AttackSimulationEnv(gym.Env):
 
-    def __init__(self, deterministic=False, early_flag_reward=1000, late_flag_reward=10000, graph_size='large'):
+    def __init__(self, deterministic=False, early_flag_reward=1000, late_flag_reward=10000, final_flag_reward=100000, graph_size='large'):
         super(AttackSimulationEnv, self).__init__()
         self.deterministic = deterministic
         self.early_flag_reward = early_flag_reward
         self.late_flag_reward = late_flag_reward
-        self.attack_graph = AttackGraph(deterministic=deterministic, early_flag_reward=self.early_flag_reward, late_flag_reward=self.late_flag_reward, graph_size=graph_size)
+        self.final_flag_reward = final_flag_reward
+        self.attack_graph = AttackGraph(deterministic=deterministic, early_flag_reward=self.early_flag_reward, late_flag_reward=self.late_flag_reward, final_flag_reward=self.final_flag_reward, graph_size=graph_size)
         self.attacker = Attacker(
             self.attack_graph, ['internet.connect'], deterministic=self.deterministic)
         # An observation informs the defender of which attack steps have been compromised.

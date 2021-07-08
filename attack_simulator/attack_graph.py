@@ -23,10 +23,11 @@ class AttackStep:
 
 class AttackGraph:
 
-    def __init__(self, deterministic=False, early_flag_reward=1000, late_flag_reward=10000, graph_size='large'):
+    def __init__(self, deterministic=False, early_flag_reward=1000, late_flag_reward=10000, final_flag_reward=100000, graph_size='large'):
         self.deterministic = deterministic
         self.early_flag_reward = early_flag_reward
         self.late_flag_reward = late_flag_reward
+        self.final_flag_reward = final_flag_reward
         self.graph_size = graph_size
         self.reset()
 
@@ -60,7 +61,7 @@ class AttackGraph:
 
         # Here the attack logic is defined. The below is a model of the EN2720 course.
         if self.graph_size == 'large':
-                self.attack_steps['wifi_host.http_server.flag_18dd8f.capture'] = AttackStep(reward=self.late_flag_reward, deterministic=self.deterministic)
+                self.attack_steps['wifi_host.http_server.flag_18dd8f.capture'] = AttackStep(reward=self.final_flag_reward, deterministic=self.deterministic)
                 self.attack_steps['wifi_host.http_server.gather_information'] = AttackStep(ttc=3, children={'wifi_host.http_server.flag_18dd8f.capture'}, deterministic=self.deterministic)
                 self.attack_steps['wifi_host.http_server.connect'] = AttackStep(children={'wifi_host.http_server.gather_information'}, deterministic=self.deterministic)
 
