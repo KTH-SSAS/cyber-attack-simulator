@@ -16,7 +16,7 @@ def test_state_action_response(env: AttackSimulationEnv, agent: ReinforceAgent, 
 		log.debug(f"Test {test_no} failed: Selected action {action} instead of {correct_action}.")
 
 
-def test(env, agent: ReinforceAgent, graph_size='large'):
+def test_correctness(env, agent: ReinforceAgent, graph_size='large'):
 	agent.eval()
 	# Testing a specific state action. If 'lazarus.ftp.login', 'lazarus.ftp.dictionary_attack', 'lazarus.ftp.connect', 'office_network.map', 'office_network.connect' and 'internet.connect' are compromised, then the best action must be to disable 'lazarus'.
 	compromised_steps = []
