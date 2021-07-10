@@ -77,12 +77,15 @@ class Attacker:
             self.compromised_steps.append(self.current_step)
             self.reward = self.attack_graph.attack_steps[self.current_step].reward
             # If the attack surface (the available uncompromised attack steps) is empty, then terminate.
+            compromised_now = self.current_step
             if not self.attack_surface():
+                logger.debug(
+                    f"Step {self.total_time}: Compromised {compromised_now}. Nothing more to attack.")
                 return False
             self.choose_next_step()
             self.time_on_current_step = 0
             logger.debug(
-                f"Step {self.total_time}: Attacking {self.current_step}.")
+                f"Step {self.total_time}: Compromised {compromised_now}. Attacking {self.current_step}.")
         # Keep track of the time spent.
         self.time_on_current_step += 1
         self.total_time += 1
@@ -145,10 +148,10 @@ class AttackSimulationEnv(gym.Env):
                     self.disable(service)
             action_id += 1
 
-        obs = self._next_observation()
         # The attacker attacks. If the attacker's attack surface is empty, then the game ends.
         attacker_done = not self.attacker.attack()
 
+        obs = self._next_observation()
         # Positive rewards for maintaining services enabled_services and negative for compromised flags.
         reward = self.provision_reward - self.attacker.reward
         info = self.get_info()
