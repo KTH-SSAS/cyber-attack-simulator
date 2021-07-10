@@ -1,4 +1,5 @@
 from attack_simulator.agents.tabular_agents import Agent
+import torch
 import logging
 
 
@@ -14,20 +15,16 @@ class OptimalAgent(Agent):
     def act(self, state):
         log = logging.getLogger("simulator")
         action_id = 0
+        # If an attack step has been compromised which has a valuable child, then disable the corresponding service.
         for step_id in range(0, len(state)):
             if state[step_id]:
                 step_name = list(self.attack_graph.attack_steps)[step_id]
-                #if step_name == 'lazarus.ftp.login':
-                #    log.debug(f"Attack_step {step_name} is compromised.")
                 for child_name in self.attack_graph.attack_steps[step_name].children:
                     if self.attack_graph.attack_steps[child_name].reward > 0:
                         service = self.corresponding_service(step_name)
-                #        if step_name == 'lazarus.ftp.login':
-                #            log.debug(f"Attack_step {step_name}. Child with reward: {child_name}")
                         if self.attack_graph.enabled_services[service]:
                             # action_id + 1 because action == 0 is no action.
                             action_id = list(self.attack_graph.enabled_services).index(service) + 1
-                #            log.debug(f"Attack_step {step_name}. Child with reward: {child_name}, corresponding service: {service}, action_id: {action_id}")
         # If no service should be disabled, then return 0
         self.previous_state = state
         return action_id
@@ -43,10 +40,10 @@ class OptimalAgent(Agent):
                 
 
     def update(self, rewards):
-        return 0
+        return torch.Tensor([0])
 
     def calculate_loss(self, rewards, normalize_returns=False):
-        return 0
+        return torch.Tensor([0])
 
     def eval(self):
         pass
