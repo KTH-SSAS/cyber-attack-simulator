@@ -4,7 +4,7 @@ import logging
 
 
 class OptimalAgent(Agent):
-
+    # Not really optimal (yet). Fails to consider AND steps and does not take any chances even if parent steps to valuables have long ttc's.
     def __init__(self, env) -> None:
         self.attack_graph = env.attack_graph
         self.attacker = env.attacker
