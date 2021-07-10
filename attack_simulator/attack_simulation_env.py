@@ -154,7 +154,7 @@ class AttackSimulationEnv(gym.Env):
         info = self.get_info()
         if attacker_done:
             logger.debug(
-                f"Attacker is done. Reward was {reward}, of which captured flags constituted -{self.attacker.reward}.")
+                f"Attacker is done.")
             logger.debug(
                 f"Compromised steps: {self.attacker.compromised_steps}")
         info['compromised_steps'] = self.attacker.compromised_steps
