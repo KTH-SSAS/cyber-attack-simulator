@@ -103,6 +103,9 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
     except KeyboardInterrupt:
         print("Stopping...")
 
+    if evaluation:
+        log.debug(f"Average returns: {sum(returns)/len(returns)}")
+
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, sharex=True)
     title = "Training Results" if not evaluation else "Evaluation Results"
     ax1.set_title(title)
