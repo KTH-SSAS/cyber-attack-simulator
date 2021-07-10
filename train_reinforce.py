@@ -66,11 +66,11 @@ if __name__ == '__main__':
         env.attack_graph.generate_graphviz_file()
 
     services = 18
+    include_services_in_state = args.include_services
 
     if args.agent == 'reinforce':
         # allowing skipping will add an additional 'skip' action
         allow_skip = not args.no_skipping
-        include_services_in_state = args.include_services
 
         if include_services_in_state:
             input_dim = attack_steps + services
