@@ -1,5 +1,6 @@
 from attack_simulator.utils import run_multiple_simulations
 from attack_simulator.agents.policy_agents import ReinforceAgent
+from attack_simulator.agents.optimal_agents import OptimalAgent
 from attack_simulator.attack_simulation_env import AttackSimulationEnv
 from test.test_correctness import test_correctness
 import logging
@@ -16,8 +17,10 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--deterministic', action='store_true',
                         help='Make environment deterministic.')
     parser.add_argument('-t', '--test', action='store_true', help='Run tests.')
+    parser.add_argument('-a', '--agent', choices=['reinforce', 'optimal'], type=str, default='reinforce',
+                        help='Select agent. Choices are "reinforce" and "optimal".')
     parser.add_argument('-s', '--graph_size', choices=['small', 'medium', 'large'], type=str, default='large',
-                        help='Run simulations on a small, medium or large attack graph. Default is large.')
+                        help='Run simulations on a "small", "medium" or "large" attack graph. Default is "large".')
     parser.add_argument('-n', '--n_simulations', type=int, default=10000,
                         help='Maximum number of simulations. Training will stop automatically when losses are sufficiently low. Default is 10000.')
     parser.add_argument('-e', '--early_flag_reward', type=int, default=1000,
@@ -62,18 +65,23 @@ if __name__ == '__main__':
     if args.graph:
         env.attack_graph.generate_graphviz_file()
 
-    services = 16
-    # allowing skipping will add an additional 'skip' action
-    allow_skip = not args.no_skipping
-    include_services_in_state = args.include_services
+    services = 18
 
-    if include_services_in_state:
-        input_dim = attack_steps + services
-    else:
-        input_dim = attack_steps
+    if args.agent == 'reinforce':
+        # allowing skipping will add an additional 'skip' action
+        allow_skip = not args.no_skipping
+        include_services_in_state = args.include_services
 
-    agent = ReinforceAgent(input_dim, services,
-                           hidden_dim=args.hidden_width, allow_skip=allow_skip)
+        if include_services_in_state:
+            input_dim = attack_steps + services
+        else:
+            input_dim = attack_steps
+
+        agent = ReinforceAgent(input_dim, services,
+                               hidden_dim=args.hidden_width, allow_skip=allow_skip)
+    elif args.agent == 'optimal':
+        agent = OptimalAgent(env)
+
 
     # Train
     run_multiple_simulations(args.n_simulations, env, agent)
