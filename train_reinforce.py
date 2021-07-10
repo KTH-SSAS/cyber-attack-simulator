@@ -23,12 +23,12 @@ if __name__ == '__main__':
                         help='Run simulations on a "small", "medium" or "large" attack graph. Default is "large".')
     parser.add_argument('-n', '--n_simulations', type=int, default=10000,
                         help='Maximum number of simulations. Training will stop automatically when losses are sufficiently low. Default is 10000.')
-    parser.add_argument('-e', '--early_flag_reward', type=int, default=1000,
-                        help='Flag reward for the attacker when capturing flags early in the attack graph (use positive values). Default is 1000.')
+    parser.add_argument('-e', '--early_flag_reward', type=int, default=10000,
+                        help='Flag reward for the attacker when capturing flags early in the attack graph (use positive values). Default is 10000.')
     parser.add_argument('-l', '--late_flag_reward', type=int, default=10000,
                         help='Flag reward for the attacker when capturing flags late in the attack graph (use positive values). Default is 10000.')
-    parser.add_argument('-f', '--final_flag_reward', type=int, default=100000,
-                        help='Flag reward for the attacker when capturing the final flag in the attack graph (use positive values). Default is 100000.')
+    parser.add_argument('-f', '--final_flag_reward', type=int, default=10000,
+                        help='Flag reward for the attacker when capturing the final flag in the attack graph (use positive values). Default is 10000.')
     parser.add_argument('-r', '--random_seed', type=int, default=0,
                         help='Random seed for both numpy and torch. Default is 0.')
     parser.add_argument('-w', '--hidden_width', type=int, default=64,
