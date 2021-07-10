@@ -56,8 +56,10 @@ class AttackGraph:
         self.enabled_services['cloud_hopper'] = True
         self.enabled_services['cloud_hopper.smb'] = True
         self.enabled_services['cloud_function'] = True
+        self.enabled_services['cloud_bucket'] = True
         self.enabled_services['fancy_bear.ssh'] = True
         self.enabled_services['fancy_bear'] = True
+        self.enabled_services['wifi_network'] = True
         self.enabled_services['wifi_host.http_server'] = True
         self.enabled_services['wifi_host'] = True
 
