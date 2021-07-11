@@ -3,7 +3,6 @@ from attack_simulator.agents.policy_agents import ReinforceAgent
 from attack_simulator.agents.baseline_agents import RuleBasedAgent
 from attack_simulator.agents.baseline_agents import RandomMCAgent
 from attack_simulator.attack_simulation_env import AttackSimulationEnv
-from test.test_correctness import test_correctness
 import logging
 import numpy.random as random
 import torch
