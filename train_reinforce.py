@@ -1,6 +1,6 @@
 from attack_simulator.utils import run_multiple_simulations
 from attack_simulator.agents.policy_agents import ReinforceAgent
-from attack_simulator.agents.optimal_agents import OptimalAgent
+from attack_simulator.agents.baseline_agents import RuleBasedAgent
 from attack_simulator.agents.baseline_agents import RandomMCAgent
 from attack_simulator.attack_simulation_env import AttackSimulationEnv
 from test.test_correctness import test_correctness
@@ -18,8 +18,8 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--deterministic', action='store_true',
                         help='Make environment deterministic.')
     parser.add_argument('-t', '--test', action='store_true', help='Run tests.')
-    parser.add_argument('-a', '--agent', choices=['reinforce', 'optimal', 'random'], type=str, default='reinforce',
-                        help='Select agent. Choices are "reinforce", "random" and "optimal".')
+    parser.add_argument('-a', '--agent', choices=['reinforce', 'rule_based', 'random'], type=str, default='reinforce',
+                        help='Select agent. Choices are "reinforce", "random" and "rule_based".')
     parser.add_argument('-s', '--graph_size', choices=['small', 'medium', 'large'], type=str, default='large',
                         help='Run simulations on a "small", "medium" or "large" attack graph. Default is "large".')
     parser.add_argument('-n', '--n_simulations', type=int, default=10000,
@@ -85,8 +85,8 @@ if __name__ == '__main__':
 
         agent = ReinforceAgent(input_dim, services,
                                hidden_dim=args.hidden_width, allow_skip=allow_skip)
-    elif args.agent == 'optimal':
-        agent = OptimalAgent(env)
+    elif args.agent == 'rule_based':
+        agent = RuleBasedAgent(env)
     elif args.agent == 'random':
         agent = RandomMCAgent(services, allow_skip=allow_skip)
 
