@@ -17,7 +17,6 @@ if __name__ == '__main__':
                         help='Generate a GraphViz .dot file.')
     parser.add_argument('-d', '--deterministic', action='store_true',
                         help='Make environment deterministic.')
-    parser.add_argument('-t', '--test', action='store_true', help='Run tests.')
     parser.add_argument('-a', '--agent', choices=['reinforce', 'rule_based', 'random'], type=str, default='reinforce',
                         help='Select agent. Choices are "reinforce", "random" and "rule_based".')
     parser.add_argument('-s', '--graph_size', choices=['small', 'medium', 'large'], type=str, default='large',
@@ -98,7 +97,3 @@ if __name__ == '__main__':
     if args.evaluation_rounds > 0:
         run_multiple_simulations(args.evaluation_rounds, env, agent,
                                  evaluation=True, include_services=include_services_in_state)
-
-    if args.test:
-        test_correctness(env, agent, graph_size=args.graph_size,
-                         include_services=include_services_in_state)
