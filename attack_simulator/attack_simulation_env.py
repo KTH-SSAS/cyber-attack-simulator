@@ -103,6 +103,8 @@ class Attacker:
             else:
                 return rnd <= self.get_step(attack_step).false_positive
 
+    def compromised_flags(self):
+        return [step for step in self.compromised_steps if 'flag' in step]
 
 class AttackSimulationEnv(gym.Env):
 
@@ -160,7 +162,10 @@ class AttackSimulationEnv(gym.Env):
                 f"Attacker is done.")
             logger.debug(
                 f"Compromised steps: {self.attacker.compromised_steps}")
+            logger.debug(
+                f"Compromised flags: {self.attacker.compromised_flags()}")
         info['compromised_steps'] = self.attacker.compromised_steps
+        info['compromised_flags'] = self.attacker.compromised_flags()
         return obs, reward, attacker_done, info
 
     def reset(self):
