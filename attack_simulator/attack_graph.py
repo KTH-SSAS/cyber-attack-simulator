@@ -30,11 +30,13 @@ class AttackStep:
 
 class AttackGraph:
 
-    def __init__(self, deterministic=False, early_flag_reward=1000, late_flag_reward=10000, final_flag_reward=100000, graph_size='large', true_positive=1.0, false_positive=0.0):
+    def __init__(self, deterministic=False, early_flag_reward=10000, late_flag_reward=10000, final_flag_reward=10000, easy_ttc=10, hard_ttc=100, graph_size='large', true_positive=1.0, false_positive=0.0):
         self.deterministic = deterministic
         self.early_flag_reward = early_flag_reward
         self.late_flag_reward = late_flag_reward
         self.final_flag_reward = final_flag_reward
+        self.easy_ttc = easy_ttc
+        self.hard_ttc = hard_ttc
         self.graph_size = graph_size
         self.true_positive=true_positive
         self.false_positive=false_positive
@@ -75,27 +77,27 @@ class AttackGraph:
             self.add_attack_step(asset='wifi_host', service='http_server', flag='flag_18dd8f', name='capture', 
                 reward=self.final_flag_reward)
             self.add_attack_step(asset='wifi_host', service='http_server', name='gather_information', 
-                ttc=3, children={'wifi_host.http_server.flag_18dd8f.capture'})
+                ttc=self.easy_ttc, children={'wifi_host.http_server.flag_18dd8f.capture'})
             self.add_attack_step(asset='wifi_host', service='http_server', name='connect', 
                 children={'wifi_host.http_server.gather_information'})
 
             self.add_attack_step(asset='wifi_network', name='map', 
-                ttc=10, children={'wifi_host.http_server.connect'})
+                ttc=self.easy_ttc, children={'wifi_host.http_server.connect'})
             self.add_attack_step(asset='wifi_network', name='connect', 
                 step_type='and', children={'wifi_network.map'})
             self.add_attack_step(asset='wifi_network', service='flag_d582aa', name='capture', 
                 reward=self.late_flag_reward)
-            self.add_attack_step(asset='wifi_network', name='decrypt_traffic', step_type='and', ttc=5, children={
+            self.add_attack_step(asset='wifi_network', name='decrypt_traffic', step_type='and', ttc=self.easy_ttc, children={
                                                                            'wifi_network.flag_d582aa.capture'})
-            self.add_attack_step(asset='wifi_network', name='obtain_credentials', ttc=10, children={
+            self.add_attack_step(asset='wifi_network', name='obtain_credentials', ttc=self.easy_ttc, children={
                                                                               'wifi_network.connect', 'wifi_network.decrypt_traffic'})
             self.add_attack_step(asset='wifi_network', name='find_credentials', 
                 children={'wifi_network.obtain_credentials'})
-            self.add_attack_step(asset='wifi_network', name='capture_traffic', ttc=5, children={
+            self.add_attack_step(asset='wifi_network', name='capture_traffic', ttc=self.easy_ttc, children={
                                                                            'wifi_network.connect', 'wifi_network.find_credentials', 'wifi_network.decrypt_traffic'})
 
             self.add_attack_step(asset='fancy_bear', name='gather_information', 
-                ttc=5, children={'wifi_network.capture_traffic'})
+                ttc=self.easy_ttc, children={'wifi_network.capture_traffic'})
 
             self.add_attack_step(asset='fancy_bear', service='ssh', name='login', step_type='and', children={
                                                                    'fancy_bear.gather_information'})
@@ -123,19 +125,19 @@ class AttackGraph:
                 children={'cloud_function.gather_information', 'cloud_bucket.find_credentials', 'cloud_bucket.flag_21077e.capture'})
 
             self.add_attack_step(asset='cloud_hopper', name='gather_information', 
-                ttc=5, children={'cloud_bucket.list'})
+                ttc=self.easy_ttc, children={'cloud_bucket.list'})
             self.add_attack_step(asset='cloud_hopper', service='flag_93b00a', name='capture', 
                 reward=self.late_flag_reward)
             self.add_attack_step(asset='cloud_hopper', name='terminal_access', 
                 children={'cloud_hopper.gather_information', 'cloud_hopper.flag_93b00a.capture'})
             self.add_attack_step(asset='cloud_hopper', service='smb', name='exploit_vulnerability', 
-                ttc=10, children={'cloud_hopper.terminal_access'})
+                ttc=self.easy_ttc, children={'cloud_hopper.terminal_access'})
             self.add_attack_step(asset='cloud_hopper', service='smb', name='find_vulnerability', 
-                ttc=5, children={'cloud_hopper.smb.exploit_vulnerability'})
+                ttc=self.easy_ttc, children={'cloud_hopper.smb.exploit_vulnerability'})
             self.add_attack_step(asset='cloud_hopper', service='smb', name='connect', 
                 children={'cloud_hopper.smb.find_vulnerability'})
 
-            self.add_attack_step(asset='hidden_network', name='map', ttc=10, children={
+            self.add_attack_step(asset='hidden_network', name='map', ttc=self.easy_ttc, children={
                                                                  'cloud_hopper.smb.connect', 'fancy_bear.ssh.connect'})
             self.add_attack_step(asset='hidden_network', name='connect', 
                 children={'hidden_network.map'})
@@ -149,15 +151,15 @@ class AttackGraph:
             self.add_attack_step(asset='buckeye', name='escalate_to_root', 
                 children={'hidden_network.connect', 'buckeye.flag_2362e5.capture'})
             self.add_attack_step(asset='buckeye', name='exploit_vulnerability', 
-                ttc=10, children={'buckeye.escalate_to_root'})
+                ttc=self.easy_ttc, children={'buckeye.escalate_to_root'})
             self.add_attack_step(asset='buckeye', name='find_vulnerability', 
-                ttc=5, children={'buckeye.exploit_vulnerability'})
+                ttc=self.easy_ttc, children={'buckeye.exploit_vulnerability'})
             self.add_attack_step(asset='buckeye', name='terminal_access', 
                 children={'buckeye.find_vulnerability', 'buckeye.flag_5d402e.capture'})
             self.add_attack_step(asset='buckeye', service='firefox', name='exploit_vulnerability', 
-                ttc=10, children={'buckeye.terminal_access'})
+                ttc=self.easy_ttc, children={'buckeye.terminal_access'})
             self.add_attack_step(asset='buckeye', service='firefox', name='find_vulnerability', 
-                ttc=5, children={'buckeye.firefox.exploit_vulnerability'})
+                ttc=self.easy_ttc, children={'buckeye.firefox.exploit_vulnerability'})
             self.add_attack_step(asset='buckeye', service='firefox', name='connect', 
                 children={'buckeye.firefox.find_vulnerability'})
 
@@ -165,14 +167,14 @@ class AttackGraph:
                 reward=self.late_flag_reward)
             self.add_attack_step(asset='sea_turle', service='flag_f9038f', name='capture', 
                 reward=self.late_flag_reward)
-            self.add_attack_step(asset='sea_turtle', name='capture_traffic', ttc=10, children={
+            self.add_attack_step(asset='sea_turtle', name='capture_traffic', ttc=self.easy_ttc, children={
                                                                          'buckeye.firefox.connect', 'buckeye.firefox.flag_14ce18.capture'})
-            self.add_attack_step(asset='sea_turtle', name='escalate_to_root', ttc=50, children={
+            self.add_attack_step(asset='sea_turtle', name='escalate_to_root', ttc=self.hard_ttc, children={
                                                                           'sea_turtle.capture_traffic', 'sea_turle.flag_6be6ef.capture'})
             self.add_attack_step(asset='sea_turtle', name='exploit_vulnerability', 
-                ttc=50, children={'sea_turtle.escalate_to_root'})
+                ttc=self.hard_ttc, children={'sea_turtle.escalate_to_root'})
             self.add_attack_step(asset='sea_turtle', name='find_vulnerability', 
-                ttc=50, children={'sea_turtle.exploit_vulnerability'})
+                ttc=self.hard_ttc, children={'sea_turtle.exploit_vulnerability'})
             self.add_attack_step(asset='sea_turtle', service='telnet', name='login', step_type='and', children={
                                                                       'sea_turtle.find_vulnerability', 'sea_turle.flag_f9038f.capture'})
             self.add_attack_step(asset='sea_turtle', service='telnet', name='obtain_credentials', 
@@ -188,28 +190,28 @@ class AttackGraph:
             self.add_attack_step(asset='energetic_bear', service='flag_de3b1c', name='capture', 
                 reward=self.early_flag_reward)
             if self.graph_size == 'large':
-                self.add_attack_step(asset='energetic_bear', name='capture_traffic', ttc=5, children={
+                self.add_attack_step(asset='energetic_bear', name='capture_traffic', ttc=self.easy_ttc, children={
                     'buckeye.firefox.connect', 'buckeye.firefox.flag_14ce18.capture'})
             else:
                 self.add_attack_step(asset='energetic_bear', name='capture_traffic', 
-                    ttc=5, children={})
+                    ttc=self.easy_ttc, children={})
 
-            self.add_attack_step(asset='energetic_bear', name='escalate_to_root', ttc=20, children={
+            self.add_attack_step(asset='energetic_bear', name='escalate_to_root', ttc=self.easy_ttc, children={
                                                                               'energetic_bear.capture_traffic', 'energetic_bear.flag_73cb43.capture'})
             self.add_attack_step(asset='energetic_bear', name='exploit_vulnerability', 
-                ttc=50, children={'energetic_bear.escalate_to_root'})
+                ttc=self.hard_ttc, children={'energetic_bear.escalate_to_root'})
             self.add_attack_step(asset='energetic_bear', name='find_vulnerability', 
-                ttc=50, children={'energetic_bear.exploit_vulnerability'})
-            self.add_attack_step(asset='energetic_bear', name='terminal_access', ttc=10, children={
+                ttc=self.hard_ttc, children={'energetic_bear.exploit_vulnerability'})
+            self.add_attack_step(asset='energetic_bear', name='terminal_access', ttc=self.easy_ttc, children={
                                                                              'energetic_bear.find_vulnerability', 'energetic_bear.flag_3b2000.capture'})
 
             self.add_attack_step(asset='energetic_bear', service='apache', flag='flag_521bce', name='capture', 
                 reward=self.early_flag_reward)
-            self.add_attack_step(asset='energetic_bear', service='apache', name='exploit_vulnerability', ttc=20, children={
+            self.add_attack_step(asset='energetic_bear', service='apache', name='exploit_vulnerability', ttc=self.easy_ttc, children={
                                                                                           'energetic_bear.terminal_access', 'energetic_bear.flag_de3b1c.capture'})
             self.add_attack_step(asset='energetic_bear', service='apache', name='find_vulnerability', 
-                ttc=30, children={'energetic_bear.apache.exploit_vulnerability'})
-            self.add_attack_step(asset='energetic_bear', service='apache', name='gather_information', ttc=10, children={
+                ttc=self.hard_ttc, children={'energetic_bear.apache.exploit_vulnerability'})
+            self.add_attack_step(asset='energetic_bear', service='apache', name='gather_information', ttc=self.easy_ttc, children={
                                                                                        'energetic_bear.apache.find_vulnerability', 'energetic_bear.apache.flag_521bce.capture'})
             self.add_attack_step(asset='energetic_bear', service='apache', name='connect', 
                 children={'energetic_bear.apache.gather_information'})
@@ -217,24 +219,24 @@ class AttackGraph:
             self.add_attack_step(asset='lazarus', service='flag_cd699a', name='capture', 
                 reward=self.early_flag_reward)
             if self.graph_size == 'large':
-                self.add_attack_step(asset='lazarus', name='find_credentials', ttc=10, children={
+                self.add_attack_step(asset='lazarus', name='find_credentials', ttc=self.easy_ttc, children={
                                                                            'sea_turtle.telnet.obtain_credentials'})
             else:
                 self.add_attack_step(asset='lazarus', name='find_credentials', 
-                    ttc=10)
+                    ttc=self.easy_ttc)
             self.add_attack_step(asset='lazarus', name='terminal_access', 
                 children={'lazarus.find_credentials', 'lazarus.flag_cd699a.capture', 'lazarus.ftp.flag_adcb1f.capture'})
 
             self.add_attack_step(asset='lazarus', service='tomcat', flag='flag_90b353', name='capture', 
                 reward=self.early_flag_reward)
             self.add_attack_step(asset='lazarus', service='tomcat', name='exploit_vulnerability', 
-                ttc=10, children={'lazarus.terminal_access'})
+                ttc=self.easy_ttc, children={'lazarus.terminal_access'})
             self.add_attack_step(asset='lazarus', service='tomcat', name='find_vulnerability', 
-                ttc=10, children={'lazarus.tomcat.exploit_vulnerability'})
-            self.add_attack_step(asset='lazarus', service='tomcat', name='dictionary_attack', ttc=10, children={
+                ttc=self.easy_ttc, children={'lazarus.tomcat.exploit_vulnerability'})
+            self.add_attack_step(asset='lazarus', service='tomcat', name='dictionary_attack', ttc=self.easy_ttc, children={
                                                                                'lazarus.tomcat.find_vulnerability', 'lazarus.tomcat.flag_90b353.capture'})
             self.add_attack_step(asset='lazarus', service='tomcat', name='gather_information', 
-                ttc=5, children={'lazarus.tomcat.dictionary_attack'})
+                ttc=self.easy_ttc, children={'lazarus.tomcat.dictionary_attack'})
             self.add_attack_step(asset='lazarus', service='tomcat', name='connect', 
                 children={'lazarus.tomcat.gather_information'})
 
@@ -243,18 +245,18 @@ class AttackGraph:
         self.add_attack_step(asset='lazarus', service='ftp', name='login', 
             children={'lazarus.ftp.flag_adcb1f.capture'})
         self.add_attack_step(asset='lazarus', service='ftp', name='dictionary_attack', 
-            ttc=100, children={'lazarus.ftp.login'})
+            ttc=self.hard_ttc, children={'lazarus.ftp.login'})
         self.add_attack_step(asset='lazarus', service='ftp', name='connect', 
             children={'lazarus.ftp.dictionary_attack'})
 
         if self.graph_size == 'large':
-            self.add_attack_step(asset='office_network', name='map', ttc=10, children={
+            self.add_attack_step(asset='office_network', name='map', ttc=self.easy_ttc, children={
                 'lazarus.ftp.connect', 'energetic_bear.apache.connect', 'lazarus.tomcat.connect', 'sea_turtle.telnet.connect'})
         if self.graph_size == 'medium':
-            self.add_attack_step(asset='office_network', name='map', ttc=10, children={
+            self.add_attack_step(asset='office_network', name='map', ttc=self.easy_ttc, children={
                 'lazarus.ftp.connect', 'energetic_bear.apache.connect', 'lazarus.tomcat.connect'})
         if self.graph_size == 'small':
-            self.add_attack_step(asset='office_network', name='map', ttc=10, children={
+            self.add_attack_step(asset='office_network', name='map', ttc=self.easy_ttc, children={
                 'lazarus.ftp.connect'})
 
         self.add_attack_step(asset='office_network', name='connect', 

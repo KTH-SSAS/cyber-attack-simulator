@@ -18,6 +18,8 @@ if __name__ == '__main__':
                         help='Make environment deterministic.')
     parser.add_argument('-a', '--agent', choices=['reinforce', 'rule_based', 'random'], type=str, default='reinforce',
                         help='Select agent. Choices are "reinforce", "random" and "rule_based".')
+    parser.add_argument('--attacker_strategy', choices=['value_maximizing', 'random'], type=str, default='random',
+                        help='Select agent. Choices are "value_maximizing" and "random".')
     parser.add_argument('-s', '--graph_size', choices=['small', 'medium', 'large'], type=str, default='large',
                         help='Run simulations on a "small", "medium" or "large" attack graph. Default is "large".')
     parser.add_argument('-n', '--n_simulations', type=int, default=10000,
@@ -28,6 +30,10 @@ if __name__ == '__main__':
                         help='Flag reward for the attacker when capturing flags late in the attack graph (use positive values). Default is 10000.')
     parser.add_argument('-f', '--final_flag_reward', type=int, default=10000,
                         help='Flag reward for the attacker when capturing the final flag in the attack graph (use positive values). Default is 10000.')
+    parser.add_argument('--easy_ttc', type=int, default=10,
+                        help='Mean time required by attacker to compromise easy attack steps. Default is 10.')
+    parser.add_argument('--hard_ttc', type=int, default=100,
+                        help='Mean time required by attacker to compromise hard attack steps. Default is 100.')
     parser.add_argument('-r', '--random_seed', type=int, default=0,
                         help='Random seed for both numpy and torch. Default is 0.')
     parser.add_argument('-w', '--hidden_width', type=int, default=64,
@@ -63,7 +69,7 @@ if __name__ == '__main__':
         torch.manual_seed(args.random_seed)
 
     env = AttackSimulationEnv(deterministic=args.deterministic, early_flag_reward=args.early_flag_reward,
-                              late_flag_reward=args.late_flag_reward, final_flag_reward=args.final_flag_reward, graph_size=args.graph_size, true_positive=args.true_positive, false_positive=args.false_positive)
+                              late_flag_reward=args.late_flag_reward, final_flag_reward=args.final_flag_reward, easy_ttc=args.easy_ttc, hard_ttc=args.hard_ttc, graph_size=args.graph_size, attacker_strategy=args.attacker_strategy, true_positive=args.true_positive, false_positive=args.false_positive)
 
     if args.graph:
         env.attack_graph.generate_graphviz_file()

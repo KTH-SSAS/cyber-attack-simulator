@@ -15,7 +15,8 @@ RANDOM_SEED = 4
 
 class Attacker:
 
-    def __init__(self, attack_graph: AttackGraph, compromised_steps: List[str], deterministic=False):
+    def __init__(self, attack_graph: AttackGraph, compromised_steps: List[str], deterministic=False, strategy='random'):
+        self.strategy = strategy
         self.attack_graph = attack_graph
         # self.compromised_steps keeps track of which attack steps have been reached by that attacker.
         self.compromised_steps = compromised_steps
@@ -48,8 +49,10 @@ class Attacker:
         return att_surf
 
     def choose_next_step(self):
-#        self.choose_next_step_randomly()
-        self.choose_highest_value_step()
+        if self.strategy == 'random':
+            self.choose_next_step_randomly()
+        elif self.strategy == 'value_maximizing':
+            self.choose_highest_value_step()
 
     def choose_next_step_randomly(self):
         # The attacker strategy is currently simply to select a random attack step of the available ones (i.e. from the attack surface).
@@ -62,7 +65,7 @@ class Attacker:
                 self.current_step = random.choice(list(self.attack_surface()))
 
     def choose_highest_value_step(self):
-        # Selecting the attack step with the highet net present value. Because the attacker cannot know when the defender might disable a service, future rewards are uncertain, and thus the introduction of the discount rate of the net present value calculation. Note: Does not consider AND steps, so will not always act optimally. 
+        # Selecting the attack step with the highet net present value. Because the attacker cannot know when the defender might disable a service, future rewards are uncertain, and thus the introduction of the discount rate of the net present value calculation. Note: Does not consider AND steps, so will not always act optimally.
         self.current_step = None
         highest_value = 0
         step_value = dict()
@@ -74,37 +77,13 @@ class Attacker:
                     highest_value = step_value[step_name]
                     self.current_step = step_name
 
-    def value(self, parent_name, discount_rate = 0.1):
+    def value(self, parent_name, discount_rate=0.1):
         parent = self.attack_graph.attack_steps[parent_name]
         value = parent.reward
         for child_name in parent.children:
             value += self.value(child_name)
         value = value/(1 + discount_rate)**parent.ttc
         return value
-            
-
-    def shortest_path(self):
-        gttc = dict()
-        horizon = set()
-        for compromised_step in self.compromised_steps:
-            gttc[compromised_step] = 0
-            horizon.add(compromised_step)
-        self.shortest_path_recursion(horizon, gttc)
-        return gttc
-
-    def shortest_path_recursion(self, horizon, gttc):
-        next_horizon = set()
-        for parent in horizon:
-            for child in self.attack_graph.attack_steps[parent].children:
-                if child in gttc:
-                    if gttc[child] < gttc[parent] + self.attack_graph.attack_steps[child].ttc:
-                        gttc[child] = gttc[child]
-                else:
-                    gttc[child] = gttc[parent] + self.attack_graph.attack_steps[child].ttc
-                next_horizon.add(child)
-        if next_horizon:
-            self.shortest_path_recursion(next_horizon, gttc)
-
 
     def attack(self):
         logger = logging.getLogger("simulator")
@@ -146,18 +125,21 @@ class Attacker:
     def compromised_flags(self):
         return [step for step in self.compromised_steps if 'flag' in step]
 
+
 class AttackSimulationEnv(gym.Env):
 
-    def __init__(self, deterministic=False, early_flag_reward=1000, late_flag_reward=10000, final_flag_reward=100000, graph_size='large', true_positive=1.0, false_positive=0.0):
+    def __init__(self, deterministic=False, early_flag_reward=1000, late_flag_reward=10000, final_flag_reward=100000, easy_ttc=10, hard_ttc=100, graph_size='large', attacker_strategy='random', true_positive=1.0, false_positive=0.0):
         super(AttackSimulationEnv, self).__init__()
         self.deterministic = deterministic
         self.early_flag_reward = early_flag_reward
         self.late_flag_reward = late_flag_reward
         self.final_flag_reward = final_flag_reward
+        self.easy_ttc = easy_ttc
+        self.hard_ttc = hard_ttc
         self.attack_graph = AttackGraph(deterministic=deterministic, early_flag_reward=self.early_flag_reward,
-                                        late_flag_reward=self.late_flag_reward, final_flag_reward=self.final_flag_reward, graph_size=graph_size, true_positive=true_positive, false_positive=false_positive)
+                                        late_flag_reward=self.late_flag_reward, final_flag_reward=self.final_flag_reward, easy_ttc=self.easy_ttc, hard_ttc=self.hard_ttc, graph_size=graph_size, true_positive=true_positive, false_positive=false_positive)
         self.attacker = Attacker(
-            self.attack_graph, ['internet.connect'], deterministic=self.deterministic)
+            self.attack_graph, ['internet.connect'], deterministic=self.deterministic, strategy=attacker_strategy)
         # An observation informs the defender of which attack steps have been compromised.
         # Observations are imperfect.
         self.observation_space = spaces.Box(low=0, high=1, shape=(
