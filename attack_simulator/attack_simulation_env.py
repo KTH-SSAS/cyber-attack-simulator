@@ -48,7 +48,8 @@ class Attacker:
         return att_surf
 
     def choose_next_step(self):
-        self.choose_next_step_randomly()
+#        self.choose_next_step_randomly()
+        self.choose_highest_value_step()
 
     def choose_next_step_randomly(self):
         # The attacker strategy is currently simply to select a random attack step of the available ones (i.e. from the attack surface).
@@ -60,11 +61,50 @@ class Attacker:
             else:
                 self.current_step = random.choice(list(self.attack_surface()))
 
-    def choose_next_step_optimally(self):
-        pass
+    def choose_highest_value_step(self):
+        # Selecting the attack step with the highet net present value. Because the attacker cannot know when the defender might disable a service, future rewards are uncertain, and thus the introduction of the discount rate of the net present value calculation. Note: Does not consider AND steps, so will not always act optimally. 
+        self.current_step = None
+        highest_value = 0
+        step_value = dict()
+        surface = self.attack_surface()
+        if surface:
+            for step_name in surface:
+                step_value[step_name] = self.value(step_name)
+                if step_value[step_name] > highest_value:
+                    highest_value = step_value[step_name]
+                    self.current_step = step_name
+
+    def value(self, parent_name, discount_rate = 0.1):
+        parent = self.attack_graph.attack_steps[parent_name]
+        value = parent.reward
+        for child_name in parent.children:
+            value += self.value(child_name)
+        value = value/(1 + discount_rate)**parent.ttc
+        return value
+            
 
     def shortest_path(self):
-        pass
+        gttc = dict()
+        horizon = set()
+        for compromised_step in self.compromised_steps:
+            gttc[compromised_step] = 0
+            horizon.add(compromised_step)
+        self.shortest_path_recursion(horizon, gttc)
+        return gttc
+
+    def shortest_path_recursion(self, horizon, gttc):
+        next_horizon = set()
+        for parent in horizon:
+            for child in self.attack_graph.attack_steps[parent].children:
+                if child in gttc:
+                    if gttc[child] < gttc[parent] + self.attack_graph.attack_steps[child].ttc:
+                        gttc[child] = gttc[child]
+                else:
+                    gttc[child] = gttc[parent] + self.attack_graph.attack_steps[child].ttc
+                next_horizon.add(child)
+        if next_horizon:
+            self.shortest_path_recursion(next_horizon, gttc)
+
 
     def attack(self):
         logger = logging.getLogger("simulator")
