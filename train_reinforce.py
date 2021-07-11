@@ -36,6 +36,10 @@ if __name__ == '__main__':
                         help='Dimension of the hidden linear layers. Defult is 64.')
     parser.add_argument('--evaluation_rounds', type=int, default=0,
                         help='Number of simulations to run after training, for evaluation.')
+    parser.add_argument('--true_positive', type=float, default=1.0,
+                        help='Probability that compromised attack steps are reported as compromised.')
+    parser.add_argument('--false_positive', type=float, default=0.0,
+                        help='Probability that uncompromised attack steps are reported as compromised.')
     parser.add_argument('--no_skipping', action='store_true',
                         help="Do not add a skip action for the agent.")
     parser.add_argument('--include_services', action='store_true',
@@ -61,7 +65,7 @@ if __name__ == '__main__':
         torch.manual_seed(args.random_seed)
 
     env = AttackSimulationEnv(deterministic=args.deterministic, early_flag_reward=args.early_flag_reward,
-                              late_flag_reward=args.late_flag_reward, final_flag_reward=args.final_flag_reward, graph_size=args.graph_size)
+                              late_flag_reward=args.late_flag_reward, final_flag_reward=args.final_flag_reward, graph_size=args.graph_size, true_positive=args.true_positive, false_positive=args.false_positive)
 
     if args.graph:
         env.attack_graph.generate_graphviz_file()
