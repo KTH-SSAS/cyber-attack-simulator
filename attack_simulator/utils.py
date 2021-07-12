@@ -7,121 +7,157 @@ import numpy as np
 import torch
 
 
-def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False, include_services_in_state=False):
-    services = {}  # Serves as a key for which services belong to which index
-    done = False
-    for service, i in enumerate(env.attack_graph.enabled_services):
-        services[service] = i
+class Runner:
 
-    enabled_services = np.ones(len(services), dtype=np.int8)
+    def __init__(self, agent_type, deterministic,  early_flag_reward, late_flag_reward, final_flag_reward, easy_ttc, hard_ttc, graph_size, attacker_strategy, true_positive, false_positive, input_dim, services, hidden_dim, allow_skip, include_services_in_state=False):
 
-    rewards = []
-    num_services = []
-    compromised_flags = []
-    state = env._next_observation()  # Intial state
-    while not done:
+        self.env = AttackSimulationEnv(deterministic=deterministic, early_flag_reward=early_flag_reward,
+                                  late_flag_reward=late_flag_reward, final_flag_reward=final_flag_reward, easy_ttc=easy_ttc, hard_ttc=hard_ttc, graph_size=graph_size, attacker_strategy=attacker_strategy, true_positive=true_positive, false_positive=false_positive)
 
-        if include_services_in_state:
-            state = np.concatenate([state, enabled_services])
+        if agent_type == 'reinforce':
+            self.agent = ReinforceAgent(input_dim, services,
+                                   hidden_dim=hidden_dim, allow_skip=allow_skip)
+        elif agent_type == 'rule_based':
+            self.agent = RuleBasedAgent(env)
+        elif agent_type == 'random':
+            self.agent = RandomMCAgent(services, allow_skip=allow_skip)
 
-        action = agent.act(state)
+        self.include_services_in_state = include_services_in_state
 
-        if agent.can_skip:
-            if action > 0:
-                # Shift action by 1 since action==0 is treated as skip
-                enabled_services[action - 1] = 0
+    def run_sim(self, plot_results=False):
+        services = {}  # Serves as a key for which services belong to which index
+        done = False
+        for service, i in enumerate(self.env.attack_graph.enabled_services):
+            services[service] = i
+
+        enabled_services = np.ones(len(services), dtype=np.int8)
+
+        rewards = []
+        num_services = []
+        compromised_flags = []
+        state = self.env._next_observation()  # Intial state
+        while not done:
+
+            if self.include_services_in_state:
+                state = np.concatenate([state, enabled_services])
+
+            action = self.agent.act(state)
+
+            if self.agent.can_skip:
+                if action > 0:
+                    # Shift action by 1 since action==0 is treated as skip
+                    enabled_services[action - 1] = 0
+                else:
+                    pass  # Skip action and don't disable a service
             else:
-                pass  # Skip action and don't disable a service
+                enabled_services[action] = 0
+
+            new_state, reward, done, info = self.env.step(enabled_services)
+            rewards.append(reward)
+            # count number of running services
+            num_services.append(sum(enabled_services))
+            compromised_flags.append(len(info['compromised_flags']))
+            state = new_state
+
+        if plot_results:
+            _, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
+            ax1.plot(rewards, "b")
+            ax1.set_ylabel("Reward")
+            ax2.plot(num_services, "r")
+            ax2.set_ylabel("Number of services")
+            ax3.plot(compromised_flags)
+            ax3.set_ylabel("Compromised flags")
+            ax3.set_xlabel("Step")
+            plt.show()
+
+        return rewards, info['time'], info['compromised_flags']
+
+    def run_multiple_simulations(self, episodes, evaluation=False, plot=True):
+
+        log = logging.getLogger("trainer")
+        returns = np.zeros(episodes)
+        losses = np.zeros(episodes)
+        lengths = np.zeros(episodes)
+        num_compromised_flags = np.zeros(episodes)
+        max_patience = 50
+        patience = max_patience
+        prev_loss = 1E6
+
+        if evaluation:
+            self.agent.eval()
         else:
-            enabled_services[action] = 0
+            self.agent.train()
 
-        new_state, reward, done, info = env.step(enabled_services)
-        rewards.append(reward)
-        # count number of running services
-        num_services.append(sum(enabled_services))
-        compromised_flags.append(len(info['compromised_flags']))
-        state = new_state
+        try:
+            for i in range(episodes):
+                rewards, episode_length, compromised_flags = self.run_sim()
+                if evaluation:
+                    loss = self.agent.calculate_loss(rewards).item()
+                else:
+                    loss = self.agent.update(rewards)
+                losses[i] = loss
+                returns[i] = sum(rewards)
+                lengths[i] = episode_length
+                num_compromised_flags[i] = len(compromised_flags)
+                self.env.reset()
+                log.debug(
+                    f"Episode: {i+1}/{episodes}, Loss: {loss}, Return: {sum(rewards)}, Episode Length: {episode_length}")
 
-    if plot_results:
-        _, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
-        ax1.plot(rewards, "b")
-        ax1.set_ylabel("Reward")
-        ax2.plot(num_services, "r")
-        ax2.set_ylabel("Number of services")
-        ax3.plot(compromised_flags)
-        ax3.set_ylabel("Compromised flags")
-        ax3.set_xlabel("Step")
-        plt.show()
+                if (prev_loss - loss) < 0.01 and not evaluation:
+                    patience -= 1
+                else:
+                    patience = (
+                        patience+1) if patience < max_patience else max_patience
 
-    return rewards, info['time'], info['compromised_flags']
+                if patience == 0:
+                    log.debug("Stopping due to insignicant loss changes.")
+                    break
 
+                prev_loss = loss
 
-def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: ReinforceAgent, evaluation=False, include_services=False):
+        except KeyboardInterrupt:
+            print("Stopping...")
 
-    log = logging.getLogger("trainer")
-    returns = np.zeros(episodes)
-    losses = np.zeros(episodes)
-    lengths = np.zeros(episodes)
-    num_compromised_flags = np.zeros(episodes)
-    max_patience = 50
-    patience = max_patience
-    prev_loss = 1E6
+        if evaluation:
+            log.debug(f"Average returns: {sum(returns)/len(returns)}")
 
-    if evaluation:
-        agent.eval()
-    else:
-        agent.train()
+        if plot:
+            fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, sharex=True)
+            title = "Training Results" if not evaluation else "Evaluation Results"
+            ax1.set_title(title)
+            ax1.plot(returns)
+            # ax1.set_xlabel("Episode")
+            ax1.set_xlim(0, i)  # Cut off graph at stopping point
+            ax1.set_ylabel("Return")
+            ax2.plot(losses)
+            ax2.set_ylabel('Loss')
+            # ax2.set_xlabel('Episode')
+            ax3.plot(lengths)
+            ax3.set_ylabel("Episode Length")
 
-    try:
-        for i in range(episodes):
-            rewards, episode_length, compromised_flags = run_sim(
-                env, agent, include_services_in_state=include_services)
-            if evaluation:
-                loss = agent.calculate_loss(rewards).item()
-            else:
-                loss = agent.update(rewards)
-            losses[i] = loss
-            returns[i] = sum(rewards)
-            lengths[i] = episode_length
-            num_compromised_flags[i] = len(compromised_flags)
-            env.reset()
-            log.debug(
-                f"Episode: {i+1}/{episodes}, Loss: {loss}, Return: {sum(rewards)}, Episode Length: {episode_length}")
+            ax4.plot(num_compromised_flags)
+            ax4.set_ylabel("Compromised flags")
 
-            if (prev_loss - loss) < 0.01 and not evaluation:
-                patience -= 1
-            else:
-                patience = (
-                    patience+1) if patience < max_patience else max_patience
+            ax4.set_xlabel("Episode")
+            fig.savefig('plot.pdf', dpi=200)
+            plt.show()
 
-            if patience == 0:
-                log.debug("Stopping due to insignicant loss changes.")
-                break
+        return returns, losses, lengths, num_compromised_flags
 
-            prev_loss = loss
+    def train_and_evaluate(self, n_simulations, evaluation_rounds=0):
 
-    except KeyboardInterrupt:
-        print("Stopping...")
+        # Train
+        self.run_multiple_simulations(n_simulations, self.env, self.agent)
 
-    if evaluation:
-        log.debug(f"Average returns: {sum(returns)/len(returns)}")
+        # Evaluate
+        if evaluation_rounds > 0:
+            self.run_multiple_simulations(evaluation_rounds, self.env, self.agent,
+                                          evaluation=True, include_services=include_services_in_state)
 
-    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, sharex=True)
-    title = "Training Results" if not evaluation else "Evaluation Results"
-    ax1.set_title(title)
-    ax1.plot(returns)
-    # ax1.set_xlabel("Episode")
-    ax1.set_xlim(0, i)  # Cut off graph at stopping point
-    ax1.set_ylabel("Return")
-    ax2.plot(losses)
-    ax2.set_ylabel('Loss')
-    # ax2.set_xlabel('Episode')
-    ax3.plot(lengths)
-    ax3.set_ylabel("Episode Length")
+    def explore_parameter(self, episodes, evaluation_rounds):
 
-    ax4.plot(num_compromised_flags)
-    ax4.set_ylabel("Compromised flags")
+        self.run_multiple_simulations(
+            episodes, evaluation=True, plot=False)
 
-    ax4.set_xlabel("Episode")
-    fig.savefig('plot.pdf', dpi=200)
-    plt.show()
+    def generate_graphviz_file(self):
+            self.env.attack_graph.generate_graphviz_file()

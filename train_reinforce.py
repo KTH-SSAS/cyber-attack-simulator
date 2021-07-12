@@ -1,4 +1,4 @@
-from attack_simulator.utils import run_multiple_simulations
+from attack_simulator.utils import Runner
 from attack_simulator.agents.policy_agents import ReinforceAgent
 from attack_simulator.agents.baseline_agents import RuleBasedAgent
 from attack_simulator.agents.baseline_agents import RandomMCAgent
@@ -68,37 +68,20 @@ if __name__ == '__main__':
         random.seed(args.random_seed)
         torch.manual_seed(args.random_seed)
 
-    env = AttackSimulationEnv(deterministic=args.deterministic, early_flag_reward=args.early_flag_reward,
-                              late_flag_reward=args.late_flag_reward, final_flag_reward=args.final_flag_reward, easy_ttc=args.easy_ttc, hard_ttc=args.hard_ttc, graph_size=args.graph_size, attacker_strategy=args.attacker_strategy, true_positive=args.true_positive, false_positive=args.false_positive)
-
-    if args.graph:
-        env.attack_graph.generate_graphviz_file()
-
     services = 18
     include_services_in_state = args.include_services
+    if include_services_in_state:
+        input_dim = attack_steps + services
+    else:
+        input_dim = attack_steps
 
     # allowing skipping will add an additional 'skip' action
     allow_skip = not args.no_skipping
 
-    if args.agent == 'reinforce':
+    runner = Runner(args.agent, args.deterministic,  args.early_flag_reward, args.late_flag_reward,
+                                             args.final_flag_reward, args.easy_ttc, args.hard_ttc, args.graph_size, args.attacker_strategy, args.true_positive, args.false_positive, input_dim, services, args.hidden_width, allow_skip)
 
-        if include_services_in_state:
-            input_dim = attack_steps + services
-        else:
-            input_dim = attack_steps
+    if args.graph:
+        runner.generate_graphviz_file()
 
-        agent = ReinforceAgent(input_dim, services,
-                               hidden_dim=args.hidden_width, allow_skip=allow_skip)
-    elif args.agent == 'rule_based':
-        agent = RuleBasedAgent(env)
-    elif args.agent == 'random':
-        agent = RandomMCAgent(services, allow_skip=allow_skip)
-
-
-    # Train
-    run_multiple_simulations(args.n_simulations, env, agent)
-
-    # Evaluate
-    if args.evaluation_rounds > 0:
-        run_multiple_simulations(args.evaluation_rounds, env, agent,
-                                 evaluation=True, include_services=include_services_in_state)
+    runner.train_and_evaluate(args.n_simulations, args.evaluation_rounds)
