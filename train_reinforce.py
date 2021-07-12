@@ -1,7 +1,5 @@
 from attack_simulator.utils import Runner
 import logging
-import numpy.random as random
-import torch
 import argparse
 
 if __name__ == '__main__':
