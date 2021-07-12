@@ -85,7 +85,7 @@ class AttackGraph:
                 ttc=self.easy_ttc, children={'wifi_host.http_server.connect'})
             self.add_attack_step(asset='wifi_network', name='connect', 
                 step_type='and', children={'wifi_network.map'})
-            self.add_attack_step(asset='wifi_network', service='flag_d582aa', name='capture', 
+            self.add_attack_step(asset='wifi_network', flag='flag_d582aa', name='capture', 
                 reward=self.late_flag_reward)
             self.add_attack_step(asset='wifi_network', name='decrypt_traffic', step_type='and', ttc=self.easy_ttc, children={
                                                                            'wifi_network.flag_d582aa.capture'})
@@ -106,9 +106,9 @@ class AttackGraph:
             self.add_attack_step(asset='fancy_bear', service='ssh', name='connect', 
                 children={'fancy_bear.ssh.login'})
 
-            self.add_attack_step(asset='cloud_function', service='flag_831865', name='capture', 
+            self.add_attack_step(asset='cloud_function', flag='flag_831865', name='capture', 
                 reward=self.late_flag_reward)
-            self.add_attack_step(asset='cloud_function', service='flag_d8d9da', name='capture', 
+            self.add_attack_step(asset='cloud_function', flag='flag_d8d9da', name='capture', 
                 reward=self.late_flag_reward)
             self.add_attack_step(asset='cloud_function', name='exploit_vulnerability', 
                 children={'cloud_function.flag_831865.capture'})
@@ -117,7 +117,7 @@ class AttackGraph:
             self.add_attack_step(asset='cloud_function', name='gather_information', 
                 children={'cloud_function.find_vulnerability', 'cloud_function.flag_d8d9da.capture'})
 
-            self.add_attack_step(asset='cloud_bucket', service='flag_21077e', name='capture', 
+            self.add_attack_step(asset='cloud_bucket', flag='flag_21077e', name='capture', 
                 reward=self.late_flag_reward)
             self.add_attack_step(asset='cloud_bucket', name='find_credentials', 
                 children={'fancy_bear.ssh.obtain_credentials'})
@@ -126,7 +126,7 @@ class AttackGraph:
 
             self.add_attack_step(asset='cloud_hopper', name='gather_information', 
                 ttc=self.easy_ttc, children={'cloud_bucket.list'})
-            self.add_attack_step(asset='cloud_hopper', service='flag_93b00a', name='capture', 
+            self.add_attack_step(asset='cloud_hopper', flag='flag_93b00a', name='capture', 
                 reward=self.late_flag_reward)
             self.add_attack_step(asset='cloud_hopper', name='terminal_access', 
                 children={'cloud_hopper.gather_information', 'cloud_hopper.flag_93b00a.capture'})
@@ -142,9 +142,9 @@ class AttackGraph:
             self.add_attack_step(asset='hidden_network', name='connect', 
                 children={'hidden_network.map'})
 
-            self.add_attack_step(asset='buckeye', service='flag_2362e5', name='capture', 
+            self.add_attack_step(asset='buckeye', flag='flag_2362e5', name='capture', 
                 reward=self.late_flag_reward)
-            self.add_attack_step(asset='buckeye', service='flag_5d402e', name='capture', 
+            self.add_attack_step(asset='buckeye', flag='flag_5d402e', name='capture', 
                 reward=self.late_flag_reward)
             self.add_attack_step(asset='buckeye', service='firefox', flag='flag_14ce18', name='capture', 
                 reward=self.late_flag_reward)
@@ -163,31 +163,31 @@ class AttackGraph:
             self.add_attack_step(asset='buckeye', service='firefox', name='connect', 
                 children={'buckeye.firefox.find_vulnerability'})
 
-            self.add_attack_step(asset='sea_turle', service='flag_6be6ef', name='capture', 
+            self.add_attack_step(asset='sea_turtle', flag='flag_6be6ef', name='capture', 
                 reward=self.late_flag_reward)
-            self.add_attack_step(asset='sea_turle', service='flag_f9038f', name='capture', 
+            self.add_attack_step(asset='sea_turtle', flag='flag_f9038f', name='capture', 
                 reward=self.late_flag_reward)
             self.add_attack_step(asset='sea_turtle', name='capture_traffic', ttc=self.easy_ttc, children={
                                                                          'buckeye.firefox.connect', 'buckeye.firefox.flag_14ce18.capture'})
             self.add_attack_step(asset='sea_turtle', name='escalate_to_root', ttc=self.hard_ttc, children={
-                                                                          'sea_turtle.capture_traffic', 'sea_turle.flag_6be6ef.capture'})
+                                                                          'sea_turtle.capture_traffic', 'sea_turtle.flag_6be6ef.capture'})
             self.add_attack_step(asset='sea_turtle', name='exploit_vulnerability', 
                 ttc=self.hard_ttc, children={'sea_turtle.escalate_to_root'})
             self.add_attack_step(asset='sea_turtle', name='find_vulnerability', 
                 ttc=self.hard_ttc, children={'sea_turtle.exploit_vulnerability'})
             self.add_attack_step(asset='sea_turtle', service='telnet', name='login', step_type='and', children={
-                                                                      'sea_turtle.find_vulnerability', 'sea_turle.flag_f9038f.capture'})
+                                                                      'sea_turtle.find_vulnerability', 'sea_turtle.flag_f9038f.capture'})
             self.add_attack_step(asset='sea_turtle', service='telnet', name='obtain_credentials', 
                 children={'sea_turtle.telnet.login'})
             self.add_attack_step(asset='sea_turtle', service='telnet', name='connect', 
                 children={'sea_turtle.telnet.login'})
 
         if self.graph_size == 'medium' or self.graph_size == 'large':
-            self.add_attack_step(asset='energetic_bear', service='flag_73cb43', name='capture', 
+            self.add_attack_step(asset='energetic_bear', flag='flag_73cb43', name='capture', 
                 reward=self.early_flag_reward)
-            self.add_attack_step(asset='energetic_bear', service='flag_3b2000', name='capture', 
+            self.add_attack_step(asset='energetic_bear', flag='flag_3b2000', name='capture', 
                 reward=self.early_flag_reward)
-            self.add_attack_step(asset='energetic_bear', service='flag_de3b1c', name='capture', 
+            self.add_attack_step(asset='energetic_bear', flag='flag_de3b1c', name='capture', 
                 reward=self.early_flag_reward)
             if self.graph_size == 'large':
                 self.add_attack_step(asset='energetic_bear', name='capture_traffic', ttc=self.easy_ttc, children={
@@ -216,7 +216,7 @@ class AttackGraph:
             self.add_attack_step(asset='energetic_bear', service='apache', name='connect', 
                 children={'energetic_bear.apache.gather_information'})
 
-            self.add_attack_step(asset='lazarus', service='flag_cd699a', name='capture', 
+            self.add_attack_step(asset='lazarus', flag='flag_cd699a', name='capture', 
                 reward=self.early_flag_reward)
             if self.graph_size == 'large':
                 self.add_attack_step(asset='lazarus', name='find_credentials', ttc=self.easy_ttc, children={
