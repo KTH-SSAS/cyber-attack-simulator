@@ -17,7 +17,7 @@ def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False,
 
     rewards = []
     num_services = []
-    compromised_steps = []
+    compromised_flags = []
     state = env._next_observation()  # Intial state
     while not done:
 
@@ -39,7 +39,7 @@ def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False,
         rewards.append(reward)
         # count number of running services
         num_services.append(sum(enabled_services))
-        compromised_steps.append(len(info['compromised_steps']))
+        compromised_flags.append(len(info['compromised_flags']))
         state = new_state
 
     if plot_results:
@@ -48,12 +48,12 @@ def run_sim(env: AttackSimulationEnv, agent: ReinforceAgent, plot_results=False,
         ax1.set_ylabel("Reward")
         ax2.plot(num_services, "r")
         ax2.set_ylabel("Number of services")
-        ax3.plot(compromised_steps)
-        ax3.set_ylabel("Compromised steps")
+        ax3.plot(compromised_flags)
+        ax3.set_ylabel("Compromised flags")
         ax3.set_xlabel("Step")
         plt.show()
 
-    return rewards, info['time'], info['compromised_steps']
+    return rewards, info['time'], info['compromised_flags']
 
 
 def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: ReinforceAgent, evaluation=False, include_services=False):
@@ -62,7 +62,7 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
     returns = np.zeros(episodes)
     losses = np.zeros(episodes)
     lengths = np.zeros(episodes)
-    num_compromised_steps = np.zeros(episodes)
+    num_compromised_flags = np.zeros(episodes)
     max_patience = 50
     patience = max_patience
     prev_loss = 1E6
@@ -74,7 +74,7 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
 
     try:
         for i in range(episodes):
-            rewards, episode_length, compromised_steps = run_sim(
+            rewards, episode_length, compromised_flags = run_sim(
                 env, agent, include_services_in_state=include_services)
             if evaluation:
                 loss = agent.calculate_loss(rewards).item()
@@ -83,7 +83,7 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
             losses[i] = loss
             returns[i] = sum(rewards)
             lengths[i] = episode_length
-            num_compromised_steps[i] = len(compromised_steps)
+            num_compromised_flags[i] = len(compromised_flags)
             env.reset()
             log.debug(
                 f"Episode: {i+1}/{episodes}, Loss: {loss}, Return: {sum(rewards)}, Episode Length: {episode_length}")
@@ -103,6 +103,9 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
     except KeyboardInterrupt:
         print("Stopping...")
 
+    if evaluation:
+        log.debug(f"Average returns: {sum(returns)/len(returns)}")
+
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, sharex=True)
     title = "Training Results" if not evaluation else "Evaluation Results"
     ax1.set_title(title)
@@ -116,8 +119,8 @@ def run_multiple_simulations(episodes, env: AttackSimulationEnv, agent: Reinforc
     ax3.plot(lengths)
     ax3.set_ylabel("Episode Length")
 
-    ax4.plot(num_compromised_steps)
-    ax4.set_ylabel("Compromised steps")
+    ax4.plot(num_compromised_flags)
+    ax4.set_ylabel("Compromised flags")
 
     ax4.set_xlabel("Episode")
     fig.savefig('plot.pdf', dpi=200)

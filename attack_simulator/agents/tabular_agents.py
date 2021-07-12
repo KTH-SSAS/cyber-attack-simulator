@@ -64,7 +64,7 @@ class QLearningAgent(Agent):
 
         q = self.Q[self.state][self.action]
         self.Q[self.state][self.action] = q + self.alpha * \
-            (reward + self.gamma*argmax(q_prime) - q)
+            (reward + self.gamma*max(q_prime) - q)
 
 
 class RandomAgent(Agent):
