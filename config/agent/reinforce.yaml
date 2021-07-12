@@ -1,0 +1,5 @@
+type: reinforce
+# Optimizer (Adam) learning rate.
+lr: 0.01
+# Dimension of the hidden linear layers.
+hidden_width: 32

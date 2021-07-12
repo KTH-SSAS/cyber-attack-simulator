@@ -1,0 +1,8 @@
+# Maximum number of simulations. Training will stop automatically when losses are sufficiently low
+n_simulations: 10000
+# Include enabled services in the state.
+include_services: false
+# Add a skip action for the agent.
+allow_skips: false
+# Number of simulations to run after training, for evaluation.
+evaluation_rounds: 0

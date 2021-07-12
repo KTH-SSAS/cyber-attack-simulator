@@ -1,0 +1,18 @@
+# Graph size. Valid choices: small, medium, large
+graph_size: large
+# Flag reward for the attacker when capturing flags early in the attack graph (use positive values)
+early_flag_reward: 10000
+# Flag reward for the attacker when capturing flags late in the attack graph (use positive values)
+late_flag_reward: 10000
+# Flag reward for the attacker when capturing the final flag in the attack graph (use positive values)
+final_flag_reward: 10000
+# Mean time required by attacker to compromise easy attack steps.
+easy_ttc: 10
+# Mean time required by attacker to compromise hard attack steps.
+hard_ttc: 100
+# Probability that compromised attack steps are reported as compromised.
+true_positive: 1
+# Probability that uncompromised attack steps are reported as compromised.
+false_positive: 0
+# Attacker strategy. Valid choices: value_maximizing and random
+attacker_strategy: random

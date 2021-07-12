@@ -1,0 +1,12 @@
+defaults:
+- env: default
+- agent: reinforce
+- trainer: only_train
+- override hydra/job_logging: custom
+
+# Generate a GraphViz .dot file.
+graph: false
+# Random seed for both numpy and torch.
+random_seed: 0
+# Make environment deterministic.        
+deterministic: false
