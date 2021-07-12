@@ -12,10 +12,10 @@ class RandomMCAgent():
         return np.random.randint(0, self.num_actions)
 
     def update(self, *args):
-        return 0
+        return self.calculate_loss()
 
     def calculate_loss(self, *args, **kwargs):
-        return torch.Tensor([0])
+        return torch.Tensor([np.random.rand()])
 
     def eval(self):
         ...
