@@ -1,4 +1,6 @@
 from attack_simulator.agents.policy_agents import ReinforceAgent
+from attack_simulator.agents.baseline_agents import RuleBasedAgent
+from attack_simulator.agents.baseline_agents import RandomMCAgent
 from attack_simulator.attack_simulation_env import AttackSimulationEnv
 import matplotlib.pyplot as plt
 import logging
@@ -18,7 +20,7 @@ class Runner:
             self.agent = ReinforceAgent(input_dim, services,
                                    hidden_dim=hidden_dim, allow_skip=allow_skip)
         elif agent_type == 'rule_based':
-            self.agent = RuleBasedAgent(env)
+            self.agent = RuleBasedAgent(self.env)
         elif agent_type == 'random':
             self.agent = RandomMCAgent(services, allow_skip=allow_skip)
 
@@ -108,7 +110,6 @@ class Runner:
                 else:
                     patience = (
                         patience+1) if patience < max_patience else max_patience
-
                 if patience == 0:
                     log.debug("Stopping due to insignicant loss changes.")
                     break
@@ -147,12 +148,11 @@ class Runner:
     def train_and_evaluate(self, n_simulations, evaluation_rounds=0):
 
         # Train
-        self.run_multiple_simulations(n_simulations, self.env, self.agent)
+        self.run_multiple_simulations(n_simulations)
 
         # Evaluate
         if evaluation_rounds > 0:
-            self.run_multiple_simulations(evaluation_rounds, self.env, self.agent,
-                                          evaluation=True, include_services=include_services_in_state)
+            self.run_multiple_simulations(evaluation_rounds, evaluation=True, include_services=include_services_in_state)
 
     def explore_parameter(self, episodes, evaluation_rounds):
 

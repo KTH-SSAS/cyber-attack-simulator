@@ -1,8 +1,4 @@
 from attack_simulator.utils import Runner
-from attack_simulator.agents.policy_agents import ReinforceAgent
-from attack_simulator.agents.baseline_agents import RuleBasedAgent
-from attack_simulator.agents.baseline_agents import RandomMCAgent
-from attack_simulator.attack_simulation_env import AttackSimulationEnv
 import logging
 import numpy.random as random
 import torch
@@ -79,7 +75,7 @@ if __name__ == '__main__':
     allow_skip = not args.no_skipping
 
     runner = Runner(args.agent, args.deterministic,  args.early_flag_reward, args.late_flag_reward,
-                                             args.final_flag_reward, args.easy_ttc, args.hard_ttc, args.graph_size, args.attacker_strategy, args.true_positive, args.false_positive, input_dim, services, args.hidden_width, allow_skip)
+                                             args.final_flag_reward, args.easy_ttc, args.hard_ttc, args.graph_size, args.attacker_strategy, args.true_positive, args.false_positive, input_dim, services, args.hidden_width, allow_skip, include_services_in_state)
 
     if args.graph:
         runner.generate_graphviz_file()
