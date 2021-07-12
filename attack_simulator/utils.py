@@ -11,14 +11,14 @@ import torch
 
 class Runner:
 
-    def __init__(self, agent_type, deterministic,  early_flag_reward, late_flag_reward, final_flag_reward, easy_ttc, hard_ttc, graph_size, attacker_strategy, true_positive, false_positive, input_dim, services, hidden_dim, allow_skip, include_services_in_state=False):
+    def __init__(self, agent_type, deterministic,  early_flag_reward, late_flag_reward, final_flag_reward, easy_ttc, hard_ttc, graph_size, attacker_strategy, true_positive, false_positive, input_dim, services, hidden_dim, learning_rate, allow_skip, include_services_in_state=False):
 
         self.env = AttackSimulationEnv(deterministic=deterministic, early_flag_reward=early_flag_reward,
                                   late_flag_reward=late_flag_reward, final_flag_reward=final_flag_reward, easy_ttc=easy_ttc, hard_ttc=hard_ttc, graph_size=graph_size, attacker_strategy=attacker_strategy, true_positive=true_positive, false_positive=false_positive)
 
         if agent_type == 'reinforce':
             self.agent = ReinforceAgent(input_dim, services,
-                                   hidden_dim=hidden_dim, allow_skip=allow_skip)
+                                   hidden_dim, learning_rate, allow_skip=allow_skip)
         elif agent_type == 'rule_based':
             self.agent = RuleBasedAgent(self.env)
         elif agent_type == 'random':

@@ -44,6 +44,7 @@ if __name__ == '__main__':
                         help="Do not add a skip action for the agent.")
     parser.add_argument('--include_services', action='store_true',
                         help="Include enabled services in the state.")
+    parser.add_argument('--lr', help='Optimizer (Adam) learning rate.', default=1e-2)
     args = parser.parse_args()
 
     logging.getLogger("simulator").setLevel(logging.DEBUG)
@@ -75,9 +76,6 @@ if __name__ == '__main__':
     allow_skip = not args.no_skipping
 
     runner = Runner(args.agent, args.deterministic,  args.early_flag_reward, args.late_flag_reward,
-                                             args.final_flag_reward, args.easy_ttc, args.hard_ttc, args.graph_size, args.attacker_strategy, args.true_positive, args.false_positive, input_dim, services, args.hidden_width, allow_skip, include_services_in_state)
-
-    if args.graph:
-        runner.generate_graphviz_file()
+                                             args.final_flag_reward, args.easy_ttc, args.hard_ttc, args.graph_size, args.attacker_strategy, args.true_positive, args.false_positive, input_dim, services, args.hidden_width, args.lr, allow_skip, include_services_in_state)
 
     runner.train_and_evaluate(args.n_simulations, args.evaluation_rounds)
