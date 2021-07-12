@@ -48,6 +48,7 @@ if __name__ == '__main__':
                         help="Do not add a skip action for the agent.")
     parser.add_argument('--include_services', action='store_true',
                         help="Include enabled services in the state.")
+    parser.add_argument('--lr', help='Optimizer (Adam) learning rate.', default=1e-2)
     args = parser.parse_args()
 
     logging.getLogger("simulator").setLevel(logging.DEBUG)
@@ -88,7 +89,7 @@ if __name__ == '__main__':
             input_dim = attack_steps
 
         agent = ReinforceAgent(input_dim, services,
-                               hidden_dim=args.hidden_width, allow_skip=allow_skip)
+                               hidden_dim=args.hidden_width, learning_rate=args.lr, allow_skip=allow_skip)
     elif args.agent == 'rule_based':
         agent = RuleBasedAgent(env)
     elif args.agent == 'random':

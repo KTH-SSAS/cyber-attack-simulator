@@ -29,13 +29,13 @@ class PolicyModel(nn.Module):
 
 class ReinforceAgent(Agent):
 
-    def __init__(self, input_dim, num_actions, hidden_dim, gamma=0.9, allow_skip=True) -> None:
+    def __init__(self, input_dim, num_actions, hidden_dim, learning_rate, gamma=0.9, allow_skip=True) -> None:
         num_actions = num_actions + 1 if allow_skip else num_actions
         self.can_skip = allow_skip
         self.policy = PolicyModel(input_dim, num_actions, hidden_dim)
         self.saved_log_probs = []
         self.gamma = gamma
-        self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=1e-2)
+        self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=learning_rate)
 
     def act(self, state):
         action_probabilities = self.policy.forward(torch.Tensor(state))
