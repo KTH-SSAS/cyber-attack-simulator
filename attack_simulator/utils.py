@@ -11,14 +11,34 @@ import torch
 
 class Runner:
 
-    def __init__(self, agent_type, deterministic,  early_flag_reward, late_flag_reward, final_flag_reward, easy_ttc, hard_ttc, graph_size, attacker_strategy, true_positive, false_positive, input_dim, services, hidden_dim, learning_rate, allow_skip, include_services_in_state=False):
+    def __init__(self, agent_type, deterministic, random_seed, early_flag_reward, late_flag_reward, final_flag_reward, easy_ttc, hard_ttc, graph_size, attacker_strategy, true_positive, false_positive, hidden_dim, learning_rate, no_skipping, include_services_in_state=False):
+
+        if graph_size == 'small': 
+            attack_steps = 7 
+        elif graph_size == 'medium': 
+            attack_steps = 29 
+        elif graph_size == 'large': 
+            attack_steps = 78 
+
+        services = 18 
+
+        if include_services_in_state: 
+            input_dim = attack_steps + services
+        else:
+            input_dim = attack_steps
+
+        if deterministic:
+            random.seed(random_seed)
+            torch.manual_seed(random_seed)
+
+        allow_skip = not no_skipping
 
         self.env = AttackSimulationEnv(deterministic=deterministic, early_flag_reward=early_flag_reward,
-                                  late_flag_reward=late_flag_reward, final_flag_reward=final_flag_reward, easy_ttc=easy_ttc, hard_ttc=hard_ttc, graph_size=graph_size, attacker_strategy=attacker_strategy, true_positive=true_positive, false_positive=false_positive)
+                                       late_flag_reward=late_flag_reward, final_flag_reward=final_flag_reward, easy_ttc=easy_ttc, hard_ttc=hard_ttc, graph_size=graph_size, attacker_strategy=attacker_strategy, true_positive=true_positive, false_positive=false_positive)
 
         if agent_type == 'reinforce':
             self.agent = ReinforceAgent(input_dim, services,
-                                   hidden_dim, learning_rate, allow_skip=allow_skip)
+                                        hidden_dim, learning_rate, allow_skip=allow_skip)
         elif agent_type == 'rule_based':
             self.agent = RuleBasedAgent(self.env)
         elif agent_type == 'random':
@@ -74,7 +94,7 @@ class Runner:
 
         return rewards, info['time'], info['compromised_flags']
 
-    def run_multiple_simulations(self, episodes, evaluation=False, plot=True):
+    def run_multiple_episodes(self, episodes, evaluation=False, plot=True):
 
         log = logging.getLogger("trainer")
         returns = np.zeros(episodes)
@@ -145,19 +165,26 @@ class Runner:
 
         return returns, losses, lengths, num_compromised_flags
 
-    def train_and_evaluate(self, n_simulations, evaluation_rounds=0):
+    def train_and_evaluate(self, episodes, evaluation_rounds=0):
 
         # Train
-        self.run_multiple_simulations(n_simulations)
+        self.run_multiple_episodes(episodes)
 
         # Evaluate
         if evaluation_rounds > 0:
-            self.run_multiple_simulations(evaluation_rounds, evaluation=True, include_services=include_services_in_state)
+            self.run_multiple_episodes(
+                evaluation_rounds, evaluation=True, include_services=self.include_services_in_state)
 
-    def explore_parameter(self, episodes, evaluation_rounds):
-
-        self.run_multiple_simulations(
-            episodes, evaluation=True, plot=False)
+    def effect_of_measurement_accuracy_on_returns(self, episodes=10000, evaluation_rounds=50, resolution=5):
+        returns_matrix = np.zeros((resolution, resolution))
+        for fp in range(0, resolution):
+            for tp in range(0, resolution):
+                self.env.attack_graph.false_positive = fp/(resolution-1)
+                self.env.attack_graph.true_positive = tp/(resolution-1)
+                returns, losses, lengths, num_compromised_flags = self.train_and_evaluate(episodes, evaluation_rounds)
+                returns_matrix[fp, tp] = sum(returns)/len(returns)
+                print(returns_matrix)
+        return returns_matrix
 
     def generate_graphviz_file(self):
-            self.env.attack_graph.generate_graphviz_file()
+        self.env.attack_graph.generate_graphviz_file()

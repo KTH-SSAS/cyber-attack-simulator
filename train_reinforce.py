@@ -54,28 +54,8 @@ if __name__ == '__main__':
     logging.getLogger("trainer").addHandler(
         logging.FileHandler("trainer.log", mode="w"))
 
-    if args.graph_size == 'small':
-        attack_steps = 7
-    elif args.graph_size == 'medium':
-        attack_steps = 29
-    else:
-        attack_steps = 78
-
-    if args.deterministic:
-        random.seed(args.random_seed)
-        torch.manual_seed(args.random_seed)
-
-    services = 18
-    include_services_in_state = args.include_services
-    if include_services_in_state:
-        input_dim = attack_steps + services
-    else:
-        input_dim = attack_steps
-
     # allowing skipping will add an additional 'skip' action
-    allow_skip = not args.no_skipping
 
-    runner = Runner(args.agent, args.deterministic,  args.early_flag_reward, args.late_flag_reward,
-                                             args.final_flag_reward, args.easy_ttc, args.hard_ttc, args.graph_size, args.attacker_strategy, args.true_positive, args.false_positive, input_dim, services, args.hidden_width, args.lr, allow_skip, include_services_in_state)
+    runner = Runner(args.agent, args.deterministic, args.random_seed, args.early_flag_reward, args.late_flag_reward, args.final_flag_reward, args.easy_ttc, args.hard_ttc, args.graph_size, args.attacker_strategy, args.true_positive, args.false_positive, args.hidden_width, args.lr, args.no_skipping, args.include_services)
 
     runner.train_and_evaluate(args.n_simulations, args.evaluation_rounds)
