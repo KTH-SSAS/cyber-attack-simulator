@@ -46,6 +46,9 @@ class Runner:
 
         self.include_services_in_state = include_services_in_state
 
+        self.agent_time = 0
+        self.environment_time = 0
+
     def run_sim(self, plot_results=False):
         services = {}  # Serves as a key for which services belong to which index
         done = False
@@ -63,7 +66,9 @@ class Runner:
             if self.include_services_in_state:
                 state = np.concatenate([state, enabled_services])
 
+            agent_start = time.time()
             action = self.agent.act(state)
+            self.agent_time += time.time() - agent_start
 
             if self.agent.can_skip:
                 if action > 0:
@@ -74,7 +79,10 @@ class Runner:
             else:
                 enabled_services[action] = 0
 
+            env_start = time.time()
             new_state, reward, done, info = self.env.step(enabled_services)
+            self.environment_time += time.time() - env_start
+
             rewards.append(reward)
             # count number of running services
             num_services.append(sum(enabled_services))
@@ -179,7 +187,9 @@ class Runner:
                 evaluation_rounds, evaluation=True, include_services=self.include_services_in_state)
 
         duration = time.time() - start
-        log.debug(f"Elapsed time: {duration}")
+        log.debug(f"Total elapsed time: {duration}, agent time: {self.agent_time}, environment time: {self.environment_time}")
+
+
 
     def effect_of_measurement_accuracy_on_returns(self, episodes=10000, evaluation_rounds=50, resolution=5):
         returns_matrix = np.zeros((resolution, resolution))
