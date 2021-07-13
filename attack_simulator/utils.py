@@ -7,7 +7,7 @@ import logging
 import numpy.random as random
 import numpy as np
 import torch
-
+import time
 
 class Runner:
 
@@ -167,6 +167,9 @@ class Runner:
 
     def train_and_evaluate(self, episodes, evaluation_rounds=0):
 
+        log = logging.getLogger("trainer")
+        start = time.time()
+
         # Train
         self.run_multiple_episodes(episodes)
 
@@ -174,6 +177,9 @@ class Runner:
         if evaluation_rounds > 0:
             self.run_multiple_episodes(
                 evaluation_rounds, evaluation=True, include_services=self.include_services_in_state)
+
+        duration = time.time() - start
+        log.debug(f"Elapsed time: {duration}")
 
     def effect_of_measurement_accuracy_on_returns(self, episodes=10000, evaluation_rounds=50, resolution=5):
         returns_matrix = np.zeros((resolution, resolution))
