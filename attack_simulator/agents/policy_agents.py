@@ -29,16 +29,27 @@ class PolicyModel(nn.Module):
 
 class ReinforceAgent(Agent):
 
-    def __init__(self, input_dim, num_actions, hidden_dim, learning_rate, gamma=0.9, allow_skip=True) -> None:
+    def __init__(self, input_dim, num_actions, hidden_dim, learning_rate, gamma=0.9, allow_skip=True, use_cuda=False) -> None:
         num_actions = num_actions + 1 if allow_skip else num_actions
         self.can_skip = allow_skip
         self.policy = PolicyModel(input_dim, num_actions, hidden_dim)
+
+        self.use_cuda = use_cuda
+        if use_cuda:
+            self.policy = self.policy.cuda()
+
         self.saved_log_probs = []
         self.gamma = gamma
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=learning_rate)
 
     def act(self, state):
-        action_probabilities = self.policy.forward(torch.Tensor(state))
+        
+        if self.use_cuda:
+            state = torch.Tensor(state).cuda()
+        else:
+            state = torch.Tensor(state)
+
+        action_probabilities = self.policy.forward(state)
         # Create a distribution from the action probabilities...
         m = Categorical(action_probabilities)
         action: Tensor = m.sample()  # and sample an action from it.

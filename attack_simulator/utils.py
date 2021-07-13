@@ -11,7 +11,7 @@ import time
 
 class Runner:
 
-    def __init__(self, agent_type, deterministic, random_seed, early_flag_reward, late_flag_reward, final_flag_reward, easy_ttc, hard_ttc, graph_size, attacker_strategy, true_positive, false_positive, hidden_dim, learning_rate, no_skipping, include_services_in_state=False):
+    def __init__(self, agent_type, deterministic, random_seed, early_flag_reward, late_flag_reward, final_flag_reward, easy_ttc, hard_ttc, graph_size, attacker_strategy, true_positive, false_positive, hidden_dim, learning_rate, no_skipping, include_services_in_state=False, use_cuda=False):
 
         if graph_size == 'small': 
             attack_steps = 7 
@@ -38,7 +38,7 @@ class Runner:
 
         if agent_type == 'reinforce':
             self.agent = ReinforceAgent(input_dim, services,
-                                        hidden_dim, learning_rate, allow_skip=allow_skip)
+                                        hidden_dim, learning_rate, allow_skip=allow_skip, use_cuda=use_cuda)                                      
         elif agent_type == 'rule_based':
             self.agent = RuleBasedAgent(self.env)
         elif agent_type == 'random':

@@ -43,6 +43,7 @@ if __name__ == '__main__':
     parser.add_argument('--include_services', action='store_true',
                         help="Include enabled services in the state.")
     parser.add_argument('--lr', help='Optimizer (Adam) learning rate.', default=1e-2)
+    parser.add_argument('--cuda', action='store_true', help='Use CUDA acceleration.')
     args = parser.parse_args()
 
     logging.getLogger("simulator").setLevel(logging.DEBUG)
@@ -54,6 +55,6 @@ if __name__ == '__main__':
 
     # allowing skipping will add an additional 'skip' action
 
-    runner = Runner(args.agent, args.deterministic, args.random_seed, args.early_flag_reward, args.late_flag_reward, args.final_flag_reward, args.easy_ttc, args.hard_ttc, args.graph_size, args.attacker_strategy, args.true_positive, args.false_positive, args.hidden_width, args.lr, args.no_skipping, args.include_services)
+    runner = Runner(args.agent, args.deterministic, args.random_seed, args.early_flag_reward, args.late_flag_reward, args.final_flag_reward, args.easy_ttc, args.hard_ttc, args.graph_size, args.attacker_strategy, args.true_positive, args.false_positive, args.hidden_width, args.lr, args.no_skipping, args.include_services, use_cuda=args.cuda)
 
     runner.train_and_evaluate(args.n_simulations, args.evaluation_rounds)
