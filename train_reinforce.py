@@ -6,6 +6,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
         description='Reinforcement learning of a computer network defender.')
+    parser.add_argument('--action', choices=['train_and_evaluate', 'computational_complexity'], type=str, default='train_and_evaluate',
+                        help='Select what action to perform. Choices are "train_and_evaluate" and "computational_complexity".')
     parser.add_argument('-g', '--graph', action='store_true',
                         help='Generate a GraphViz .dot file.')
     parser.add_argument('-d', '--deterministic', action='store_true',
@@ -57,4 +59,7 @@ if __name__ == '__main__':
 
     runner = Runner(args.agent, args.deterministic, args.random_seed, args.early_flag_reward, args.late_flag_reward, args.final_flag_reward, args.easy_ttc, args.hard_ttc, args.graph_size, args.attacker_strategy, args.true_positive, args.false_positive, args.hidden_width, args.lr, args.no_skipping, args.include_services, use_cuda=args.cuda)
 
-    runner.train_and_evaluate(args.n_simulations, args.evaluation_rounds)
+    if args.action == 'train_and_evaluate':
+        runner.train_and_evaluate(args.n_simulations, args.evaluation_rounds)
+    if args.action == 'computational_complexity':
+        runner.computational_complexity(100, 1100, 100)

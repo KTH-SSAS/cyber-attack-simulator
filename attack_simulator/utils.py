@@ -11,7 +11,7 @@ import time
 
 class Runner:
 
-    def __init__(self, agent_type, deterministic, random_seed, early_flag_reward, late_flag_reward, final_flag_reward, easy_ttc, hard_ttc, graph_size, attacker_strategy, true_positive, false_positive, hidden_dim, learning_rate, no_skipping, include_services_in_state=False, use_cuda=False):
+    def __init__(self, agent_type='reinforce', deterministic=False, random_seed=0, early_flag_reward=10000, late_flag_reward=10000, final_flag_reward=10000, easy_ttc=10, hard_ttc=100, graph_size='large', attacker_strategy='random', true_positive=1.0, false_positive=0.0, hidden_dim=64, learning_rate=1e-2, no_skipping=False, include_services_in_state=False, use_cuda=False):
 
         if graph_size == 'small': 
             attack_steps = 7 
@@ -36,18 +36,31 @@ class Runner:
         self.env = AttackSimulationEnv(deterministic=deterministic, early_flag_reward=early_flag_reward,
                                        late_flag_reward=late_flag_reward, final_flag_reward=final_flag_reward, easy_ttc=easy_ttc, hard_ttc=hard_ttc, graph_size=graph_size, attacker_strategy=attacker_strategy, true_positive=true_positive, false_positive=false_positive)
 
-        if agent_type == 'reinforce':
-            self.agent = ReinforceAgent(input_dim, services,
-                                        hidden_dim, learning_rate, allow_skip=allow_skip, use_cuda=use_cuda)                                      
-        elif agent_type == 'rule_based':
-            self.agent = RuleBasedAgent(self.env)
-        elif agent_type == 'random':
-            self.agent = RandomMCAgent(services, allow_skip=allow_skip)
+
+        self.agent_type = agent_type
+        self.input_dim = input_dim
+        self.services = services
+        self.hidden_dim = hidden_dim
+        self.learning_rate = learning_rate
+        self.allow_skip = allow_skip
+        self.use_cuda = use_cuda
+
+        self.create_agent()
 
         self.include_services_in_state = include_services_in_state
 
         self.agent_time = 0
         self.environment_time = 0
+
+    def create_agent(self):
+        if self.agent_type == 'reinforce':
+            self.agent = ReinforceAgent(self.input_dim, self.services,
+                                        self.hidden_dim, self.learning_rate, allow_skip=self.allow_skip, use_cuda=self.use_cuda)                                      
+        elif self.agent_type == 'rule_based':
+            self.agent = RuleBasedAgent(self.env)
+        elif self.agent_type == 'random':
+            self.agent = RandomMCAgent(self.services, allow_skip=self.allow_skip)
+
 
     def run_sim(self, plot_results=False):
         services = {}  # Serves as a key for which services belong to which index
@@ -189,8 +202,17 @@ class Runner:
 
         duration = time.time() - start
         log.debug(f"Total elapsed time: {duration}, agent time: {self.agent_time}, environment time: {self.environment_time}")
+        return duration
 
-
+    def computational_complexity(self, start_episodes=100, end_episodes=1100, step_episodes=100):
+        log = logging.getLogger("trainer")
+        simulation_time = []
+        for episodes in range(start_episodes, end_episodes, step_episodes):
+            print(episodes)
+            self.create_agent()
+            simulation_time.append((episodes, self.train_and_evaluate(episodes)))
+        log.debug(f"Simulation time as a function of number of episodes: {simulation_time}")
+        print(simulation_time)
 
     def effect_of_measurement_accuracy_on_returns(self, episodes=10000, evaluation_rounds=50, resolution=5):
         returns_matrix = np.zeros((resolution, resolution))
