@@ -183,8 +183,9 @@ class Runner:
 
         # Evaluate
         if evaluation_rounds > 0:
-            self.run_multiple_episodes(
-                evaluation_rounds, evaluation=True, include_services=self.include_services_in_state)
+            with torch.no_grad():
+                self.run_multiple_episodes(
+                    evaluation_rounds, evaluation=True)
 
         duration = time.time() - start
         log.debug(f"Total elapsed time: {duration}, agent time: {self.agent_time}, environment time: {self.environment_time}")
