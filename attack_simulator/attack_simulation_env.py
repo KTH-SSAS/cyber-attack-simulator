@@ -1,10 +1,10 @@
-from typing import Dict, List
-import gym
+from typing import List
+import random
+import logging
 from gym import spaces
 import numpy as np
-import random
+import gym
 from attack_simulator.attack_graph import AttackGraph, AttackStep
-import logging
 
 # The probability that the defender will disable a given service at a given step is given by DISABLE_PROBABILITY.
 DISABLE_PROBABILITY = 0.001
@@ -24,12 +24,14 @@ class Attacker:
         self.choose_next_step()
         self.time_on_current_step = 0
         self.total_time = 0
+        self.current_step = None
+        self.reward = 0
 
     def get_step(self, name) -> AttackStep:
         return self.attack_graph.attack_steps[name]
 
-    def attack_surface(self, debug=False):
-        # The attack surface consists of all reachable but uncompromised attack steps.
+    def attack_surface(self):
+        """The attack surface consists of all reachable but uncompromised attack steps."""
         att_surf = set()
         for compromised_step_name in self.compromised_steps:
             for child_name in self.get_step(compromised_step_name).children:
@@ -55,7 +57,10 @@ class Attacker:
             self.choose_highest_value_step()
 
     def choose_next_step_randomly(self):
-        # The attacker strategy is currently simply to select a random attack step of the available ones (i.e. from the attack surface).
+        """
+        The attacker strategy is currently simply to select a random
+        attack step of the available ones (i.e. from the attack surface).
+        """
         self.current_step = None
         if self.attack_surface():
             if self.deterministic:
@@ -65,7 +70,13 @@ class Attacker:
                 self.current_step = random.choice(list(self.attack_surface()))
 
     def choose_highest_value_step(self):
-        # Selecting the attack step with the highet net present value. Because the attacker cannot know when the defender might disable a service, future rewards are uncertain, and thus the introduction of the discount rate of the net present value calculation. Note: Does not consider AND steps, so will not always act optimally.
+        """
+        Selecting the attack step with the highet net present value.
+        Because the attacker cannot know when the defender might disable a service,
+        future rewards are uncertain, and thus the introduction of the discount
+        rate of the net present value calculation.
+        Note: Does not consider AND steps, so will not always act optimally.
+        """
         self.current_step = None
         highest_value = 0
         step_value = dict()
@@ -98,30 +109,33 @@ class Attacker:
             # If the attack surface (the available uncompromised attack steps) is empty, then terminate.
             compromised_now = self.current_step
             if not self.attack_surface():
-                logger.debug(
-                    f"Step {self.total_time}: Compromised {compromised_now}. Nothing more to attack.")
+                logger.debug("Step %f: Compromised %s. Nothing more to attack.",
+                             self.total_time, compromised_now)
                 return False
             self.choose_next_step()
             self.time_on_current_step = 0
-            logger.debug(
-                f"Step {self.total_time}: Compromised {compromised_now}. Attacking {self.current_step}.")
+            logger.debug("Step %f: Compromised %s. Attacking %s.",
+                         self.total_time, compromised_now, self.current_step)
         # Keep track of the time spent.
         self.time_on_current_step += 1
         self.total_time += 1
         return True
 
     def observe(self, attack_step):
-        # Observations of the attacker are made by an intrusion detection system.
-        # The accuracy of observations is given for each attack step by the true and false positive rates respectively.
+        """
+        Observations of the attacker are made by an intrusion detection system.
+        The accuracy of observations is given for each attack step by the true and false positive rates respectively. 
+        """
         if self.deterministic:
             return attack_step in self.compromised_steps
-        else:
-            rnd = random.uniform(0, 1)
-            if attack_step in self.compromised_steps:
-                return rnd <= self.get_step(attack_step).true_positive
-            else:
-                return rnd <= self.get_step(attack_step).false_positive
 
+        rnd = random.uniform(0, 1)
+        if attack_step in self.compromised_steps:
+            return rnd <= self.get_step(attack_step).true_positive
+
+        return rnd <= self.get_step(attack_step).false_positive
+
+    @property
     def compromised_flags(self):
         return [step for step in self.compromised_steps if 'flag' in step]
 
@@ -129,7 +143,7 @@ class Attacker:
 class AttackSimulationEnv(gym.Env):
 
     def __init__(self, deterministic=False, early_flag_reward=1000, late_flag_reward=10000, final_flag_reward=100000, easy_ttc=10, hard_ttc=100, graph_size='large', attacker_strategy='random', true_positive=1.0, false_positive=0.0):
-        super(AttackSimulationEnv, self).__init__()
+        super().__init__()
         self.deterministic = deterministic
         self.early_flag_reward = early_flag_reward
         self.late_flag_reward = late_flag_reward
@@ -148,6 +162,7 @@ class AttackSimulationEnv(gym.Env):
         self.n_defender_actions = len(self.attack_graph.enabled_services)
         self.action_space = spaces.Tuple(
             ([spaces.Discrete(2)]*self.n_defender_actions))
+        self.provision_reward = 0
 
     def get_info(self):
         if self.attacker.current_step:
@@ -180,14 +195,13 @@ class AttackSimulationEnv(gym.Env):
         reward = self.provision_reward - self.attacker.reward
         info = self.get_info()
         if attacker_done:
-            logger.debug(
-                f"Attacker is done.")
-            logger.debug(
-                f"Compromised steps: {self.attacker.compromised_steps}")
-            logger.debug(
-                f"Compromised flags: {self.attacker.compromised_flags()}")
+            logger.debug("Attacker is done.")
+            logger.debug("Compromised steps: %s", str(
+                self.attacker.compromised_steps))
+            logger.debug("Compromised flags: %s", str(
+                self.attacker.compromised_flags))
         info['compromised_steps'] = self.attacker.compromised_steps
-        info['compromised_flags'] = self.attacker.compromised_flags()
+        info['compromised_flags'] = self.attacker.compromised_flags
         return obs, reward, attacker_done, info
 
     def reset(self):
@@ -200,8 +214,8 @@ class AttackSimulationEnv(gym.Env):
 
     def interpret_observation(self, observations):
         compromised = []
-        for i in range(0, len(observations)):
-            if observations[i]:
+        for i, obs in enumerate(observations):
+            if obs:
                 compromised.append(list(self.attack_graph.attack_steps)[i])
         return compromised
 
@@ -215,8 +229,8 @@ class AttackSimulationEnv(gym.Env):
     def interpret_action(self, action):
         if action == 0:
             return "no action"
-        else:
-            return list(self.attack_graph.enabled_services)[action-1]
+
+        return list(self.attack_graph.enabled_services)[action-1]
 
     def observation_from_compromised_steps(self, compromised_steps):
         return np.array([a in compromised_steps for a in self.attack_graph.attack_steps])
@@ -231,7 +245,7 @@ class AttackSimulationEnv(gym.Env):
     def disable(self, service):
         logger = logging.getLogger('simulator')
         if self.attack_graph.enabled_services[service]:
-            logger.debug(
-                f"Disabling {service} while attacker is attacking {self.attacker.current_step}")
+            logger.debug("Disabling %s while attacker is attacking %s",
+                         service, self.attacker.current_step)
         self.attack_graph.disable(service)
         self.attacker.choose_next_step()
