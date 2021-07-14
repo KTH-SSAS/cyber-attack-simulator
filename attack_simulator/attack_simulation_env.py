@@ -235,23 +235,3 @@ class AttackSimulationEnv(gym.Env):
                 f"Disabling {service} while attacker is attacking {self.attacker.current_step}")
         self.attack_graph.disable(service)
         self.attacker.choose_next_step()
-
-
-if __name__ == '__main__':
-    if DETERMINISTIC:
-        random.seed(RANDOM_SEED)
-
-    env = AttackSimulationEnv()
-    enabled_services = dict()
-    # Defender can act by disabling various services and hosts (found in env.attack_graph.enabled_services)
-    for service in env.attack_graph.enabled_services:
-        enabled_services[service] = 1
-    done = False
-    while not done:
-        enabled_services_status_changed = False
-        for service in enabled_services:
-            # Current strategy is to disable any service with a given probability each step.
-            if enabled_services[service] == 1 and random.uniform(0, 1) < DISABLE_PROBABILITY:
-                enabled_services[service] = 0
-                enabled_services_status_changed = True
-        obs, reward, done, info = env.step(tuple(enabled_services.values()))
