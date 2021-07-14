@@ -30,6 +30,7 @@ class Attacker:
     def get_step(self, name) -> AttackStep:
         return self.attack_graph.attack_steps[name]
 
+    @property
     def attack_surface(self):
         """The attack surface consists of all reachable but uncompromised attack steps."""
         att_surf = set()
@@ -62,12 +63,12 @@ class Attacker:
         attack step of the available ones (i.e. from the attack surface).
         """
         self.current_step = None
-        if self.attack_surface():
+        if self.attack_surface:
             if self.deterministic:
-                sorted_surface = sorted(list(self.attack_surface()))
+                sorted_surface = sorted(list(self.attack_surface))
                 self.current_step = sorted_surface[0]
             else:
-                self.current_step = random.choice(list(self.attack_surface()))
+                self.current_step = random.choice(list(self.attack_surface))
 
     def choose_highest_value_step(self):
         """
@@ -80,7 +81,7 @@ class Attacker:
         self.current_step = None
         highest_value = 0
         step_value = dict()
-        surface = self.attack_surface()
+        surface = self.attack_surface
         if surface:
             for step_name in surface:
                 step_value[step_name] = self.value(step_name)
@@ -108,7 +109,7 @@ class Attacker:
             self.reward = self.attack_graph.attack_steps[self.current_step].reward
             # If the attack surface (the available uncompromised attack steps) is empty, then terminate.
             compromised_now = self.current_step
-            if not self.attack_surface():
+            if not self.attack_surface:
                 logger.debug("Step %f: Compromised %s. Nothing more to attack.",
                              self.total_time, compromised_now)
                 return False
@@ -170,10 +171,10 @@ class AttackSimulationEnv(gym.Env):
     def get_info(self):
         if self.attacker.current_step:
             info = {"time": self.attacker.total_time, "current_step": self.attacker.current_step, "time_on_current_step": self.attacker.time_on_current_step, "ttc_of_current_step": self.attacker.get_step(
-                self.attacker.current_step).ttc, "attack_surface": self.attacker.attack_surface(), "self.attack_graph.enabled_services": self.attack_graph.enabled_services}
+                self.attacker.current_step).ttc, "attack_surface": self.attacker.attack_surface, "self.attack_graph.enabled_services": self.attack_graph.enabled_services}
         else:
             info = {"time": self.attacker.total_time, "current_step": None, "time_on_current_step": None, "ttc_of_current_step": None,
-                    "attack_surface": self.attacker.attack_surface(), "self.attack_graph.enabled_services": self.attack_graph.enabled_services}
+                    "attack_surface": self.attacker.attack_surface, "self.attack_graph.enabled_services": self.attack_graph.enabled_services}
         return info
 
     def step(self, action):
