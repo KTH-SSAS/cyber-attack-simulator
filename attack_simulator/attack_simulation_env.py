@@ -215,6 +215,7 @@ class AttackSimulationEnv(gym.Env):
         return self._next_observation()
 
     def interpret_observation(self, observations):
+        """Debug function"""
         compromised = []
         for i, obs in enumerate(observations):
             if obs:
@@ -222,6 +223,7 @@ class AttackSimulationEnv(gym.Env):
         return compromised
 
     def interpret_action_probabilities(self, action_probs):
+        """Debug function"""
         act_prob_dict = {"no action": f"{action_probs[0]:.2f}"}
         for i in range(1, len(action_probs)):
             act_prob_dict[list(self.attack_graph.enabled_services)[
@@ -229,12 +231,14 @@ class AttackSimulationEnv(gym.Env):
         return act_prob_dict
 
     def interpret_action(self, action):
+        """Debug function"""
         if action == 0:
             return "no action"
 
         return list(self.attack_graph.enabled_services)[action-1]
 
     def observation_from_compromised_steps(self, compromised_steps):
+        """Debug function"""
         return np.array([a in compromised_steps for a in self.attack_graph.attack_steps])
 
     def _next_observation(self):

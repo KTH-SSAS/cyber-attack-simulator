@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 class RandomMCAgent():
-
+    """Agent that will pick a random action each turn. Returns random loss."""
     def __init__(self, num_actions, allow_skip=True) -> None:
         self.num_actions = num_actions + 1 if allow_skip else num_actions
         self.can_skip = allow_skip
@@ -25,7 +25,7 @@ class RandomMCAgent():
         ...
 
 class SkipAgent():
-
+    """Agent that will always skip, i.e. do nothing, each turn."""
     def __init__(self) -> None:
         self.can_skip = True
 
@@ -46,7 +46,7 @@ class SkipAgent():
 
 
 class RuleBasedAgent(Agent):
-    # Disables corresponding services when attacker seems to have compromised attack steps preceeding valuable steps.
+    """Disables corresponding services when attacker seems to have compromised attack steps preceeding valuable steps."""
     def __init__(self, env) -> None:
         self.attack_graph = env.attack_graph
         self.attacker = env.attacker
