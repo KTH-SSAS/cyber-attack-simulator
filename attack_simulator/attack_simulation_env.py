@@ -69,6 +69,8 @@ class Attacker:
                 step = sorted_surface[0]
             else:
                 step = random.choice(list(self.attack_surface))
+        else:
+            step = None
         return step
 
     def choose_highest_value_step(self):
