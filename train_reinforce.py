@@ -6,8 +6,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
         description='Reinforcement learning of a computer network defender.')
-    parser.add_argument('--action', choices=['train_and_evaluate', 'computational_complexity'], type=str, default='train_and_evaluate',
-                        help='Select what action to perform. Choices are "train_and_evaluate" and "computational_complexity".')
+    parser.add_argument('--action', choices=['train_and_evaluate', 'computational_complexity', 'accuracy'], type=str, default='train_and_evaluate',
+                        help='Select what action to perform. Choices are "train_and_evaluate", "acccuracy" and "computational_complexity".')
     parser.add_argument('-g', '--graph', action='store_true',
                         help='Generate a GraphViz .dot file.')
     parser.add_argument('-d', '--deterministic', action='store_true',
@@ -62,4 +62,6 @@ if __name__ == '__main__':
     if args.action == 'train_and_evaluate':
         runner.train_and_evaluate(args.n_simulations, args.evaluation_rounds)
     if args.action == 'computational_complexity':
-        runner.computational_complexity(100, 1100, 100)
+        runner.computational_complexity(100, 1, -1)
+    if args.action == 'accuracy':
+        runner.effect_of_measurement_accuracy_on_returns(episodes=100, evaluation_rounds=50, resolution=4)

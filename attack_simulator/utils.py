@@ -186,44 +186,89 @@ class Runner:
 
         return returns, losses, lengths, num_compromised_flags
 
-    def train_and_evaluate(self, episodes, evaluation_rounds=0):
+    def train_and_evaluate(self, episodes, evaluation_rounds=0, plot=True):
 
         log = logging.getLogger("trainer")
         start = time.time()
 
         # Train
-        self.run_multiple_episodes(episodes)
+        self.run_multiple_episodes(episodes, plot=plot)
 
         # Evaluate
+        returns = None
+        losses = None
+        lengths = None
+        num_compromised_flags = None
         if evaluation_rounds > 0:
             with torch.no_grad():
-                self.run_multiple_episodes(
+                returns, losses, lengths, num_compromised_flags = self.run_multiple_episodes(
                     evaluation_rounds, evaluation=True)
 
         duration = time.time() - start
         log.debug(f"Total elapsed time: {duration}, agent time: {self.agent_time}, environment time: {self.environment_time}")
-        return duration
+        return duration, returns, losses, lengths, num_compromised_flags
 
-    def computational_complexity(self, start_episodes=100, end_episodes=1100, step_episodes=100):
+    def computational_complexity(self, start_episodes=100, end_episodes=5, step_episodes=-5):
         log = logging.getLogger("trainer")
-        simulation_time = []
-        for episodes in range(start_episodes, end_episodes, step_episodes):
-            print(episodes)
+        episodes_list = range(start_episodes, end_episodes, step_episodes)
+        simulation_time_list = []
+        for episodes in episodes_list:
             self.create_agent()
-            simulation_time.append((episodes, self.train_and_evaluate(episodes)))
-        log.debug(f"Simulation time as a function of number of episodes: {simulation_time}")
-        print(simulation_time)
+            simulation_time_list.append(self.train_and_evaluate(episodes, plot=False))
+            
+            log.debug(f"Simulation time {simulation_time_list} as a function of number of episodes {episodes_list}.")
+
+        fig, ax = plt.subplots()
+        title = "Computational complexity"
+        ax.set_title(title)
+        ax.plot(episodes_list, simulation_time_list, '.', color='black')
+        # ax1.set_xlabel("Episode")
+        ax.set_ylabel("Time")
+        ax.set_xlabel("Episodes")
+        fig.savefig('computational_complexity.pdf', dpi=200)
+        plt.show()
+        return (episodes_list, simulation_time_list)
 
     def effect_of_measurement_accuracy_on_returns(self, episodes=10000, evaluation_rounds=50, resolution=5):
+        """
+        from matplotlib import cm
+        from matplotlib.ticker import LinearLocator
+
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+
+        # Make data.
+        X = np.arange(-5, 5, 0.25)
+        Y = np.arange(-5, 5, 0.25)
+        X, Y = np.meshgrid(X, Y)
+        R = np.sqrt(X**2 + Y**2)
+        Z = np.sin(R)
+
+        # Plot the surface.
+        surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
+                               linewidth=0, antialiased=False)
+
+        # Customize the z axis.
+        ax.set_zlim(-1.01, 1.01)
+        ax.zaxis.set_major_locator(LinearLocator(10))
+
+        # Add a color bar which maps values to colors.
+        fig.colorbar(surf, shrink=0.5, aspect=5)
+        fig.savefig('3D.pdf', dpi=200)
+
+        plt.show()
+
+        
+        """
         returns_matrix = np.zeros((resolution, resolution))
         for fp in range(0, resolution):
-            for tp in range(0, resolution):
-                self.env.attack_graph.false_positive = fp/(resolution-1)
-                self.env.attack_graph.true_positive = tp/(resolution-1)
-                returns, losses, lengths, num_compromised_flags = self.train_and_evaluate(episodes, evaluation_rounds)
-                returns_matrix[fp, tp] = sum(returns)/len(returns)
-                print(returns_matrix)
-        return returns_matrix
+        #    for tp in range(0, resolution):
+        #        self.env.attack_graph.false_positive = 0.98*fp/(resolution-1)+0.01
+        #        self.env.attack_graph.true_positive = 0.98*tp/(resolution-1)+0.01
+            duration, returns, losses, lengths, num_compromised_flags = self.train_and_evaluate(episodes, evaluation_rounds=0, plot=False)
+        #returns_matrix[fp, tp] = sum(returns)/len(returns)
+        #print(returns_matrix)
+        #return returns_matrix
 
     def generate_graphviz_file(self):
         self.env.attack_graph.generate_graphviz_file()
