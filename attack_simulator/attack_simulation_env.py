@@ -15,7 +15,7 @@ RANDOM_SEED = 4
 
 class Attacker:
 
-    def __init__(self, attack_graph: AttackGraph, compromised_steps: List[str], deterministic=False, strategy='random'):
+    def __init__(self, attack_graph: AttackGraph, compromised_steps: set, deterministic=False, strategy='random'):
         self.strategy = strategy
         self.attack_graph = attack_graph
         # self.compromised_steps keeps track of which attack steps have been reached by that attacker.
@@ -47,7 +47,7 @@ class Attacker:
                         if all_parents_are_compromised:
                             att_surf.add(child_name)
 
-        att_surf -= set(self.compromised_steps)
+        att_surf -= self.compromised_steps
         return att_surf
 
     def choose_next_step(self):
@@ -104,7 +104,7 @@ class Attacker:
         self.reward = 0
         # If the attacker has spent the required time on the current attack step, then it becomes compromised.
         if self.time_on_current_step >= self.get_step(self.current_step).ttc:
-            self.compromised_steps.append(self.current_step)
+            self.compromised_steps.add(self.current_step)
             self.reward = self.attack_graph.attack_steps[self.current_step].reward
             # If the attack surface (the available uncompromised attack steps) is empty, then terminate.
             compromised_now = self.current_step
@@ -165,7 +165,7 @@ class AttackSimulationEnv(gym.Env):
         self.provision_reward = 0
 
     def create_attacker(self):
-        return Attacker(self.attack_graph, ['internet.connect'], deterministic=self.deterministic, strategy=self.attacker_strategy)
+        return Attacker(self.attack_graph, {'internet.connect'}, deterministic=self.deterministic, strategy=self.attacker_strategy)
 
     def get_info(self):
         if self.attacker.current_step:
