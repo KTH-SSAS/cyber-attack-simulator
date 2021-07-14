@@ -21,10 +21,10 @@ class Attacker:
         # self.compromised_steps keeps track of which attack steps have been reached by that attacker.
         self.compromised_steps = compromised_steps
         self.deterministic = deterministic
-        self.choose_next_step()
         self.time_on_current_step = 0
         self.total_time = 0
         self.current_step = None
+        self.choose_next_step()
         self.reward = 0
 
     def get_step(self, name) -> AttackStep:
@@ -53,22 +53,23 @@ class Attacker:
 
     def choose_next_step(self):
         if self.strategy == 'random':
-            self.choose_next_step_randomly()
+            step = self.choose_next_step_randomly()
         elif self.strategy == 'value_maximizing':
-            self.choose_highest_value_step()
+            step = self.choose_highest_value_step()
+        self.current_step = step
 
     def choose_next_step_randomly(self):
         """
         The attacker strategy is currently simply to select a random
         attack step of the available ones (i.e. from the attack surface).
         """
-        self.current_step = None
         if self.attack_surface:
             if self.deterministic:
                 sorted_surface = sorted(list(self.attack_surface))
-                self.current_step = sorted_surface[0]
+                step = sorted_surface[0]
             else:
-                self.current_step = random.choice(list(self.attack_surface))
+                step = random.choice(list(self.attack_surface))
+        return step
 
     def choose_highest_value_step(self):
         """
@@ -78,7 +79,6 @@ class Attacker:
         rate of the net present value calculation.
         Note: Does not consider AND steps, so will not always act optimally.
         """
-        self.current_step = None
         highest_value = 0
         step_value = dict()
         surface = self.attack_surface
@@ -87,7 +87,8 @@ class Attacker:
                 step_value[step_name] = self.value(step_name)
                 if step_value[step_name] > highest_value:
                     highest_value = step_value[step_name]
-                    self.current_step = step_name
+                    step = step_name
+        return step
 
     def value(self, parent_name, discount_rate=0.1):
         parent = self.attack_graph.attack_steps[parent_name]
