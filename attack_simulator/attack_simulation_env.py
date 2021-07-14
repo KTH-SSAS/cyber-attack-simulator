@@ -180,17 +180,15 @@ class AttackSimulationEnv(gym.Env):
 
     def step(self, action):
         logger = logging.getLogger("simulator")
-        # The order of actions follows self.attack_graph.enabled_services
-        action_id = 0
         # provision_reward is the defender reward for maintaining services online.
         self.provision_reward = 0
         # Disable services according to the actions provided
-        for service in self.attack_graph.enabled_services:
-            if self.attack_graph.enabled_services[service]:
+        # The order of actions follows self.attack_graph.enabled_services
+        for action_id, (service, service_enabled) in enumerate(self.attack_graph.enabled_services.items()):
+            if service_enabled:
                 self.provision_reward += 1
                 if action[action_id] == 0:
                     self.disable(service)
-            action_id += 1
 
         # The attacker attacks. If the attacker's attack surface is empty, then the game ends.
         attacker_done = not self.attacker.attack()

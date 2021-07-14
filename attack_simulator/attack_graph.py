@@ -1,6 +1,6 @@
 import random
 import logging
-from typing import Dict
+from typing import Dict, OrderedDict
 import numpy as np
 
 
@@ -45,7 +45,7 @@ class AttackGraph:
     def reset(self):
         logger = logging.getLogger("simulator")
         # These are the services and hosts that the defender is at liberty to disable in order to protect the computer network.
-        self.enabled_services = dict()
+        self.enabled_services = OrderedDict()
         # Disabling a host, e.g. lazarus, will also disable all of its services
         self.enabled_services['lazarus'] = True
         # The defender can limit disablement to a single service, such as the ftp server on lazarus
