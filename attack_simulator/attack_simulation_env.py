@@ -152,8 +152,8 @@ class AttackSimulationEnv(gym.Env):
         self.hard_ttc = hard_ttc
         self.attack_graph = AttackGraph(deterministic=deterministic, early_flag_reward=self.early_flag_reward,
                                         late_flag_reward=self.late_flag_reward, final_flag_reward=self.final_flag_reward, easy_ttc=self.easy_ttc, hard_ttc=self.hard_ttc, graph_size=graph_size, true_positive=true_positive, false_positive=false_positive)
-        self.attacker = Attacker(
-            self.attack_graph, ['internet.connect'], deterministic=self.deterministic, strategy=attacker_strategy)
+        self.attacker_strategy = attacker_strategy
+        self.attacker = self.create_attacker()
         # An observation informs the defender of which attack steps have been compromised.
         # Observations are imperfect.
         self.observation_space = spaces.Box(low=0, high=1, shape=(
@@ -163,6 +163,9 @@ class AttackSimulationEnv(gym.Env):
         self.action_space = spaces.Tuple(
             ([spaces.Discrete(2)]*self.n_defender_actions))
         self.provision_reward = 0
+
+    def create_attacker(self):
+        return Attacker(self.attack_graph, ['internet.connect'], deterministic=self.deterministic, strategy=self.attacker_strategy)
 
     def get_info(self):
         if self.attacker.current_step:
@@ -208,8 +211,7 @@ class AttackSimulationEnv(gym.Env):
         logger = logging.getLogger("simulator")
         logger.debug("Starting new simulation.")
         self.attack_graph.reset()
-        self.attacker = Attacker(
-            self.attack_graph, ['internet.connect'], deterministic=self.deterministic)
+        self.attacker = self.create_attacker()
         return self._next_observation()
 
     def interpret_observation(self, observations):
