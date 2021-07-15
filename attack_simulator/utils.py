@@ -197,24 +197,28 @@ class Runner:
 
         return returns, losses, lengths, num_compromised_flags
 
+    def train(self, episodes, plot=True):
+        start = time.time()
+        num_compromised_flags = 0
+        returns, losses, lengths, num_compromised_flags = self.run_multiple_episodes(episodes, plot=plot)
+        duration = time.time() - start
+        return duration, returns, losses, lengths, num_compromised_flags
+
+    def evaluate(self, evaluation_rounds=50, plot=True):
+        start = time.time()
+        with torch.no_grad():
+            returns, losses, lengths, num_compromised_flags = self.run_multiple_episodes(evaluation_rounds, evaluation=True)
+        duration = time.time() - start
+        return duration, returns, losses, lengths, num_compromised_flags
+        
+
     def train_and_evaluate(self, episodes, evaluation_rounds=0, plot=True):
         log = logging.getLogger("trainer")
-        start = time.time()
-
-        # Train
-        self.run_multiple_episodes(episodes, plot=plot)
-
-        # Evaluate
-        returns = None
-        losses = None
-        lengths = None
-        num_compromised_flags = None
+        training_duration, returns, losses, lengths, num_compromised_flags = self.train(episodes, plot=plot)
+        duration = training_duration
         if evaluation_rounds > 0:
-            with torch.no_grad():
-                returns, losses, lengths, num_compromised_flags = self.run_multiple_episodes(
-                    evaluation_rounds, evaluation=True)
-
-        duration = time.time() - start
+            evaluation_duration, returns, losses, lengths, num_compromised_flags = self.evaluate(evaluation_rounds=evaluation_rounds, plot=plot)
+            duration += evaluation_duration
         log.debug(f"Total elapsed time: {duration}, agent time: {self.agent_time}, environment time: {self.environment_time}")
         return duration, returns, losses, lengths, num_compromised_flags
 
@@ -241,6 +245,8 @@ class Runner:
 
     def effect_of_measurement_accuracy_on_returns(self, episodes=10000, evaluation_rounds=50, resolution=5):
         log = logging.getLogger("trainer")
+        # Training on perfect obbservations
+        duration, returns, losses, lengths, num_compromised_flags = self.train(episodes, plot=False)
         returns_matrix = np.zeros((resolution, resolution))
         fp_array = np.zeros((resolution, resolution))
         tp_array = np.zeros((resolution, resolution))
@@ -254,7 +260,7 @@ class Runner:
                 tp_array[fp, tp] = self.env.attack_graph.true_positive
                 self.env.attack_graph.reset()
                 self.create_agent()
-                duration, returns, losses, lengths, num_compromised_flags = self.train_and_evaluate(episodes,evaluation_rounds=evaluation_rounds, plot=False)
+                duration, returns, losses, lengths, num_compromised_flags = self.evaluate(evaluation_rounds=evaluation_rounds, plot=False)
                 returns_matrix[fp, tp] = sum(returns)/len(returns)
                 log.debug(f"fp=\n{fp_array}, tp=\n{tp_array}, returns_matrix=\n{returns_matrix}")
                 print(f"returns_matrix=\n{returns_matrix}")
