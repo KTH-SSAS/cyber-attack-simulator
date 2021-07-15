@@ -1,6 +1,45 @@
-from attack_simulator.utils import Runner
 import logging
 import argparse
+from attack_simulator.utils import set_seeds, create_agent, create_environment
+from attack_simulator.config import AgentConfig, EnvironmentConfig
+from attack_simulator.runner import Runner
+import attack_simulator.analysis as analysis
+
+def initialize(args):
+    services = 18
+    env_config = EnvironmentConfig(args.deterministic,
+    args.early_flag_reward, args.late_flag_reward, args.final_flag_reward, args.easy_ttc, args.hard_ttc,
+    args.graph_size, args.attacker_strategy, args.true_positive, args.false_positive)
+
+    env = create_environment(env_config)
+
+    attack_steps = env_config.attack_steps
+
+    if args.include_services:
+        input_dim = attack_steps + services
+    else:
+        input_dim = attack_steps
+
+    if args.deterministic:
+        set_seeds(args.random_seed)
+
+    agent_config = AgentConfig(agent_type=args.agent, hidden_dim=args.hidden_width,
+    learning_rate=args.lr, input_dim=input_dim, num_actions=services, allow_skip=(not args.no_skipping))
+    agent = create_agent(agent_config)
+    runner = Runner(agent, env, args.include_services)
+    analyzer = analysis.Analyzer(runner, agent_config, use_cuda=args.cuda)
+    return analyzer
+
+def main(args):
+
+    analyzer = initialize(args)
+
+    if args.action == 'train_and_evaluate':
+        analyzer.train_and_evaluate(args.episodes, args.evaluation_rounds)
+    if args.action == 'computational_complexity':
+        analyzer.computational_complexity(100, 1, -1)
+    if args.action == 'accuracy':
+        analyzer.effect_of_measurement_accuracy_on_returns(episodes=args.episodes, evaluation_rounds=50, resolution=4)
 
 if __name__ == '__main__':
 
@@ -46,7 +85,7 @@ if __name__ == '__main__':
                         help="Include enabled services in the state.")
     parser.add_argument('--lr', help='Optimizer (Adam) learning rate.', default=1e-2)
     parser.add_argument('--cuda', action='store_true', help='Use CUDA acceleration.')
-    args = parser.parse_args()
+    arguments = parser.parse_args()
 
     logging.getLogger("simulator").setLevel(logging.DEBUG)
     logging.getLogger("simulator").addHandler(
@@ -55,13 +94,4 @@ if __name__ == '__main__':
     logging.getLogger("trainer").addHandler(
         logging.FileHandler("trainer.log", mode="w"))
 
-    # allowing skipping will add an additional 'skip' action
-
-    runner = Runner(args.agent, args.deterministic, args.random_seed, args.early_flag_reward, args.late_flag_reward, args.final_flag_reward, args.easy_ttc, args.hard_ttc, args.graph_size, args.attacker_strategy, args.true_positive, args.false_positive, args.hidden_width, args.lr, args.no_skipping, args.include_services, use_cuda=args.cuda)
-
-    if args.action == 'train_and_evaluate':
-        runner.train_and_evaluate(args.episodes, args.evaluation_rounds)
-    if args.action == 'computational_complexity':
-        runner.computational_complexity(100, 1, -1)
-    if args.action == 'accuracy':
-        runner.effect_of_measurement_accuracy_on_returns(episodes=args.episodes, evaluation_rounds=50, resolution=4)
+    main(arguments)
