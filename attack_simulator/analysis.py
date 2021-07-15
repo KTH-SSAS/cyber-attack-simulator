@@ -5,6 +5,7 @@ from attack_simulator.runner import Runner
 from attack_simulator.utils import set_seeds, create_agent
 import numpy as np
 from matplotlib import cm
+import random
 
 class Analyzer():
     """Metaclass to manage different forms of runs"""
@@ -50,32 +51,28 @@ class Analyzer():
         plt.show()
         return (episodes_list, simulation_time_list)
 
-
-    def effect_of_measurement_accuracy_on_returns(self, episodes=10000, evaluation_rounds=50, resolution=5, random_seed=0):
+    def effect_of_measurement_accuracy_on_returns(self, episodes=10000, evaluation_rounds=50, tp_low=0.0, tp_high=1.0, fp_low=0.0, fp_high=1.0, resolution=5):
         log = logging.getLogger("trainer")
         # Training on perfect obbservations
         runner = self.runner
-        duration, returns, losses, lengths, num_compromised_flags = runner.train(
-            episodes, plot=False)
+        duration, returns, losses, lengths, num_compromised_flags = runner.train(episodes, plot=False)
         returns_matrix = np.zeros((resolution, resolution))
         fp_array = np.zeros((resolution, resolution))
         tp_array = np.zeros((resolution, resolution))
-        for fp in range(0, resolution):
-            for tp in range(0, resolution):
+        for fp_index in range(0, resolution):
+            for tp_index in range(0, resolution):
                 set_seeds(random_seed)
-                runner.env.attack_graph.false_positive = fp/(resolution-1)
-                runner.env.attack_graph.true_positive = tp/(resolution-1)
-                fp_array[fp, tp] = runner.env.attack_graph.false_positive
-                tp_array[fp, tp] = runner.env.attack_graph.true_positive
+                torch.manual_seed(self.random_seed)
+                runner.env.attack_graph.false_positive = fp_low + (fp_high -fp_low)*fp_index/(resolution-1)
+                runner.env.attack_graph.true_positive = tp_low + (tp_high -tp_low)*tp_index/(resolution-1)
+                fp_array[fp_index, tp_index] = runner.env.attack_graph.false_positive
+                tp_array[fp_index, tp_index] = runner.env.attack_graph.true_positive
                 runner.env.attack_graph.reset()
-
                 runner.agent = create_agent(self.agent_config, self.use_cuda)
-                duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
-                    episodes=evaluation_rounds, plot=False)
-
-                returns_matrix[fp, tp] = sum(returns)/len(returns)
-                log.debug(
-                    f"fp=\n{fp_array}, tp=\n{tp_array}, returns_matrix=\n{returns_matrix}")
+                # Evaluate on a range of different observation qualities.
+                duration, returns, losses, lengths, num_compromised_flags = self.evaluate(evaluation_rounds=evaluation_rounds, plot=False)
+                returns_matrix[fp_index, tp_index] = np.median(returns)
+                log.debug(f"fp=\n{fp_array}, tp=\n{tp_array}, returns_matrix=\n{returns_matrix}")
                 print(f"returns_matrix=\n{returns_matrix}")
 
         fig = plt.figure()
