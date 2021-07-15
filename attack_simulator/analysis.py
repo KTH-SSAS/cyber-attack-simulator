@@ -51,7 +51,7 @@ class Analyzer():
         plt.show()
         return (episodes_list, simulation_time_list)
 
-    def effect_of_measurement_accuracy_on_returns(self, episodes=10000, evaluation_rounds=50, tp_low=0.0, tp_high=1.0, fp_low=0.0, fp_high=1.0, resolution=5):
+    def effect_of_measurement_accuracy_on_returns(self, episodes=10000, evaluation_rounds=50, tp_low=0.0, tp_high=1.0, fp_low=0.0, fp_high=1.0, resolution=5, random_seed=0):
         log = logging.getLogger("trainer")
         # Training on perfect obbservations
         runner = self.runner

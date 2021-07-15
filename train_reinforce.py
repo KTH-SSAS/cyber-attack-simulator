@@ -39,7 +39,7 @@ def main(args):
     if args.action == 'computational_complexity':
         analyzer.computational_complexity(100, 1, -1)
     if args.action == 'accuracy':
-        analyzer.effect_of_measurement_accuracy_on_returns(episodes=args.episodes, evaluation_rounds=100, tp_low=0.9, tp_high=1.0, fp_low=0.0, fp_high=0.1, resolution=4)
+        analyzer.effect_of_measurement_accuracy_on_returns(episodes=args.episodes, evaluation_rounds=100, tp_low=0.9, tp_high=1.0, fp_low=0.0, fp_high=0.1, resolution=4, random_seed=0)
 
 if __name__ == '__main__':
 
