@@ -60,7 +60,7 @@ if __name__ == '__main__':
     runner = Runner(args.agent, args.deterministic, args.random_seed, args.early_flag_reward, args.late_flag_reward, args.final_flag_reward, args.easy_ttc, args.hard_ttc, args.graph_size, args.attacker_strategy, args.true_positive, args.false_positive, args.hidden_width, args.lr, args.no_skipping, args.include_services, use_cuda=args.cuda)
 
     if args.action == 'train_and_evaluate':
-        runner.train_and_evaluate(args.n_simulations, args.evaluation_rounds)
+        runner.train_and_evaluate(args.episodes, args.evaluation_rounds)
     if args.action == 'computational_complexity':
         runner.computational_complexity(100, 1, -1)
     if args.action == 'accuracy':
