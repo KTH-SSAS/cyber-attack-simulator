@@ -125,9 +125,6 @@ class Attacker:
         Observations of the attacker are made by an intrusion detection system.
         The accuracy of observations is given for each attack step by the true and false positive rates respectively. 
         """
-        if self.deterministic:
-            return attack_step in self.compromised_steps
-
         rnd = random.uniform(0, 1)
         if attack_step in self.compromised_steps:
             return rnd <= self.get_step(attack_step).true_positive
