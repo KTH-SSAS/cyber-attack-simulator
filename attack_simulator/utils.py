@@ -3,6 +3,8 @@ from attack_simulator.agents.baseline_agents import RuleBasedAgent
 from attack_simulator.agents.baseline_agents import RandomMCAgent
 from attack_simulator.attack_simulation_env import AttackSimulationEnv
 import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator
 import logging
 import numpy.random as random
 import numpy as np
@@ -13,6 +15,25 @@ class Runner:
 
     def __init__(self, agent_type='reinforce', deterministic=False, random_seed=0, early_flag_reward=10000, late_flag_reward=10000, final_flag_reward=10000, easy_ttc=10, hard_ttc=100, graph_size='large', attacker_strategy='random', true_positive=1.0, false_positive=0.0, hidden_dim=64, learning_rate=1e-2, no_skipping=False, include_services_in_state=False, use_cuda=False):
 
+        self.agent_type = agent_type
+        self.deterministic = deterministic
+        self.random_seed = random_seed
+        self.early_flag_reward = early_flag_reward
+        self.late_flag_reward = late_flag_reward
+        self.final_flag_reward = final_flag_reward
+        self.easy_ttc = easy_ttc
+        self.hard_ttc = hard_ttc
+        self.graph_size = graph_size
+        self.attacker_strategy = attacker_strategy
+        self.true_positive = true_positive
+        self.false_positive = false_positive
+        self.hidden_dim = hidden_dim
+        self.learning_rate = learning_rate
+        self.allow_skip = not no_skipping
+        self.include_services_in_state = include_services_in_state
+        self.use_cuda = use_cuda
+
+
         if graph_size == 'small': 
             attack_steps = 7 
         elif graph_size == 'medium': 
@@ -20,36 +41,27 @@ class Runner:
         elif graph_size == 'large': 
             attack_steps = 78 
 
-        services = 18 
+        self.services = 18 
 
         if include_services_in_state: 
-            input_dim = attack_steps + services
+            self.input_dim = attack_steps + self.services
         else:
-            input_dim = attack_steps
+            self.input_dim = attack_steps
 
         if deterministic:
             random.seed(random_seed)
             torch.manual_seed(random_seed)
 
-        allow_skip = not no_skipping
-
-        self.env = AttackSimulationEnv(deterministic=deterministic, early_flag_reward=early_flag_reward,
-                                       late_flag_reward=late_flag_reward, final_flag_reward=final_flag_reward, easy_ttc=easy_ttc, hard_ttc=hard_ttc, graph_size=graph_size, attacker_strategy=attacker_strategy, true_positive=true_positive, false_positive=false_positive)
-
-        self.agent_type = agent_type
-        self.input_dim = input_dim
-        self.services = services
-        self.hidden_dim = hidden_dim
-        self.learning_rate = learning_rate
-        self.allow_skip = allow_skip
-        self.use_cuda = use_cuda
-
+        self.create_environment()
         self.create_agent()
-
-        self.include_services_in_state = include_services_in_state
 
         self.agent_time = 0
         self.environment_time = 0
+
+    def create_environment(self):
+        self.env = AttackSimulationEnv(deterministic=self.deterministic, early_flag_reward=self.early_flag_reward,
+                                       late_flag_reward=self.late_flag_reward, final_flag_reward=self.final_flag_reward, easy_ttc=self.easy_ttc, hard_ttc=self.hard_ttc, graph_size=self.graph_size, attacker_strategy=self.attacker_strategy, true_positive=self.true_positive, false_positive=self.false_positive)
+
 
     def create_agent(self):
         if self.agent_type == 'reinforce':
@@ -228,45 +240,37 @@ class Runner:
         return (episodes_list, simulation_time_list)
 
     def effect_of_measurement_accuracy_on_returns(self, episodes=10000, evaluation_rounds=50, resolution=5):
-        """
-        from matplotlib import cm
-        from matplotlib.ticker import LinearLocator
-
+        log = logging.getLogger("trainer")
+        returns_matrix = np.zeros((resolution, resolution))
+        fp_array = np.zeros((resolution, resolution))
+        tp_array = np.zeros((resolution, resolution))
+        for fp in range(0, resolution):
+            for tp in range(0, resolution):
+                random.seed(self.random_seed)
+                torch.manual_seed(self.random_seed)
+                self.env.attack_graph.false_positive = fp/(resolution-1)
+                self.env.attack_graph.true_positive = tp/(resolution-1)
+                fp_array[fp, tp] = self.env.attack_graph.false_positive
+                tp_array[fp, tp] = self.env.attack_graph.true_positive
+                self.env.attack_graph.reset()
+                self.create_agent()
+                duration, returns, losses, lengths, num_compromised_flags = self.train_and_evaluate(episodes,evaluation_rounds=evaluation_rounds, plot=False)
+                returns_matrix[fp, tp] = sum(returns)/len(returns)
+                log.debug(f"fp=\n{fp_array}, tp=\n{tp_array}, returns_matrix=\n{returns_matrix}")
+                print(f"returns_matrix=\n{returns_matrix}")
+        
         fig = plt.figure()
         ax = fig.gca(projection='3d')
 
-        # Make data.
-        X = np.arange(-5, 5, 0.25)
-        Y = np.arange(-5, 5, 0.25)
-        X, Y = np.meshgrid(X, Y)
-        R = np.sqrt(X**2 + Y**2)
-        Z = np.sin(R)
-
         # Plot the surface.
-        surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
+        surf = ax.plot_surface(fp_array, tp_array, returns_matrix, cmap=cm.coolwarm,
                                linewidth=0, antialiased=False)
 
-        # Customize the z axis.
-        ax.set_zlim(-1.01, 1.01)
-        ax.zaxis.set_major_locator(LinearLocator(10))
-
-        # Add a color bar which maps values to colors.
-        fig.colorbar(surf, shrink=0.5, aspect=5)
         fig.savefig('3D.pdf', dpi=200)
 
         plt.show()
 
-        
-        """
-        returns_matrix = np.zeros((resolution, resolution))
-        for fp in range(0, resolution):
-        #    for tp in range(0, resolution):
-        #        self.env.attack_graph.false_positive = 0.98*fp/(resolution-1)+0.01
-        #        self.env.attack_graph.true_positive = 0.98*tp/(resolution-1)+0.01
-            duration, returns, losses, lengths, num_compromised_flags = self.train_and_evaluate(episodes, evaluation_rounds=0, plot=False)
-        #returns_matrix[fp, tp] = sum(returns)/len(returns)
-        #print(returns_matrix)
-        #return returns_matrix
+        return returns_matrix
 
     def generate_graphviz_file(self):
         self.env.attack_graph.generate_graphviz_file()

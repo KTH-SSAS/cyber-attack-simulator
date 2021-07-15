@@ -64,4 +64,4 @@ if __name__ == '__main__':
     if args.action == 'computational_complexity':
         runner.computational_complexity(100, 1, -1)
     if args.action == 'accuracy':
-        runner.effect_of_measurement_accuracy_on_returns(episodes=100, evaluation_rounds=50, resolution=4)
+        runner.effect_of_measurement_accuracy_on_returns(episodes=10000, evaluation_rounds=50, resolution=4)
