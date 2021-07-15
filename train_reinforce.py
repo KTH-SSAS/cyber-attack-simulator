@@ -1,16 +1,17 @@
-from attack_simulator.config import AgentConfig, EnvironmentConfig
-from attack_simulator.runner import Runner
 import logging
 import argparse
-import numpy.random as random
-import torch
+from attack_simulator.utils import set_seeds, create_agent, create_environment
+from attack_simulator.config import AgentConfig, EnvironmentConfig
+from attack_simulator.runner import Runner
+import attack_simulator.analysis as analysis
 
 def initialize(args):
-
     services = 18
     env_config = EnvironmentConfig(args.deterministic,
     args.early_flag_reward, args.late_flag_reward, args.final_flag_reward, args.easy_ttc, args.hard_ttc,
     args.graph_size, args.attacker_strategy, args.true_positive, args.false_positive)
+
+    env = create_environment(env_config)
 
     attack_steps = env_config.attack_steps
 
@@ -20,24 +21,25 @@ def initialize(args):
         input_dim = attack_steps
 
     if args.deterministic:
-        random.seed(args.random_seed)
-        torch.manual_seed(args.random_seed)
-    
+        set_seeds(args.random_seed)
+
     agent_config = AgentConfig(agent_type=args.agent, hidden_dim=args.hidden_width,
     learning_rate=args.lr, input_dim=input_dim, num_actions=services, allow_skip=(not args.no_skipping))
-
-    return Runner(agent_config, env_config, args.include_services, args.random_seed, args.cuda)
+    agent = create_agent(agent_config)
+    runner = Runner(agent, env, args.include_services)
+    analyzer = analysis.Analyzer(runner, agent_config, use_cuda=args.cuda)
+    return analyzer
 
 def main(args):
 
-    runner = initialize(args)
+    analyzer = initialize(args)
 
     if args.action == 'train_and_evaluate':
-        runner.train_and_evaluate(args.episodes, args.evaluation_rounds)
+        analyzer.train_and_evaluate(args.episodes, args.evaluation_rounds)
     if args.action == 'computational_complexity':
-        runner.computational_complexity(100, 1, -1)
+        analyzer.computational_complexity(100, 1, -1)
     if args.action == 'accuracy':
-        runner.effect_of_measurement_accuracy_on_returns(episodes=args.episodes, evaluation_rounds=50, resolution=4)
+        analyzer.effect_of_measurement_accuracy_on_returns(episodes=args.episodes, evaluation_rounds=50, resolution=4)
 
 if __name__ == '__main__':
 
