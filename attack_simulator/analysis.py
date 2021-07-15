@@ -62,7 +62,6 @@ class Analyzer():
         for fp_index in range(0, resolution):
             for tp_index in range(0, resolution):
                 set_seeds(random_seed)
-                torch.manual_seed(self.random_seed)
                 runner.env.attack_graph.false_positive = fp_low + (fp_high -fp_low)*fp_index/(resolution-1)
                 runner.env.attack_graph.true_positive = tp_low + (tp_high -tp_low)*tp_index/(resolution-1)
                 fp_array[fp_index, tp_index] = runner.env.attack_graph.false_positive
@@ -70,8 +69,8 @@ class Analyzer():
                 runner.env.attack_graph.reset()
                 runner.agent = create_agent(self.agent_config, self.use_cuda)
                 # Evaluate on a range of different observation qualities.
-                duration, returns, losses, lengths, num_compromised_flags = self.evaluate(evaluation_rounds=evaluation_rounds, plot=False)
-                returns_matrix[fp_index, tp_index] = np.median(returns)
+                duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(evaluation_rounds=evaluation_rounds, plot=False)
+                returns_matrix[fp_index, tp_index] = np.mean(returns)
                 log.debug(f"fp=\n{fp_array}, tp=\n{tp_array}, returns_matrix=\n{returns_matrix}")
                 print(f"returns_matrix=\n{returns_matrix}")
 
