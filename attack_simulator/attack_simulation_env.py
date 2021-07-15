@@ -136,8 +136,10 @@ class AttackSimulationEnv(gym.Env):
         self.final_flag_reward = final_flag_reward
         self.easy_ttc = easy_ttc
         self.hard_ttc = hard_ttc
+        self.true_positive = true_positive
+        self.false_positive = false_positive
         self.attack_graph = AttackGraph(deterministic=deterministic, early_flag_reward=self.early_flag_reward,
-                                        late_flag_reward=self.late_flag_reward, final_flag_reward=self.final_flag_reward, easy_ttc=self.easy_ttc, hard_ttc=self.hard_ttc, graph_size=graph_size, true_positive=true_positive, false_positive=false_positive)
+                                        late_flag_reward=self.late_flag_reward, final_flag_reward=self.final_flag_reward, easy_ttc=self.easy_ttc, hard_ttc=self.hard_ttc, graph_size=graph_size, true_positive=self.true_positive, false_positive=self.false_positive)
         self.attacker = Attacker(
             self.attack_graph, ['internet.connect'], deterministic=self.deterministic, strategy=attacker_strategy)
         # An observation informs the defender of which attack steps have been compromised.
@@ -234,7 +236,7 @@ class AttackSimulationEnv(gym.Env):
             logger.debug(
                 f"Disabling {service} while attacker is attacking {self.attacker.current_step}")
         self.attack_graph.disable(service)
-        self.attacker.choose_next_step()
+       # self.attacker.choose_next_step()
 
 
 if __name__ == '__main__':
