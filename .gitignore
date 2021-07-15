@@ -6,7 +6,7 @@ __pycache__
 *.swp
 graphviz.*
 PKG-INFO
-plot.pdf
+*.pdf
 .DS_Store
 .idea
 outputs
