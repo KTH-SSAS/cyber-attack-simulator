@@ -36,7 +36,6 @@ class Runner:
         self.env = AttackSimulationEnv(deterministic=deterministic, early_flag_reward=early_flag_reward,
                                        late_flag_reward=late_flag_reward, final_flag_reward=final_flag_reward, easy_ttc=easy_ttc, hard_ttc=hard_ttc, graph_size=graph_size, attacker_strategy=attacker_strategy, true_positive=true_positive, false_positive=false_positive)
 
-
         self.agent_type = agent_type
         self.input_dim = input_dim
         self.services = services
@@ -187,7 +186,6 @@ class Runner:
         return returns, losses, lengths, num_compromised_flags
 
     def train_and_evaluate(self, episodes, evaluation_rounds=0, plot=True):
-
         log = logging.getLogger("trainer")
         start = time.time()
 
