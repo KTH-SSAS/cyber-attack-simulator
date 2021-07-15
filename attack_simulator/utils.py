@@ -1,3 +1,4 @@
+from attack_simulator.config import AgentConfig, EnvironmentConfig
 from attack_simulator.agents.policy_agents import ReinforceAgent
 from attack_simulator.agents.baseline_agents import RuleBasedAgent
 from attack_simulator.agents.baseline_agents import RandomMCAgent
@@ -6,72 +7,39 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 import logging
-import numpy.random as random
 import numpy as np
 import torch
 import time
+import random
+from dataclasses import asdict
 
+def create_environment(config: EnvironmentConfig):
+    return AttackSimulationEnv(**asdict(config))
+
+def create_agent(config: AgentConfig, env: AttackSimulationEnv = None, use_cuda=False):
+    agent = None
+    if config.agent_type == 'reinforce':
+        agent = ReinforceAgent(config.input_dim, config.num_actions,
+                                    config.hidden_dim, config.learning_rate, allow_skip=config.allow_skip, use_cuda=use_cuda)                                      
+    elif config.agent_type == 'rule_based':
+        agent = RuleBasedAgent(env)
+    elif config.agent_type == 'random':
+        agent = RandomMCAgent(config.num_actions, allow_skip=config.allow_skip)
+    
+    return agent
 class Runner:
 
-    def __init__(self, agent_type='reinforce', deterministic=False, random_seed=0, early_flag_reward=10000, late_flag_reward=10000, final_flag_reward=10000, easy_ttc=10, hard_ttc=100, graph_size='large', attacker_strategy='random', true_positive=1.0, false_positive=0.0, hidden_dim=64, learning_rate=1e-2, no_skipping=False, include_services_in_state=False, use_cuda=False):
+    def __init__(self, agent_config: AgentConfig, env_config: AttackSimulationEnv, include_services=False, random_seed=0, use_cuda=False):
 
-        self.agent_type = agent_type
-        self.deterministic = deterministic
-        self.random_seed = random_seed
-        self.early_flag_reward = early_flag_reward
-        self.late_flag_reward = late_flag_reward
-        self.final_flag_reward = final_flag_reward
-        self.easy_ttc = easy_ttc
-        self.hard_ttc = hard_ttc
-        self.graph_size = graph_size
-        self.attacker_strategy = attacker_strategy
-        self.true_positive = true_positive
-        self.false_positive = false_positive
-        self.hidden_dim = hidden_dim
-        self.learning_rate = learning_rate
-        self.allow_skip = not no_skipping
-        self.include_services_in_state = include_services_in_state
+        self.include_services = include_services #TODO move this to the environment
         self.use_cuda = use_cuda
-
-
-        if graph_size == 'small': 
-            attack_steps = 7 
-        elif graph_size == 'medium': 
-            attack_steps = 29 
-        elif graph_size == 'large': 
-            attack_steps = 78 
-
-        self.services = 18 
-
-        if include_services_in_state: 
-            self.input_dim = attack_steps + self.services
-        else:
-            self.input_dim = attack_steps
-
-        if deterministic:
-            random.seed(random_seed)
-            torch.manual_seed(random_seed)
-
-        self.create_environment()
-        self.create_agent()
+        self.random_seed = random_seed
+        self.agent_config = agent_config
+        self.env = create_environment(env_config)
+        self.agent = create_agent(agent_config, self.env, use_cuda)
 
         self.agent_time = 0
         self.environment_time = 0
-
-    def create_environment(self):
-        self.env = AttackSimulationEnv(deterministic=self.deterministic, early_flag_reward=self.early_flag_reward,
-                                       late_flag_reward=self.late_flag_reward, final_flag_reward=self.final_flag_reward, easy_ttc=self.easy_ttc, hard_ttc=self.hard_ttc, graph_size=self.graph_size, attacker_strategy=self.attacker_strategy, true_positive=self.true_positive, false_positive=self.false_positive)
-
-
-    def create_agent(self):
-        if self.agent_type == 'reinforce':
-            self.agent = ReinforceAgent(self.input_dim, self.services,
-                                        self.hidden_dim, self.learning_rate, allow_skip=self.allow_skip, use_cuda=self.use_cuda)                                      
-        elif self.agent_type == 'rule_based':
-            self.agent = RuleBasedAgent(self.env)
-        elif self.agent_type == 'random':
-            self.agent = RandomMCAgent(self.services, allow_skip=self.allow_skip)
-
 
     def run_sim(self, plot_results=False):
         services = {}  # Serves as a key for which services belong to which index
@@ -87,7 +55,7 @@ class Runner:
         state = self.env._next_observation()  # Intial state
         while not done:
 
-            if self.include_services_in_state:
+            if self.include_services:
                 state = np.concatenate([state, enabled_services])
 
             agent_start = time.time()
@@ -223,7 +191,7 @@ class Runner:
         episodes_list = range(start_episodes, end_episodes, step_episodes)
         simulation_time_list = []
         for episodes in episodes_list:
-            self.create_agent()
+            self.agent = create_agent(self.agent_config)
             simulation_time_list.append(self.train_and_evaluate(episodes, plot=False))
             
             log.debug(f"Simulation time {simulation_time_list} as a function of number of episodes {episodes_list}.")
@@ -253,7 +221,7 @@ class Runner:
                 fp_array[fp, tp] = self.env.attack_graph.false_positive
                 tp_array[fp, tp] = self.env.attack_graph.true_positive
                 self.env.attack_graph.reset()
-                self.create_agent()
+                self.agent = create_agent(self.agent_config)
                 duration, returns, losses, lengths, num_compromised_flags = self.train_and_evaluate(episodes,evaluation_rounds=evaluation_rounds, plot=False)
                 returns_matrix[fp, tp] = sum(returns)/len(returns)
                 log.debug(f"fp=\n{fp_array}, tp=\n{tp_array}, returns_matrix=\n{returns_matrix}")
