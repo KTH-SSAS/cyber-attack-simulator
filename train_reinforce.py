@@ -1,5 +1,5 @@
 from attack_simulator.config import AgentConfig, EnvironmentConfig
-from attack_simulator.utils import Runner
+from attack_simulator.runner import Runner
 import logging
 import argparse
 import numpy.random as random
