@@ -18,8 +18,8 @@ if __name__ == '__main__':
                         help='Select agent. Choices are "value_maximizing" and "random".')
     parser.add_argument('-s', '--graph_size', choices=['small', 'medium', 'large'], type=str, default='large',
                         help='Run simulations on a "small", "medium" or "large" attack graph. Default is "large".')
-    parser.add_argument('-n', '--n_simulations', type=int, default=10000,
-                        help='Maximum number of simulations. Training will stop automatically when losses are sufficiently low. Default is 10000.')
+    parser.add_argument('-n', '--episodes', type=int, default=10000,
+                        help='Maximum number of episodes. Training will stop automatically when losses are sufficiently low. Default is 10000.')
     parser.add_argument('-e', '--early_flag_reward', type=int, default=10000,
                         help='Flag reward for the attacker when capturing flags early in the attack graph (use positive values). Default is 10000.')
     parser.add_argument('-l', '--late_flag_reward', type=int, default=10000,
@@ -64,4 +64,4 @@ if __name__ == '__main__':
     if args.action == 'computational_complexity':
         runner.computational_complexity(100, 1, -1)
     if args.action == 'accuracy':
-        runner.effect_of_measurement_accuracy_on_returns(episodes=100, evaluation_rounds=50, resolution=4)
+        runner.effect_of_measurement_accuracy_on_returns(episodes=args.episodes, evaluation_rounds=50, resolution=4)

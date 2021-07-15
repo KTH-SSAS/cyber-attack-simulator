@@ -113,12 +113,12 @@ class Attacker:
             # If the attack surface (the available uncompromised attack steps) is empty, then terminate.
             compromised_now = self.current_step
             if not self.attack_surface:
-                logger.debug("Step %f: Compromised %s. Nothing more to attack.",
+                logger.debug("Step %.0f: Compromised %s. Nothing more to attack.",
                              self.total_time, compromised_now)
                 return False
             self.choose_next_step()
             self.time_on_current_step = 0
-            logger.debug("Step %f: Compromised %s. Attacking %s.",
+            logger.debug("Step %.0f: Compromised %s. Attacking %s.",
                          self.total_time, compromised_now, self.current_step)
         # Keep track of the time spent.
         self.time_on_current_step += 1
@@ -130,9 +130,6 @@ class Attacker:
         Observations of the attacker are made by an intrusion detection system.
         The accuracy of observations is given for each attack step by the true and false positive rates respectively. 
         """
-        if self.deterministic:
-            return attack_step in self.compromised_steps
-
         rnd = random.uniform(0, 1)
         if attack_step in self.compromised_steps:
             return rnd <= self.get_step(attack_step).true_positive
@@ -154,10 +151,12 @@ class AttackSimulationEnv(gym.Env):
         self.final_flag_reward = final_flag_reward
         self.easy_ttc = easy_ttc
         self.hard_ttc = hard_ttc
+        self.true_positive = true_positive
+        self.false_positive = false_positive
         self.attack_graph = AttackGraph(deterministic=deterministic, early_flag_reward=self.early_flag_reward,
-                                        late_flag_reward=self.late_flag_reward, final_flag_reward=self.final_flag_reward, easy_ttc=self.easy_ttc, hard_ttc=self.hard_ttc, graph_size=graph_size, true_positive=true_positive, false_positive=false_positive)
+                                        late_flag_reward=self.late_flag_reward, final_flag_reward=self.final_flag_reward, easy_ttc=self.easy_ttc, hard_ttc=self.hard_ttc, graph_size=graph_size, true_positive=self.true_positive, false_positive=self.false_positive)
         self.attacker_strategy = attacker_strategy
-        self.attacker = self.create_attacker()
+        self.create_attacker()
         # An observation informs the defender of which attack steps have been compromised.
         # Observations are imperfect.
         self.observation_space = spaces.Box(low=0, high=1, shape=(
@@ -169,7 +168,7 @@ class AttackSimulationEnv(gym.Env):
         self.provision_reward = 0
 
     def create_attacker(self):
-        return Attacker(self.attack_graph, {'internet.connect'}, deterministic=self.deterministic, strategy=self.attacker_strategy)
+        self.attacker = Attacker(self.attack_graph, {'internet.connect'}, deterministic=self.deterministic, strategy=self.attacker_strategy)
 
     def get_info(self):
         if self.attacker.current_step:
@@ -213,7 +212,7 @@ class AttackSimulationEnv(gym.Env):
         logger = logging.getLogger("simulator")
         logger.debug("Starting new simulation.")
         self.attack_graph.reset()
-        self.attacker = self.create_attacker()
+        self.create_attacker()
         return self._next_observation()
 
     def interpret_observation(self, observations):
@@ -256,4 +255,3 @@ class AttackSimulationEnv(gym.Env):
             logger.debug("Disabling %s while attacker is attacking %s",
                          service, self.attacker.current_step)
         self.attack_graph.disable(service)
-        self.attacker.choose_next_step()
