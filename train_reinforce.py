@@ -35,7 +35,7 @@ def main(args):
     analyzer = initialize(args)
 
     if args.action == 'train_and_evaluate':
-        analyzer.train_and_evaluate(args.episodes, args.evaluation_rounds)
+        analyzer.train_and_evaluate(args.episodes, args.evaluation_rounds, tp_train=args.true_positive_training, fp_train=args.false_positive_training, tp_evaluate=args.true_positive_evaluation, fp_evaluate=args.false_positive_evaluation)
     if args.action == 'computational_complexity':
         analyzer.computational_complexity(100, 1, -1)
     if args.action == 'accuracy':

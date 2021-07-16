@@ -17,10 +17,7 @@ class Analyzer():
         # Save config to be able to reinitialize runner agent
         self.agent_config = agent_config
 
-    def train_and_evaluate(self, episodes, evaluation_rounds=0, plot=True):
-        return self.train_and_evaluate_on_different_accuracy(episodes=episodes, evaluation_rounds=evaluation_rounds, tp_train=1.0, fp_train=0.0, tp_evaluate=1.0, fp_evaluate=0.0, plot=plot)
-
-    def train_and_evaluate_on_different_accuracy(self, episodes, evaluation_rounds=0, tp_train=1.0, fp_train=0.0, tp_evaluate=1.0, fp_evaluate=0.0, plot=True):
+    def train_and_evaluate(self, episodes, evaluation_rounds=0, tp_train=1.0, fp_train=0.0, tp_evaluate=1.0, fp_evaluate=0.0, plot=True):
         log = logging.getLogger("trainer")
         runner = self.runner
         runner.env.attack_graph.false_positive = fp_train
