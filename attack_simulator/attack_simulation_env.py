@@ -143,7 +143,7 @@ class Attacker:
 
 class AttackSimulationEnv(gym.Env):
 
-    def __init__(self, deterministic=False, early_flag_reward=1000, late_flag_reward=10000, final_flag_reward=100000, easy_ttc=10, hard_ttc=100, graph_size='large', attacker_strategy='random', true_positive=1.0, false_positive=0.0):
+    def __init__(self, deterministic=False, early_flag_reward=1000, late_flag_reward=10000, final_flag_reward=100000, easy_ttc=10, hard_ttc=100, graph_size='large', attacker_strategy='random', true_positive_training=1.0, false_positive_training=0.0, true_positive_evaluation=1.0, false_positive_evaluation=0.0):
         super().__init__()
         self.deterministic = deterministic
         self.early_flag_reward = early_flag_reward
@@ -151,10 +151,12 @@ class AttackSimulationEnv(gym.Env):
         self.final_flag_reward = final_flag_reward
         self.easy_ttc = easy_ttc
         self.hard_ttc = hard_ttc
-        self.true_positive = true_positive
-        self.false_positive = false_positive
+        self.true_positive_training = true_positive_training
+        self.false_positive_training = false_positive_training
+        self.true_positive_evaluation = true_positive_evaluation
+        self.false_positive_evaluation = false_positive_evaluation
         self.attack_graph = AttackGraph(deterministic=deterministic, early_flag_reward=self.early_flag_reward,
-                                        late_flag_reward=self.late_flag_reward, final_flag_reward=self.final_flag_reward, easy_ttc=self.easy_ttc, hard_ttc=self.hard_ttc, graph_size=graph_size, true_positive=self.true_positive, false_positive=self.false_positive)
+                                        late_flag_reward=self.late_flag_reward, final_flag_reward=self.final_flag_reward, easy_ttc=self.easy_ttc, hard_ttc=self.hard_ttc, graph_size=graph_size, true_positive=self.true_positive_training, false_positive=self.false_positive_training)
         self.attacker_strategy = attacker_strategy
         self.create_attacker()
         # An observation informs the defender of which attack steps have been compromised.

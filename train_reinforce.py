@@ -9,7 +9,7 @@ def initialize(args):
     services = 18
     env_config = EnvironmentConfig(args.deterministic,
     args.early_flag_reward, args.late_flag_reward, args.final_flag_reward, args.easy_ttc, args.hard_ttc,
-    args.graph_size, args.attacker_strategy, args.true_positive, args.false_positive)
+    args.graph_size, args.attacker_strategy, args.true_positive_training, args.false_positive_training, args.true_positive_evaluation, args.false_positive_evaluation)
 
     env = create_environment(env_config)
 
@@ -75,10 +75,14 @@ if __name__ == '__main__':
                         help='Dimension of the hidden linear layers. Defult is 64.')
     parser.add_argument('--evaluation_rounds', type=int, default=0,
                         help='Number of simulations to run after training, for evaluation.')
-    parser.add_argument('--true_positive', type=float, default=1.0,
-                        help='Probability that compromised attack steps are reported as compromised.')
-    parser.add_argument('--false_positive', type=float, default=0.0,
-                        help='Probability that uncompromised attack steps are reported as compromised.')
+    parser.add_argument('--true_positive_training', type=float, default=1.0,
+                        help='Probability that compromised attack steps are reported as compromised during training.')
+    parser.add_argument('--false_positive_training', type=float, default=0.0,
+                        help='Probability that uncompromised attack steps are reported as compromised_during_training.')
+    parser.add_argument('--true_positive_evaluation', type=float, default=1.0,
+                        help='Probability that compromised attack steps are reported as compromised during evaluation.')
+    parser.add_argument('--false_positive_evaluation', type=float, default=0.0,
+                        help='Probability that uncompromised attack steps are reported as compromised during evaluation.')
     parser.add_argument('--false_positive_low', type=float, default=0.0,
                         help='For the accuracy graph, specifies the lowest probability that uncompromised attack steps are reported as compromised.')
     parser.add_argument('--false_positive_high', type=float, default=1.0,

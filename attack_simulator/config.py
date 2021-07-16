@@ -11,8 +11,10 @@ class EnvironmentConfig():
     hard_ttc: int
     graph_size: str
     attacker_strategy: str
-    true_positive: float
-    false_positive: float
+    true_positive_training: float
+    false_positive_training: float
+    true_positive_evaluation: float
+    false_positive_evaluation: float
 
     @property
     def attack_steps(self):

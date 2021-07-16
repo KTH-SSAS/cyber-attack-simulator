@@ -18,14 +18,22 @@ class Analyzer():
         self.agent_config = agent_config
 
     def train_and_evaluate(self, episodes, evaluation_rounds=0, plot=True):
+        return self.train_and_evaluate_on_different_accuracy(episodes=episodes, evaluation_rounds=evaluation_rounds, tp_train=1.0, fp_train=0.0, tp_evaluate=1.0, fp_evaluate=0.0, plot=plot)
+
+    def train_and_evaluate_on_different_accuracy(self, episodes, evaluation_rounds=0, tp_train=1.0, fp_train=0.0, tp_evaluate=1.0, fp_evaluate=0.0, plot=True):
         log = logging.getLogger("trainer")
         runner = self.runner
+        runner.env.attack_graph.false_positive = fp_train
+        runner.env.attack_graph.true_positive = tp_train
         training_duration, returns, losses, lengths, num_compromised_flags = runner.train(
             episodes, plot=plot)
         duration = training_duration
         if evaluation_rounds > 0:
+            runner.env.attack_graph.false_positive = fp_evaluate
+            runner.env.attack_graph.true_positive = tp_evaluate
+            runner.env.attack_graph.reset()
             evaluation_duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
-                evaluation_rounds, plot=plot)
+                evaluation_rounds, plot=False)
             duration += evaluation_duration
         log.debug(
             f"Total elapsed time: {duration}, agent time: {runner.agent_time}, environment time: {runner.environment_time}")
