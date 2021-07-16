@@ -7,12 +7,15 @@ import numpy as np
 from matplotlib import cm
 import random
 
+
 class Analyzer():
     """Metaclass to manage different forms of runs"""
+
     def __init__(self, runner, agent_config, use_cuda=False) -> None:
         self.runner: Runner = runner
         self.use_cuda = use_cuda
-        self.agent_config = agent_config # Save config to be able to reinitialize runner agent
+        # Save config to be able to reinitialize runner agent
+        self.agent_config = agent_config
 
     def train_and_evaluate(self, episodes, evaluation_rounds=0, plot=True):
         log = logging.getLogger("trainer")
@@ -22,12 +25,11 @@ class Analyzer():
         duration = training_duration
         if evaluation_rounds > 0:
             evaluation_duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
-                evaluation_rounds=evaluation_rounds, plot=plot)
+                evaluation_rounds, plot=plot)
             duration += evaluation_duration
         log.debug(
             f"Total elapsed time: {duration}, agent time: {runner.agent_time}, environment time: {runner.environment_time}")
         return duration, returns, losses, lengths, num_compromised_flags
-
 
     def computational_complexity(self, start_episodes=100, end_episodes=5, step_episodes=-5):
         log = logging.getLogger("trainer")
@@ -55,32 +57,40 @@ class Analyzer():
         log = logging.getLogger("trainer")
         # Training on perfect obbservations
         runner = self.runner
-        duration, returns, losses, lengths, num_compromised_flags = runner.train(episodes, plot=False)
+        duration, returns, losses, lengths, num_compromised_flags = runner.train(
+            episodes, plot=False)
         returns_matrix = np.zeros((resolution, resolution))
         fp_array = np.zeros((resolution, resolution))
         tp_array = np.zeros((resolution, resolution))
         for fp_index in range(0, resolution):
             for tp_index in range(0, resolution):
                 set_seeds(random_seed)
-                runner.env.attack_graph.false_positive = fp_low + (fp_high -fp_low)*fp_index/(resolution-1)
-                runner.env.attack_graph.true_positive = tp_low + (tp_high -tp_low)*tp_index/(resolution-1)
-                fp_array[fp_index, tp_index] = runner.env.attack_graph.false_positive
-                tp_array[fp_index, tp_index] = runner.env.attack_graph.true_positive
+                runner.env.attack_graph.false_positive = fp_low + \
+                    (fp_high - fp_low)*fp_index/(resolution-1)
+                runner.env.attack_graph.true_positive = tp_low + \
+                    (tp_high - tp_low)*tp_index/(resolution-1)
+                fp_array[fp_index,
+                         tp_index] = runner.env.attack_graph.false_positive
+                tp_array[fp_index,
+                         tp_index] = runner.env.attack_graph.true_positive
                 runner.env.attack_graph.reset()
-                runner.agent = create_agent(self.agent_config, env=runner.env, use_cuda=self.use_cuda)
                 # Evaluate on a range of different observation qualities.
-                duration, returns, losses, lengths, num_compromised_flags = runner.evaluate( 
-                    episodes=evaluation_rounds, plot=False) 
+                duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
+                    episodes=evaluation_rounds, plot=False)
                 returns_matrix[fp_index, tp_index] = np.mean(returns)
-                log.debug(f"fp=\n{fp_array}, tp=\n{tp_array}, returns_matrix=\n{returns_matrix}")
+                log.debug(
+                    f"fp=\n{fp_array}, tp=\n{tp_array}, returns_matrix=\n{returns_matrix}")
 
         fig = plt.figure()
         ax = fig.gca(projection='3d')
 
         # Plot the surface.
         surf = ax.plot_surface(fp_array, tp_array, returns_matrix, cmap=cm.coolwarm,
-                            linewidth=0, antialiased=False)
+                               linewidth=0, antialiased=False)
 
+        ax.set_xlabel("% false positives")
+        ax.set_ylabel("% true positives")
+        ax.set_zlabel("Returns")
         fig.savefig('3D.pdf', dpi=200)
 
         plt.show()

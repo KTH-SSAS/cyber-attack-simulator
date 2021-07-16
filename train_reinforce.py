@@ -39,7 +39,7 @@ def main(args):
     if args.action == 'computational_complexity':
         analyzer.computational_complexity(100, 1, -1)
     if args.action == 'accuracy':
-        analyzer.effect_of_measurement_accuracy_on_returns(episodes=args.episodes, evaluation_rounds=100, tp_low=0.0, tp_high=0.2, fp_low=0.0, fp_high=0.005, resolution=10, random_seed=0)
+        analyzer.effect_of_measurement_accuracy_on_returns(episodes=args.episodes, evaluation_rounds=args.evaluation_rounds, tp_low=args.true_positive_low, tp_high=args.true_positive_high, fp_low=args.false_positive_low, fp_high=args.false_positive_high, resolution=args.accuracy_resolution, random_seed=args.random_seed)
 
 if __name__ == '__main__':
 
@@ -79,6 +79,16 @@ if __name__ == '__main__':
                         help='Probability that compromised attack steps are reported as compromised.')
     parser.add_argument('--false_positive', type=float, default=0.0,
                         help='Probability that uncompromised attack steps are reported as compromised.')
+    parser.add_argument('--false_positive_low', type=float, default=0.0,
+                        help='For the accuracy graph, specifies the lowest probability that uncompromised attack steps are reported as compromised.')
+    parser.add_argument('--false_positive_high', type=float, default=1.0,
+                        help='For the accuracy graph, specifies the highest probability that uncompromised attack steps are reported as compromised.')
+    parser.add_argument('--true_positive_low', type=float, default=0.0,
+                        help='For the accuracy graph, specifies the lowest probability that compromised attack steps are reported as compromised.')
+    parser.add_argument('--true_positive_high', type=float, default=1.0,
+                        help='For the accuracy graph, specifies the highest probability that compromised attack steps are reported as compromised.')
+    parser.add_argument('--accuracy_resolution', type=int, default=10,
+                        help='For the accuracy graph, specifies the number of data points (the same number for both axes).')
     parser.add_argument('--no_skipping', action='store_true',
                         help="Do not add a skip action for the agent.")
     parser.add_argument('--include_services', action='store_true',
