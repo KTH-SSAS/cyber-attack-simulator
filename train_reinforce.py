@@ -25,7 +25,7 @@ def initialize(args):
 
     agent_config = AgentConfig(agent_type=args.agent, hidden_dim=args.hidden_width,
     learning_rate=args.lr, input_dim=input_dim, num_actions=services, allow_skip=(not args.no_skipping))
-    agent = create_agent(agent_config)
+    agent = create_agent(agent_config, env=env, use_cuda=args.cuda)
     runner = Runner(agent, env, args.include_services)
     analyzer = analysis.Analyzer(runner, agent_config, use_cuda=args.cuda)
     return analyzer
@@ -39,7 +39,7 @@ def main(args):
     if args.action == 'computational_complexity':
         analyzer.computational_complexity(100, 1, -1)
     if args.action == 'accuracy':
-        analyzer.effect_of_measurement_accuracy_on_returns(episodes=args.episodes, evaluation_rounds=50, resolution=4)
+        analyzer.effect_of_measurement_accuracy_on_returns(episodes=args.episodes, evaluation_rounds=100, tp_low=0.0, tp_high=0.2, fp_low=0.0, fp_high=0.005, resolution=10, random_seed=0)
 
 if __name__ == '__main__':
 
