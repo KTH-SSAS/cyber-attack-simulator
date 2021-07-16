@@ -67,12 +67,12 @@ class Analyzer():
                 fp_array[fp_index, tp_index] = runner.env.attack_graph.false_positive
                 tp_array[fp_index, tp_index] = runner.env.attack_graph.true_positive
                 runner.env.attack_graph.reset()
-                runner.agent = create_agent(self.agent_config, self.use_cuda)
+                runner.agent = create_agent(self.agent_config, env=runner.env, use_cuda=self.use_cuda)
                 # Evaluate on a range of different observation qualities.
-                duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(evaluation_rounds=evaluation_rounds, plot=False)
+                duration, returns, losses, lengths, num_compromised_flags = runner.evaluate( 
+                    episodes=evaluation_rounds, plot=False) 
                 returns_matrix[fp_index, tp_index] = np.mean(returns)
                 log.debug(f"fp=\n{fp_array}, tp=\n{tp_array}, returns_matrix=\n{returns_matrix}")
-                print(f"returns_matrix=\n{returns_matrix}")
 
         fig = plt.figure()
         ax = fig.gca(projection='3d')
