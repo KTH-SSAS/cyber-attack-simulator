@@ -53,7 +53,7 @@ if __name__ == '__main__':
                         help='Make environment deterministic.')
     parser.add_argument('-a', '--agent', choices=['reinforce', 'rule_based', 'random'], type=str, default='reinforce',
                         help='Select agent. Choices are "reinforce", "random" and "rule_based".')
-    parser.add_argument('--attacker_strategy', choices=['value_maximizing', 'random'], type=str, default='random',
+    parser.add_argument('-t', '--attacker_strategy', choices=['value_maximizing', 'random'], type=str, default='random',
                         help='Select agent. Choices are "value_maximizing" and "random".')
     parser.add_argument('-s', '--graph_size', choices=['small', 'medium', 'large'], type=str, default='large',
                         help='Run simulations on a "small", "medium" or "large" attack graph. Default is "large".')
@@ -73,7 +73,7 @@ if __name__ == '__main__':
                         help='Random seed for both numpy and torch. Default is 0.')
     parser.add_argument('-w', '--hidden_width', type=int, default=64,
                         help='Dimension of the hidden linear layers. Defult is 64.')
-    parser.add_argument('--evaluation_rounds', type=int, default=0,
+    parser.add_argument('-m', '--evaluation_rounds', type=int, default=0,
                         help='Number of simulations to run after training, for evaluation.')
     parser.add_argument('--true_positive_training', type=float, default=1.0,
                         help='Probability that compromised attack steps are reported as compromised during training.')
@@ -91,7 +91,7 @@ if __name__ == '__main__':
                         help='For the accuracy graph, specifies the lowest probability that compromised attack steps are reported as compromised.')
     parser.add_argument('--true_positive_high', type=float, default=1.0,
                         help='For the accuracy graph, specifies the highest probability that compromised attack steps are reported as compromised.')
-    parser.add_argument('--accuracy_resolution', type=int, default=5,
+    parser.add_argument('-c', '--accuracy_resolution', type=int, default=5,
                         help='For the accuracy graph, specifies the number of data points (the same number for both axes).')
     parser.add_argument('--no_skipping', action='store_true',
                         help="Do not add a skip action for the agent.")

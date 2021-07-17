@@ -190,8 +190,8 @@ class AttackSimulationEnv(gym.Env):
         for action_id, (service, service_enabled) in enumerate(self.attack_graph.enabled_services.items()):
             if service_enabled:
                 self.provision_reward += 1
-                if action[action_id] == 0:
-                    self.disable(service)
+            if action[action_id] == 0:
+                self.disable(service)
 
         # The attacker attacks. If the attacker's attack surface is empty, then the game ends.
         attacker_done = not self.attacker.attack()
@@ -254,6 +254,7 @@ class AttackSimulationEnv(gym.Env):
     def disable(self, service):
         logger = logging.getLogger('simulator')
         if self.attack_graph.enabled_services[service]:
-            logger.debug("Disabling %s while attacker is attacking %s",
-                         service, self.attacker.current_step)
+            logger.debug("Disabling %s because defender sees %s", service, str(self.interpret_observation(self.obs)))
+        else:
+            logger.debug("Re-disabling %s again, because defender sees %s", service, str(self.interpret_observation(self.obs)))
         self.attack_graph.disable(service)
