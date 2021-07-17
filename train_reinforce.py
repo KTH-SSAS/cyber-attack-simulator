@@ -91,7 +91,7 @@ if __name__ == '__main__':
                         help='For the accuracy graph, specifies the lowest probability that compromised attack steps are reported as compromised.')
     parser.add_argument('--true_positive_high', type=float, default=1.0,
                         help='For the accuracy graph, specifies the highest probability that compromised attack steps are reported as compromised.')
-    parser.add_argument('--accuracy_resolution', type=int, default=10,
+    parser.add_argument('--accuracy_resolution', type=int, default=5,
                         help='For the accuracy graph, specifies the number of data points (the same number for both axes).')
     parser.add_argument('--no_skipping', action='store_true',
                         help="Do not add a skip action for the agent.")
