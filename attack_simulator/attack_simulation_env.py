@@ -246,7 +246,8 @@ class AttackSimulationEnv(gym.Env):
 
     def _next_observation(self):
         # Imperfect observations by intrusion detection system
-        return np.array([self.attacker.observe(a) for a in self.attack_graph.attack_steps])
+        self.obs =  np.array([self.attacker.observe(a) for a in self.attack_graph.attack_steps])
+        return self.obs
 
     def render(self, mode='human'):
         pass
