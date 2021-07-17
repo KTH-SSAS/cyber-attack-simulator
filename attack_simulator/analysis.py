@@ -97,6 +97,7 @@ class Analyzer():
         ax.set_ylabel("% true positives")
         ax.set_zlabel("Returns")
         fig.savefig('3D.pdf', dpi=200)
+        fig.savefig('3D.jpg', dpi=200)
 
         plt.show()
 
