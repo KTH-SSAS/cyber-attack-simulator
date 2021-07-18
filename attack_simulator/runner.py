@@ -90,7 +90,6 @@ class Runner:
                 returns[i] = sum(rewards)
                 lengths[i] = episode_length
                 num_compromised_flags[i] = len(compromised_flags)
-                self.env.reset()
                 log.debug(
                     f"Episode: {i+1}/{episodes}, Loss: {loss}, Return: {sum(rewards)}, Episode Length: {episode_length}")
 
@@ -104,6 +103,7 @@ class Runner:
                     break
 
                 prev_loss = loss
+                self.env.reset()
 
         except KeyboardInterrupt:
             print("Stopping...")

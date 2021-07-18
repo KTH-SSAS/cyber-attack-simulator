@@ -222,6 +222,11 @@ class AttackSimulationEnv(gym.Env):
         self.create_attacker()
         return self._next_observation()
 
+    def update_accuracy(self, true_positive, false_positive):
+        self.true_positive = true_positive
+        self.false_positive = false_positive
+        self.attack_graph.update_accuracy(true_positive, false_positive)
+
     def interpret_observation(self, observations):
         """Debug function"""
         compromised = []

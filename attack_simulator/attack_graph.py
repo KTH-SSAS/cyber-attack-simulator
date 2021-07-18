@@ -280,6 +280,13 @@ class AttackGraph:
         self.attack_steps[id_string] = AttackStep(name=name, asset=asset, service=service, flag=flag, step_type=step_type, ttc=ttc,
                                                                           reward=reward, children=children, true_positive=self.true_positive, false_positive=self.false_positive, deterministic=self.deterministic)
 
+    def update_accuracy(self, true_positive, false_positive):
+        self.true_positive = true_positive
+        self.false_positive = false_positive
+        for attack_step in self.attack_steps:
+            self.attack_steps[attack_step].true_positive = true_positive
+            self.attack_steps[attack_step].false_positive = false_positive
+
     def record_parents(self):
         # And steps need to know which their parents are.
         for parent in self.attack_steps:

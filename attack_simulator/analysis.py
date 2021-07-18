@@ -26,9 +26,7 @@ class Analyzer():
             episodes, plot=plot)
         duration = training_duration
         if evaluation_rounds > 0:
-            runner.env.attack_graph.false_positive = fp_evaluate
-            runner.env.attack_graph.true_positive = tp_evaluate
-            runner.env.attack_graph.reset()
+            runner.env.update_accuracy(tp_evaluate, fp_evaluate)
             evaluation_duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
                 evaluation_rounds, plot=False)
             duration += evaluation_duration
