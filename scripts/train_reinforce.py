@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import logging
 import argparse
 from attack_simulator.utils import set_seeds, create_agent, create_environment
@@ -109,3 +111,5 @@ if __name__ == '__main__':
         logging.FileHandler("trainer.log", mode="w"))
 
     main(arguments)
+
+# vim: ft=python
