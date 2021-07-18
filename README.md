@@ -5,5 +5,5 @@ An agent learns to defend a computer network by playing games against an unlearn
 Checkout the training and simulation options with 
 
 ```
-python3 scripts/train_reinforce.py -h
+./scripts/train-reinforce -h
 ```
