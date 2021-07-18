@@ -2,6 +2,7 @@
 .vscode
 __pycache__
 *.txt
+*.jpg
 *.log
 *.swp
 graphviz.*
@@ -10,3 +11,4 @@ PKG-INFO
 .DS_Store
 .idea
 outputs
+set_up_screen.sh

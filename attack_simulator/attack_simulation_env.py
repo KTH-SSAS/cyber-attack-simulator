@@ -168,6 +168,9 @@ class AttackSimulationEnv(gym.Env):
         self.action_space = spaces.Tuple(
             ([spaces.Discrete(2)]*self.n_defender_actions))
         self.provision_reward = 0
+        self.prev_service = None
+        self.step_number = 0
+        
 
     def create_attacker(self):
         self.attacker = Attacker(self.attack_graph, {'internet.connect'}, deterministic=self.deterministic, strategy=self.attacker_strategy)
@@ -182,6 +185,7 @@ class AttackSimulationEnv(gym.Env):
         return info
 
     def step(self, action):
+        self.step_number += 1
         logger = logging.getLogger("simulator")
         # provision_reward is the defender reward for maintaining services online.
         self.provision_reward = 0
@@ -190,8 +194,8 @@ class AttackSimulationEnv(gym.Env):
         for action_id, (service, service_enabled) in enumerate(self.attack_graph.enabled_services.items()):
             if service_enabled:
                 self.provision_reward += 1
-            if action[action_id] == 0:
-                self.disable(service)
+                if action[action_id] == 0:
+                    self.disable(service)
 
         # The attacker attacks. If the attacker's attack surface is empty, then the game ends.
         attacker_done = not self.attacker.attack()
@@ -213,6 +217,7 @@ class AttackSimulationEnv(gym.Env):
     def reset(self):
         logger = logging.getLogger("simulator")
         logger.debug("Starting new simulation.")
+        self.step_number = 0
         self.attack_graph.reset()
         self.create_attacker()
         return self._next_observation()
@@ -244,6 +249,10 @@ class AttackSimulationEnv(gym.Env):
         """Debug function"""
         return np.array([a in compromised_steps for a in self.attack_graph.attack_steps])
 
+    def string_from_observation(self, observation):
+        """Debug function"""
+        return "".join([str(int(o)) for o in observation])
+
     def _next_observation(self):
         # Imperfect observations by intrusion detection system
         self.obs =  np.array([self.attacker.observe(a) for a in self.attack_graph.attack_steps])
@@ -254,8 +263,12 @@ class AttackSimulationEnv(gym.Env):
 
     def disable(self, service):
         logger = logging.getLogger('simulator')
-        if self.attack_graph.enabled_services[service]:
-            logger.debug("Disabling %s because defender sees %s", service, str(self.interpret_observation(self.obs)))
-        else:
-            logger.debug("Re-disabling %s again, because defender sees %s", service, str(self.interpret_observation(self.obs)))
+        #int_obs = self.interpret_observation(self.obs)
+        #logger.debug(f"Contemplating disabling. service = {service}, self.prev_service = {self.prev_service}, int_obs = {int_obs} and self.prev_int_obs = {self.prev_int_obs}")
+        if service != self.prev_service:
+            if self.attack_graph.enabled_services[service]:
+                logger.debug("Step %d: Disabling %s because defender sees %s", self.step_number, service, self.string_from_observation(self.obs))
+            else:
+                logger.debug("Step %d: Re-disabling %s again, because defender sees %s", self.step_number, service, self.string_from_observation(self.obs))
+        self.prev_service = service
         self.attack_graph.disable(service)
