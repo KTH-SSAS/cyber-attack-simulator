@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import numpy as np
 import random
 from attack_simulator.attack_graph import AttackGraph
@@ -62,3 +64,5 @@ if __name__ == '__main__':
     attack_graph = AttackGraph()
     attacker = Attacker(attack_graph, ['internet.connect'])
     attacker.explore()
+
+# vim: ft=python
