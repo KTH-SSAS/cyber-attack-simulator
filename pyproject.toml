@@ -1,0 +1,90 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "attack_simulator"
+version = "0.1.0"
+description = "Reinforcement learning on attack simulations"
+license = "MIT"
+authors = [
+    "Jakob Nyberg <jaknyb@kth.se>",
+    "Pontus Johnson <pontusj@kth.se>"
+]
+repository = "https://gitr.sys.kth.se/pontusj/openai_attack_simulation"
+
+
+[tool.poetry.dependencies]
+python = "^3.8"
+gym = "^0.18.3"
+torch = "^1.9.0"
+numpy = "^1.21.0"
+matplotlib = "^3.4.2"
+pyyaml = "^5.4.1"
+
+
+[tool.poetry.dev-dependencies]
+tox = "^3.23.1"
+tox-poetry-dev-dependencies = "*"
+black = "^21.6b"
+isort = "^5.9.1"
+flakehell = "^0.9.0"
+mypy = "^0.910"
+pydocstyle = "^6.1.1"
+pytest = "^6.2.4"
+pytest-cov = "^2.12.1"
+
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+isolated_build = true
+envlist = py38
+requires =
+    tox-poetry-dev-dependencies
+
+[testenv]
+deps =
+poetry_experimental_no_virtual_env = True
+skip_install = True
+allowlist_externals =
+    black
+    flakehell
+    isort
+    pydocstyle
+    mypy
+    pytest
+commands =
+    black --check --diff .
+    flakehell lint .
+    isort --check --diff .
+    # pydocstyle .
+    #mypy .
+    pytest --cov .
+"""
+
+[tool.black]
+line_length = 100
+target_version = ['py38']
+
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+
+[tool.flakehell]
+max_line_length = 100
+format = "grouped"
+show_source = true
+extended_default_ignore = []
+
+[tool.flakehell.plugins]
+pyflakes = ["+*"]
+pycodestyle = ["+*", "-E203"]
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.coverage.report]
+show_missing = true
