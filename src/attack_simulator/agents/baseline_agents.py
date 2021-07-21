@@ -1,5 +1,5 @@
 """Simple agents that can be used as baselines for performance"""
-from attack_simulator.agents.tabular_agents import Agent
+from .tabular_agents import Agent
 import numpy as np
 import torch
 

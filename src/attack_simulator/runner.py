@@ -1,6 +1,6 @@
-from attack_simulator.config import AgentConfig
-from attack_simulator.attack_simulation_env import AttackSimulationEnv
-from attack_simulator.utils import create_agent, plot_episode, plot_training_results
+from .config import AgentConfig
+from .env import AttackSimulationEnv
+from .utils import create_agent, plot_episode, plot_training_results
 import matplotlib.pyplot as plt
 import logging
 import numpy as np
