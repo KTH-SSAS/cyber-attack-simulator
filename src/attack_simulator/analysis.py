@@ -1,8 +1,8 @@
-from attack_simulator.config import AgentConfig
+from .config import AgentConfig
 import logging
 import matplotlib.pyplot as plt
-from attack_simulator.runner import Runner
-from attack_simulator.utils import set_seeds, create_agent
+from .runner import Runner
+from .utils import set_seeds, create_agent
 import numpy as np
 from matplotlib import cm
 import random

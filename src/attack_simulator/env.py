@@ -4,7 +4,7 @@ import logging
 from gym import spaces
 import numpy as np
 import gym
-from attack_simulator.attack_graph import AttackGraph, AttackStep
+from .graph import AttackGraph, AttackStep
 
 # The probability that the defender will disable a given service at a given step is given by DISABLE_PROBABILITY.
 DISABLE_PROBABILITY = 0.001
