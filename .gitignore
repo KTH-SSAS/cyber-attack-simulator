@@ -12,3 +12,7 @@ PKG-INFO
 .idea
 outputs
 set_up_screen.sh
+.tox
+.pytest_cache
+.coverage
+dist
