@@ -15,6 +15,7 @@ class EnvironmentConfig():
     false_positive_training: float
     true_positive_evaluation: float
     false_positive_evaluation: float
+    services: int = 18
 
     @property
     def attack_steps(self):

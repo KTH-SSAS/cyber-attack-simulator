@@ -2,7 +2,9 @@ from attack_simulator.config import AgentConfig
 import logging
 import matplotlib.pyplot as plt
 from attack_simulator.runner import Runner
-from attack_simulator.utils import set_seeds, create_agent
+from attack_simulator.config import AgentConfig, EnvironmentConfig
+from attack_simulator.utils import set_seeds, create_agent, create_environment
+from attack_simulator.utils import set_seeds, create_agent, create_environment
 import numpy as np
 from matplotlib import cm
 import random
@@ -11,11 +13,30 @@ import random
 class Analyzer():
     """Metaclass to manage different forms of runs"""
 
-    def __init__(self, runner, agent_config, use_cuda=False) -> None:
-        self.runner: Runner = runner
-        self.use_cuda = use_cuda
-        # Save config to be able to reinitialize runner agent
-        self.agent_config = agent_config
+    def __init__(self, args) -> None:
+        self.env_config = self.create_env_config(args)
+        self.agent_config = self.create_agent_config(args, self.env_config.attack_steps, self.env_config.services)
+        
+        env = create_environment(self.env_config)
+        agent = create_agent(self.agent_config, env=env, use_cuda=args.cuda)
+        self.runner = Runner(agent, env, args.include_services)
+
+        # TODO: Refactor this. Save config to be able to reinitialize runner agent
+        self.use_cuda = args.cuda
+        self.agent_config = self.agent_config
+
+    def create_env_config(self, args):
+        return EnvironmentConfig(args.deterministic,
+        args.early_flag_reward, args.late_flag_reward, args.final_flag_reward, args.easy_ttc, args.hard_ttc,
+        args.graph_size, args.attacker_strategy, args.true_positive_training, args.false_positive_training, args.true_positive_evaluation, args.false_positive_evaluation)
+
+    def create_agent_config(self, args, attack_steps, services):
+        if args.include_services:
+            input_dim = attack_steps + services
+        else:
+            input_dim = attack_steps
+        return AgentConfig(agent_type=args.agent, hidden_dim=args.hidden_width,
+        learning_rate=args.lr, input_dim=input_dim, num_actions=services, allow_skip=(not args.no_skipping))
 
     def train_and_evaluate(self, episodes, evaluation_rounds=0, tp_train=1.0, fp_train=0.0, tp_evaluate=1.0, fp_evaluate=0.0, plot=True):
         log = logging.getLogger("trainer")
@@ -33,6 +54,43 @@ class Analyzer():
         log.debug(
             f"Total elapsed time: {duration}, agent time: {runner.agent_time}, environment time: {runner.environment_time}")
         return duration, returns, losses, lengths, num_compromised_flags
+
+    def effect_of_size_on_returns(self, training_episodes=10000, evaluation_episodes=100, random_seed=0):
+        log = logging.getLogger("trainer")
+    
+        if evaluation_episodes != 0:
+            eval_epidodes = evaluation_episodes
+        else:
+            eval_episodes = 100
+        n_attack_steps = [7, 29, 78]
+        mean_returns = dict()
+        for agent_type in ['reinforce', 'rule_based', 'random']:
+            mean_returns[agent_type] = list()
+            for graph_size in ['small', 'medium', 'large']:
+                self.env_config.graph_size = graph_size
+                env = create_environment(self.env_config)
+                self.agent_config.agent_type = agent_type
+                self.agent_config.input_dim = self.env_config.attack_steps
+                agent = create_agent(self.agent_config, env=env)
+                runner = Runner(agent, env) 
+                duration, returns, losses, lengths, num_compromised_flags = runner.train(
+                    training_episodes, plot=False)
+                evaluation_duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
+                    eval_episodes, plot=False)
+                duration += evaluation_duration
+                print(returns)
+                mean_returns[agent_type].append(sum(returns)/len(returns))
+
+        fig, ax = plt.subplots()
+        title = "Returns vs graph size"
+        ax.set_title(title)
+        ax.plot(n_attack_steps, mean_returns['reinforce'], color='black')
+        ax.plot(n_attack_steps, mean_returns['rule_based'], color='blue')
+        ax.plot(n_attack_steps, mean_returns['random'], color='red')
+        ax.set_ylabel("Mean returns")
+        ax.set_xlabel("Graph size")
+        fig.savefig('returns_vs_size.pdf', dpi=200)
+        plt.show()
 
     def computational_complexity(self, start_episodes=100, end_episodes=5, step_episodes=-5):
         log = logging.getLogger("trainer")
@@ -82,7 +140,7 @@ class Analyzer():
                     episodes=evaluation_rounds, plot=False)
                 returns_matrix[fp_index, tp_index] = np.mean(returns)
                 log.debug(
-                    f"fp=\n{fp_array}, tp=\n{tp_array}, returns_matrix=\n{returns_matrix}")
+                    f"returns_matrix=\n{returns_matrix}")
 
         fig = plt.figure()
         ax = fig.gca(projection='3d')
@@ -94,8 +152,8 @@ class Analyzer():
         ax.set_xlabel("% false positives")
         ax.set_ylabel("% true positives")
         ax.set_zlabel("Returns")
-        fig.savefig('3D.pdf', dpi=200)
-        fig.savefig('3D.jpg', dpi=200)
+        fig.savefig(f'Accuracy seed {random_seed}.pdf', dpi=200)
+        #fig.savefig('3D.jpg', dpi=200)
 
         plt.show()
 

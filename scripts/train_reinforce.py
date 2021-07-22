@@ -8,29 +8,22 @@ from attack_simulator.runner import Runner
 import attack_simulator.analysis as analysis
 
 def initialize(args):
-    services = 18
-    env_config = EnvironmentConfig(args.deterministic,
+    if args.deterministic:
+        set_seeds(args.random_seed)
+    return analysis.Analyzer(args)
+
+def create_env_config(args, services):
+    return EnvironmentConfig(args.deterministic,
     args.early_flag_reward, args.late_flag_reward, args.final_flag_reward, args.easy_ttc, args.hard_ttc,
-    args.graph_size, args.attacker_strategy, args.true_positive_training, args.false_positive_training, args.true_positive_evaluation, args.false_positive_evaluation)
+    args.graph_size, services, args.attacker_strategy, args.true_positive_training, args.false_positive_training, args.true_positive_evaluation, args.false_positive_evaluation)
 
-    env = create_environment(env_config)
-
-    attack_steps = env_config.attack_steps
-
+def create_agent_config(args, attack_steps, services):
     if args.include_services:
         input_dim = attack_steps + services
     else:
         input_dim = attack_steps
-
-    if args.deterministic:
-        set_seeds(args.random_seed)
-
-    agent_config = AgentConfig(agent_type=args.agent, hidden_dim=args.hidden_width,
+    return AgentConfig(agent_type=args.agent, hidden_dim=args.hidden_width,
     learning_rate=args.lr, input_dim=input_dim, num_actions=services, allow_skip=(not args.no_skipping))
-    agent = create_agent(agent_config, env=env, use_cuda=args.cuda)
-    runner = Runner(agent, env, args.include_services)
-    analyzer = analysis.Analyzer(runner, agent_config, use_cuda=args.cuda)
-    return analyzer
 
 def main(args):
 
@@ -42,12 +35,15 @@ def main(args):
         analyzer.computational_complexity(100, 1, -1)
     if args.action == 'accuracy':
         analyzer.effect_of_measurement_accuracy_on_returns(episodes=args.episodes, evaluation_rounds=args.evaluation_rounds, tp_low=args.true_positive_low, tp_high=args.true_positive_high, fp_low=args.false_positive_low, fp_high=args.false_positive_high, resolution=args.accuracy_resolution, random_seed=args.random_seed)
+    if args.action == 'size':
+        analyzer.effect_of_size_on_returns(training_episodes=args.episodes, evaluation_episodes=args.evaluation_rounds, random_seed=args.random_seed)
+
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
         description='Reinforcement learning of a computer network defender.')
-    parser.add_argument('--action', choices=['train_and_evaluate', 'computational_complexity', 'accuracy'], type=str, default='train_and_evaluate',
+    parser.add_argument('--action', choices=['train_and_evaluate', 'computational_complexity', 'accuracy', 'size'], type=str, default='train_and_evaluate',
                         help='Select what action to perform. Choices are "train_and_evaluate", "acccuracy" and "computational_complexity".')
     parser.add_argument('-g', '--graph', action='store_true',
                         help='Generate a GraphViz .dot file.')

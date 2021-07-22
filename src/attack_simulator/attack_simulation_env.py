@@ -143,7 +143,7 @@ class Attacker:
 
 class AttackSimulationEnv(gym.Env):
 
-    def __init__(self, deterministic=False, early_flag_reward=1000, late_flag_reward=10000, final_flag_reward=100000, easy_ttc=10, hard_ttc=100, graph_size='large', attacker_strategy='random', true_positive_training=1.0, false_positive_training=0.0, true_positive_evaluation=1.0, false_positive_evaluation=0.0):
+    def __init__(self, deterministic=False, early_flag_reward=1000, late_flag_reward=10000, final_flag_reward=100000, easy_ttc=10, hard_ttc=100, graph_size='large', attacker_strategy='random', true_positive_training=1.0, false_positive_training=0.0, true_positive_evaluation=1.0, false_positive_evaluation=0.0, services=10):
         super().__init__()
         self.deterministic = deterministic
         self.early_flag_reward = early_flag_reward
