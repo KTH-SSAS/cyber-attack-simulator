@@ -38,7 +38,7 @@ def main(args):
     if args.action == 'accuracy':
         analyzer.effect_of_measurement_accuracy_on_returns(episodes=args.episodes, evaluation_rounds=args.evaluation_rounds, tp_low=args.true_positive_low, tp_high=args.true_positive_high, fp_low=args.false_positive_low, fp_high=args.false_positive_high, resolution=args.accuracy_resolution, random_seed=args.random_seed)
     if args.action == 'size':
-        analyzer.effect_of_size_on_returns(training_episodes=args.episodes, evaluation_episodes=args.evaluation_rounds, random_seed=args.random_seed)
+        analyzer.effect_of_size_on_returns(training_episodes=args.episodes, evaluation_episodes=args.evaluation_rounds, random_seed_min=0, random_seed_max=args.random_seed)
 
 
 if __name__ == '__main__':

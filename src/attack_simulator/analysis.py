@@ -55,42 +55,51 @@ class Analyzer():
             f"Total elapsed time: {duration}, agent time: {runner.agent_time}, environment time: {runner.environment_time}")
         return duration, returns, losses, lengths, num_compromised_flags
 
-    def effect_of_size_on_returns(self, training_episodes=10000, evaluation_episodes=100, random_seed=0):
+    def effect_of_size_on_returns(self, training_episodes=10000, evaluation_episodes=100, random_seed_min=0, random_seed_max=1):
         log = logging.getLogger("trainer")
+
+        n_attack_steps = [7, 29, 78]*(random_seed_max-random_seed_min)
+        colors = ['black', 'blue', 'red']*(random_seed_max-random_seed_min)
+        agent_types = ['reinforce', 'rule_based', 'random']
+        graph_sizes = ['small', 'medium', 'large'] 
     
         if evaluation_episodes != 0:
             eval_epidodes = evaluation_episodes
         else:
             eval_episodes = 100
-        n_attack_steps = [7, 29, 78]
+
         mean_returns = dict()
-        agent_types = ['reinforce', 'rule_based', 'random']
         # The inertial agent performs so poorly that we ignore it, because the graphs become illegible.
         #agent_types = ['reinforce', 'rule_based', 'random', 'inertial']
         for agent_type in agent_types:
             mean_returns[agent_type] = list()
-            for graph_size in ['small', 'medium', 'large']:
-                set_seeds(random_seed)
-                self.env_config.graph_size = graph_size
-                env = create_environment(self.env_config)
-                self.agent_config.agent_type = agent_type
-                self.agent_config.input_dim = self.env_config.attack_steps
-                agent = create_agent(self.agent_config, env=env)
-                runner = Runner(agent, env) 
-                duration, returns, losses, lengths, num_compromised_flags = runner.train(
-                    training_episodes, plot=False)
-                evaluation_duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
-                    eval_episodes, plot=False)
-                duration += evaluation_duration
-                print(returns)
-                mean_returns[agent_type].append(sum(returns)/len(returns))
+            for random_seed in range(random_seed_min,random_seed_max):
+                for graph_size in graph_sizes:
+                    print(f"random_seed = {random_seed}, agent_type = {agent_type}, graph_size = {graph_size}")
+                    set_seeds(random_seed)
+                    self.env_config.graph_size = graph_size
+                    env = create_environment(self.env_config)
+                    self.agent_config.agent_type = agent_type
+                    self.agent_config.input_dim = self.env_config.attack_steps
+                    agent = create_agent(self.agent_config, env=env)
+                    runner = Runner(agent, env) 
+                    duration, returns, losses, lengths, num_compromised_flags = runner.train(
+                        training_episodes, plot=False)
+                    evaluation_duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
+                        eval_episodes, plot=False)
+                    duration += evaluation_duration
+                    print(returns)
+                    mean_returns[agent_type].append(sum(returns)/len(returns))
 
         fig, ax = plt.subplots()
         title = "Returns vs graph size"
         ax.set_title(title)
-        colors = ['black', 'blue', 'red', 'green']
+        print(n_attack_steps)
+        print(mean_returns)
+        print(agent_types)
+        print(colors)
         for i in range(0,len(agent_types)):
-            ax.plot(n_attack_steps, mean_returns[agent_types[i]], color=colors[i])
+            ax.plot(n_attack_steps, mean_returns[agent_types[i]], '.', color=colors[i])
         
         ax.set_ylabel("Mean returns")
         ax.set_xlabel("Graph size")
