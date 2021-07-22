@@ -277,3 +277,5 @@ class AttackSimulationEnv(gym.Env):
                 logger.debug("Step %d: Re-disabling %s again, because defender sees %s", self.step_number, service, self.string_from_observation(self.obs))
         self.prev_service = service
         self.attack_graph.disable(service)
+        # The attacker might be attacking a step that just now became disabled, so needs to choose a new one.
+        self.attacker.choose_next_step()
