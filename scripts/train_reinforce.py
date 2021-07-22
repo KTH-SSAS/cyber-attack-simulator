@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
-import logging
 import argparse
-from attack_simulator.utils import set_seeds, create_agent, create_environment
+import logging
+
+import attack_simulator.analysis as analysis
 from attack_simulator.config import AgentConfig, EnvironmentConfig
 from attack_simulator.runner import Runner
-import attack_simulator.analysis as analysis
+from attack_simulator.utils import create_agent, create_environment, set_seeds
+
 
 def initialize(args):
     if args.deterministic:

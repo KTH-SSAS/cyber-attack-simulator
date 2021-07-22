@@ -1,7 +1,9 @@
 """Simple agents that can be used as baselines for performance"""
-from .tabular_agents import Agent
 import numpy as np
 import torch
+
+from .tabular_agents import Agent
+
 
 class RandomMCAgent():
     """Agent that will pick a random action each turn. Returns random loss."""

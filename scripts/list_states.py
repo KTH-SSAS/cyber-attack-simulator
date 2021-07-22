@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
-import numpy as np
 import random
+
+import numpy as np
+
 from attack_simulator.graph import AttackGraph
 
 

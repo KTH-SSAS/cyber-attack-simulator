@@ -1,12 +1,13 @@
-from .config import AgentConfig
 import logging
+import random
+
 import matplotlib.pyplot as plt
-from .runner import Runner
-from .utils import set_seeds, create_agent, create_environment
-from .config import AgentConfig, EnvironmentConfig
 import numpy as np
 from matplotlib import cm
-import random
+
+from .config import AgentConfig, EnvironmentConfig
+from .runner import Runner
+from .utils import create_agent, create_environment, set_seeds
 
 
 class Analyzer():
