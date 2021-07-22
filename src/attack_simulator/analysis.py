@@ -64,7 +64,10 @@ class Analyzer():
             eval_episodes = 100
         n_attack_steps = [7, 29, 78]
         mean_returns = dict()
-        for agent_type in ['reinforce', 'rule_based', 'random', 'inertial']:
+        agent_types = ['reinforce', 'rule_based', 'random']
+        # The inertial agent performs so poorly that we ignore it, because the graphs become illegible.
+        #agent_types = ['reinforce', 'rule_based', 'random', 'inertial']
+        for agent_type in agent_types:
             mean_returns[agent_type] = list()
             for graph_size in ['small', 'medium', 'large']:
                 set_seeds(random_seed)
@@ -85,10 +88,10 @@ class Analyzer():
         fig, ax = plt.subplots()
         title = "Returns vs graph size"
         ax.set_title(title)
-        ax.plot(n_attack_steps, mean_returns['reinforce'], color='black')
-        ax.plot(n_attack_steps, mean_returns['rule_based'], color='blue')
-        ax.plot(n_attack_steps, mean_returns['random'], color='red')
-        ax.plot(n_attack_steps, mean_returns['intertial'], color='green')
+        colors = ['black', 'blue', 'red', 'green']
+        for i in range(0,len(agent_types)):
+            ax.plot(n_attack_steps, mean_returns[agent_types[i]], color=colors[i])
+        
         ax.set_ylabel("Mean returns")
         ax.set_xlabel("Graph size")
         fig.savefig(f'returns_vs_size_seed_{random_seed}.pdf', dpi=200)

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy.random
 import torch
 
-from .agents.baseline_agents import RandomMCAgent, RuleBasedAgent
+from .agents.baseline_agents import RandomMCAgent, RuleBasedAgent, SkipAgent
 from .agents.policy_agents import ReinforceAgent
 from .config import AgentConfig, EnvironmentConfig
 from .env import AttackSimulationEnv
