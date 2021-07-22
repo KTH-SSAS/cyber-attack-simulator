@@ -3,7 +3,7 @@ from torch.nn.modules.activation import Softmax
 from torch.distributions import Categorical
 from torch import Tensor
 from torch.optim import optimizer
-from attack_simulator.agents.tabular_agents import Agent
+from .tabular_agents import Agent
 import torch
 import logging
 import numpy as np

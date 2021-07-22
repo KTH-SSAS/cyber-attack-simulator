@@ -2,7 +2,7 @@
 
 import numpy as np
 import random
-from attack_simulator.attack_graph import AttackGraph
+from attack_simulator.graph import AttackGraph
 
 
 class Attacker:

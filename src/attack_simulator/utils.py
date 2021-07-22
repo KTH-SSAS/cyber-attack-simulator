@@ -1,11 +1,11 @@
 import torch
 import numpy.random
 import random
-from attack_simulator.config import AgentConfig, EnvironmentConfig
-from attack_simulator.agents.policy_agents import ReinforceAgent
-from attack_simulator.agents.baseline_agents import RuleBasedAgent
-from attack_simulator.agents.baseline_agents import RandomMCAgent
-from attack_simulator.attack_simulation_env import AttackSimulationEnv
+from .config import AgentConfig, EnvironmentConfig
+from .agents.policy_agents import ReinforceAgent
+from .agents.baseline_agents import RuleBasedAgent
+from .agents.baseline_agents import RandomMCAgent
+from .env import AttackSimulationEnv
 from dataclasses import asdict
 import matplotlib.pyplot as plt
 
