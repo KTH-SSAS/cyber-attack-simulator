@@ -18,7 +18,7 @@ class PolicyModel(nn.Module):
         self.model = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
             nn.ReLU(),
-            nn.Dropout(0.1),
+            nn.Dropout(0.0),
             nn.Linear(hidden_dim, num_actions),
             nn.Softmax(dim=0)
         )
