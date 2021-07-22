@@ -51,8 +51,8 @@ if __name__ == '__main__':
                         help='Generate a GraphViz .dot file.')
     parser.add_argument('-d', '--deterministic', action='store_true',
                         help='Make environment deterministic.')
-    parser.add_argument('-a', '--agent', choices=['reinforce', 'rule_based', 'random'], type=str, default='reinforce',
-                        help='Select agent. Choices are "reinforce", "random" and "rule_based".')
+    parser.add_argument('-a', '--agent', choices=['reinforce', 'rule_based', 'inertial', 'random'], type=str, default='reinforce',
+                        help='Select agent. Choices are "reinforce" (a learning agent), "random", "interial" (does nothing) and "rule_based" (near-maximixing based on white-box info about attack graph).')
     parser.add_argument('-t', '--attacker_strategy', choices=['value_maximizing', 'random'], type=str, default='random',
                         help='Select agent. Choices are "value_maximizing" and "random".')
     parser.add_argument('-s', '--graph_size', choices=['small', 'medium', 'large'], type=str, default='large',

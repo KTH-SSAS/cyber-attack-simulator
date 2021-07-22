@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy.random
 import torch
 
-from .agents.baseline_agents import RandomMCAgent, RuleBasedAgent
+from .agents.baseline_agents import RandomMCAgent, RuleBasedAgent, SkipAgent
 from .agents.policy_agents import ReinforceAgent
 from .config import AgentConfig, EnvironmentConfig
 from .env import AttackSimulationEnv
@@ -28,7 +28,8 @@ def create_agent(config: AgentConfig, env: AttackSimulationEnv = None, use_cuda=
         agent = RuleBasedAgent(env)
     elif config.agent_type == 'random':
         agent = RandomMCAgent(config.num_actions, allow_skip=config.allow_skip)
-    
+    elif config.agent_type == 'inertial':
+        agent = SkipAgent()
     return agent
 
 def plot_training_results(returns, losses, lengths, num_compromised_flags, evaluation, cutoff):
