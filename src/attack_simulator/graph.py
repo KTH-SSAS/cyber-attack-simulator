@@ -1,7 +1,8 @@
-import random
 import logging
-from typing import Dict
+import random
 from collections import OrderedDict
+from typing import Dict
+
 import numpy as np
 
 

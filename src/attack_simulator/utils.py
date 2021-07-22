@@ -1,13 +1,15 @@
-import torch
-import numpy.random
 import random
-from .config import AgentConfig, EnvironmentConfig
-from .agents.policy_agents import ReinforceAgent
-from .agents.baseline_agents import RuleBasedAgent
-from .agents.baseline_agents import RandomMCAgent
-from .env import AttackSimulationEnv
 from dataclasses import asdict
+
 import matplotlib.pyplot as plt
+import numpy.random
+import torch
+
+from .agents.baseline_agents import RandomMCAgent, RuleBasedAgent
+from .agents.policy_agents import ReinforceAgent
+from .config import AgentConfig, EnvironmentConfig
+from .env import AttackSimulationEnv
+
 
 def set_seeds(s):
     torch.manual_seed(s)

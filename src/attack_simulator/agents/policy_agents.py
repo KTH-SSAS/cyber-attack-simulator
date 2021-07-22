@@ -1,12 +1,14 @@
-import torch.nn as nn
-from torch.nn.modules.activation import Softmax
-from torch.distributions import Categorical
-from torch import Tensor
-from torch.optim import optimizer
-from .tabular_agents import Agent
-import torch
 import logging
+
 import numpy as np
+import torch
+import torch.nn as nn
+from torch import Tensor
+from torch.distributions import Categorical
+from torch.nn.modules.activation import Softmax
+from torch.optim import optimizer
+
+from .tabular_agents import Agent
 
 
 # design influenced by https://github.com/pytorch/examples/tree/master/reinforcement_learning

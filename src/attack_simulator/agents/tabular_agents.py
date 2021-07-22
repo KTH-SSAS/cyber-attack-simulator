@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
+
 import numpy as np
-from numpy.core.fromnumeric import argmax
 import numpy.random as random
+from numpy.core.fromnumeric import argmax
 
 
 class Agent(ABC):

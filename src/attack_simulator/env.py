@@ -1,9 +1,11 @@
-from typing import List
-import random
 import logging
-from gym import spaces
-import numpy as np
+import random
+from typing import List
+
 import gym
+import numpy as np
+from gym import spaces
+
 from .graph import AttackGraph, AttackStep
 
 # The probability that the defender will disable a given service at a given step is given by DISABLE_PROBABILITY.
