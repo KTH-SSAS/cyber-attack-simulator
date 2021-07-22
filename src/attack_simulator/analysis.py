@@ -66,6 +66,7 @@ class Analyzer():
         for agent_type in ['reinforce', 'rule_based', 'random']:
             mean_returns[agent_type] = list()
             for graph_size in ['small', 'medium', 'large']:
+                set_seeds(random_seed)
                 self.env_config.graph_size = graph_size
                 env = create_environment(self.env_config)
                 self.agent_config.agent_type = agent_type
@@ -88,7 +89,7 @@ class Analyzer():
         ax.plot(n_attack_steps, mean_returns['random'], color='red')
         ax.set_ylabel("Mean returns")
         ax.set_xlabel("Graph size")
-        fig.savefig('returns_vs_size.pdf', dpi=200)
+        fig.savefig(f'returns_vs_size_seed_{random_seed}.pdf', dpi=200)
         plt.show()
 
     def computational_complexity(self, start_episodes=100, end_episodes=5, step_episodes=-5):
