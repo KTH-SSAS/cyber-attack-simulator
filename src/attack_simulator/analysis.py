@@ -75,7 +75,7 @@ class Analyzer():
             mean_returns[agent_type] = list()
             for random_seed in range(random_seed_min,random_seed_max):
                 for graph_size in graph_sizes:
-                    print(f"random_seed = {random_seed}, agent_type = {agent_type}, graph_size = {graph_size}")
+                    print(f"agent_type = {agent_type}, random_seed = {random_seed}, graph_size = {graph_size}")
                     set_seeds(random_seed)
                     self.env_config.graph_size = graph_size
                     env = create_environment(self.env_config)
@@ -83,21 +83,19 @@ class Analyzer():
                     self.agent_config.input_dim = self.env_config.attack_steps
                     agent = create_agent(self.agent_config, env=env)
                     runner = Runner(agent, env) 
-                    duration, returns, losses, lengths, num_compromised_flags = runner.train(
-                        training_episodes, plot=False)
+                    if agent_type == 'reinforce':
+                        duration, returns, losses, lengths, num_compromised_flags = runner.train(
+                            training_episodes, plot=False)
+                    else:
+                        duration = 0
                     evaluation_duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
                         eval_episodes, plot=False)
                     duration += evaluation_duration
-                    print(returns)
                     mean_returns[agent_type].append(sum(returns)/len(returns))
 
         fig, ax = plt.subplots()
         title = "Returns vs graph size"
         ax.set_title(title)
-        print(n_attack_steps)
-        print(mean_returns)
-        print(agent_types)
-        print(colors)
         for i in range(0,len(agent_types)):
             ax.plot(n_attack_steps, mean_returns[agent_types[i]], '.', color=colors[i])
         
