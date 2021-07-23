@@ -55,13 +55,83 @@ class Analyzer():
             f"Total elapsed time: {duration}, agent time: {runner.agent_time}, environment time: {runner.environment_time}")
         return duration, returns, losses, lengths, num_compromised_flags
 
-    def effect_of_size_on_returns(self, training_episodes=10000, evaluation_episodes=100, random_seed_min=0, random_seed_max=1):
+    def clean_simulation(self, training_episodes, evaluation_episodes):
+        #TODO Creating a new runner, new agent and new environment to make sure no state remains from previous simulations. But I think  the provision of a clean simulation should be located in the Runner.
+        env = create_environment(self.env_config)
+        agent = create_agent(self.agent_config, env=env)
+        runner = Runner(agent, env) 
+        duration, returns, losses, lengths, num_compromised_flags = runner.train(
+            training_episodes, plot=False)
+        evaluation_duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
+            evaluation_episodes, plot=False)
+        duration += evaluation_duration
+        return duration, returns, losses, lengths, num_compromised_flags
+
+    def effect_of_hidden_layer_size_on_return(self, training_episodes=10000, evaluation_episodes=100):
+        '''Plot the returns as a function of the size of the policy network's hidden layer and graph size.'''
         log = logging.getLogger("trainer")
 
-        n_attack_steps = [7, 29, 78]*(random_seed_max-random_seed_min)
-        colors = ['black', 'blue', 'red']*(random_seed_max-random_seed_min)
+        hidden_layer_sizes = [16, 64, 256] 
+        graph_sizes = ['large', 'medium', 'small'] 
+        n_attack_steps = [7, 29, 78] # TODO These shouldn't be hard-coded here.
+        colors = ['red', 'blue', 'green']
+    
+        # This function doesn't work with 0 evaluation episodes
+        if evaluation_episodes != 0:
+            eval_epidodes = evaluation_episodes
+        else:
+            eval_episodes = 100
+
+        hls_array = np.zeros((len(hidden_layer_sizes), len(graph_sizes)))
+        gs_array = np.zeros((len(hidden_layer_sizes), len(graph_sizes)))
+        returns_matrix = np.zeros((len(hidden_layer_sizes), len(graph_sizes)))
+        for graph_size_index in range(0, len(graph_sizes)):
+            graph_size = graph_sizes[graph_size_index]
+            #Simulating with rule-based agent as baseline.
+            self.agent_config.agent_type = 'rule_based'
+            duration, returns, losses, lengths, num_compromised_flags = self.clean_simulation(2, eval_episodes)
+            mean_rule_based_returns = sum(returns)/len(returns)
+            print(f"mean_rule_based_returns = {mean_rule_based_returns}")
+            for hidden_layer_size_index in range(0, len(hidden_layer_sizes)):
+                hidden_layer_size = hidden_layer_sizes[hidden_layer_size_index]
+                print(f"graph_size = {graph_size}, hidden_layer_size = {hidden_layer_size}")
+                # Simulating with reinforcement agent
+                self.env_config.graph_size = graph_size
+                self.agent_config.agent_type = 'reinforce'
+                self.agent_config.hidden_dim = hidden_layer_size
+                self.agent_config.input_dim = self.env_config.attack_steps
+                duration, returns, losses, lengths, num_compromised_flags = self.clean_simulation(training_episodes, eval_episodes)
+                mean_reinforce_returns = sum(returns)/len(returns)
+                print(f"mean_reinforce_returns = {mean_reinforce_returns}")
+
+                hls_array[graph_size_index, hidden_layer_size_index] = hidden_layer_size
+                gs_array[graph_size_index, hidden_layer_size_index] = n_attack_steps[graph_size_index]
+                returns_matrix[graph_size_index, hidden_layer_size_index] = mean_reinforce_returns/mean_rule_based_returns
+                print(returns_matrix)
+
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+
+        # Plot the surface.
+        surf = ax.plot_surface(hls_array, gs_array, returns_matrix, cmap=cm.coolwarm,
+                               linewidth=0, antialiased=False)
+
+        ax.set_xlabel("Hidden layer size")
+        ax.set_ylabel("Graph size")
+        ax.set_zlabel("Returns")
+        fig.savefig(f'Hidden layer and graph size', dpi=200)
+        #fig.savefig('3D.jpg', dpi=200)
+
+        plt.show()
+
+    def effect_of_size_on_returns(self, training_episodes=10000, evaluation_episodes=100, random_seed_min=0, random_seed_max=1):
+        '''Plot the returns as a function of graph size for different agents. Do this for multiple random seeds.'''
+        log = logging.getLogger("trainer")
+
         agent_types = ['reinforce', 'rule_based', 'random']
         graph_sizes = ['small', 'medium', 'large'] 
+        n_attack_steps = [7, 29, 78]*(random_seed_max-random_seed_min) # TODO These shouldn't be hard-coded here.
+        colors = ['red', 'blue', 'green']*(random_seed_max-random_seed_min)
     
         if evaluation_episodes != 0:
             eval_epidodes = evaluation_episodes
@@ -127,6 +197,7 @@ class Analyzer():
         return (episodes_list, simulation_time_list)
 
     def effect_of_measurement_accuracy_on_returns(self, episodes=10000, evaluation_rounds=50, tp_low=0.0, tp_high=1.0, fp_low=0.0, fp_high=1.0, resolution=5, random_seed=0):
+        '''Plot the returns as a function of share of true and false positives'''
         log = logging.getLogger("trainer")
         # Training on perfect obbservations
         runner = self.runner

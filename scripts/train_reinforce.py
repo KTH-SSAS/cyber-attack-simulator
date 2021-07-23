@@ -39,14 +39,16 @@ def main(args):
         analyzer.effect_of_measurement_accuracy_on_returns(episodes=args.episodes, evaluation_rounds=args.evaluation_rounds, tp_low=args.true_positive_low, tp_high=args.true_positive_high, fp_low=args.false_positive_low, fp_high=args.false_positive_high, resolution=args.accuracy_resolution, random_seed=args.random_seed)
     if args.action == 'size':
         analyzer.effect_of_size_on_returns(training_episodes=args.episodes, evaluation_episodes=args.evaluation_rounds, random_seed_min=0, random_seed_max=args.random_seed)
+    if args.action == 'hidden':
+        analyzer.effect_of_hidden_layer_size_on_return(training_episodes=args.episodes, evaluation_episodes=args.evaluation_rounds)
 
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
         description='Reinforcement learning of a computer network defender.')
-    parser.add_argument('--action', choices=['train_and_evaluate', 'computational_complexity', 'accuracy', 'size'], type=str, default='train_and_evaluate',
-                        help='Select what action to perform. Choices are "train_and_evaluate", "acccuracy" and "computational_complexity".')
+    parser.add_argument('--action', choices=['train_and_evaluate', 'computational_complexity', 'accuracy', 'size', 'hidden'], type=str, default='train_and_evaluate',
+                        help='Select what action to perform.')
     parser.add_argument('-g', '--graph', action='store_true',
                         help='Generate a GraphViz .dot file.')
     parser.add_argument('-d', '--deterministic', action='store_true',
