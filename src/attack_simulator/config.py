@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class EnvironmentConfig():
+class EnvironmentConfig:
     deterministic: bool
     early_flag_reward: int
     late_flag_reward: int
@@ -19,17 +19,17 @@ class EnvironmentConfig():
 
     @property
     def attack_steps(self):
-        if self.graph_size == 'small':
+        if self.graph_size == "small":
             attack_steps = 7
-        elif self.graph_size == 'medium':
+        elif self.graph_size == "medium":
             attack_steps = 29
-        elif self.graph_size == 'large':
+        elif self.graph_size == "large":
             attack_steps = 78
         return attack_steps
 
 
 @dataclass
-class AgentConfig():
+class AgentConfig:
     agent_type: str
     hidden_dim: int
     learning_rate: float
