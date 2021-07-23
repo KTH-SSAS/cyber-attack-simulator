@@ -91,10 +91,8 @@ class Analyzer():
             self.agent_config.agent_type = 'rule_based'
             duration, returns, losses, lengths, num_compromised_flags = self.clean_simulation(2, eval_episodes)
             mean_rule_based_returns = sum(returns)/len(returns)
-            print(f"mean_rule_based_returns = {mean_rule_based_returns}")
             for hidden_layer_size_index in range(0, len(hidden_layer_sizes)):
                 hidden_layer_size = hidden_layer_sizes[hidden_layer_size_index]
-                print(f"graph_size = {graph_size}, hidden_layer_size = {hidden_layer_size}")
                 # Simulating with reinforcement agent
                 self.env_config.graph_size = graph_size
                 self.agent_config.agent_type = 'reinforce'
@@ -102,12 +100,12 @@ class Analyzer():
                 self.agent_config.input_dim = self.env_config.attack_steps
                 duration, returns, losses, lengths, num_compromised_flags = self.clean_simulation(training_episodes, eval_episodes)
                 mean_reinforce_returns = sum(returns)/len(returns)
-                print(f"mean_reinforce_returns = {mean_reinforce_returns}")
 
                 hls_array[graph_size_index, hidden_layer_size_index] = hidden_layer_size
                 gs_array[graph_size_index, hidden_layer_size_index] = n_attack_steps[graph_size_index]
                 returns_matrix[graph_size_index, hidden_layer_size_index] = mean_reinforce_returns/mean_rule_based_returns
-                print(returns_matrix)
+                log.debug("returns_matrix")
+                log.debug(returns_matrix)
 
         fig = plt.figure()
         ax = fig.gca(projection='3d')
