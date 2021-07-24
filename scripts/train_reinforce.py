@@ -85,6 +85,10 @@ def main(args):
         analyzer.effect_of_hidden_layer_size_on_return(
             training_episodes=args.episodes, evaluation_episodes=args.evaluation_rounds
         )
+    if args.action == "seed":
+        analyzer.simulations_with_different_seeds([1]*10,
+            training_episodes=args.episodes, evaluation_episodes=args.evaluation_rounds
+        )
 
 
 if __name__ == "__main__":
@@ -94,7 +98,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--action",
-        choices=["train_and_evaluate", "computational_complexity", "accuracy", "size", "hidden"],
+        choices=["train_and_evaluate", "computational_complexity", "accuracy", "size", "hidden", "seed"],
         type=str,
         default="train_and_evaluate",
         help="Select what action to perform.",
@@ -185,7 +189,7 @@ if __name__ == "__main__":
         "-m",
         "--evaluation_rounds",
         type=int,
-        default=0,
+        default=100,
         help="Number of simulations to run after training, for evaluation.",
     )
     parser.add_argument(
