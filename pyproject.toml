@@ -81,7 +81,7 @@ extended_default_ignore = []
 
 [tool.flakehell.plugins]
 pyflakes = ["+*"]
-pycodestyle = ["+*", "-E203"]
+pycodestyle = ["+*", "-E203", "-W503"]
 
 [tool.mypy]
 ignore_missing_imports = true

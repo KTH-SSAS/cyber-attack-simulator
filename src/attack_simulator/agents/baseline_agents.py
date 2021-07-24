@@ -51,7 +51,12 @@ class SkipAgent:
 
 
 class RuleBasedAgent(Agent):
-    """Disables corresponding services when attacker seems to have compromised attack steps preceeding valuable steps."""
+    """
+    Rule-based agent following a simple IF-THIS-THEN-THAT rule.
+
+    IF the attacker seems to have compromised an attack step preceeding valuable step,
+    THEN disable the corresponding service.
+    """
 
     def __init__(self, env) -> None:
         self.attack_graph = env.attack_graph
@@ -62,7 +67,7 @@ class RuleBasedAgent(Agent):
 
     def act(self, state):
         action_id = 0
-        # If an attack step has been compromised which has a valuable child, then disable the corresponding service.
+        # When a step with a valuable child got compromised, disable the corresponding service.
         for step_id in range(0, len(state)):
             if state[step_id]:
                 step_name = list(self.attack_graph.attack_steps)[step_id]

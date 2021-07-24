@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
 
-import random
-
-import numpy as np
-
 from attack_simulator.graph import AttackGraph
 
 
@@ -29,10 +25,7 @@ class Attacker:
         self.compromised_steps = compromised
         self.counter += 1
         print(
-            "Number of states: "
-            + str(len(self.states))
-            + ".  State: "
-            + self.binary_state(compromised)
+            f"Number of states: {str(len(self.states))}.  State: {self.binary_state(compromised)}"
         )
         self.states.add(self.binary_state(compromised))
         for child in sorted(list(self.attack_surface())):

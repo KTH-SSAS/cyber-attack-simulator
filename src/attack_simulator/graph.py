@@ -1,5 +1,4 @@
 import logging
-import random
 from collections import OrderedDict
 from typing import Dict
 
@@ -68,7 +67,8 @@ class AttackGraph:
 
     def reset(self):
         logger = logging.getLogger("simulator")
-        # These are the services and hosts that the defender is at liberty to disable in order to protect the computer network.
+        # These are the services and hosts that the defender is at liberty to disable
+        # in order to protect the computer network.
         self.enabled_services = OrderedDict()
         # Disabling a host, e.g. lazarus, will also disable all of its services
         self.enabled_services["lazarus"] = True
@@ -684,10 +684,12 @@ class AttackGraph:
         for parent in self.attack_steps:
             for child in self.attack_steps[parent].children:
                 f.write(
-                    f'"{parent}, {self.attack_steps[parent].ttc:.0f}" -> "{child}, {self.attack_steps[child].ttc:.0f}";\n'
+                    f'"{parent}, {self.attack_steps[parent].ttc:.0f}"'
+                    f' -> "{child}, {self.attack_steps[child].ttc:.0f}";\n'
                 )
         f.write("}\n")
         f.close()
         print(
-            "Generated a GraphViz file of the attack graph which, e.g., can be viewed at https://dreampuf.github.io/GraphvizOnline."
+            "Generated a GraphViz file of the attack graph which, e.g.,"
+            " can be viewed at https://dreampuf.github.io/GraphvizOnline."
         )
