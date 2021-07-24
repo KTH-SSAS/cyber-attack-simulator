@@ -87,18 +87,45 @@ class Analyzer:
         return duration, returns, losses, lengths, num_compromised_flags
 
     def clean_simulation(self, training_episodes, evaluation_episodes):
-        # TODO Creating a new runner, new agent and new environment to make sure no state remains from previous simulations. But I think  the provision of a clean simulation should be located in the Runner.
+        # TODO Creating a new runner, new agent and new environment to make sure no state remains from previous simulations. But I think the provision of a clean simulation should be located in the Runner.
         env = create_environment(self.env_config)
         agent = create_agent(self.agent_config, env=env)
         runner = Runner(agent, env)
-        duration, returns, losses, lengths, num_compromised_flags = runner.train(
-            training_episodes, plot=False
-        )
+        if self.agent_config.agent_type == "reinforce": # Don't train untrainable agents
+            duration, returns, losses, lengths, num_compromised_flags = runner.train(
+                training_episodes, plot=False
+            )
         evaluation_duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
             evaluation_episodes, plot=False
         )
         duration += evaluation_duration
         return duration, returns, losses, lengths, num_compromised_flags
+
+    def simulations_with_different_seeds(
+        self, seeds, training_episodes=10000, evaluation_episodes=100
+    ):
+        '''Histogram over returns for different random seeds.'''
+        mean_returns = list()
+        i = 0
+        for seed in seeds:
+            i += 1
+            print(f"Simulation {i}/{len(seeds)}")
+            duration, returns, losses, lengths, num_compromised_flags = self.clean_simulation(
+                training_episodes, evaluation_episodes
+            )
+            mean_returns.append(sum(returns)/len(returns))
+
+        fig = plt.figure()
+        n, bins, patches = plt.hist(mean_returns, 50, density=True, facecolor='g', alpha=0.75)
+
+        plt.xlabel('Mean returns')
+        plt.ylabel('Frequency')
+        plt.title('Histogram mean returns for different seeds')
+        plt.grid(True)
+        fig.savefig(f"Histogram of random seeds.pdf", dpi=200)
+        plt.show()
+
+        return mean_returns
 
     def effect_of_hidden_layer_size_on_return(
         self, training_episodes=10000, evaluation_episodes=100
