@@ -1,12 +1,8 @@
-import logging
-
 import numpy as np
 import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.distributions import Categorical
-from torch.nn.modules.activation import Softmax
-from torch.optim import optimizer
 
 from .tabular_agents import Agent
 

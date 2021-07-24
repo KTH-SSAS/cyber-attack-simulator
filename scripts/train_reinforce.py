@@ -5,8 +5,7 @@ import logging
 
 import attack_simulator.analysis as analysis
 from attack_simulator.config import AgentConfig, EnvironmentConfig
-from attack_simulator.runner import Runner
-from attack_simulator.utils import create_agent, create_environment, set_seeds
+from attack_simulator.utils import set_seeds
 
 
 def initialize(args):
@@ -86,8 +85,8 @@ def main(args):
             training_episodes=args.episodes, evaluation_episodes=args.evaluation_rounds
         )
     if args.action == "seed":
-        analyzer.simulations_with_different_seeds([1]*10,
-            training_episodes=args.episodes, evaluation_episodes=args.evaluation_rounds
+        analyzer.simulations_with_different_seeds(
+            [1] * 10, training_episodes=args.episodes, evaluation_episodes=args.evaluation_rounds
         )
 
 
@@ -98,7 +97,14 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--action",
-        choices=["train_and_evaluate", "computational_complexity", "accuracy", "size", "hidden", "seed"],
+        choices=[
+            "train_and_evaluate",
+            "computational_complexity",
+            "accuracy",
+            "size",
+            "hidden",
+            "seed",
+        ],
         type=str,
         default="train_and_evaluate",
         help="Select what action to perform.",
@@ -113,7 +119,9 @@ if __name__ == "__main__":
         choices=["reinforce", "rule_based", "inertial", "random"],
         type=str,
         default="reinforce",
-        help='Select agent. Choices are "reinforce" (a learning agent), "random", "interial" (does nothing) and "rule_based" (near-maximixing based on white-box info about attack graph).',
+        help='Select agent. Choices are "reinforce", "random", "inertial", and "rule_based".'
+        '  "reinforce": a learning agent, "inertial": does nothing,'
+        ' and "rule_based": near-maximixing based on white-box info about attack graph.',
     )
     parser.add_argument(
         "-t",
@@ -136,28 +144,32 @@ if __name__ == "__main__":
         "--episodes",
         type=int,
         default=10000,
-        help="Maximum number of episodes. Training will stop automatically when losses are sufficiently low. Default is 10000.",
+        help="Maximum number of episodes. Default is 10000."
+        " Training will stop automatically when losses are sufficiently low.",
     )
     parser.add_argument(
         "-e",
         "--early_flag_reward",
         type=int,
         default=10000,
-        help="Flag reward for the attacker when capturing flags early in the attack graph (use positive values). Default is 10000.",
+        help="Flag reward for the attacker when capturing flags early in the attack graph."
+        "Default is 10000. (Use positive values!)",
     )
     parser.add_argument(
         "-l",
         "--late_flag_reward",
         type=int,
         default=10000,
-        help="Flag reward for the attacker when capturing flags late in the attack graph (use positive values). Default is 10000.",
+        help="Flag reward for the attacker when capturing flags late in the attack graph"
+        "Default is 10000. (Use positive values!)",
     )
     parser.add_argument(
         "-f",
         "--final_flag_reward",
         type=int,
         default=10000,
-        help="Flag reward for the attacker when capturing the final flag in the attack graph (use positive values). Default is 10000.",
+        help="Flag reward for the attacker when capturing the final flag in the attack graph"
+        "Default is 10000. (Use positive values!)",
     )
     parser.add_argument(
         "--easy_ttc",
@@ -196,56 +208,64 @@ if __name__ == "__main__":
         "--true_positive_training",
         type=float,
         default=1.0,
-        help="Probability that compromised attack steps are reported as compromised during training.",
+        help="Probability that compromised attack steps are reported as compromised"
+        " during training.",
     )
     parser.add_argument(
         "--false_positive_training",
         type=float,
         default=0.0,
-        help="Probability that uncompromised attack steps are reported as compromised_during_training.",
+        help="Probability that uncompromised attack steps are reported as compromised"
+        "during training.",
     )
     parser.add_argument(
         "--true_positive_evaluation",
         type=float,
         default=1.0,
-        help="Probability that compromised attack steps are reported as compromised during evaluation.",
+        help="Probability that compromised attack steps are reported as compromised"
+        " during evaluation.",
     )
     parser.add_argument(
         "--false_positive_evaluation",
         type=float,
         default=0.0,
-        help="Probability that uncompromised attack steps are reported as compromised during evaluation.",
+        help="Probability that uncompromised attack steps are reported as compromised"
+        " during evaluation.",
     )
     parser.add_argument(
         "--false_positive_low",
         type=float,
         default=0.0,
-        help="For the accuracy graph, specifies the lowest probability that uncompromised attack steps are reported as compromised.",
+        help="The lowest probability that uncompromised attack steps are reported as compromised."
+        " Only valid when producing the accuracy plot (i.e. `--action accuracy`).",
     )
     parser.add_argument(
         "--false_positive_high",
         type=float,
         default=1.0,
-        help="For the accuracy graph, specifies the highest probability that uncompromised attack steps are reported as compromised.",
+        help="The highest probability that uncompromised attack steps are reported as compromised."
+        " Only valid when producing the accuracy plot (i.e. `--action accuracy`).",
     )
     parser.add_argument(
         "--true_positive_low",
         type=float,
         default=0.0,
-        help="For the accuracy graph, specifies the lowest probability that compromised attack steps are reported as compromised.",
+        help="The lowest probability that compromised attack steps are reported as compromised."
+        " Only valid when producing the accuracy plot (i.e. `--action accuracy`).",
     )
     parser.add_argument(
         "--true_positive_high",
         type=float,
         default=1.0,
-        help="For the accuracy graph, specifies the highest probability that compromised attack steps are reported as compromised.",
+        help="The highest probability that compromised attack steps are reported as compromised."
+        " Only valid when producing the accuracy plot (i.e. `--action accuracy`).",
     )
     parser.add_argument(
         "-c",
         "--accuracy_resolution",
         type=int,
         default=5,
-        help="For the accuracy graph, specifies the number of data points (the same number for both axes).",
+        help="The number of data points for the accuracy graph (the same number for both axes).",
     )
     parser.add_argument(
         "--no_skipping", action="store_true", help="Do not add a skip action for the agent."

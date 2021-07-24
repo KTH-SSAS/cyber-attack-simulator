@@ -1,18 +1,11 @@
 import logging
 import random
-from typing import List
 
 import gym
 import numpy as np
 from gym import spaces
 
 from .graph import AttackGraph, AttackStep
-
-# The probability that the defender will disable a given service at a given step is given by DISABLE_PROBABILITY.
-DISABLE_PROBABILITY = 0.001
-# For debugging convenience, simulations can be made deterministic, only dependent on the random seed.
-DETERMINISTIC = False
-RANDOM_SEED = 4
 
 
 class Attacker:
@@ -25,7 +18,7 @@ class Attacker:
     ):
         self.strategy = strategy
         self.attack_graph = attack_graph
-        # self.compromised_steps keeps track of which attack steps have been reached by that attacker.
+        # self.compromised_steps keeps track of attack steps reached by that attacker.
         self.compromised_steps = compromised_steps
         self.deterministic = deterministic
         self.time_on_current_step = 0
@@ -113,11 +106,12 @@ class Attacker:
         if not self.current_step:
             return False
         self.reward = 0
-        # If the attacker has spent the required time on the current attack step, then it becomes compromised.
+        # If the attacker has spent the required time on the current attack step,
+        # then it becomes compromised.
         if self.time_on_current_step >= self.get_step(self.current_step).ttc:
             self.compromised_steps.add(self.current_step)
             self.reward = self.attack_graph.attack_steps[self.current_step].reward
-            # If the attack surface (the available uncompromised attack steps) is empty, then terminate.
+            # If the attack surface (the available uncompromised attack steps) is empty, terminate.
             compromised_now = self.current_step
             if not self.attack_surface:
                 logger.debug(
@@ -142,7 +136,8 @@ class Attacker:
     def observe(self, attack_step):
         """
         Observations of the attacker are made by an intrusion detection system.
-        The accuracy of observations is given for each attack step by the true and false positive rates respectively.
+        The accuracy of observations is given for each attack step
+        by the true and false positive rates respectively.
         """
         rnd = random.uniform(0, 1)
         if attack_step in self.compromised_steps:
@@ -256,7 +251,7 @@ class AttackSimulationEnv(gym.Env):
         attacker_done = not self.attacker.attack()
 
         obs = self._next_observation()
-        # Positive rewards for maintaining services enabled_services and negative for compromised flags.
+        # Positive rewards for maintaining services and negative for compromised flags.
         reward = self.provision_reward - self.attacker.reward
         info = self.get_info()
         if attacker_done:
@@ -322,8 +317,6 @@ class AttackSimulationEnv(gym.Env):
 
     def disable(self, service):
         logger = logging.getLogger("simulator")
-        # int_obs = self.interpret_observation(self.obs)
-        # logger.debug(f"Contemplating disabling. service = {service}, self.prev_service = {self.prev_service}, int_obs = {int_obs} and self.prev_int_obs = {self.prev_int_obs}")
         if service != self.prev_service:
             if self.attack_graph.enabled_services[service]:
                 logger.debug(
@@ -341,5 +334,6 @@ class AttackSimulationEnv(gym.Env):
                 )
         self.prev_service = service
         self.attack_graph.disable(service)
-        # The attacker might be attacking a step that just now became disabled, so needs to choose a new one.
+        # The attacker might be attacking a step that just now became disabled,
+        # so needs to choose a new one.
         self.attacker.choose_next_step()

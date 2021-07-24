@@ -1,5 +1,4 @@
 import logging
-import random
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -82,16 +81,19 @@ class Analyzer:
             )
             duration += evaluation_duration
         log.debug(
-            f"Total elapsed time: {duration}, agent time: {runner.agent_time}, environment time: {runner.environment_time}"
+            f"Total elapsed time: {duration}, agent time: {runner.agent_time},"
+            f" environment time: {runner.environment_time}"
         )
         return duration, returns, losses, lengths, num_compromised_flags
 
     def clean_simulation(self, training_episodes, evaluation_episodes):
-        # TODO Creating a new runner, new agent and new environment to make sure no state remains from previous simulations. But I think the provision of a clean simulation should be located in the Runner.
+        # TODO Create a new runner, new agent and new environment
+        # to make sure no state remains from previous simulations.
+        # But I think  the provision of a clean simulation should be located in the Runner.
         env = create_environment(self.env_config)
         agent = create_agent(self.agent_config, env=env)
         runner = Runner(agent, env)
-        if self.agent_config.agent_type == "reinforce": # Don't train untrainable agents
+        if self.agent_config.agent_type == "reinforce":  # Don't train untrainable agents
             duration, returns, losses, lengths, num_compromised_flags = runner.train(
                 training_episodes, plot=False
             )
@@ -104,7 +106,7 @@ class Analyzer:
     def simulations_with_different_seeds(
         self, seeds, training_episodes=10000, evaluation_episodes=100
     ):
-        '''Histogram over returns for different random seeds.'''
+        """Histogram over returns for different random seeds."""
         mean_returns = list()
         i = 0
         for seed in seeds:
@@ -113,16 +115,16 @@ class Analyzer:
             duration, returns, losses, lengths, num_compromised_flags = self.clean_simulation(
                 training_episodes, evaluation_episodes
             )
-            mean_returns.append(sum(returns)/len(returns))
+            mean_returns.append(np.mean(returns))
 
         fig = plt.figure()
-        n, bins, patches = plt.hist(mean_returns, 50, density=True, facecolor='g', alpha=0.75)
+        n, bins, patches = plt.hist(mean_returns, 50, density=True, facecolor="g", alpha=0.75)
 
-        plt.xlabel('Mean returns')
-        plt.ylabel('Frequency')
-        plt.title('Histogram mean returns for different seeds')
+        plt.xlabel("Mean returns")
+        plt.ylabel("Frequency")
+        plt.title("Histogram mean returns for different seeds")
         plt.grid(True)
-        fig.savefig(f"Histogram of random seeds.pdf", dpi=200)
+        fig.savefig("Histogram of random seeds.pdf", dpi=200)
         plt.show()
 
         return mean_returns
@@ -130,17 +132,16 @@ class Analyzer:
     def effect_of_hidden_layer_size_on_return(
         self, training_episodes=10000, evaluation_episodes=100
     ):
-        """Plot the returns as a function of the size of the policy network's hidden layer and graph size."""
+        """Plot the returns as a function of the size of the hidden layer and the graph size."""
         log = logging.getLogger("trainer")
 
         hidden_layer_sizes = [16, 64, 256]
         graph_sizes = ["large", "medium", "small"]
         n_attack_steps = [7, 29, 78]  # TODO These shouldn't be hard-coded here.
-        colors = ["red", "blue", "green"]
 
         # This function doesn't work with 0 evaluation episodes
         if evaluation_episodes != 0:
-            eval_epidodes = evaluation_episodes
+            eval_episodes = evaluation_episodes
         else:
             eval_episodes = 100
 
@@ -181,14 +182,14 @@ class Analyzer:
         ax = fig.gca(projection="3d")
 
         # Plot the surface.
-        surf = ax.plot_surface(
+        ax.plot_surface(
             hls_array, gs_array, returns_matrix, cmap=cm.coolwarm, linewidth=0, antialiased=False
         )
 
         ax.set_xlabel("Hidden layer size")
         ax.set_ylabel("Graph size")
         ax.set_zlabel("Returns")
-        fig.savefig(f"Hidden layer and graph size", dpi=200)
+        fig.savefig("Hidden layer and graph size", dpi=200)
         # fig.savefig('3D.jpg', dpi=200)
 
         plt.show()
@@ -196,9 +197,10 @@ class Analyzer:
     def effect_of_size_on_returns(
         self, training_episodes=10000, evaluation_episodes=100, random_seed_min=0, random_seed_max=1
     ):
-        """Plot the returns as a function of graph size for different agents. Do this for multiple random seeds."""
-        log = logging.getLogger("trainer")
-
+        """
+        Plot the returns as a function of graph size for different agents.
+        Do this for multiple random seeds.
+        """
         agent_types = ["reinforce", "rule_based", "random"]
         graph_sizes = ["small", "medium", "large"]
         n_attack_steps = [7, 29, 78] * (
@@ -207,19 +209,21 @@ class Analyzer:
         colors = ["red", "blue", "green"] * (random_seed_max - random_seed_min)
 
         if evaluation_episodes != 0:
-            eval_epidodes = evaluation_episodes
+            eval_episodes = evaluation_episodes
         else:
             eval_episodes = 100
 
         mean_returns = dict()
-        # The inertial agent performs so poorly that we ignore it, because the graphs become illegible.
+        # The inertial agent performs so poorly that we ignore it,
+        # because the graphs become illegible.
         # agent_types = ['reinforce', 'rule_based', 'random', 'inertial']
         for agent_type in agent_types:
             mean_returns[agent_type] = list()
             for random_seed in range(random_seed_min, random_seed_max):
                 for graph_size in graph_sizes:
                     print(
-                        f"agent_type = {agent_type}, random_seed = {random_seed}, graph_size = {graph_size}"
+                        f"agent_type = {agent_type}, random_seed = {random_seed},"
+                        f" graph_size = {graph_size}"
                     )
                     set_seeds(random_seed)
                     self.env_config.graph_size = graph_size
@@ -264,7 +268,8 @@ class Analyzer:
             data = self.train_and_evaluate(episodes, plot=False)
             simulation_time_list.append(data)
             log.debug(
-                f"Simulation time {simulation_time_list} as a function of number of episodes {episodes_list}."
+                f"Simulation time {simulation_time_list} as a function of"
+                f" the number of episodes {episodes_list}."
             )
 
         fig, ax = plt.subplots()
@@ -322,7 +327,7 @@ class Analyzer:
         ax = fig.gca(projection="3d")
 
         # Plot the surface.
-        surf = ax.plot_surface(
+        ax.plot_surface(
             fp_array, tp_array, returns_matrix, cmap=cm.coolwarm, linewidth=0, antialiased=False
         )
 

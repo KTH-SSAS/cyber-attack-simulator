@@ -2,13 +2,11 @@ import logging
 import time
 from functools import partial
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from .config import AgentConfig
 from .env import AttackSimulationEnv
-from .utils import create_agent, plot_episode, plot_training_results
+from .utils import plot_episode, plot_training_results
 
 
 class Runner:
@@ -92,7 +90,8 @@ class Runner:
                 lengths[i] = episode_length
                 num_compromised_flags[i] = len(compromised_flags)
                 log.debug(
-                    f"Episode: {i+1}/{episodes}, Loss: {loss}, Return: {sum(rewards)}, Episode Length: {episode_length}"
+                    f"Episode: {i+1}/{episodes}, Loss: {loss}, Return: {sum(rewards)},"
+                    f" Episode Length: {episode_length}"
                 )
 
                 if (prev_loss - loss) < 0.01 and not evaluation:
