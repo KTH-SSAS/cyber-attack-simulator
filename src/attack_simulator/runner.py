@@ -12,9 +12,8 @@ from .utils import create_agent, plot_episode, plot_training_results
 
 
 class Runner:
-
     def __init__(self, agent, env: AttackSimulationEnv, include_services=False):
-        self.include_services = include_services # TODO move this to the environment
+        self.include_services = include_services  # TODO move this to the environment
         self.env = env
         self.agent = agent
         self.agent_time = 0
@@ -57,13 +56,13 @@ class Runner:
             rewards.append(reward)
             # count number of running services
             num_services.append(sum(enabled_services))
-            compromised_flags.append(len(info['compromised_flags']))
+            compromised_flags.append(len(info["compromised_flags"]))
             state = new_state
 
         if plot_results:
             plot_episode(rewards, num_services, compromised_flags)
 
-        return rewards, info['time'], info['compromised_flags']
+        return rewards, info["time"], info["compromised_flags"]
 
     def run_multiple_episodes(self, episodes, evaluation=False, plot=True):
 
@@ -74,7 +73,7 @@ class Runner:
         num_compromised_flags = np.zeros(episodes)
         max_patience = 50
         patience = max_patience
-        prev_loss = 1E6
+        prev_loss = 1e6
 
         if evaluation:
             self.agent.eval()
@@ -93,13 +92,13 @@ class Runner:
                 lengths[i] = episode_length
                 num_compromised_flags[i] = len(compromised_flags)
                 log.debug(
-                    f"Episode: {i+1}/{episodes}, Loss: {loss}, Return: {sum(rewards)}, Episode Length: {episode_length}")
+                    f"Episode: {i+1}/{episodes}, Loss: {loss}, Return: {sum(rewards)}, Episode Length: {episode_length}"
+                )
 
                 if (prev_loss - loss) < 0.01 and not evaluation:
                     patience -= 1
                 else:
-                    patience = (
-                        patience+1) if patience < max_patience else max_patience
+                    patience = (patience + 1) if patience < max_patience else max_patience
                 if patience == 0:
                     log.debug("Stopping due to insignicant loss changes.")
                     break
@@ -113,8 +112,10 @@ class Runner:
         if evaluation:
             log.debug(f"Average returns: {sum(returns)/len(returns)}")
 
-        if plot: # TODO move this out of the Runner class
-            plot_training_results(returns, losses, lengths, num_compromised_flags, evaluation, cutoff=i)
+        if plot:  # TODO move this out of the Runner class
+            plot_training_results(
+                returns, losses, lengths, num_compromised_flags, evaluation, cutoff=i
+            )
 
         return returns, losses, lengths, num_compromised_flags
 
@@ -125,17 +126,14 @@ class Runner:
         duration = time.time() - start
         return duration, returns, losses, lengths, num_compromised_flags
 
-
     def train(self, episodes, plot=True):
         func = partial(self.run_multiple_episodes, episodes=episodes, plot=plot)
         return self.run(func)
-
 
     def evaluate(self, episodes, plot=True):
         func = partial(self.run_multiple_episodes, episodes=episodes, evaluation=True, plot=plot)
         with torch.no_grad():
             return self.run(func)
-
 
     def generate_graphviz_file(self):
         self.env.attack_graph.generate_graphviz_file()

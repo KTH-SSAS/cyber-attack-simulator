@@ -13,7 +13,6 @@ from .tabular_agents import Agent
 
 # design influenced by https://github.com/pytorch/examples/tree/master/reinforcement_learning
 class PolicyModel(nn.Module):
-
     def __init__(self, input_dim, num_actions, hidden_dim):
         super().__init__()
 
@@ -22,7 +21,7 @@ class PolicyModel(nn.Module):
             nn.ReLU(),
             nn.Dropout(0.0),
             nn.Linear(hidden_dim, num_actions),
-            nn.Softmax(dim=0)
+            nn.Softmax(dim=0),
         )
 
     def forward(self, state):
@@ -30,8 +29,16 @@ class PolicyModel(nn.Module):
 
 
 class ReinforceAgent(Agent):
-
-    def __init__(self, input_dim, num_actions, hidden_dim, learning_rate, gamma=0.9, allow_skip=True, use_cuda=False) -> None:
+    def __init__(
+        self,
+        input_dim,
+        num_actions,
+        hidden_dim,
+        learning_rate,
+        gamma=0.9,
+        allow_skip=True,
+        use_cuda=False,
+    ) -> None:
         num_actions = num_actions + 1 if allow_skip else num_actions
         self.can_skip = allow_skip
         self.policy = PolicyModel(input_dim, num_actions, hidden_dim)
@@ -45,7 +52,7 @@ class ReinforceAgent(Agent):
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=learning_rate)
 
     def act(self, state):
-        
+
         if self.use_cuda:
             state = torch.Tensor(state).cuda()
         else:
@@ -81,10 +88,9 @@ class ReinforceAgent(Agent):
 
         if normalize_returns:
             if len(returns) > 1:
-                returns = (returns-returns.mean()) / \
-                    (returns.std()+eps)  # normalize returns
+                returns = (returns - returns.mean()) / (returns.std() + eps)  # normalize returns
             else:
-                returns = returns/returns
+                returns = returns / returns
 
         for i, (log_prob, R) in enumerate(zip(self.saved_log_probs, returns)):
             loss[i] = -log_prob * R  # minus sign on loss for gradient ascent
