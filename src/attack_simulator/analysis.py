@@ -14,11 +14,13 @@ class Analyzer:
 
     def __init__(self, args) -> None:
         self.env_config = self.create_env_config(args)
-        self.agent_config = self.create_agent_config(
-            args, self.env_config.attack_steps, self.env_config.services
-        )
-
         env = create_environment(self.env_config)
+
+        self.agent_config = self.create_agent_config(
+            args,
+            env.observation_space.shape[0],
+            len(env.action_space.spaces),
+        )
         agent = create_agent(self.agent_config, env=env, use_cuda=args.cuda)
         self.runner = Runner(agent, env, args.include_services)
 
@@ -38,8 +40,6 @@ class Analyzer:
             args.attacker_strategy,
             args.true_positive_training,
             args.false_positive_training,
-            args.true_positive_evaluation,
-            args.false_positive_evaluation,
         )
 
     def create_agent_config(self, args, attack_steps, services):
@@ -68,8 +68,7 @@ class Analyzer:
     ):
         log = logging.getLogger("trainer")
         runner = self.runner
-        runner.env.attack_graph.false_positive = fp_train
-        runner.env.attack_graph.true_positive = tp_train
+        runner.env.update_accuracy(tp_train, fp_train)
         training_duration, returns, losses, lengths, num_compromised_flags = runner.train(
             episodes, plot=plot
         )
@@ -307,15 +306,11 @@ class Analyzer:
         for fp_index in range(0, resolution):
             for tp_index in range(0, resolution):
                 set_seeds(random_seed)
-                runner.env.attack_graph.false_positive = fp_low + (fp_high - fp_low) * fp_index / (
-                    resolution - 1
-                )
-                runner.env.attack_graph.true_positive = tp_low + (tp_high - tp_low) * tp_index / (
-                    resolution - 1
-                )
-                fp_array[fp_index, tp_index] = runner.env.attack_graph.false_positive
-                tp_array[fp_index, tp_index] = runner.env.attack_graph.true_positive
-                runner.env.attack_graph.reset()
+                tp = tp_low + (tp_high - tp_low) * tp_index / (resolution - 1)
+                fp = fp_low + (fp_high - fp_low) * fp_index / (resolution - 1)
+                runner.env.update_accuracy(tp, fp)
+                tp_array[fp_index, tp_index] = tp
+                fp_array[fp_index, tp_index] = fp
                 # Evaluate on a range of different observation qualities.
                 duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
                     episodes=evaluation_rounds, plot=False

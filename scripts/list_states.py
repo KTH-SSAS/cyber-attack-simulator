@@ -5,62 +5,91 @@ from attack_simulator.graph import AttackGraph
 
 class Attacker:
     def __init__(self, attack_graph, compromised_steps):
-        self.attack_graph = attack_graph
-        self.compromised_steps = compromised_steps
+        self.steps = attack_graph.attack_steps
+        self.compromised = compromised_steps
 
-    def binary_state(self, compromised):
-        attack_step_names = list(self.attack_graph.attack_steps)
-        state = [0] * len(self.attack_graph.attack_steps)
-        for step_name in compromised:
-            state[attack_step_names.index(step_name)] = 1
-        return "".join(str(x) for x in state)
+        self.indicator = dict()
+        self.width = 0
+        indicator = 1
+        for attack_step in self.steps:
+            self.indicator[attack_step] = indicator
+            indicator <<= 1
+            self.width += 1
 
-    def explore(self):
+    def state(self, compromised):
+        state = 0
+        for attack_step in compromised:
+            state |= self.indicator[attack_step]
+        return state
+
+    def explore(self, verbose=False):
         self.states = set()
         self.counter = 0
-        self.explore_recursive("internet.connect", set(["internet.connect"]))
+        self.verbose = verbose
+        print(self.compromised)
+        self.explore_recursive(set(self.compromised))
         print("Total: " + str(len(self.states)))
 
-    def explore_recursive(self, parent, compromised):
-        self.compromised_steps = compromised
+    def explore_recursive(self, compromised):
         self.counter += 1
-        print(
-            f"Number of states: {str(len(self.states))}.  State: {self.binary_state(compromised)}"
-        )
-        self.states.add(self.binary_state(compromised))
+        state = self.state(compromised)
+        if self.verbose:
+            print(
+                f"Number of states: {len(self.states)} ({self.counter})."
+                f"  State: {state:0{self.width}b}"
+            )
+        self.states.add(state)
+        self.compromised = compromised
         for child in sorted(list(self.attack_surface())):
-            new_compromised = set(compromised)
-            new_compromised.add(child)
-            if self.binary_state(new_compromised) not in self.states:
-                self.explore_recursive(child, new_compromised)
+            new_state = state | self.indicator[child]
+            if new_state not in self.states:
+                self.explore_recursive(compromised | set((child,)))
 
-    def get_step(self, name):
-        return self.attack_graph.attack_steps[name]
-
-    def attack_surface(self, debug=False):
+    def attack_surface(self):
         # The attack surface consists of all reachable but uncompromised attack steps.
-        att_surf = set()
-        for compromised_step_name in self.compromised_steps:
-            for child_name in self.get_step(compromised_step_name).children:
-                if self.get_step(child_name).enabled:
-                    if self.get_step(child_name).step_type == "or":
-                        att_surf.add(child_name)
-                    else:
-                        all_parents_are_compromised = True
-                        for parent_name in self.get_step(child_name).parents:
-                            if parent_name not in self.compromised_steps:
-                                all_parents_are_compromised = False
-                                break
-                        if all_parents_are_compromised:
-                            att_surf.add(child_name)
+        surface = set()
+        for compromised_name in self.compromised:
+            for child_name in self.steps[compromised_name].children:
+                if self.steps[child_name].step_type == "or" or all(
+                    [
+                        parent_name in self.compromised
+                        for parent_name in self.steps[child_name].parents
+                    ]
+                ):
+                    surface.add(child_name)
 
-        att_surf -= set(self.compromised_steps)
-        return att_surf
+        surface -= set(self.compromised)
+        return surface
 
 
 if __name__ == "__main__":
-    attack_graph = AttackGraph()
-    attacker = Attacker(attack_graph, ["internet.connect"])
-    attacker.explore()
+    import argparse
 
-# vim: ft=python
+    from attack_simulator.graph import SIZES
+
+    parser = argparse.ArgumentParser(description="State explorer.")
+    choices = list(SIZES.keys())
+    choices_help = '", "'.join(choices[:-1]) + f'" or "{choices[-1]}'
+    parser.add_argument(
+        "-s",
+        "--graph_size",
+        choices=choices,
+        type=str,
+        default=choices[-3],
+        help='Run simulations on a "{choices_help}" attack graph. Default is "{choice[-3]}".',
+    )
+    parser.add_argument(
+        "-c",
+        "--compromised_steps",
+        type=str,
+        default="internet.connect",
+        help="Start exploring from this comma-separated list of compromised attack steps.",
+    )
+    parser.add_argument(
+        "-v", "--verbose", type=bool, default=False, help="Print each state being explored."
+    )
+    args = parser.parse_args()
+
+    attack_graph = AttackGraph({"graph_size": args.graph_size})
+    attacker = Attacker(attack_graph, args.compromised_steps.split(","))
+    attacker.explore(args.verbose)
