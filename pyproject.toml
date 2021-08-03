@@ -55,9 +55,9 @@ allowlist_externals =
     mypy
     pytest
 commands =
-    black --check --diff .
+    black .
+    isort .
     flakehell lint .
-    isort --check --diff .
     # pydocstyle .
     #mypy .
     pytest --cov .
