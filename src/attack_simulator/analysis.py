@@ -8,6 +8,8 @@ from .config import AgentConfig, EnvironmentConfig
 from .runner import Runner
 from .utils import create_agent, create_environment, set_seeds
 
+logger = logging.getLogger("trainer")
+
 
 class Analyzer:
     """Metaclass to manage different forms of runs"""
@@ -59,27 +61,26 @@ class Analyzer:
     def train_and_evaluate(
         self,
         episodes,
-        evaluation_rounds=0,
+        rollouts=0,
         tp_train=1.0,
         fp_train=0.0,
-        tp_evaluate=1.0,
-        fp_evaluate=0.0,
+        tp_eval=1.0,
+        fp_eval=0.0,
         plot=True,
     ):
-        log = logging.getLogger("trainer")
         runner = self.runner
         runner.env.update_accuracy(tp_train, fp_train)
         training_duration, returns, losses, lengths, num_compromised_flags = runner.train(
             episodes, plot=plot
         )
         duration = training_duration
-        if evaluation_rounds > 0:
-            runner.env.update_accuracy(tp_evaluate, fp_evaluate)
+        if rollouts > 0:
+            runner.env.update_accuracy(tp_eval, fp_eval)
             evaluation_duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
-                evaluation_rounds, plot=False
+                rollouts, plot=False
             )
             duration += evaluation_duration
-        log.debug(
+        logger.debug(
             f"Total elapsed time: {duration}, agent time: {runner.agent_time},"
             f" environment time: {runner.environment_time}"
         )
@@ -132,8 +133,6 @@ class Analyzer:
         self, training_episodes=10000, evaluation_episodes=100
     ):
         """Plot the returns as a function of the size of the hidden layer and the graph size."""
-        log = logging.getLogger("trainer")
-
         hidden_layer_sizes = [16, 64, 256]
         graph_sizes = ["large", "medium", "small"]
         n_attack_steps = [7, 29, 78]  # TODO These shouldn't be hard-coded here.
@@ -174,8 +173,8 @@ class Analyzer:
                 returns_matrix[graph_size_index, hidden_layer_size_index] = (
                     mean_reinforce_returns / mean_rule_based_returns
                 )
-                log.debug("returns_matrix")
-                log.debug(returns_matrix)
+                logger.debug("returns_matrix")
+                logger.debug(returns_matrix)
 
         fig = plt.figure()
         ax = fig.gca(projection="3d")
@@ -258,15 +257,15 @@ class Analyzer:
         fig.savefig(f"returns_vs_size_seed_{random_seed}.pdf", dpi=200)
         plt.show()
 
-    def computational_complexity(self, start_episodes=100, end_episodes=5, step_episodes=-5):
-        log = logging.getLogger("trainer")
-        episodes_list = range(start_episodes, end_episodes, step_episodes)
+    def computational_complexity(self, episodes_list=None):
         simulation_time_list = []
+        if episodes_list is None:
+            episodes_list = range(100, 5, -5)
         for episodes in episodes_list:
             self.runner.agent = create_agent(self.agent_config, self.use_cuda)
             data = self.train_and_evaluate(episodes, plot=False)
             simulation_time_list.append(data)
-            log.debug(
+            logger.debug(
                 f"Simulation time {simulation_time_list} as a function of"
                 f" the number of episodes {episodes_list}."
             )
@@ -285,7 +284,7 @@ class Analyzer:
     def effect_of_measurement_accuracy_on_returns(
         self,
         episodes=10000,
-        evaluation_rounds=50,
+        rollouts=50,
         tp_low=0.0,
         tp_high=1.0,
         fp_low=0.0,
@@ -294,29 +293,26 @@ class Analyzer:
         random_seed=0,
     ):
         """Plot the returns as a function of share of true and false positives"""
-        log = logging.getLogger("trainer")
         # Training on perfect obbservations
         runner = self.runner
         duration, returns, losses, lengths, num_compromised_flags = runner.train(
             episodes, plot=False
         )
-        returns_matrix = np.zeros((resolution, resolution))
-        fp_array = np.zeros((resolution, resolution))
-        tp_array = np.zeros((resolution, resolution))
-        for fp_index in range(0, resolution):
-            for tp_index in range(0, resolution):
-                set_seeds(random_seed)
-                tp = tp_low + (tp_high - tp_low) * tp_index / (resolution - 1)
-                fp = fp_low + (fp_high - fp_low) * fp_index / (resolution - 1)
-                runner.env.update_accuracy(tp, fp)
-                tp_array[fp_index, tp_index] = tp
-                fp_array[fp_index, tp_index] = fp
-                # Evaluate on a range of different observation qualities.
-                duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
-                    episodes=evaluation_rounds, plot=False
-                )
-                returns_matrix[fp_index, tp_index] = np.mean(returns)
-                log.debug(f"returns_matrix=\n{returns_matrix}")
+        tps = np.linspace(tp_low, tp_high, resolution)
+        fps = np.linspace(fp_low, fp_high, resolution)
+
+        def mean_returns(tp, fp):
+            set_seeds(random_seed)
+            runner.env.update_accuracy(tp, fp)
+            duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
+                episodes=rollouts, plot=False
+            )
+            return np.mean(returns)
+
+        returns_matrix = np.array([[mean_returns(tp, fp) for tp in tps] for fp in fps])
+        logger.debug(f"returns_matrix=\n{returns_matrix}")
+
+        tp_array, fp_array = np.meshgrid(tps, fps)
 
         fig = plt.figure()
         ax = fig.gca(projection="3d")
