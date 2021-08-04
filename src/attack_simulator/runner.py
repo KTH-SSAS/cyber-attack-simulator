@@ -18,17 +18,14 @@ class Runner:
         self.environment_time = 0
 
     def run_sim(self, plot_results=False):
-        services = {}  # Serves as a key for which services belong to which index
         done = False
-        for service, i in enumerate(self.env.attack_graph.enabled_services):
-            services[service] = i
 
-        enabled_services = np.ones(len(services), dtype=np.int8)
+        enabled_services = np.ones(len(self.env.action_space.spaces), dtype=np.int8)
 
         rewards = []
         num_services = []
         compromised_flags = []
-        state = self.env._next_observation()  # Intial state
+        state = self.env.reset()  # Intial state
         while not done:
 
             if self.include_services:
@@ -133,6 +130,3 @@ class Runner:
         func = partial(self.run_multiple_episodes, episodes=episodes, evaluation=True, plot=plot)
         with torch.no_grad():
             return self.run(func)
-
-    def generate_graphviz_file(self):
-        self.env.attack_graph.generate_graphviz_file()

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+[ -x "$(type -p dot)" ] ||
+    {
+        echo 'Cannot find required `dot` executable.  Is `graphviz` installed?'
+        exit 1
+    }
+
+(($#)) ||
+    {
+        shopt nullglob
+        set -- *.dot
+        (($#)) ||
+            {
+                echo 'No arguments given and no `*.dot` files found. Nothing to do.'
+                exit 2
+            }
+    }
+
+for i
+do dot -Tpdf "$i" -o "${i%.dot}.pdf"
+done

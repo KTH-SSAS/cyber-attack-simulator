@@ -70,24 +70,23 @@ class RuleBasedAgent(Agent):
         # When a step with a valuable child got compromised, disable the corresponding service.
         for step_id in range(0, len(state)):
             if state[step_id]:
-                step_name = list(self.attack_graph.attack_steps)[step_id]
+                step_name = self.attack_graph.attack_names[step_id]
                 for child_name in self.attack_graph.attack_steps[step_name].children:
-                    if self.attack_graph.attack_steps[child_name].reward > 0:
+                    if self.env.rewards[child_name] > 0:
                         service = self.corresponding_service(step_name)
-                        if self.attack_graph.enabled_services[service]:
+                        if service in self.env.enabled_services:
                             # action_id + 1 because action == 0 is no action.
-                            action_id = list(self.attack_graph.enabled_services).index(service) + 1
+                            action_id = self.attack_graph.service_names.index(service) + 1
         # If no service should be disabled, then return 0
         self.previous_state = state
         return action_id
 
     def corresponding_service(self, attack_step_name):
-        for service_name in self.attack_graph.enabled_services:
-            if self.attack_graph.attack_steps[attack_step_name].asset in service_name:
-                if self.attack_graph.attack_steps[attack_step_name].service == "":
-                    return service_name
-                elif self.attack_graph.attack_steps[attack_step_name].service in service_name:
-                    return service_name
+        step = self.attack_graph.attack_steps[attack_step_name]
+        service_name = step.asset
+        if step.service:
+            service_name += "." + step.service
+        return service_name
 
     def update(self, rewards):
         return torch.Tensor([0])
