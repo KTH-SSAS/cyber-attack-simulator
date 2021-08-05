@@ -22,6 +22,7 @@ def parse_args():
     )
 
     parser.add_argument(
+        "-A",
         "--action",
         choices=[
             "train_and_evaluate",
@@ -109,6 +110,7 @@ def parse_args():
     )
 
     parser.add_argument(
+        "-E",
         "--easy_ttc",
         type=int,
         default=10,
@@ -116,6 +118,7 @@ def parse_args():
     )
 
     parser.add_argument(
+        "-H",
         "--hard_ttc",
         type=int,
         default=100,
@@ -139,8 +142,8 @@ def parse_args():
     )
 
     parser.add_argument(
-        "-m",
-        "--evaluation_rounds",
+        "-N",
+        "--rollouts",
         type=int,
         default=100,
         help="Number of simulations to run after training, for evaluation.",
@@ -249,20 +252,20 @@ def main():
     if parsed_args.action == "train_and_evaluate":
         analyzer.train_and_evaluate(
             parsed_args.episodes,
-            parsed_args.evaluation_rounds,
+            parsed_args.rollouts,
             tp_train=parsed_args.true_positive_training,
             fp_train=parsed_args.false_positive_training,
-            tp_evaluate=parsed_args.true_positive_evaluation,
-            fp_evaluate=parsed_args.false_positive_evaluation,
+            tp_eval=parsed_args.true_positive_evaluation,
+            fp_eval=parsed_args.false_positive_evaluation,
         )
 
     if parsed_args.action == "computational_complexity":
-        analyzer.computational_complexity(100, 1, -1)
+        analyzer.computational_complexity(range(100, 1, -1))
 
     if parsed_args.action == "accuracy":
         analyzer.effect_of_measurement_accuracy_on_returns(
             episodes=parsed_args.episodes,
-            evaluation_rounds=parsed_args.evaluation_rounds,
+            rollouts=parsed_args.rollouts,
             tp_low=parsed_args.true_positive_low,
             tp_high=parsed_args.true_positive_high,
             fp_low=parsed_args.false_positive_low,
@@ -274,7 +277,7 @@ def main():
     if parsed_args.action == "size":
         analyzer.effect_of_size_on_returns(
             training_episodes=parsed_args.episodes,
-            evaluation_episodes=parsed_args.evaluation_rounds,
+            evaluation_episodes=parsed_args.rollouts,
             random_seed_min=0,
             random_seed_max=parsed_args.random_seed,
         )
@@ -282,14 +285,14 @@ def main():
     if parsed_args.action == "hidden":
         analyzer.effect_of_hidden_layer_size_on_return(
             training_episodes=parsed_args.episodes,
-            evaluation_episodes=parsed_args.evaluation_rounds,
+            evaluation_episodes=parsed_args.rollouts,
         )
 
     if parsed_args.action == "seed":
         analyzer.simulations_with_different_seeds(
             [1] * 10,
             training_episodes=parsed_args.episodes,
-            evaluation_episodes=parsed_args.evaluation_rounds,
+            evaluation_episodes=parsed_args.rollouts,
         )
 
 
