@@ -3,6 +3,7 @@
 import argparse
 import logging
 
+from attack_simulator.agents import DEFENDERS
 from attack_simulator.analysis import Analyzer
 from attack_simulator.graph import SIZES
 from attack_simulator.utils import set_seeds
@@ -16,13 +17,14 @@ def dict2choices(d):
 
 def parse_args():
     sizes, sizes_help = dict2choices(SIZES)
+    defenders, defenders_help = dict2choices(DEFENDERS)
 
     parser = argparse.ArgumentParser(
         description="Reinforcement learning of a computer network defender."
     )
 
     parser.add_argument(
-        "-A",
+        "-a",
         "--action",
         choices=[
             "train_and_evaluate",
@@ -44,19 +46,19 @@ def parse_args():
     )
 
     parser.add_argument(
-        "-a",
-        "--agent",
-        choices=["reinforce", "rule_based", "inertial", "random"],
+        "-D",
+        "--defender",
+        metavar="DEFENDER",
+        choices=defenders,
         type=str,
-        default="reinforce",
-        help='Select agent. Choices are "reinforce", "random", "inertial", and "rule_based".'
-        '  "reinforce": a learning agent, "inertial": does nothing,'
-        ' and "rule_based": near-maximixing based on white-box info about attack graph.',
+        default=defenders[-1],
+        help=f'Select defender. Choices are "{defenders_help}".  Default is "{defenders[-1]}"',
     )
 
     parser.add_argument(
-        "-t",
+        "-A",
         "--attacker_strategy",
+        metavar="ATTACKER",
         choices=["value_maximizing", "random"],
         type=str,
         default="random",
@@ -138,7 +140,7 @@ def parse_args():
         "--hidden_width",
         type=int,
         default=64,
-        help="Dimension of the hidden linear layers. Defult is 64.",
+        help="Dimension of the hidden linear layers (not used by all agents). Defult is 64.",
     )
 
     parser.add_argument(
@@ -219,14 +221,6 @@ def parse_args():
         type=int,
         default=5,
         help="The number of data points for the accuracy graph (the same number for both axes).",
-    )
-
-    parser.add_argument(
-        "--no_skipping", action="store_true", help="Do not add a skip action for the agent."
-    )
-
-    parser.add_argument(
-        "--include_services", action="store_true", help="Include enabled services in the state."
     )
 
     parser.add_argument("--lr", help="Optimizer (Adam) learning rate.", default=1e-2)

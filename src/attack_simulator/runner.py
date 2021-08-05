@@ -5,17 +5,17 @@ from functools import partial
 import numpy as np
 import torch
 
+from .agents import Agent
 from .env import AttackSimulationEnv
 from .utils import plot_episode, plot_training_results
 
 
 class Runner:
-    def __init__(self, agent, env: AttackSimulationEnv, include_services=False):
-        self.include_services = include_services  # TODO move this to the environment
-        self.env = env
+    def __init__(self, agent: Agent, env: AttackSimulationEnv):
         self.agent = agent
+        self.env = env
         self.agent_time = 0
-        self.environment_time = 0
+        self.env_time = 0
 
     def run_sim(self, plot_results=False):
         done = False
@@ -25,33 +25,35 @@ class Runner:
         rewards = []
         num_services = []
         compromised_flags = []
+
+        env_start = time.time()
         state = self.env.reset()  # Intial state
+        self.env_time += time.time() - env_start
+
         while not done:
 
-            if self.include_services:
-                state = np.concatenate([state, enabled_services])
+            state = np.concatenate([state, enabled_services])
 
             agent_start = time.time()
             action = self.agent.act(state)
             self.agent_time += time.time() - agent_start
 
-            if self.agent.can_skip:
-                if action > 0:
-                    # Shift action by 1 since action==0 is treated as skip
-                    enabled_services[action - 1] = 0
-                else:
-                    pass  # Skip action and don't disable a service
-            else:
-                enabled_services[action] = 0
+            if action > 0:
+                enabled_services[action - 1] = 0
 
             env_start = time.time()
             new_state, reward, done, info = self.env.step(enabled_services)
-            self.environment_time += time.time() - env_start
+            self.env_time += time.time() - env_start
+
+            agent_start = time.time()
+            self.agent.update(new_state, reward, done)
+            self.agent_time += time.time() - agent_start
 
             rewards.append(reward)
             # count number of running services
             num_services.append(sum(enabled_services))
             compromised_flags.append(len(info["compromised_flags"]))
+
             state = new_state
 
         if plot_results:
@@ -70,18 +72,13 @@ class Runner:
         patience = max_patience
         prev_loss = 1e6
 
-        if evaluation:
-            self.agent.eval()
-        else:
-            self.agent.train()
+        if hasattr(self.agent, "train"):  # not all agent's support setting training mode
+            self.agent.train(not evaluation)
 
         try:
             for i in range(episodes):
                 rewards, episode_length, compromised_flags = self.run_sim()
-                if evaluation:
-                    loss = self.agent.calculate_loss(rewards).item()
-                else:
-                    loss = self.agent.update(rewards)
+                loss = self.agent.loss if hasattr(self.agent, "loss") else np.random.rand()
                 losses[i] = loss
                 returns[i] = sum(rewards)
                 lengths[i] = episode_length
@@ -100,7 +97,6 @@ class Runner:
                     break
 
                 prev_loss = loss
-                self.env.reset()
 
         except KeyboardInterrupt:
             print("Stopping...")

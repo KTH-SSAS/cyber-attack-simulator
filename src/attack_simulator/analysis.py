@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm
 
-from .config import AgentConfig, EnvironmentConfig
+from .config import AgentConfig, EnvConfig
 from .runner import Runner
-from .utils import create_agent, create_environment, set_seeds
+from .utils import create_agent, create_env, set_seeds
 
 logger = logging.getLogger("trainer")
 
@@ -16,22 +16,15 @@ class Analyzer:
 
     def __init__(self, args) -> None:
         self.env_config = self.create_env_config(args)
-        env = create_environment(self.env_config)
+        env = create_env(self.env_config)
 
-        self.agent_config = self.create_agent_config(
-            args,
-            env.observation_space.shape[0],
-            len(env.action_space.spaces),
-        )
-        agent = create_agent(self.agent_config, env=env, use_cuda=args.cuda)
-        self.runner = Runner(agent, env, args.include_services)
+        self.agent_config = self.create_agent_config(args, env.attack_graph)
+        agent = create_agent(self.agent_config, env.attack_graph)
 
-        # TODO: Refactor this. Save config to be able to reinitialize runner agent
-        self.use_cuda = args.cuda
-        self.agent_config = self.agent_config
+        self.runner = Runner(agent, env)
 
     def create_env_config(self, args):
-        return EnvironmentConfig(
+        return EnvConfig(
             args.deterministic,
             args.early_flag_reward,
             args.late_flag_reward,
@@ -44,18 +37,16 @@ class Analyzer:
             args.false_positive_training,
         )
 
-    def create_agent_config(self, args, attack_steps, services):
-        if args.include_services:
-            input_dim = attack_steps + services
-        else:
-            input_dim = attack_steps
+    def create_agent_config(self, args, graph):
         return AgentConfig(
-            agent_type=args.agent,
+            agent_type=args.defender,
+            random_seed=args.random_seed,
+            input_dim=graph.num_attacks + graph.num_services,
             hidden_dim=args.hidden_width,
+            num_actions=graph.num_services + 1,
             learning_rate=args.lr,
-            input_dim=input_dim,
-            num_actions=services,
-            allow_skip=(not args.no_skipping),
+            use_cuda=args.cuda,
+            attack_graph=graph,
         )
 
     def train_and_evaluate(
@@ -69,11 +60,13 @@ class Analyzer:
         plot=True,
     ):
         runner = self.runner
-        runner.env.update_accuracy(tp_train, fp_train)
-        training_duration, returns, losses, lengths, num_compromised_flags = runner.train(
-            episodes, plot=plot
-        )
-        duration = training_duration
+        duration = 0
+        if runner.agent.trainable:  # Don't train untrainable agents
+            runner.env.update_accuracy(tp_train, fp_train)
+            training_duration, returns, losses, lengths, num_compromised_flags = runner.train(
+                episodes, plot=plot
+            )
+            duration = training_duration
         if rollouts > 0:
             runner.env.update_accuracy(tp_eval, fp_eval)
             evaluation_duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
@@ -82,7 +75,7 @@ class Analyzer:
             duration += evaluation_duration
         logger.debug(
             f"Total elapsed time: {duration}, agent time: {runner.agent_time},"
-            f" environment time: {runner.environment_time}"
+            f" environment time: {runner.env_time}"
         )
         return duration, returns, losses, lengths, num_compromised_flags
 
@@ -90,10 +83,11 @@ class Analyzer:
         # TODO Create a new runner, new agent and new environment
         # to make sure no state remains from previous simulations.
         # But I think  the provision of a clean simulation should be located in the Runner.
-        env = create_environment(self.env_config)
-        agent = create_agent(self.agent_config, env=env)
+        env = create_env(self.env_config)
+        agent = create_agent(self.agent_config, env.attack_graph)
         runner = Runner(agent, env)
-        if self.agent_config.agent_type == "reinforce":  # Don't train untrainable agents
+        duration = 0
+        if agent.trainable:  # Don't train untrainable agents
             duration, returns, losses, lengths, num_compromised_flags = runner.train(
                 training_episodes, plot=False
             )
@@ -112,6 +106,7 @@ class Analyzer:
         for seed in seeds:
             i += 1
             print(f"Simulation {i}/{len(seeds)}")
+            # FIXME: seed is never used!!
             duration, returns, losses, lengths, num_compromised_flags = self.clean_simulation(
                 training_episodes, evaluation_episodes
             )
@@ -143,13 +138,15 @@ class Analyzer:
         else:
             eval_episodes = 100
 
-        hls_array = np.zeros((len(hidden_layer_sizes), len(graph_sizes)))
-        gs_array = np.zeros((len(hidden_layer_sizes), len(graph_sizes)))
-        returns_matrix = np.zeros((len(hidden_layer_sizes), len(graph_sizes)))
-        for graph_size_index in range(0, len(graph_sizes)):
+        shape = (len(hidden_layer_sizes), len(graph_sizes))
+        hls_array = np.zeros(shape)
+        gs_array = np.zeros(shape)
+        returns_matrix = np.zeros(shape)
+        for graph_size_index in range(len(graph_sizes)):
             graph_size = graph_sizes[graph_size_index]
             # Simulating with rule-based agent as baseline.
-            self.agent_config.agent_type = "rule_based"
+            self.agent_config.agent_type = "rule-based"
+            # FIXME: this is independent of graph_size!!
             duration, returns, losses, lengths, num_compromised_flags = self.clean_simulation(
                 2, eval_episodes
             )
@@ -160,7 +157,6 @@ class Analyzer:
                 self.env_config.graph_size = graph_size
                 self.agent_config.agent_type = "reinforce"
                 self.agent_config.hidden_dim = hidden_layer_size
-                self.agent_config.input_dim = self.env_config.attack_steps
                 duration, returns, losses, lengths, num_compromised_flags = self.clean_simulation(
                     training_episodes, eval_episodes
                 )
@@ -199,7 +195,7 @@ class Analyzer:
         Plot the returns as a function of graph size for different agents.
         Do this for multiple random seeds.
         """
-        agent_types = ["reinforce", "rule_based", "random"]
+        agent_types = ["reinforce", "rule-based", "random"]
         graph_sizes = ["small", "medium", "large"]
         n_attack_steps = [7, 29, 78] * (
             random_seed_max - random_seed_min
@@ -214,7 +210,7 @@ class Analyzer:
         mean_returns = dict()
         # The inertial agent performs so poorly that we ignore it,
         # because the graphs become illegible.
-        # agent_types = ['reinforce', 'rule_based', 'random', 'inertial']
+        # agent_types = ['reinforce', 'rule-based', 'random', 'inertial']
         for agent_type in agent_types:
             mean_returns[agent_type] = list()
             for random_seed in range(random_seed_min, random_seed_max):
@@ -225,10 +221,9 @@ class Analyzer:
                     )
                     set_seeds(random_seed)
                     self.env_config.graph_size = graph_size
-                    env = create_environment(self.env_config)
+                    env = create_env(self.env_config)
                     self.agent_config.agent_type = agent_type
-                    self.agent_config.input_dim = self.env_config.attack_steps
-                    agent = create_agent(self.agent_config, env=env)
+                    agent = create_agent(self.agent_config, env.attack_graph)
                     runner = Runner(agent, env)
                     if agent_type == "reinforce":
                         duration, returns, losses, lengths, num_compromised_flags = runner.train(
@@ -262,7 +257,7 @@ class Analyzer:
         if episodes_list is None:
             episodes_list = range(100, 5, -5)
         for episodes in episodes_list:
-            self.runner.agent = create_agent(self.agent_config, self.use_cuda)
+            self.runner.agent = create_agent(self.agent_config)
             data = self.train_and_evaluate(episodes, plot=False)
             simulation_time_list.append(data)
             logger.debug(
