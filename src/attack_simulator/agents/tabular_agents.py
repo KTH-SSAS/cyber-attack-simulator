@@ -1,77 +1,71 @@
-from abc import ABC, abstractmethod
+from collections import defaultdict
 
 import numpy as np
-import numpy.random as random
-from numpy.core.fromnumeric import argmax
+
+from ..rng import get_rng
+from .agent import Agent
 
 
-class Agent(ABC):
-    @abstractmethod
-    def act(self, observation):
-        ...
+def _argmax_random_tie_break(values, rng):
+    return rng.choice(np.flatnonzero(values == np.max(values)))
 
-    @abstractmethod
-    def update(self, action, reward):
-        ...
+
+def epsilon_greedy(values, epsilon=0.1, rng=None):
+    if rng is None:
+        rng = np.random
+
+    if rng.uniform(0, 1) < epsilon:
+        action = rng.choice(range(len(values)))
+    else:
+        action = _argmax_random_tie_break(values, rng)
+
+    return action
 
 
 class BanditAgent(Agent):
-    def __init__(self, num_actions) -> None:
-        self.Q = np.array(num_actions)
-        self.times_taken = np.array(num_actions)
+    def __init__(self, agent_config):
+        self.rng, _ = get_rng(agent_config.get("random_seed"))
+        num_actions = agent_config["num_actions"]
+        self.Q = np.zeros(num_actions)
+        self.times_taken = np.zeros(num_actions, dtype="int")
+        self.action = None
 
-    def update(self, action, reward):
+    def update(self, new_observation, reward, done):
+        action = self.action
         self.times_taken[action] += 1
-        self.Q[action] = self.Q[action] + (reward - self.Q[action]) / self.times_taken[action]
+        self.Q[action] += (reward - self.Q[action]) / self.times_taken[action]
 
-    def act(self, observation):
-        return np.argmax(self.Q)
+    def act(self, observation=None):
+        self.action = epsilon_greedy(self.Q, rng=self.rng)
+        return self.action
+
+    @property
+    def trainable(self):
+        return True
 
 
 class QLearningAgent(Agent):
-    def __init__(self, num_actions) -> None:
-
-        self.num_actions = num_actions
-        self.Q = {}  # A dict is used to save on memory
-        self.epsilon = 0.1
+    def __init__(self, agent_config):
+        self.rng, _ = get_rng(agent_config.get("random_seed"))
+        self.num_actions = agent_config["num_actions"]
         self.alpha = 0.5
         self.gamma = 0.5
         self.state = None
         self.action = None
+        # A defaultdict is used to save on memory and automatically fill missing entries
+        # TODO: explain the magic constant 10
+        self.Q = defaultdict(lambda: np.full(self.num_actions, 10))
 
-    def act(self, state):
-        self.state = state
-        if random.rand() > self.epsilon:
-            a = self.Q.get(state)
-            if a is None:
-                a = [10] * self.num_actions
-                self.Q[state] = a
-            action = argmax(a)
-        else:
-            action = random.randint(self.num_actions)
+    def act(self, observation):
+        self.state = tuple(observation)
+        self.action = epsilon_greedy(self.Q[self.state], rng=self.rng)
+        return self.action
 
-        self.action = action
-        return action
-
-    def update(self, new_state, reward):
-        q_prime = self.Q.get(new_state)
-        if q_prime is None:
-            q_prime = [10] * self.num_actions
-            self.Q[new_state] = q_prime
-
+    def update(self, new_observation, reward, done):
+        q_prime = 0 if done else self.Q[tuple(new_observation)]
         q = self.Q[self.state][self.action]
-        self.Q[self.state][self.action] = q + self.alpha * (reward + self.gamma * max(q_prime) - q)
+        self.Q[self.state][self.action] += self.alpha * (reward + self.gamma * np.max(q_prime) - q)
 
-
-class RandomAgent(Agent):
-    def __init__(self, disable_probability):
-        self.disable_probability = disable_probability
-
-    def act(self, enabled_services):
-        for service in enabled_services:
-            if enabled_services[service] == 1 and random.uniform(0, 1) < self.disable_probability:
-                enabled_services[service] = 0
-        return None
-
-    def update(self, action, reward):
-        return
+    @property
+    def trainable(self):
+        return True

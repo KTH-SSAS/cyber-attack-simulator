@@ -1,53 +1,43 @@
 """Simple agents that can be used as baselines for performance"""
 import numpy as np
-import torch
 
-from .tabular_agents import Agent
-
-
-class RandomMCAgent:
-    """Agent that will pick a random action each turn. Returns random loss."""
-
-    def __init__(self, num_actions, allow_skip=True) -> None:
-        self.num_actions = num_actions + 1 if allow_skip else num_actions
-        self.can_skip = allow_skip
-
-    def act(self, *args):
-        return np.random.randint(0, self.num_actions)
-
-    def update(self, *args):
-        return self.calculate_loss()
-
-    def calculate_loss(self, *args, **kwargs):
-        return torch.Tensor([np.random.rand()])
-
-    def eval(self):
-        ...
-
-    def train(self):
-        ...
+from ..rng import get_rng
+from .agent import Agent
 
 
-class SkipAgent:
-    """Agent that will always skip, i.e. do nothing, each turn."""
+class RandomAgent(Agent):
+    """Agent that will pick a random action each turn."""
 
-    def __init__(self) -> None:
-        self.can_skip = True
+    def __init__(self, agent_config):
+        self.rng, _ = get_rng(agent_config.get("random_seed"))
+        self.num_actions = agent_config["num_actions"]
 
-    def act(self, *args):
+    def act(self, observation=None):
+        return self.rng.integers(self.num_actions)
+
+
+class SkipAgent(Agent):
+    """Agent that will always select no action, i.e. does nothing (or "skips"), on each turn."""
+
+    def __init__(self, agent_config=None):
+        pass
+
+    def act(self, observation=None):
         return 0
 
-    def update(self, *args):
-        return 0
 
-    def calculate_loss(self, *args, **kwargs):
-        return torch.Tensor([0])
+class DisableProbabilityAgent(Agent):
+    """An agent that mixes `no action` and `random action` with a given `disable_probability`."""
 
-    def eval(self):
-        ...
+    def __init__(self, agent_config):
+        self.rng, _ = get_rng(agent_config.get("random_seed"))
+        self.num_services = agent_config["num_actions"] - 1
+        self.disable_probability = agent_config.get("disable_probability", 0.1)
 
-    def train(self):
-        ...
+    def act(self, observation):
+        enabled_services = np.array(observation[-self.num_services :])
+        disable = self.rng.uniform(0, 1) < self.disable_probability
+        return self.rng.choice(np.flatnonzero(enabled_services)) + 1 if disable else 0
 
 
 class RuleBasedAgent(Agent):
@@ -58,44 +48,31 @@ class RuleBasedAgent(Agent):
     THEN disable the corresponding service.
     """
 
-    def __init__(self, env) -> None:
-        self.attack_graph = env.attack_graph
-        self.attacker = env.attacker
-        self.can_skip = True
-        self.n_action = 0
-        self.previous_state = [False] * len(self.attack_graph.attack_steps)
+    def __init__(self, agent_config):
+        self.g = agent_config["attack_graph"]
+        self.attack_state = np.full(self.g.num_attacks, 0)
 
-    def act(self, state):
-        action_id = 0
-        # When a step with a valuable child got compromised, disable the corresponding service.
-        for step_id in range(0, len(state)):
-            if state[step_id]:
-                step_name = self.attack_graph.attack_names[step_id]
-                for child_name in self.attack_graph.attack_steps[step_name].children:
-                    if self.env.rewards[child_name] > 0:
-                        service = self.corresponding_service(step_name)
-                        if service in self.env.enabled_services:
-                            # action_id + 1 because action == 0 is no action.
-                            action_id = self.attack_graph.service_names.index(service) + 1
-        # If no service should be disabled, then return 0
-        self.previous_state = state
-        return action_id
+    def act(self, observation):
+        attack_state = np.array(observation[: self.g.num_attacks])
+        service_state = np.array(observation[self.g.num_attacks :])
 
-    def corresponding_service(self, attack_step_name):
-        step = self.attack_graph.attack_steps[attack_step_name]
-        service_name = step.asset
-        if step.service:
-            service_name += "." + step.service
-        return service_name
+        changed = (1 - self.attack_state) & attack_state
+        self.attack_state = attack_state
 
-    def update(self, rewards):
-        return torch.Tensor([0])
+        action = 0  # no action
 
-    def calculate_loss(self, rewards, normalize_returns=False):
-        return torch.Tensor([0])
+        if any(changed):
+            # pick the change first change, there _should_ be only one
+            attack_name = self.g.attack_names[np.flatnonzero(changed)[0]]
+            attack_step = self.g.attack_steps[attack_name]
 
-    def eval(self):
-        pass
-
-    def train(self):
-        pass
+            # If an attack step has been compromised which has a valuable child
+            # then disable the corresponding service.
+            if any([self.g.attack_steps[child].reward > 0 for child in attack_step.children]):
+                service_name = attack_step.asset
+                if attack_step.service:
+                    service_name += "." + attack_step.service
+                service_index = self.g.service_names.index(service_name)
+                if service_state[service_index]:
+                    action = service_index + 1  # + 1 because action == 0 is no action.
+        return action

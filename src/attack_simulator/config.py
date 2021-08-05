@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from typing import Optional
 
+from .graph import AttackGraph
 
 @dataclass
-class EnvironmentConfig:
+class EnvConfig:
     deterministic: bool
     early_flag_reward: int
     late_flag_reward: int
@@ -18,8 +20,10 @@ class EnvironmentConfig:
 @dataclass
 class AgentConfig:
     agent_type: str
-    hidden_dim: int
-    learning_rate: float
+    random_seed: Optional[int]
     input_dim: int
+    hidden_dim: int
     num_actions: int
-    allow_skip: bool
+    learning_rate: float
+    use_cuda: bool
+    attack_graph: AttackGraph

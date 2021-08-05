@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 import numpy.random
 import torch
 
-from .agents.baseline_agents import RandomMCAgent, RuleBasedAgent, SkipAgent
-from .agents.policy_agents import ReinforceAgent
-from .config import AgentConfig, EnvironmentConfig
+from .agents import DEFENDERS
+from .config import AgentConfig, EnvConfig
 from .env import AttackSimulationEnv
+from .graph import AttackGraph
 
 
 def set_seeds(s):
@@ -17,28 +17,18 @@ def set_seeds(s):
     random.seed(s)
 
 
-def create_environment(config: EnvironmentConfig):
+def create_env(config: EnvConfig):
     return AttackSimulationEnv(**asdict(config))
 
 
-def create_agent(config: AgentConfig, env: AttackSimulationEnv = None, use_cuda=False):
-    agent = None
-    if config.agent_type == "reinforce":
-        agent = ReinforceAgent(
-            config.input_dim,
-            config.num_actions,
-            config.hidden_dim,
-            config.learning_rate,
-            allow_skip=config.allow_skip,
-            use_cuda=use_cuda,
-        )
-    elif config.agent_type == "rule_based":
-        agent = RuleBasedAgent(env)
-    elif config.agent_type == "random":
-        agent = RandomMCAgent(config.num_actions, allow_skip=config.allow_skip)
-    elif config.agent_type == "inertial":
-        agent = SkipAgent()
-    return agent
+def create_agent(config: AgentConfig, graph: AttackGraph = None):
+    config = asdict(config)
+    if graph:
+        input_dim = graph.num_attacks + graph.num_services
+        num_actions = graph.num_services + 1
+        config = dict(config, input_dim=input_dim, num_actions=num_actions, attack_graph=graph)
+    print(config)
+    return DEFENDERS[config["agent_type"]](config)
 
 
 def plot_training_results(returns, losses, lengths, num_compromised_flags, evaluation, cutoff):

@@ -178,8 +178,6 @@ class AttackSimulationEnv(gym.Env):
     ):
         super().__init__()
         self.deterministic = deterministic
-        self.true_positive = true_positive
-        self.false_positive = false_positive
         self.attack_graph = AttackGraph(
             dict(
                 early_flag_reward=early_flag_reward,
@@ -191,6 +189,9 @@ class AttackSimulationEnv(gym.Env):
             )
         )
         self.attacker_strategy = attacker_strategy
+        self.true_positive = true_positive
+        self.false_positive = false_positive
+
         # An observation informs the defender of which attack steps have been compromised.
         # Observations are imperfect.
         self.observation_space = spaces.Box(
@@ -222,7 +223,7 @@ class AttackSimulationEnv(gym.Env):
                 "time_on_current_step": self.attacker.time_on_current_step,
                 "ttc_of_current_step": self.ttc[self.attacker.current_step],
                 "attack_surface": self.attacker.attack_surface,
-                "self.attack_graph.enabled_services": self.enabled_services,
+                "enabled_services": self.enabled_services,
             }
         else:
             info = {
@@ -231,7 +232,7 @@ class AttackSimulationEnv(gym.Env):
                 "time_on_current_step": None,
                 "ttc_of_current_step": None,
                 "attack_surface": self.attacker.attack_surface,
-                "self.attack_graph.enabled_services": self.enabled_services,
+                "enabled_services": self.enabled_services,
             }
         return info
 
