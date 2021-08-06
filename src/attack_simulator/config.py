@@ -3,18 +3,19 @@ from typing import Optional
 
 from .graph import AttackGraph
 
+
 @dataclass
 class EnvConfig:
-    deterministic: bool
     early_flag_reward: int
     late_flag_reward: int
     final_flag_reward: int
     easy_ttc: int
     hard_ttc: int
     graph_size: str
-    attacker_strategy: str
+    attacker: str
     true_positive: float
     false_positive: float
+    save_graphs: bool
 
 
 @dataclass

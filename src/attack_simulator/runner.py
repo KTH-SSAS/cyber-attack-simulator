@@ -17,47 +17,42 @@ class Runner:
         self.agent_time = 0
         self.env_time = 0
 
-    def run_sim(self, plot_results=False):
-        done = False
-
-        enabled_services = np.ones(len(self.env.action_space.spaces), dtype=np.int8)
+    def _run_sim(self, plot_results=False):
+        if plot_results:
+            running_services = []
+            compromised_flags = []
+            num_services = self.env.action_space.n - 1
 
         rewards = []
-        num_services = []
-        compromised_flags = []
+        done = False
 
         env_start = time.time()
         state = self.env.reset()  # Intial state
         self.env_time += time.time() - env_start
 
         while not done:
-
-            state = np.concatenate([state, enabled_services])
-
             agent_start = time.time()
             action = self.agent.act(state)
             self.agent_time += time.time() - agent_start
 
-            if action > 0:
-                enabled_services[action - 1] = 0
-
             env_start = time.time()
-            new_state, reward, done, info = self.env.step(enabled_services)
+            new_state, reward, done, info = self.env.step(action)
             self.env_time += time.time() - env_start
 
             agent_start = time.time()
             self.agent.update(new_state, reward, done)
             self.agent_time += time.time() - agent_start
 
-            rewards.append(reward)
-            # count number of running services
-            num_services.append(sum(enabled_services))
-            compromised_flags.append(len(info["compromised_flags"]))
-
             state = new_state
+            rewards.append(reward)
+
+            if plot_results:
+                # count number of running services
+                running_services.append(sum(new_state[:num_services]))
+                compromised_flags.append(len(info["compromised_flags"]))
 
         if plot_results:
-            plot_episode(rewards, num_services, compromised_flags)
+            plot_episode(rewards, running_services, compromised_flags)
 
         return rewards, info["time"], info["compromised_flags"]
 
@@ -77,7 +72,7 @@ class Runner:
 
         try:
             for i in range(episodes):
-                rewards, episode_length, compromised_flags = self.run_sim()
+                rewards, episode_length, compromised_flags = self._run_sim()
                 loss = self.agent.loss if hasattr(self.agent, "loss") else np.random.rand()
                 losses[i] = loss
                 returns[i] = sum(rewards)
