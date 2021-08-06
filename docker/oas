@@ -4,14 +4,6 @@ set -euo pipefail
 
 name=${0##*/}
 
-die() {
-    ! (($#)) || echo $name$': \x1b[1;31mERROR\x1b[m:' "$@"
-    exit 1
-}
-
-docker info -f '{{.ServerVersion}}' &>/dev/null ||
-    die Docker access is required to run this script.
-
 
 case ${1-} in
     build)
