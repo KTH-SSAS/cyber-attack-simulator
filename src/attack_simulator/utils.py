@@ -1,20 +1,11 @@
-import random
 from dataclasses import asdict
 
 import matplotlib.pyplot as plt
-import numpy.random
-import torch
 
 from .agents import DEFENDERS
 from .config import AgentConfig, EnvConfig
 from .env import AttackSimulationEnv
 from .graph import AttackGraph
-
-
-def set_seeds(s):
-    torch.manual_seed(s)
-    numpy.random.seed(s)
-    random.seed(s)
 
 
 def create_env(config: EnvConfig):

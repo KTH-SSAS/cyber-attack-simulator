@@ -5,8 +5,9 @@ import numpy as np
 from matplotlib import cm
 
 from .config import AgentConfig, EnvConfig
+from .rng import set_seeds
 from .runner import Runner
-from .utils import create_agent, create_env, set_seeds
+from .utils import create_agent, create_env
 
 logger = logging.getLogger("trainer")
 
@@ -15,26 +16,28 @@ class Analyzer:
     """Metaclass to manage different forms of runs"""
 
     def __init__(self, args) -> None:
+        set_seeds(args.random_seed)
+
         self.env_config = self.create_env_config(args)
         env = create_env(self.env_config)
 
-        self.agent_config = self.create_agent_config(args, env.attack_graph)
-        agent = create_agent(self.agent_config, env.attack_graph)
+        self.agent_config = self.create_agent_config(args, env.g)
+        agent = create_agent(self.agent_config, env.g)
 
         self.runner = Runner(agent, env)
 
     def create_env_config(self, args):
         return EnvConfig(
-            args.deterministic,
             args.early_flag_reward,
             args.late_flag_reward,
             args.final_flag_reward,
             args.easy_ttc,
             args.hard_ttc,
             args.graph_size,
-            args.attacker_strategy,
+            args.attacker,
             args.true_positive_training,
             args.false_positive_training,
+            args.graph,
         )
 
     def create_agent_config(self, args, graph):
@@ -62,13 +65,13 @@ class Analyzer:
         runner = self.runner
         duration = 0
         if runner.agent.trainable:  # Don't train untrainable agents
-            runner.env.update_accuracy(tp_train, fp_train)
+            runner.env._update_accuracy(tp_train, fp_train)
             training_duration, returns, losses, lengths, num_compromised_flags = runner.train(
                 episodes, plot=plot
             )
             duration = training_duration
         if rollouts > 0:
-            runner.env.update_accuracy(tp_eval, fp_eval)
+            runner.env._update_accuracy(tp_eval, fp_eval)
             evaluation_duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
                 rollouts, plot=False
             )
@@ -84,7 +87,7 @@ class Analyzer:
         # to make sure no state remains from previous simulations.
         # But I think  the provision of a clean simulation should be located in the Runner.
         env = create_env(self.env_config)
-        agent = create_agent(self.agent_config, env.attack_graph)
+        agent = create_agent(self.agent_config, env.g)
         runner = Runner(agent, env)
         duration = 0
         if agent.trainable:  # Don't train untrainable agents
@@ -223,7 +226,7 @@ class Analyzer:
                     self.env_config.graph_size = graph_size
                     env = create_env(self.env_config)
                     self.agent_config.agent_type = agent_type
-                    agent = create_agent(self.agent_config, env.attack_graph)
+                    agent = create_agent(self.agent_config, env.g)
                     runner = Runner(agent, env)
                     if agent_type == "reinforce":
                         duration, returns, losses, lengths, num_compromised_flags = runner.train(
@@ -298,7 +301,7 @@ class Analyzer:
 
         def mean_returns(tp, fp):
             set_seeds(random_seed)
-            runner.env.update_accuracy(tp, fp)
+            runner.env._update_accuracy(tp, fp)
             duration, returns, losses, lengths, num_compromised_flags = runner.evaluate(
                 episodes=rollouts, plot=False
             )

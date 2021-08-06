@@ -3,10 +3,9 @@
 import argparse
 import logging
 
-from attack_simulator.agents import DEFENDERS
+from attack_simulator.agents import ATTACKERS, DEFENDERS
 from attack_simulator.analysis import Analyzer
 from attack_simulator.graph import SIZES
-from attack_simulator.utils import set_seeds
 
 
 def dict2choices(d):
@@ -18,6 +17,7 @@ def dict2choices(d):
 def parse_args():
     sizes, sizes_help = dict2choices(SIZES)
     defenders, defenders_help = dict2choices(DEFENDERS)
+    attackers, attackers_help = dict2choices(ATTACKERS)
 
     parser = argparse.ArgumentParser(
         description="Reinforcement learning of a computer network defender."
@@ -42,10 +42,6 @@ def parse_args():
     parser.add_argument("-g", "--graph", action="store_true", help="Generate a GraphViz .dot file.")
 
     parser.add_argument(
-        "-d", "--deterministic", action="store_true", help="Make environment deterministic."
-    )
-
-    parser.add_argument(
         "-D",
         "--defender",
         metavar="DEFENDER",
@@ -57,12 +53,12 @@ def parse_args():
 
     parser.add_argument(
         "-A",
-        "--attacker_strategy",
+        "--attacker",
         metavar="ATTACKER",
-        choices=["value_maximizing", "random"],
+        choices=attackers,
         type=str,
-        default="random",
-        help='Select agent. Choices are "value_maximizing" and "random".',
+        default=attackers[-1],
+        help=f'Select attacker. Choices are "{attackers_help}".  Default is "{attackers[-1]}"',
     )
 
     parser.add_argument(
@@ -131,8 +127,8 @@ def parse_args():
         "-r",
         "--random_seed",
         type=int,
-        default=0,
-        help="Random seed for both numpy and torch. Default is 0.",
+        default=None,
+        help="Random seed for simulation. Default is None, which falls back to OS entropy.",
     )
 
     parser.add_argument(
@@ -238,9 +234,6 @@ def main():
     logging.getLogger("trainer").setLevel(logging.DEBUG)
     logging.getLogger("trainer").addHandler(logging.FileHandler("trainer.log", mode="w"))
 
-    if parsed_args.deterministic:
-        set_seeds(parsed_args.random_seed)
-
     analyzer = Analyzer(parsed_args)
 
     if parsed_args.action == "train_and_evaluate":
@@ -273,7 +266,7 @@ def main():
             training_episodes=parsed_args.episodes,
             evaluation_episodes=parsed_args.rollouts,
             random_seed_min=0,
-            random_seed_max=parsed_args.random_seed,
+            random_seed_max=parsed_args.random_seed or 10,
         )
 
     if parsed_args.action == "hidden":

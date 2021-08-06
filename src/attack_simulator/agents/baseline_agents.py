@@ -53,8 +53,8 @@ class RuleBasedAgent(Agent):
         self.attack_state = np.full(self.g.num_attacks, 0)
 
     def act(self, observation):
-        attack_state = np.array(observation[: self.g.num_attacks])
-        service_state = np.array(observation[self.g.num_attacks :])
+        service_state = np.array(observation[: self.g.num_services])
+        attack_state = np.array(observation[self.g.num_services :])
 
         changed = (1 - self.attack_state) & attack_state
         self.attack_state = attack_state
