@@ -1,15 +1,13 @@
 import logging
-import random
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
 from matplotlib import cm
 
 from .config import AgentConfig, EnvConfig, GraphConfig, create_agent, create_env, create_graph
 from .graph import SIZES
-from .rng import get_rng
+from .rng import set_seeds
 from .runner import Runner
 
 logger = logging.getLogger("trainer")
@@ -30,15 +28,10 @@ class Analyzer:
         self.env_config = env_config
         self.graph_config = graph_config
 
-        rng, seed = get_rng(random_seed)
-        random_bytes = rng.bytes(8)
-        random.seed(random_bytes)
-        np.random.seed(int.from_bytes(random_bytes[:4], "big"))
-        torch.manual_seed(int.from_bytes(random_bytes, "big"))
-
-        self.seed_train = seed
-        self.seed_eval = seed if same_seed else np.random.SeedSequence(None).entropy
+        self.seed_train, self.seed_eval = set_seeds(random_seed)
         self.same_seed = same_seed
+        if same_seed:
+            self.seed_eval = self.seed_train
 
     def train_and_evaluate(
         self,
