@@ -56,6 +56,8 @@ case ${1-} in
             $name "$@"
         ;;
     *)
-        echo Usage: $name [build\|run\|exec]
+        echo Usage: $name [build\|run\|shell\|exec]
+        echo
+        echo Wrapper for handling a Docker image based on this repo
         exit 1
 esac

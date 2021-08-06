@@ -3,6 +3,7 @@ from typing import Optional
 
 from .graph import AttackGraph
 
+
 @dataclass
 class EnvConfig:
     deterministic: bool
