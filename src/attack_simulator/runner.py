@@ -1,6 +1,7 @@
 import logging
 import time
-from functools import partial
+from collections import namedtuple
+from typing import NamedTuple
 
 import numpy as np
 import torch
@@ -8,6 +9,23 @@ import torch
 from .agents import Agent
 from .env import AttackSimulationEnv
 from .utils import plot_episode, plot_training_results
+
+logger = logging.getLogger("trainer")
+
+
+RunnerResults: NamedTuple = namedtuple(
+    "RunnerResults",
+    field_names=(
+        "duration",
+        "env_time",
+        "agent_time",
+        "returns",
+        "losses",
+        "lengths",
+        "num_compromised_flags",
+    ),
+    defaults=(0.0, 0.0, 0.0, None, None, None, None),
+)
 
 
 class Runner:
@@ -19,9 +37,9 @@ class Runner:
 
     def _run_sim(self, plot_results=False):
         if plot_results:
-            running_services = []
-            compromised_flags = []
             num_services = self.env.action_space.n - 1
+            num_running_services = []
+            num_compromised_flags = []
 
         rewards = []
         done = False
@@ -47,17 +65,20 @@ class Runner:
 
             if plot_results:
                 # count number of running services
-                running_services.append(sum(state[:num_services]))
-                compromised_flags.append(len(info["compromised_flags"]))
+                num_running_services.append(sum(state[:num_services]))
+                num_compromised_flags.append(len(info["compromised_flags"]))
 
         if plot_results:
-            plot_episode(rewards, running_services, compromised_flags)
+            plot_episode(rewards, num_running_services, num_compromised_flags)
 
-        return rewards, info["time"], info["compromised_flags"]
+        return sum(rewards), info["time"], len(info["compromised_flags"])
 
-    def run_multiple_episodes(self, episodes, evaluation=False, plot=True):
+    def _run_episodes(self, episodes, random_seed=None, evaluation=False, plot=True):
+        if not episodes:
+            return RunnerResults()
 
-        log = logging.getLogger("trainer")
+        start = time.time()
+
         returns = np.zeros(episodes)
         losses = np.zeros(episodes)
         lengths = np.zeros(episodes)
@@ -69,54 +90,62 @@ class Runner:
         if hasattr(self.agent, "train"):  # not all agent's support setting training mode
             self.agent.train(not evaluation)
 
-        try:
+        random_seed = self.env.seed(random_seed)
+        logger.info(f"Starting simulations with seed #{random_seed}")
+
+        try:  # allow graceful manual termination
             for i in range(episodes):
-                rewards, episode_length, compromised_flags = self._run_sim()
-                loss = self.agent.loss if hasattr(self.agent, "loss") else np.random.rand()
-                losses[i] = loss
-                returns[i] = sum(rewards)
-                lengths[i] = episode_length
-                num_compromised_flags[i] = len(compromised_flags)
-                log.debug(
-                    f"Episode: {i+1}/{episodes}, Loss: {loss}, Return: {sum(rewards)},"
-                    f" Episode Length: {episode_length}"
+                returns[i], lengths[i], num_compromised_flags[i] = self._run_sim()
+
+                if hasattr(self.agent, "loss"):
+                    loss = losses[i] = self.agent.loss
+
+                    if (prev_loss - loss) < 0.01 and not evaluation:
+                        patience -= 1
+                    elif patience < max_patience:
+                        patience += 1
+                    prev_loss = loss
+                else:  # generate random loss (FIXME: for plotting?)
+                    losses[i] = np.random.rand()
+
+                logger.debug(
+                    f"Episode: {i+1}/{episodes}, Loss: {losses[i]}, Return: {returns[i]},"
+                    f" Episode Length: {lengths[i]}"
                 )
 
-                if (prev_loss - loss) < 0.01 and not evaluation:
-                    patience -= 1
-                else:
-                    patience = (patience + 1) if patience < max_patience else max_patience
                 if patience == 0:
-                    log.debug("Stopping due to insignicant loss changes.")
+                    logger.debug("Stopping due to insignificant change in loss.")
                     break
-
-                prev_loss = loss
 
         except KeyboardInterrupt:
             print("Stopping...")
 
         if evaluation:
-            log.debug(f"Average returns: {sum(returns)/len(returns)}")
+            logger.debug(f"Average returns: {returns.mean()}")
 
         if plot:  # TODO move this out of the Runner class
             plot_training_results(
                 returns, losses, lengths, num_compromised_flags, evaluation, cutoff=i
             )
 
-        return returns, losses, lengths, num_compromised_flags
-
-    def run(self, func):
-        start = time.time()
-        num_compromised_flags = 0
-        returns, losses, lengths, num_compromised_flags = func()
         duration = time.time() - start
-        return duration, returns, losses, lengths, num_compromised_flags
 
-    def train(self, episodes, plot=True):
-        func = partial(self.run_multiple_episodes, episodes=episodes, plot=plot)
-        return self.run(func)
+        return RunnerResults(
+            duration=duration,
+            agent_time=self.agent_time,
+            env_time=self.env_time,
+            returns=returns,
+            losses=losses,
+            lengths=lengths,
+            num_compromised_flags=num_compromised_flags,
+        )
 
-    def evaluate(self, episodes, plot=True):
-        func = partial(self.run_multiple_episodes, episodes=episodes, evaluation=True, plot=plot)
+    def train(self, episodes, random_seed=None, plot=True):
+        return self._run_episodes(episodes=episodes, random_seed=random_seed, plot=plot)
+
+    def evaluate(self, episodes, random_seed=None, plot=True):
         with torch.no_grad():
-            return self.run(func)
+            results = self._run_episodes(
+                episodes=episodes, random_seed=random_seed, evaluation=True, plot=plot
+            )
+        return results

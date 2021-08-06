@@ -5,6 +5,7 @@ import logging
 
 from attack_simulator.agents import ATTACKERS, DEFENDERS
 from attack_simulator.analysis import Analyzer
+from attack_simulator.config import make_configs
 from attack_simulator.graph import SIZES
 
 
@@ -132,11 +133,18 @@ def parse_args():
     )
 
     parser.add_argument(
+        "-R",
+        "--same_seed",
+        action="store_true",
+        help="Use the same seed for BOTH training AND evaluation. Defaults to `False`",
+    )
+
+    parser.add_argument(
         "-w",
         "--hidden_width",
         type=int,
         default=64,
-        help="Dimension of the hidden linear layers (not used by all agents). Defult is 64.",
+        help="Dimension of the hidden linear layers (not used by all agents). Default is 64.",
     )
 
     parser.add_argument(
@@ -219,9 +227,9 @@ def parse_args():
         help="The number of data points for the accuracy graph (the same number for both axes).",
     )
 
-    parser.add_argument("--lr", help="Optimizer (Adam) learning rate.", default=1e-2)
+    parser.add_argument("-L", "--lr", help="Optimizer (Adam) learning rate.", default=1e-2)
 
-    parser.add_argument("--cuda", action="store_true", help="Use CUDA acceleration.")
+    parser.add_argument("-C", "--cuda", action="store_true", help="Use CUDA acceleration.")
 
     return parser.parse_args()
 
@@ -229,12 +237,22 @@ def parse_args():
 def main():
     parsed_args = parse_args()
 
+    print(parsed_args)
+
     logging.getLogger("simulator").setLevel(logging.DEBUG)
     logging.getLogger("simulator").addHandler(logging.FileHandler("simulator.log", mode="w"))
     logging.getLogger("trainer").setLevel(logging.DEBUG)
     logging.getLogger("trainer").addHandler(logging.FileHandler("trainer.log", mode="w"))
 
-    analyzer = Analyzer(parsed_args)
+    agent_config, env_config, graph_config = make_configs(parsed_args)
+
+    print(agent_config)
+    print(env_config)
+    print(graph_config)
+
+    analyzer = Analyzer(
+        agent_config, env_config, graph_config, parsed_args.random_seed, parsed_args.same_seed
+    )
 
     if parsed_args.action == "train_and_evaluate":
         analyzer.train_and_evaluate(
@@ -258,28 +276,26 @@ def main():
             fp_low=parsed_args.false_positive_low,
             fp_high=parsed_args.false_positive_high,
             resolution=parsed_args.accuracy_resolution,
-            random_seed=parsed_args.random_seed,
         )
 
     if parsed_args.action == "size":
         analyzer.effect_of_size_on_returns(
-            training_episodes=parsed_args.episodes,
-            evaluation_episodes=parsed_args.rollouts,
-            random_seed_min=0,
-            random_seed_max=parsed_args.random_seed or 10,
+            range(parsed_args.random_seed or 10),
+            episodes=parsed_args.episodes,
+            rollouts=parsed_args.rollouts,
         )
 
     if parsed_args.action == "hidden":
         analyzer.effect_of_hidden_layer_size_on_return(
-            training_episodes=parsed_args.episodes,
-            evaluation_episodes=parsed_args.rollouts,
+            episodes=parsed_args.episodes,
+            rollouts=parsed_args.rollouts,
         )
 
     if parsed_args.action == "seed":
         analyzer.simulations_with_different_seeds(
-            [1] * 10,
-            training_episodes=parsed_args.episodes,
-            evaluation_episodes=parsed_args.rollouts,
+            range(parsed_args.random_seed or 10),
+            episodes=parsed_args.episodes,
+            rollouts=parsed_args.rollouts,
         )
 
 

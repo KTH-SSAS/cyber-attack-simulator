@@ -17,36 +17,18 @@ def enabled(value, state):
 class AttackSimulationEnv(gym.Env):
     NO_ACTION = "no action"
 
-    def __init__(
-        self,
-        early_flag_reward=1000,
-        late_flag_reward=10000,
-        final_flag_reward=100000,
-        easy_ttc=10,
-        hard_ttc=100,
-        graph_size="large",
-        attacker="random",
-        true_positive=1.0,
-        false_positive=0.0,
-        save_graphs=False,
-    ):
+    def __init__(self, env_config):
         super(AttackSimulationEnv, self).__init__()
 
         # process configuration
-        self.g = AttackGraph(
-            dict(
-                early_flag_reward=early_flag_reward,
-                late_flag_reward=late_flag_reward,
-                final_flag_reward=final_flag_reward,
-                easy_ttc=easy_ttc,
-                hard_ttc=hard_ttc,
-                graph_size=graph_size,
-            )
-        )
-        self.attacker_class = ATTACKERS[attacker]
-        self.true_positive = true_positive
-        self.false_positive = false_positive
-        self.save_graphs = save_graphs
+        self.g = env_config.get("attack_graph")
+        if self.g is None:
+            self.g = AttackGraph(env_config)
+
+        self.attacker_class = ATTACKERS[env_config.get("attacker", "random")]
+        self.true_positive = env_config.get("true_positive", 1.0)
+        self.false_positive = env_config.get("false_positive", 0.0)
+        self.save_graphs = env_config.get("save_graphs")
 
         # prepare just enough to get dimensions sorted, do the rest on first `reset`
         self.entry_attack_index = self.g.attack_names.index(self.g.root)
@@ -262,9 +244,3 @@ class AttackSimulationEnv(gym.Env):
     def seed(self, seed=None):
         self.rng, self._seed = get_rng(seed)
         return self._seed
-
-    def _update_accuracy(self, true_positive, false_positive):
-        # FIXME: not compliant with OpenAI Gym API
-        # TODO: remove in favor of creating a new environment
-        self.true_positive = true_positive
-        self.false_positive = false_positive
