@@ -36,19 +36,18 @@ class Runner:
             self.agent_time += time.time() - agent_start
 
             env_start = time.time()
-            new_state, reward, done, info = self.env.step(action)
+            state, reward, done, info = self.env.step(action)
             self.env_time += time.time() - env_start
 
             agent_start = time.time()
-            self.agent.update(new_state, reward, done)
+            self.agent.update(state, reward, done)
             self.agent_time += time.time() - agent_start
 
-            state = new_state
             rewards.append(reward)
 
             if plot_results:
                 # count number of running services
-                running_services.append(sum(new_state[:num_services]))
+                running_services.append(sum(state[:num_services]))
                 compromised_flags.append(len(info["compromised_flags"]))
 
         if plot_results:

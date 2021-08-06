@@ -188,8 +188,10 @@ class AttackSimulationEnv(gym.Env):
                 for child_name in children:
                     child_index = self.g.attack_names.index(child_name)
                     required_services, logic, prerequisites = self.attack_prerequisites[child_index]
-                    if all(enabled(required_services, self.service_state)) and logic(
-                        enabled(prerequisites, self.attack_state)
+                    if (
+                        not self.attack_state[child_index]
+                        and all(enabled(required_services, self.service_state))
+                        and logic(enabled(prerequisites, self.attack_state))
                     ):
                         self.attack_surface[child_index] = 1
 
