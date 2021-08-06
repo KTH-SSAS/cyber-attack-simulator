@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+name=${0##*/}
+
+
+case ${1-} in
+    build)
+        context="$(git rev-parse --show-toplevel 2>/dev/null)" ||
+            context="$(dirname "$(cd "$(dirname "$0")" && pwd)")"
+
+        find "$context" -type d -name __pycache__ -exec rm -vfr {} +
+        rm -vfr "$context"/.{tox,coverage}
+        docker build \
+            --tag $name \
+            --file "$context/docker/Dockerfile" \
+            "$context"
+        ;;
+    run)
+        args=(
+            --name $name
+            --rm
+            --interactive
+            --tty
+        )
+        history="$HOME/.${name}_history"
+        touch "$history"
+        mounts=(
+            "$HOME/.ssh":/root/.ssh
+            "$HOME/.gitconfig":/root/.gitconfig
+            "$history":/root/.bash_history
+        )
+        for mount in "${mounts[@]}"
+        do ! [ -r "${mount%%:*}" ] || args+=(--volume "$mount")
+        done
+
+        docker run "${args[@]}" $name
+        ;;
+    shell)
+        set -- exec poetry shell
+        ;&
+    exec)
+        shift
+        exec docker exec \
+            --interactive \
+            --tty \
+            $name "$@"
+        ;;
+    *)
+        echo Usage: $name [build\|run\|shell\|exec]
+        echo
+        echo Wrapper for handling a Docker image based on this repo
+        exit 1
+esac
