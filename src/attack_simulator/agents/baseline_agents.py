@@ -35,7 +35,7 @@ class DisableProbabilityAgent(Agent):
         self.disable_probability = agent_config.get("disable_probability", 0.1)
 
     def act(self, observation):
-        enabled_services = np.array(observation[-self.num_services :])
+        enabled_services = np.array(observation[: self.num_services])
         disable = self.rng.uniform(0, 1) < self.disable_probability
         return self.rng.choice(np.flatnonzero(enabled_services)) + 1 if disable else 0
 

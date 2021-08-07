@@ -1,25 +1,4 @@
-from dataclasses import asdict
-
 import matplotlib.pyplot as plt
-
-from .agents import DEFENDERS
-from .config import AgentConfig, EnvConfig
-from .env import AttackSimulationEnv
-from .graph import AttackGraph
-
-
-def create_env(config: EnvConfig):
-    return AttackSimulationEnv(**asdict(config))
-
-
-def create_agent(config: AgentConfig, graph: AttackGraph = None):
-    config = asdict(config)
-    if graph:
-        input_dim = graph.num_attacks + graph.num_services
-        num_actions = graph.num_services + 1
-        config = dict(config, input_dim=input_dim, num_actions=num_actions, attack_graph=graph)
-    print(config)
-    return DEFENDERS[config["agent_type"]](config)
 
 
 def plot_training_results(returns, losses, lengths, num_compromised_flags, evaluation, cutoff):

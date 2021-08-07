@@ -2,7 +2,8 @@
 
 set -euo pipefail
 
-name=${0##*/}
+self=${0##*/}
+name=$self${2:+.$2}
 
 
 case ${1-} in
@@ -24,15 +25,16 @@ case ${1-} in
             --interactive
             --tty
         )
-        history="$HOME/.${name}_history"
-        touch "$history"
-        mounts=(
-            "$HOME/.ssh":/root/.ssh
-            "$HOME/.gitconfig":/root/.gitconfig
-            "$history":/root/.bash_history
-        )
-        for mount in "${mounts[@]}"
-        do ! [ -r "${mount%%:*}" ] || args+=(--volume "$mount")
+
+        for path in .ssh .gitconfig
+        do ! [ -r "$HOME/$path" ] || args+=(--volume "$HOME/$path:/root/$path")
+        done
+
+        for repl in bash python
+        do
+            history="$HOME/.${name}_${repl}_history"
+            touch "$history"
+            args+=(--volume "$history:/root/.${repl}_history")
         done
 
         docker run "${args[@]}" $name
@@ -48,8 +50,10 @@ case ${1-} in
             $name "$@"
         ;;
     *)
-        echo Usage: $name [build\|run\|shell\|exec]
+        echo Usage: $self [build\|run\|shell\|exec] [FLAVOR]
         echo
-        echo Wrapper for handling a Docker image based on this repo
+        echo Wrapper for handling a Docker image based on this repo.
+        echo If an optional FLAVOR is specified, the corresponding
+        echo image and container will be called \`$self.FLAVOR\`.
         exit 1
 esac

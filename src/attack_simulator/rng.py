@@ -12,13 +12,13 @@ def get_rng(seed=None):
     if seed is None:  # fall back to real entropy
         seed = np.random.SeedSequence(None).entropy
 
-    if seed < 0:
-        seed = -seed
-
-    try:  # whose calling?
-        caller = inspect.currentframe().f_back.f_locals["self"].__class__.__name__
-    except Exception:
-        caller = "UNKNOWN"
+    caller = "UNKNOWN"
+    frame = inspect.currentframe()
+    while frame:
+        if "self" in frame.f_locals:
+            caller = frame.f_locals["self"].__class__.__name__
+            break
+        frame = frame.f_back
 
     # tweak passed seeds for different callers
     tweaked = seed + int.from_bytes(bytes(caller.encode()), byteorder="big")
@@ -33,15 +33,10 @@ def get_rng(seed=None):
 
 
 def set_seeds(seed=None):
-    same = seed is not None and seed < 0
-
-    if same:
-        seed = abs(seed)
-
     rng, seed = get_rng(seed)
     random_bytes = rng.bytes(8)
     random.seed(random_bytes)
     np.random.seed(int.from_bytes(random_bytes[:4], "big"))
     torch.manual_seed(int.from_bytes(random_bytes, "big"))
 
-    return seed, seed if same else np.random.SeedSequence(None).entropy
+    return seed, np.random.SeedSequence(None).entropy
