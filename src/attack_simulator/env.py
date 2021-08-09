@@ -154,7 +154,7 @@ class AttackSimulationEnv(gym.Env):
                 # end episode when attack surface becomes empty
                 done = not any(self.attack_surface)
 
-        attack_index = None
+        self.attack_index = None
 
         if not done:
             # obtain attacker action
