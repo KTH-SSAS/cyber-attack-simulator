@@ -33,6 +33,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config = {
+        "framework": "torch",
         "env": AttackSimulationEnv,
         # Also try common gym envs like: "CartPole-v0" or "Pendulum-v0".
         # Evaluate once per training iteration.
