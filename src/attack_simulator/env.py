@@ -254,10 +254,20 @@ class AttackSimulationEnv(gym.Env):
             self.render_file.write("\nStarting new episode.\n")
         self.render_file.write(f"Step {self.simulation_time}: ")
         self.render_file.write(f"Defender disables {self._interpret_action(self.action)}. ")
-        self.render_file.write(f"Attacker attacks {self.g.attack_names[self.attack_index]}. ")
-        self.render_file.write(f"Reward: {self.reward}.\n")
+        if self.attack_index:
+            self.render_file.write(f"Attacker attacks {self.g.attack_names[self.attack_index]}. ")
+            self.render_file.write(f"Remaining TTC: {self.ttc_remaining[self.attack_index]}. ")
+        else:
+            self.render_file.write("Attacker attacks nothing. ")
+        self.render_file.write(f"Reward: {self.reward}. ")
+        surf = [
+            self.g.attack_names[i]
+            for i in range(len(self.attack_surface))
+            if self.attack_surface[i] == 1
+        ]
+        self.render_file.write(f"Attack surface: {surf}.\n")
         if not any(self.attack_surface):
-            self.render_file.write("Attack is complete.")
+            self.render_file.write("Attack is complete.\n")
             self.render_file.write(f"Compromised steps: {self.compromised_steps}\n")
             self.render_file.write(f"Compromised flags: {self.compromised_flags}\n")
 
