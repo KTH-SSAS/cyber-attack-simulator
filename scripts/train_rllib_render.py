@@ -9,12 +9,8 @@
 # https://github.com/openai/gym/issues/1925
 
 import argparse
-import os
 
-import gym
-import numpy as np
 import ray
-from gym.spaces import Box, Discrete
 from ray import tune
 
 from attack_simulator.env import AttackSimulationEnv
