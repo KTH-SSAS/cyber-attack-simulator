@@ -37,9 +37,7 @@ class AttackSimulationEnv(gym.Env):
         # a) which services are turned on; and,
         # b) which attack steps have been successfully taken
         self.dim_observations = self.g.num_services + self.g.num_attacks
-        self.observation_space = gym.spaces.Box(
-            low=0, high=1, shape=(self.dim_observations,), dtype=np.float32
-        )
+        self.observation_space = gym.spaces.Tuple((gym.spaces.Discrete(2),) * self.dim_observations)
 
         # The defender action space allows to disable any one service or leave all unchanged
         self.num_actions = self.g.num_services + 1
@@ -129,7 +127,7 @@ class AttackSimulationEnv(gym.Env):
         true_positives = self.attack_state & (probabilities <= self.true_positive)
         false_positives = (1 - self.attack_state) & (probabilities <= self.false_positive)
         detected = true_positives | false_positives
-        return np.append(self.service_state, detected)
+        return tuple(np.append(self.service_state, detected))
 
     def step(self, action):
         self.action = action
