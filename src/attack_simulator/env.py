@@ -196,12 +196,16 @@ class AttackSimulationEnv(gym.Env):
         self.reward = sum(self.service_state) - attacker_reward
 
         self.compromised_steps = self._interpret_attacks()
-        self.compromised_flags = [step_name for step_name in self.compromised_steps if "flag" in step_name]
+        self.compromised_flags = [
+            step_name for step_name in self.compromised_steps if "flag" in step_name
+        ]
 
         info = {
             "time": self.simulation_time,
             "attack_surface": self.attack_surface,
-            "current_step": None if self.attack_index is None else self.g.attack_names[self.attack_index],
+            "current_step": None
+            if self.attack_index is None
+            else self.g.attack_names[self.attack_index],
             "ttc_remaining_on_current_step": self.ttc_remaining[self.attack_index],
             "compromised_steps": self.compromised_steps,
             "compromised_flags": self.compromised_flags,
@@ -246,21 +250,20 @@ class AttackSimulationEnv(gym.Env):
 
     def render(self, mode="human"):
         if self.first_render:
-            self.render_file = f = open(f"render_{self._seed}_{self.episode_count}.txt", "w")
+            self.render_file = open(f"render_{self._seed}_{self.episode_count}.txt", "w")
         self.first_render = False
         if self.simulation_time == 1:
-            self.render_file.write(f"\nStarting new episode.\n")
+            self.render_file.write("\nStarting new episode.\n")
         self.render_file.write(f"Step {self.simulation_time}: ")
         self.render_file.write(f"Defender disables {self._interpret_action(self.action)}. ")
         self.render_file.write(f"Attacker attacks {self.g.attack_names[self.attack_index]}. ")
         self.render_file.write(f"Reward: {self.reward}.\n")
         if not any(self.attack_surface):
-            self.render_file.write(f"Attack is complete.")
+            self.render_file.write("Attack is complete.")
             self.render_file.write(f"Compromised steps: {self.compromised_steps}\n")
             self.render_file.write(f"Compromised flags: {self.compromised_flags}\n")
 
         return True
-
 
     def seed(self, seed=None):
         self.rng, self._seed = get_rng(seed)
