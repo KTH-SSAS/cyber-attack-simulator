@@ -3,7 +3,13 @@
 set -euo pipefail
 
 self=${0##*/}
-name=$self${2:+.$2}
+name=$self
+
+! [ . = ${1::1} ] ||
+    {
+        name+=$1
+        shift
+    }
 
 context="$(git rev-parse --show-toplevel 2>/dev/null)" ||
     context="$(dirname "$(cd "$(dirname "$0")" && pwd)")"
@@ -24,7 +30,7 @@ case ${1-} in
             --interactive
             --tty
             --shm-size $((1<<31))  # 2GiB
-            --publish-all  # map the Ray dashboard to a random port
+            --publish 127.0.0.1:8265:8265  # Ray dashboard
         )
 
         for path in .ssh .gitconfig
@@ -40,6 +46,9 @@ case ${1-} in
 
         docker run "${args[@]}" $name
         ;;
+    dash)
+        open http://127.0.0.1:8265
+        ;;
     shell)
         set -- exec poetry shell
         ;&
@@ -50,14 +59,12 @@ case ${1-} in
             --tty \
             $name "$@"
         ;;
-    dash)
-        open http://localhost:$(docker port $name)
-        ;;
     *)
-        echo Usage: $self [build\|run\|shell\|exec] [FLAVOR]
+        echo Usage: $self [.FLAVOR] [build\|run\|dash\|shell\|exec [COMMAND ARGS]]
         echo
         echo Wrapper for handling a Docker image based on this repo.
-        echo If an optional FLAVOR is specified, the corresponding
-        echo image and container will be called \`$self.FLAVOR\`.
+        echo
+        echo When an optional .FLAVOR \(the leading dot is important\!\) is specified,
+        echo the corresponding image and container will be called \`$self.FLAVOR\`.
         exit 1
 esac
