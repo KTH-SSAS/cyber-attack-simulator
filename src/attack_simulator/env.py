@@ -124,7 +124,7 @@ class AttackSimulationEnv(gym.Env):
         true_positives = self.attack_state & (probabilities <= self.true_positive)
         false_positives = (1 - self.attack_state) & (probabilities <= self.false_positive)
         detected = true_positives | false_positives
-        return np.append(self.service_state, detected)
+        return tuple(np.append(self.service_state, detected))
 
     def step(self, action):
         assert 0 <= action < self.num_actions
