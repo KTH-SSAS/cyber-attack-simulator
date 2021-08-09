@@ -24,6 +24,7 @@ case ${1-} in
             --interactive
             --tty
             --shm-size $((1<<31))  # 2GiB
+            --publish-all  # map the Ray dashboard to a random port
         )
 
         for path in .ssh .gitconfig
@@ -48,6 +49,9 @@ case ${1-} in
             --interactive \
             --tty \
             $name "$@"
+        ;;
+    dash)
+        open http://localhost:$(docker port $name)
         ;;
     *)
         echo Usage: $self [build\|run\|shell\|exec] [FLAVOR]

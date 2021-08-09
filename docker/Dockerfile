@@ -10,6 +10,6 @@ COPY --chown=ray:ray . .
 RUN pip install --upgrade pip poetry; \
     poetry update; \
     poetry install
-ENV SHELL=bash  # help `poetry` find the right shell
-EXPOSE 8265  # Ray dashboard
+ENV SHELL=bash
+EXPOSE 8265
 ENTRYPOINT ["poetry", "shell"]
