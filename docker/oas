@@ -5,18 +5,17 @@ set -euo pipefail
 self=${0##*/}
 name=$self${2:+.$2}
 
+context="$(git rev-parse --show-toplevel 2>/dev/null)" ||
+    context="$(dirname "$(cd "$(dirname "$0")" && pwd)")"
+dockerfile="$context/docker/Dockerfile"
+home="$(dirname "$(sed -n '/WORKDIR/{s/[^/]*//;p;}' "$dockerfile")")"
+
 
 case ${1-} in
     build)
-        context="$(git rev-parse --show-toplevel 2>/dev/null)" ||
-            context="$(dirname "$(cd "$(dirname "$0")" && pwd)")"
-
         find "$context" -type d -name __pycache__ -exec rm -vfr {} +
         rm -vfr "$context"/.{tox,coverage}
-        docker build \
-            --tag $name \
-            --file "$context/docker/Dockerfile" \
-            "$context"
+        docker build --tag $name --file "$dockerfile" "$context"
         ;;
     run)
         args=(
@@ -24,17 +23,18 @@ case ${1-} in
             --rm
             --interactive
             --tty
+            --shm-size $((1<<31))  # 2GiB
         )
 
         for path in .ssh .gitconfig
-        do ! [ -r "$HOME/$path" ] || args+=(--volume "$HOME/$path:/root/$path")
+        do ! [ -r "$HOME/$path" ] || args+=(--volume "$HOME/$path:$home/$path")
         done
 
         for repl in bash python
         do
             history="$HOME/.${name}_${repl}_history"
             touch "$history"
-            args+=(--volume "$history:/root/.${repl}_history")
+            args+=(--volume "$history:$home/.${repl}_history")
         done
 
         docker run "${args[@]}" $name

@@ -9,7 +9,9 @@ ray.init()
 trainer = pg.PGTrainer(
     env=AttackSimulationEnv,
     config={
-        "env_config": {},  # config to pass to env class
+        "log_level": "DEBUG",  # show detailed info during training
+        "framework": "torch",  # avoid pulling in TensorFlow
+        "env_config": {"graph_size": "large"},  # config to pass to env class
     },
 )
 
