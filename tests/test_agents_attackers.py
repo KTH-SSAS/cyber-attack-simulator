@@ -1,0 +1,42 @@
+import numpy as np
+
+from attack_simulator.agents import InformedAttacker, RandomAttacker, RoundRobinAttacker
+
+from .test_tests_utils import np_bits
+
+
+def test_agents_attackers_informed(test_graph):
+    a = InformedAttacker(dict(attack_graph=test_graph))
+    n = len(test_graph.attack_steps)
+
+    for i in range(1, 1 << n):
+        obs = np_bits(i, size=n)
+        assert a.act(obs) in np.flatnonzero(obs)
+
+
+def test_agents_attackers_random():
+    a = RandomAttacker(dict(random_seed=42))
+    for size in np.random.randint(1, 99, size=4):
+        obs = np.zeros(size)
+        ones = np.random.randint(size, size=2)
+        obs[ones] = 1
+        for _ in range(5):
+            assert a.act(obs) in ones
+
+    assert a.update(obs, 0, True) is None
+
+
+def test_agents_attackers_round_robin():
+    a = RoundRobinAttacker()
+    for size in np.random.randint(1, 99, size=4):
+        obs = np.full(size, 1)
+        zeros = np.random.randint(size, size=size // 3)
+        obs[zeros] = 0
+        last_action = a.act(obs)
+        max_action = max(np.flatnonzero(obs))
+        for _ in range(size + size):
+            action = a.act(obs)
+            assert (last_action < action or last_action == max_action) and action not in zeros
+            last_action = action
+
+    assert a.update(obs, 0, True) is None

@@ -1,5 +1,7 @@
 import pytest
 
+from attack_simulator.agents import InformedAttacker
+from attack_simulator.env import AttackSimulationEnv
 from attack_simulator.graph import AttackGraph, AttackStep
 
 TEST_GRAPH_YAML = """\
@@ -150,3 +152,13 @@ def test_graph_config(tmpdir_factory):
 @pytest.fixture(scope="session")
 def test_graph(test_graph_config):
     return AttackGraph(test_graph_config)
+
+
+@pytest.fixture(scope="session")
+def test_env_config(test_graph):
+    return dict(attack_graph=test_graph, attacker_class=InformedAttacker)
+
+
+@pytest.fixture(scope="session")
+def test_env(test_env_config):
+    return AttackSimulationEnv(test_env_config)
