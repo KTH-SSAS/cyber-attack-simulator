@@ -45,6 +45,9 @@ class AttackSimulationEnv(gym.Env):
         self.num_actions = self.g.num_services + 1
         self.action_space = gym.spaces.Discrete(self.num_actions)
 
+        # False if self.render() was ever called.
+        self.first_render = True
+
         self.episode_count = 0
         self._seed = None
 
@@ -129,6 +132,7 @@ class AttackSimulationEnv(gym.Env):
         return np.append(self.service_state, detected)
 
     def step(self, action):
+        self.action = action
         assert 0 <= action < self.num_actions
 
         self.simulation_time += 1
@@ -156,19 +160,19 @@ class AttackSimulationEnv(gym.Env):
 
         if not done:
             # obtain attacker action
-            attack_index = self.attacker.act(self.attack_surface)
-            assert 0 <= attack_index < self.g.num_attacks
+            self.attack_index = self.attacker.act(self.attack_surface)
+            assert 0 <= self.attack_index < self.g.num_attacks
 
             # compute attacker reward
-            self.ttc_remaining[attack_index] -= 1
-            if self.ttc_remaining[attack_index] == 0:
+            self.ttc_remaining[self.attack_index] -= 1
+            if self.ttc_remaining[self.attack_index] == 0:
                 # successful attack, update reward, attack_state, attack_surface
-                attacker_reward = self.rewards[attack_index]
-                self.attack_state[attack_index] = 1
-                self.attack_surface[attack_index] = 0
+                attacker_reward = self.rewards[self.attack_index]
+                self.attack_state[self.attack_index] = 1
+                self.attack_surface[self.attack_index] = 0
 
                 # add eligible children to the attack surface
-                children = self.g.attack_steps[self.g.attack_names[attack_index]].children
+                children = self.g.attack_steps[self.g.attack_names[self.attack_index]].children
                 for child_name in children:
                     child_index = self.g.attack_names.index(child_name)
                     required_services, logic, prerequisites = self.attack_prerequisites[child_index]
@@ -189,26 +193,26 @@ class AttackSimulationEnv(gym.Env):
         # positive reward for maintaining services online (1 unit per service)
         # negative reward for the attacker's gains (as measured by `attacker_reward`)
         # FIXME: the reward for maintaining services is _very_ low
-        reward = sum(self.service_state) - attacker_reward
+        self.reward = sum(self.service_state) - attacker_reward
 
-        compromised_steps = self._interpret_attacks()
-        compromised_flags = [step_name for step_name in compromised_steps if "flag" in step_name]
+        self.compromised_steps = self._interpret_attacks()
+        self.compromised_flags = [step_name for step_name in self.compromised_steps if "flag" in step_name]
 
         info = {
             "time": self.simulation_time,
             "attack_surface": self.attack_surface,
-            "current_step": None if attack_index is None else self.g.attack_names[attack_index],
-            "ttc_remaining_on_current_step": self.ttc_remaining[attack_index],
-            "compromised_steps": compromised_steps,
-            "compromised_flags": compromised_flags,
+            "current_step": None if self.attack_index is None else self.g.attack_names[self.attack_index],
+            "ttc_remaining_on_current_step": self.ttc_remaining[self.attack_index],
+            "compromised_steps": self.compromised_steps,
+            "compromised_flags": self.compromised_flags,
         }
 
         if done:
             logger.debug("Attacker done")
-            logger.debug(f"Compromised steps: {compromised_steps}")
-            logger.debug(f"Compromised flags: {compromised_flags}")
+            logger.debug(f"Compromised steps: {self.compromised_steps}")
+            logger.debug(f"Compromised flags: {self.compromised_flags}")
 
-        return self.observation, reward, done, info
+        return self.observation, self.reward, done, info
 
     def _interpret_services(self, services=None):
         if services is None:
@@ -241,7 +245,22 @@ class AttackSimulationEnv(gym.Env):
         return {key: value for key, value in zip(keys, action_probabilities)}
 
     def render(self, mode="human"):
-        pass
+        if self.first_render:
+            self.render_file = f = open(f"render_{self._seed}_{self.episode_count}.txt", "w")
+        self.first_render = False
+        if self.simulation_time == 1:
+            self.render_file.write(f"\nStarting new episode.\n")
+        self.render_file.write(f"Step {self.simulation_time}: ")
+        self.render_file.write(f"Defender disables {self._interpret_action(self.action)}. ")
+        self.render_file.write(f"Attacker attacks {self.g.attack_names[self.attack_index]}. ")
+        self.render_file.write(f"Reward: {self.reward}.\n")
+        if not any(self.attack_surface):
+            self.render_file.write(f"Attack is complete.")
+            self.render_file.write(f"Compromised steps: {self.compromised_steps}\n")
+            self.render_file.write(f"Compromised flags: {self.compromised_flags}\n")
+
+        return True
+
 
     def seed(self, seed=None):
         self.rng, self._seed = get_rng(seed)
