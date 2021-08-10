@@ -69,7 +69,7 @@ def test_env_first_step(attacker, action, expected, test_env_config):
 
 
 def test_env_render(test_env):
-    assert test_env.render() is None
+    assert test_env.render() is None or test_env.render() is True
 
 
 def test_env_empty_config():

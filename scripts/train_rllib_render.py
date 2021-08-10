@@ -17,7 +17,7 @@ from attack_simulator.env import AttackSimulationEnv
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--run", type=str, default="PPO", help="The RLlib-registered algorithm to use.")
-parser.add_argument("--stop-iters", type=int, default=10, help="Number of iterations to train.")
+parser.add_argument("--stop-iters", type=int, default=800, help="Number of iterations to train.")
 parser.add_argument(
     "--stop-timesteps", type=int, default=1000000, help="Number of timesteps to train."
 )
@@ -33,13 +33,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config = {
-        "framework": "torch",
         "env": AttackSimulationEnv,
-        # Also try common gym envs like: "CartPole-v0" or "Pendulum-v0".
-        # Evaluate once per training iteration.
-        "evaluation_interval": 3,
+        # The number of iterations between renderings
+        "evaluation_interval": 50,
         # Run evaluation on (at least) two episodes
-        "evaluation_num_episodes": 2,
+        "evaluation_num_episodes": 1,
         # ... using one evaluation worker (setting this to 0 will cause
         # evaluation to run on the local evaluation worker, blocking
         # training until evaluation is done).
