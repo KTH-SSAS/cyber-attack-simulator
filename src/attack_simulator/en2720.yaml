@@ -22,7 +22,7 @@ lazarus.ftp.login:
   children:
     - lazarus.ftp.flag_adcb1f.capture
 lazarus.ftp.flag_adcb1f.capture:
-  reward: EARLY_FLAG_REWARD
+  reward: LOW_FLAG_REWARD
 lazarus.tomcat.connect:
   children:
     - lazarus.tomcat.gather_information
@@ -36,7 +36,7 @@ lazarus.tomcat.dictionary_attack:
     - lazarus.tomcat.flag_90b353.capture
     - lazarus.tomcat.find_vulnerability
 lazarus.tomcat.flag_90b353.capture:
-  reward: EARLY_FLAG_REWARD
+  reward: LOW_FLAG_REWARD
 lazarus.tomcat.find_vulnerability:
   ttc: EASY_TTC
   children:
@@ -51,7 +51,7 @@ lazarus.terminal_access:
     - lazarus.find_credentials
     - lazarus.ftp.flag_adcb1f.capture
 lazarus.flag_cd699a.capture:
-  reward: EARLY_FLAG_REWARD
+  reward: LOW_FLAG_REWARD
 lazarus.find_credentials:
   ttc: EASY_TTC
   children:
@@ -65,7 +65,7 @@ energetic_bear.apache.gather_information:
     - energetic_bear.apache.flag_521bce.capture
     - energetic_bear.apache.find_vulnerability
 energetic_bear.apache.flag_521bce.capture:
-  reward: EARLY_FLAG_REWARD
+  reward: LOW_FLAG_REWARD
 energetic_bear.apache.find_vulnerability:
   ttc: HARD_TTC
   children:
@@ -76,14 +76,14 @@ energetic_bear.apache.exploit_vulnerability:
     - energetic_bear.flag_de3b1c.capture
     - energetic_bear.terminal_access
 energetic_bear.flag_de3b1c.capture:
-  reward: EARLY_FLAG_REWARD
+  reward: LOW_FLAG_REWARD
 energetic_bear.terminal_access:
   ttc: EASY_TTC
   children:
     - energetic_bear.flag_3b2000.capture
     - energetic_bear.find_vulnerability
 energetic_bear.flag_3b2000.capture:
-  reward: EARLY_FLAG_REWARD
+  reward: LOW_FLAG_REWARD
 energetic_bear.find_vulnerability:
   ttc: HARD_TTC
   children:
@@ -98,7 +98,7 @@ energetic_bear.escalate_to_root:
     - energetic_bear.flag_73cb43.capture
     - energetic_bear.capture_traffic
 energetic_bear.flag_73cb43.capture:
-  reward: EARLY_FLAG_REWARD
+  reward: LOW_FLAG_REWARD
 energetic_bear.capture_traffic:
   ttc: EASY_TTC
   children:
@@ -116,7 +116,7 @@ sea_turtle.telnet.login:
     - sea_turtle.flag_f9038f.capture
     - sea_turtle.find_vulnerability
 sea_turtle.flag_f9038f.capture:
-  reward: LATE_FLAG_REWARD
+  reward: MEDIUM_FLAG_REWARD
 sea_turtle.find_vulnerability:
   ttc: HARD_TTC
   children:
@@ -131,14 +131,14 @@ sea_turtle.escalate_to_root:
     - sea_turtle.flag_6be6ef.capture
     - sea_turtle.capture_traffic
 sea_turtle.flag_6be6ef.capture:
-  reward: LATE_FLAG_REWARD
+  reward: MEDIUM_FLAG_REWARD
 sea_turtle.capture_traffic:
   ttc: EASY_TTC
   children:
     - buckeye.firefox.flag_14ce18.capture
     - buckeye.firefox.connect
 buckeye.firefox.flag_14ce18.capture:
-  reward: LATE_FLAG_REWARD
+  reward: MEDIUM_FLAG_REWARD
 buckeye.firefox.connect:
   children:
     - buckeye.firefox.find_vulnerability
@@ -155,7 +155,7 @@ buckeye.terminal_access:
     - buckeye.flag_5d402e.capture
     - buckeye.find_vulnerability
 buckeye.flag_5d402e.capture:
-  reward: LATE_FLAG_REWARD
+  reward: MEDIUM_FLAG_REWARD
 buckeye.find_vulnerability:
   ttc: EASY_TTC
   children:
@@ -169,7 +169,7 @@ buckeye.escalate_to_root:
     - buckeye.flag_2362e5.capture
     - hidden_network.connect
 buckeye.flag_2362e5.capture:
-  reward: LATE_FLAG_REWARD
+  reward: MEDIUM_FLAG_REWARD
 hidden_network.connect:
   children:
     - hidden_network.map
@@ -194,7 +194,7 @@ cloud_hopper.terminal_access:
     - cloud_hopper.flag_93b00a.capture
     - cloud_hopper.gather_information
 cloud_hopper.flag_93b00a.capture:
-  reward: LATE_FLAG_REWARD
+  reward: MEDIUM_FLAG_REWARD
 cloud_hopper.gather_information:
   ttc: EASY_TTC
   children:
@@ -205,7 +205,7 @@ cloud_bucket.list:
     - cloud_bucket.find_credentials
     - cloud_function.gather_information
 cloud_bucket.flag_21077e.capture:
-  reward: LATE_FLAG_REWARD
+  reward: MEDIUM_FLAG_REWARD
 cloud_bucket.find_credentials:
   children:
     - fancy_bear.ssh.obtain_credentials
@@ -214,7 +214,7 @@ cloud_function.gather_information:
     - cloud_function.flag_d8d9da.capture
     - cloud_function.find_vulnerability
 cloud_function.flag_d8d9da.capture:
-  reward: LATE_FLAG_REWARD
+  reward: MEDIUM_FLAG_REWARD
 cloud_function.find_vulnerability:
   children:
     - cloud_function.exploit_vulnerability
@@ -222,7 +222,7 @@ cloud_function.exploit_vulnerability:
   children:
     - cloud_function.flag_831865.capture
 cloud_function.flag_831865.capture:
-  reward: LATE_FLAG_REWARD
+  reward: MEDIUM_FLAG_REWARD
 fancy_bear.ssh.connect:
   children:
     - fancy_bear.ssh.login
@@ -257,7 +257,7 @@ wifi_network.decrypt_traffic:
   children:
     - wifi_network.flag_d582aa.capture
 wifi_network.flag_d582aa.capture:
-  reward: LATE_FLAG_REWARD
+  reward: MEDIUM_FLAG_REWARD
 wifi_network.connect:
   step_type: and
   children:
@@ -274,4 +274,4 @@ wifi_host.http_server.gather_information:
   children:
     - wifi_host.http_server.flag_18dd8f.capture
 wifi_host.http_server.flag_18dd8f.capture:
-  reward: FINAL_FLAG_REWARD
+  reward: HIGH_FLAG_REWARD

@@ -8,9 +8,9 @@ from .graph import AttackGraph
 
 @dataclass
 class GraphConfig:
-    early_flag_reward: int
-    late_flag_reward: int
-    final_flag_reward: int
+    low_flag_reward: int
+    medium_flag_reward: int
+    high_flag_reward: int
     easy_ttc: int
     hard_ttc: int
     graph_size: str
@@ -54,9 +54,9 @@ def make_configs(parsed_args):
     """Create base configurations from parsed arguments"""
 
     graph_config = GraphConfig(
-        early_flag_reward=parsed_args.early_flag_reward,
-        late_flag_reward=parsed_args.late_flag_reward,
-        final_flag_reward=parsed_args.final_flag_reward,
+        low_flag_reward=parsed_args.low_flag_reward,
+        medium_flag_reward=parsed_args.medium_flag_reward,
+        high_flag_reward=parsed_args.high_flag_reward,
         easy_ttc=parsed_args.easy_ttc,
         hard_ttc=parsed_args.hard_ttc,
         graph_size=parsed_args.graph_size,
