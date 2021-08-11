@@ -100,7 +100,7 @@ def parse_args():
     )
 
     parser.add_argument(
-        "-f",
+        "-h",
         "--high_flag_reward",
         type=int,
         default=100000,
