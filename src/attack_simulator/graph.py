@@ -31,9 +31,9 @@ DEFAULT_CONFIG = {
     "unmalleable_assets": set(("internet", "office_network", "hidden_network")),
     "easy_ttc": 10,
     "hard_ttc": 100,
-    "early_flag_reward": 10000,
-    "late_flag_reward": 10000,
-    "final_flag_reward": 10000,
+    "low_flag_reward": 10000,
+    "medium_flag_reward": 10000,
+    "high_flag_reward": 10000,
 }
 
 SIZES = {

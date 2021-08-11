@@ -17,7 +17,7 @@ b.x:
     - b.u.y
     - b.v.y
 b.flag.capture:
-  reward: EARLY_FLAG_REWARD
+  reward: LOW_FLAG_REWARD
 b.u.y:
   ttc: EASY_TTC
   children:
@@ -28,7 +28,7 @@ b.v.y:
     - b.v.flag.capture
     - c.x
 b.v.flag.capture:
-  reward: LATE_FLAG_REWARD
+  reward: MEDIUM_FLAG_REWARD
 c.x:
   children:
     - c.u.x
@@ -38,7 +38,7 @@ c.u.x:
   children:
     - c.u.flag.capture
 c.u.flag.capture:
-  reward: FINAL_FLAG_REWARD
+  reward: HIGH_FLAG_REWARD
 """
 
 TEST_SERVICES = ["a", "b", "b.u", "b.v", "c", "c.u"]

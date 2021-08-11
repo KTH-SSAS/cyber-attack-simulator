@@ -82,30 +82,30 @@ def parse_args():
     )
 
     parser.add_argument(
-        "-e",
-        "--early_flag_reward",
-        type=int,
-        default=10000,
-        help="Flag reward for the attacker when capturing flags early in the attack graph."
-        "Default is 10000. (Use positive values!)",
-    )
-
-    parser.add_argument(
         "-l",
-        "--late_flag_reward",
+        "--low_flag_reward",
+        type=int,
+        default=1000,
+        help="Flag reward for the attacker when capturing low-value flags in the attack graph."
+        "Default is 1000. (Use positive values!)",
+    )
+
+    parser.add_argument(
+        "-m",
+        "--medium_flag_reward",
         type=int,
         default=10000,
-        help="Flag reward for the attacker when capturing flags late in the attack graph"
+        help="Flag reward for the attacker when capturing medium-value flags in the attack graph"
         "Default is 10000. (Use positive values!)",
     )
 
     parser.add_argument(
-        "-f",
-        "--final_flag_reward",
+        "-h",
+        "--high_flag_reward",
         type=int,
-        default=10000,
-        help="Flag reward for the attacker when capturing the final flag in the attack graph"
-        "Default is 10000. (Use positive values!)",
+        default=100000,
+        help="Flag reward for the attacker when capturing high-value flags in the attack graph"
+        "Default is 100000. (Use positive values!)",
     )
 
     parser.add_argument(
