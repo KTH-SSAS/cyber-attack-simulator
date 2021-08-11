@@ -29,10 +29,15 @@ parser.add_argument(
 if __name__ == "__main__":
     # Note: Recording and rendering in this example
     # should work for both local_mode=True|False.
-    ray.init(num_cpus=4)
+
+    # listen on all interfaces inside a container for port-forwarding to work
+    dashboard_host = "0.0.0.0" if os.path.exists("/.dockerenv") else "127.0.0.1"
+    ray.init(num_cpus=4, dashboard_host=dashboard_host)
+
     args = parser.parse_args()
 
     config = {
+        "framework": "torch",
         "env": AttackSimulationEnv,
         # The number of iterations between renderings
         "evaluation_interval": 50,
