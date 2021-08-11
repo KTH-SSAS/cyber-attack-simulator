@@ -91,7 +91,7 @@ case ${1-} in
         _exec "$@"
         ;;
     *)
-        echo Usage: $self [.FLAVOR] [build\|run\|dash\|shell\|exec [COMMAND ARGS]]
+        echo "Usage: $self [.FLAVOR] [build|run|tboard|dash|shell|exec [COMMAND ARGS]]"
         echo
         echo Wrapper for handling a Docker image based on this repo.
         echo
