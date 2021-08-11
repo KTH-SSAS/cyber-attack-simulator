@@ -16,12 +16,40 @@ context="$(git rev-parse --show-toplevel 2>/dev/null)" ||
 dockerfile="$context/docker/Dockerfile"
 home="$(dirname "$(sed -n '/WORKDIR/{s/[^/]*//;p;}' "$dockerfile")")"
 
+# see if URL:s can easily be opened
+case $(uname -s) in
+    (Darwin)
+        open=open
+        ;;
+    (Linux)
+        ! command -pv xdg-open || open=xdg-open
+        ;&
+    (*)
+        [ -v open ] ||
+            open="echo open the following URL in your browser: "
+        ;;
+esac
+
+_open() {
+    local url=http://127.0.0.1:$1 retries=${2:-100}
+    while ((retries)) && ! curl -s $url >& /dev/null
+    do
+        sleep .1
+        ((retries--))
+    done
+    ! ((retries)) || $open $url
+}
+
+_exec() {
+    exec docker exec --interactive --tty $name "$@"
+}
 
 case ${1-} in
     build)
         find "$context" -type d -name __pycache__ -exec rm -vfr {} +
         rm -vfr "$context"/.{tox,coverage}
-        docker build --tag $name --file "$dockerfile" "$context"
+        shift
+        docker build "$@" --tag $name --file "$dockerfile" "$context"
         ;;
     run)
         args=(
@@ -31,6 +59,7 @@ case ${1-} in
             --tty
             --shm-size $((1<<31))  # 2GiB
             --publish 127.0.0.1:8265:8265  # Ray dashboard
+            --publish 127.0.0.1:6006:6006  # TensorBoard
         )
 
         for path in .ssh .gitconfig
@@ -44,20 +73,22 @@ case ${1-} in
             args+=(--volume "$history:$home/.${repl}_history")
         done
 
-        docker run "${args[@]}" $name
+        shift
+        docker run "$@" "${args[@]}" $name
         ;;
     dash)
-        open http://127.0.0.1:8265
+        _open 8265 1
+        ;;
+    tboard)
+        _open 6006 25 &
+        _exec poetry run tensorboard --bind_all --logdir $home/ray_results
         ;;
     shell)
-        set -- exec poetry shell
-        ;&
+        _exec poetry shell
+        ;;
     exec)
         shift
-        exec docker exec \
-            --interactive \
-            --tty \
-            $name "$@"
+        _exec "$@"
         ;;
     *)
         echo Usage: $self [.FLAVOR] [build\|run\|dash\|shell\|exec [COMMAND ARGS]]
