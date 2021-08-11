@@ -82,7 +82,7 @@ def parse_args():
     )
 
     parser.add_argument(
-        "-e",
+        "-l",
         "--low_flag_reward",
         type=int,
         default=1000,
