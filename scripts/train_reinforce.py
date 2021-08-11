@@ -91,7 +91,7 @@ def parse_args():
     )
 
     parser.add_argument(
-        "-l",
+        "-m",
         "--medium_flag_reward",
         type=int,
         default=10000,
