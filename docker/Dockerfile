@@ -1,15 +1,14 @@
-FROM rayproject/ray:latest-py38
-USER root
+FROM python:3.8
 RUN set -ex; \
     apt-get update; \
     apt-get install -y less vim-nox locate screen \
-        libglib2.0-0  # libsm6 libxrender1 libxext6 ## OpenCV
-USER ray
-WORKDIR /home/ray/openai_attack_simulation
-COPY --chown=ray:ray . .
-RUN pip install --upgrade pip poetry; \
-    poetry update; \
+        npm libglib2.0-0; \
+    npm install -g @bazel/bazelisk; \
+    pip install --upgrade pip; \
+    pip install poetry
+WORKDIR /root/openai_attack_simulation
+COPY . .
+RUN poetry update; \
     poetry install
 ENV SHELL=bash
-EXPOSE 8265
 ENTRYPOINT ["poetry", "shell"]
