@@ -115,10 +115,9 @@ class AttackSimulationEnv(gym.Env):
                 random_seed=self._seed + self.episode_count,
             )
         )
-        return self.observation
+        return self.observe()
 
-    @property
-    def observation(self):
+    def observe(self):
         # Observation of attack steps is subject to the true/false positive rates
         # of an assumed underlying intrusion detection system
         # Depending on the true and false positive rates for each step,
@@ -127,7 +126,8 @@ class AttackSimulationEnv(gym.Env):
         true_positives = self.attack_state & (probabilities <= self.true_positive)
         false_positives = (1 - self.attack_state) & (probabilities <= self.false_positive)
         detected = true_positives | false_positives
-        return tuple(np.append(self.service_state, detected))
+        self.observation = tuple(np.append(self.service_state, detected))
+        return self.observation
 
     def step(self, action):
         self.action = action
@@ -214,7 +214,7 @@ class AttackSimulationEnv(gym.Env):
             logger.debug(f"Compromised steps: {self.compromised_steps}")
             logger.debug(f"Compromised flags: {self.compromised_flags}")
 
-        return self.observation, self.reward, done, info
+        return self.observe(), self.reward, done, info
 
     def _interpret_services(self, services=None):
         if services is None:
