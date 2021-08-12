@@ -5,7 +5,7 @@ set -euo pipefail
 self=${0##*/}
 name=$self
 
-! [ . = ${1::1} ] ||
+! [ "${1-}" ] || ! [ . = ${1::1} ] ||
     {
         name+=$1
         shift
@@ -49,7 +49,8 @@ case ${1-} in
         find "$context" -type d -name __pycache__ -exec rm -vfr {} +
         rm -vfr "$context"/.{tox,coverage}
         shift
-        docker build "$@" --tag $name --file "$dockerfile" "$context"
+        # put original command-line arguments last to allow override
+        docker build --tag $name --file "$dockerfile" "$@" "$context"
         ;;
     run)
         args=(
@@ -57,24 +58,26 @@ case ${1-} in
             --rm
             --interactive
             --tty
-            --shm-size $((1<<31))  # 2GiB
+            --memory $((1<<33))  # 8GiB
+            --shm-size $(((1<<33)/3))  # > 30% of 8GiB
             --publish 127.0.0.1:8265:8265  # Ray dashboard
             --publish 127.0.0.1:6006:6006  # TensorBoard
+            --publish 127.0.0.1:8888:8888  # JupyterLab
         )
-
         for path in .ssh .gitconfig
-        do ! [ -r "$HOME/$path" ] || args+=(--volume "$HOME/$path:$home/$path")
+        do ! [ -r "$HOME/$path" ] || args+=(--volume "$HOME/$path:$home/$path:ro")
         done
 
         for repl in bash python
         do
             history="$HOME/.${name}_${repl}_history"
             touch "$history"
-            args+=(--volume "$history:$home/.${repl}_history")
+            args+=(--volume "$history:$home/.${repl}_history:rw")
         done
 
         shift
-        docker run "$@" "${args[@]}" $name
+        # put original command-line arguments last to allow override
+        docker run "${args[@]}" "$@" $name
         ;;
     dash)
         _open 8265 1
@@ -82,6 +85,10 @@ case ${1-} in
     tboard)
         _open 6006 25 &
         _exec poetry run tensorboard --bind_all --logdir $home/ray_results
+        ;;
+    jlab)
+        _open 8888 25 &
+        _exec poetry run jupyter-lab --allow-root --no-browser --ip=0.0.0.0
         ;;
     shell)
         _exec poetry shell
@@ -91,7 +98,7 @@ case ${1-} in
         _exec "$@"
         ;;
     *)
-        echo "Usage: $self [.FLAVOR] [build|run|tboard|dash|shell|exec [COMMAND ARGS]]"
+        echo "Usage: $self [.FLAVOR] [build [ARGS]|run [ARGS]|dash|tboard|jlab|shell|exec [ARGS]]"
         echo
         echo Wrapper for handling a Docker image based on this repo.
         echo
