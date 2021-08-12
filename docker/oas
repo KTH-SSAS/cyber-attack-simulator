@@ -5,7 +5,9 @@ set -euo pipefail
 self=${0##*/}
 name=$self
 
-! [ . = ${1-::1} ] ||
+set -x
+
+! [ "${1-}" ] || ! [ . = ${1::1} ] ||
     {
         name+=$1
         shift
