@@ -37,6 +37,7 @@ pydocstyle = "^6.1.1"
 pytest = "^6.2.4"
 pytest-cov = "^2.12.1"
 tensorboard = "^2.6.0"
+jupyterlab = "^3.1.4"
 
 [tool.tox]
 legacy_tox_ini = """
