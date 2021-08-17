@@ -25,6 +25,7 @@ numpy = "~1.21.0"
 matplotlib = "^3.4.2"
 pyyaml = "^5.4.1"
 ray = {version = "^1.5.1", extras = ["default", "rllib"]}
+networkx = "^2.6.2"
 
 [tool.poetry.dev-dependencies]
 tox = "^3.23.1"

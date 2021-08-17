@@ -1,10 +1,14 @@
 import logging
 
 import gym
+import matplotlib.pyplot as plt
+import networkx as nx
 import numpy as np
+from matplotlib.animation import HTMLWriter
 
 from .agents import ATTACKERS
 from .graph import AttackGraph, AttackStep
+from .nx_utils import nx_dag_layout, nx_digraph
 from .rng import get_rng
 
 logger = logging.getLogger("simulator")
@@ -20,15 +24,16 @@ class AttackSimulationEnv(gym.Env):
     def __init__(self, env_config):
         super(AttackSimulationEnv, self).__init__()
 
-        # process configuration
-        self.g = env_config.get("attack_graph")
-        if self.g is None:
-            self.g = AttackGraph(env_config)
-
+        # process configuration, leave the graph last, as it may destroy env_config
         self.attacker_class = ATTACKERS[env_config.get("attacker", "random")]
         self.true_positive = env_config.get("true_positive", 1.0)
         self.false_positive = env_config.get("false_positive", 0.0)
         self.save_graphs = env_config.get("save_graphs")
+        self.g = env_config.get("attack_graph")
+        if self.g is None:
+            self.g = AttackGraph(env_config)
+        # a placeholder for a networkx-compatible version for rendering
+        self.dag = None
 
         # prepare just enough to get dimensions sorted, do the rest on first `reset`
         self.entry_attack_index = self.g.attack_names.index(self.g.root)
@@ -43,9 +48,7 @@ class AttackSimulationEnv(gym.Env):
         self.num_actions = self.g.num_services + 1
         self.action_space = gym.spaces.Discrete(self.num_actions)
 
-        # False if self.render() was ever called.
-        self.first_render = True
-
+        self.writer = None
         self.episode_count = 0
         self._seed = None
 
@@ -88,18 +91,13 @@ class AttackSimulationEnv(gym.Env):
             self._setup()
 
         self.episode_count += 1
-        logger.debug(f"Starting new simulation. (#{self._seed}-{self.episode_count})")
+        self.episode_id = f"{self._seed}_{self.episode_count}"
+        logger.debug(f"Starting new simulation. (#{self.episode_id})")
 
         self.ttc_remaining = np.array(
             [max(1, int(v)) for v in self.rng.exponential(self.ttc_params)]
         )
         self.rewards = np.array([int(v) for v in self.rng.exponential(self.reward_params)])
-
-        if self.save_graphs:
-            self.g.save_graphviz(
-                f"attack-graph-{self._seed}-{self.episode_count}.dot",
-                ttc=dict(zip(self.g.attack_names, self.ttc_remaining)),
-            )
 
         self.simulation_time = 0
         self.service_state = np.full(self.g.num_services, 1)
@@ -134,7 +132,7 @@ class AttackSimulationEnv(gym.Env):
         assert 0 <= action < self.num_actions
 
         self.simulation_time += 1
-        done = False
+        self.done = False
         attacker_reward = 0
 
         # reserve 0 for no action
@@ -152,11 +150,11 @@ class AttackSimulationEnv(gym.Env):
                         self.attack_surface[attack_index] = 0
 
                 # end episode when attack surface becomes empty
-                done = not any(self.attack_surface)
+                self.done = not any(self.attack_surface)
 
         self.attack_index = None
 
-        if not done:
+        if not self.done:
             # obtain attacker action
             self.attack_index = self.attacker.act(self.attack_surface)
             assert 0 <= self.attack_index < self.g.num_attacks
@@ -182,10 +180,10 @@ class AttackSimulationEnv(gym.Env):
                         self.attack_surface[child_index] = 1
 
                 # end episode when attack surface becomes empty
-                done = not any(self.attack_surface)
+                self.done = not any(self.attack_surface)
 
             # TODO: placeholder, none of the current attackers learn...
-            # self.attacker.update(attack_surface, attacker_reward, done)
+            # self.attacker.update(attack_surface, attacker_reward, self.done)
 
         # compute defender reward
         # positive reward for maintaining services online (1 unit per service)
@@ -209,12 +207,12 @@ class AttackSimulationEnv(gym.Env):
             "compromised_flags": self.compromised_flags,
         }
 
-        if done:
+        if self.done:
             logger.debug("Attacker done")
             logger.debug(f"Compromised steps: {self.compromised_steps}")
             logger.debug(f"Compromised flags: {self.compromised_flags}")
 
-        return self.observe(), self.reward, done, info
+        return self.observe(), self.reward, self.done, info
 
     def _interpret_services(self, services=None):
         if services is None:
@@ -246,30 +244,141 @@ class AttackSimulationEnv(gym.Env):
         keys = [self.NO_ACTION] + self.g.service_names
         return {key: value for key, value in zip(keys, action_probabilities)}
 
+    def _draw_nodes(self, nodes, size, color, border, **kwargs):
+        nx.draw_networkx_nodes(
+            self.dag,
+            self.pos,
+            ax=self.ax,
+            nodelist=nodes,
+            node_size=size,
+            node_color=color,
+            edgecolors=border,
+            linewidths=3,
+            **kwargs,
+        )
+
+    def _draw_edges(self, edges, **kwargs):
+        nx.draw_networkx_edges(
+            self.dag, self.pos, ax=self.ax, edgelist=edges, width=2, node_size=1000, **kwargs
+        )
+
+    def _draw_labels(self, labels, color, **kwargs):
+        nx.draw_networkx_labels(
+            self.dag,
+            self.pos,
+            ax=self.ax,
+            labels=labels,
+            font_size=8,
+            font_weight="bold",
+            font_color=color,
+            **kwargs,
+        )
+
+    def _render_frame(self):
+        self.ax.clear()
+        self.ax.set_title(f"Step {self.simulation_time}; Reward: {self.reward}")
+
+        # draw "or" edges solid (default), "and" edges dashed
+        self._draw_edges(self.dag.edges - self.and_edges)
+        self._draw_edges(self.and_edges, style="dashed")
+
+        all_attacks = set(range(self.g.num_attacks))
+        flags = set([i for i in all_attacks if "flag" in self.g.attack_names[i]])
+        observed_attacks = np.array(self.observation[self.g.num_services :])
+
+        observed_ok = set(np.flatnonzero(1 - observed_attacks))
+        self._draw_nodes(observed_ok - flags, 1000, "white", "green")
+        self._draw_nodes(observed_ok & flags, 1000, "white", "green", node_shape="s")
+
+        observed_ko = set(np.flatnonzero(observed_attacks))
+        self._draw_nodes(observed_ko - flags, 1000, "white", "red")
+        self._draw_nodes(observed_ko & flags, 1000, "white", "red", node_shape="s")
+
+        fixed_attacks = [i for i in all_attacks if not any(self.attack_prerequisites[i][0])]
+        self._draw_nodes(fixed_attacks, 800, "white", "black", node_shape="h")
+
+        # gray out disabled attacks
+        disabled_attacks = set(
+            [
+                i
+                for i in all_attacks
+                if not all(enabled(self.attack_prerequisites[i][0], self.service_state))
+            ]
+        )
+        self._draw_nodes(disabled_attacks - flags, 800, "lightgray", "lightgray")
+        self._draw_nodes(disabled_attacks & flags, 800, "lightgray", "lightgray", node_shape="s")
+
+        # use "forward" triangles for the attack surface, vary color by TTC
+        nodes = np.flatnonzero(self.attack_surface)
+        colors = self.ttc_remaining[nodes]
+        self._draw_nodes(nodes, 800, colors, "red", vmin=0, vmax=256, cmap="YlOrRd", node_shape=">")
+
+        # show attack state by label color
+        # safe(ok): GREEN, under attack(kk): BLACK, compromised(ko): RED
+        ok_labels = {
+            i: f"{self.rewards[i]}\n{self.ttc_remaining[i]}"
+            for i in np.flatnonzero(1 - (self.attack_state | self.attack_surface))
+        }
+        self._draw_labels(ok_labels, "green")
+        kk_labels = {
+            i: f"{self.rewards[i]}\n{self.ttc_remaining[i]}"
+            for i in np.flatnonzero(self.attack_surface)
+        }
+        self._draw_labels(kk_labels, "black", horizontalalignment="right")
+        ko_labels = {i: f"{self.rewards[i]}" for i in np.flatnonzero(self.attack_state)}
+        self._draw_labels(ko_labels, "red")
+
     def render(self, mode="human"):
-        if self.first_render:
-            self.render_file = open(f"render_{self._seed}_{self.episode_count}.txt", "w")
-        self.first_render = False
-        if self.simulation_time == 1:
-            self.render_file.write("\nStarting new episode.\n")
-        self.render_file.write(f"Step {self.simulation_time}: ")
-        self.render_file.write(f"Defender disables {self._interpret_action(self.action)}. ")
-        if self.attack_index:
-            self.render_file.write(f"Attacker attacks {self.g.attack_names[self.attack_index]}. ")
-            self.render_file.write(f"Remaining TTC: {self.ttc_remaining[self.attack_index]}. ")
+        if self.writer is None:
+            if self.save_graphs:
+                if not self.dag:
+                    self.dag = nx_digraph(self.g)
+                    self.pos = nx_dag_layout(self.dag)
+                    self.and_edges = [
+                        (i, j)
+                        for i, j in self.dag.edges
+                        if self.g.attack_steps[self.g.attack_names[j]].step_type == "and"
+                    ]
+                    self.xlim, self.ylim = tuple(
+                        map(lambda l: (min(l), max(l)), zip(*self.pos.values()))
+                    )
+                xmin, xmax = self.xlim
+                ymin, ymax = self.ylim
+                fig, self.ax = plt.subplots(figsize=(xmax - xmin, ymax - ymin))
+                plt.xlim(xmin, xmax)
+                plt.ylim(ymin, ymax)
+                plt.axis("off")
+                self.writer = HTMLWriter()
+                self.writer.setup(fig, f"render_{self.episode_id}.html", dpi=None)
+            else:
+                self.writer = open(f"render_{self.episode_id}.txt", "w")
+
+        if self.save_graphs:
+            self._render_frame()
+            self.writer.grab_frame()
         else:
-            self.render_file.write("Attacker attacks nothing. ")
-        self.render_file.write(f"Reward: {self.reward}. ")
-        surf = [
-            self.g.attack_names[i]
-            for i in range(len(self.attack_surface))
-            if self.attack_surface[i] == 1
-        ]
-        self.render_file.write(f"Attack surface: {surf}.\n")
-        if not any(self.attack_surface):
-            self.render_file.write("Attack is complete.\n")
-            self.render_file.write(f"Compromised steps: {self.compromised_steps}\n")
-            self.render_file.write(f"Compromised flags: {self.compromised_flags}\n")
+            self.writer.write(f"Step {self.simulation_time}: ")
+            self.writer.write(f"Defender disables {self._interpret_action(self.action)}. ")
+            if self.attack_index is None:
+                self.writer.write(f"Attacker didn't have a chance")
+            else:
+                self.writer.write(f"Attacker attacks {self.g.attack_names[self.attack_index]}. ")
+                self.writer.write(f"Remaining TTC: {self.ttc_remaining[self.attack_index]}. ")
+            self.writer.write(f"Reward: {self.reward}. ")
+            self.writer.write(
+                "Attack surface: " f"{self._interpret_attacks(self.attack_surface)}.\n"
+            )
+            if self.done:
+                self.writer.write("Attack is complete.\n")
+                self.writer.write(f"Compromised steps: {self.compromised_steps}\n")
+                self.writer.write(f"Compromised flags: {self.compromised_flags}\n")
+
+        if self.done:
+            if self.save_graphs:
+                self.writer.finish()
+            else:
+                self.writer.close()
+            self.writer = None
 
         return True
 

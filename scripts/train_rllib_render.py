@@ -37,9 +37,15 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    env_config = dict(
+        graph_size="medium",
+        save_graphs=True,
+    )
+
     config = {
         "framework": "torch",
         "env": AttackSimulationEnv,
+        "env_config": env_config,
         # The number of iterations between renderings
         "evaluation_interval": 50,
         # Run evaluation on (at least) two episodes
