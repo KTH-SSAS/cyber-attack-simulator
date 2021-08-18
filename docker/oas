@@ -23,12 +23,8 @@ case $(uname -s) in
         ;;
     (Linux)
         ! command -pv xdg-open || open=xdg-open
-        ;&
-    (*)
-        [ -v open ] ||
-            open="echo open the following URL in your browser: "
-        ;;
 esac
+[ "$open" ] || open="echo open the following URL in your browser: "
 
 _open() {
     local url=http://127.0.0.1:$1 retries=${2:-100}
@@ -42,6 +38,11 @@ _open() {
 
 _exec() {
     exec docker exec --interactive --tty $name "$@"
+}
+
+_bail() {
+    echo $'\x1b[1;31m'"$@"$'\x1b[m'
+    exit 1
 }
 
 case ${1-} in
@@ -64,9 +65,29 @@ case ${1-} in
             --publish 127.0.0.1:6006:6006  # TensorBoard
             --publish 127.0.0.1:8888:8888  # JupyterLab
         )
-        for path in .ssh .gitconfig
+        for path in .gitconfig
         do ! [ -r "$HOME/$path" ] || args+=(--volume "$HOME/$path:$home/$path:ro")
         done
+
+        if [ "${OAS_SSH_KEY-}" ]
+        then
+            [ / = "${OAS_SSH_KEY::1}" ] ||
+                _bail OAS_SSH_KEY needs to be an absolute path [$OAS_SSH_KEY]
+            [ -r "$OAS_SSH_KEY" ] ||
+                _bail OAS_SSH_KEY must point to a readable file [$OAS_SSH_KEY]
+            type=$(ssh-keygen -lf "$OAS_SSH_KEY" | sed 's/.*(\(.*\)).*/\1/' | tr A-Z a-z) ||
+                _bail OAS_SSH_KEY must point to an SSH key [$OAS_SSH_KEY]
+            args+=(--volume "$OAS_SSH_KEY:$home/.ssh/id_$type:ro")
+        elif [[ "$*" != *:$home/.ssh/id_* ]]
+        then
+            echo $'\x1b[1;33m'
+            echo To map an SSH key into the \'$name\' container,
+            echo either set the OAS_SSH_KEY environment variable to the key\'s absolute path,
+            echo or pass \'--volume key-absolute-path:$home/.ssh/id_TYPE:ro\' on the command line,
+            echo where TYPE is type of the key [one of dsa, ecdsa, ed25519, or rsa]
+            echo $'\x1b[m'
+
+        fi
 
         for repl in bash python
         do
