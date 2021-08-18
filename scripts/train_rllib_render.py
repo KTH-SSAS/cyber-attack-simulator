@@ -45,6 +45,7 @@ if __name__ == "__main__":
     config = {
         "framework": "torch",
         "env": AttackSimulationEnv,
+        "model": dict(use_lstm=True),
         "env_config": env_config,
         # The number of iterations between renderings
         "evaluation_interval": 50,
@@ -61,6 +62,8 @@ if __name__ == "__main__":
             # Note that this will always only render the 1st RolloutWorker's
             # env and only the 1st sub-env in a vectorized env.
             "render_env": True,
+            # workaround for a bug in RLLib (https://github.com/ray-project/ray/issues/17921)
+            "replay_sequence_length": -1,
         },
         "num_workers": 1,
     }
@@ -71,4 +74,4 @@ if __name__ == "__main__":
         "episode_reward_mean": args.stop_reward,
     }
 
-    results = tune.run("PPO", config=config, stop=stop)
+    results = tune.run(args.run, config=config, stop=stop)
