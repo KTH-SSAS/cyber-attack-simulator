@@ -21,7 +21,7 @@ def parse_args():
     attackers, attackers_help = dict2choices(ATTACKERS)
 
     parser = argparse.ArgumentParser(
-        description="Reinforcement learning of a computer network defender."
+        description="Reinforcement learning of a computer network defender.", add_help=False
     )
 
     parser.add_argument(

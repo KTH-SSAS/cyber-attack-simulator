@@ -32,13 +32,13 @@ def nx_digraph(g: AttackGraph, indices=True) -> nx.DiGraph:
 def _tweak_children(pos, root, children, skip_edges, intersection_weights, debug=0) -> bool:
     """Tweak _order_ of children to center the graph and reduce edge lengths and crossings
 
-       Swap predetermined vertex positions leaving the total **in-tree** edge length unchanged.
-       Only lengths of edges that _skip_ between levels can change.
-       Similarly, only intersections that involve edges that _skip_ between levels are relevant.
-       For centering, the deviation from the mid-line at zero is penalized.
+    Swap predetermined vertex positions leaving the total **in-tree** edge length unchanged.
+    Only lengths of edges that _skip_ between levels can change.
+    Similarly, only intersections that involve edges that _skip_ between levels are relevant.
+    For centering, the deviation from the mid-line at zero is penalized.
 
-       Returns True when a better permutation is found, False otherwise.
-       (`children` manipulated in-place as a side effect).
+    Returns True when a better permutation is found, False otherwise.
+    (`children` manipulated in-place as a side effect).
     """
     # TODO: include experimental code
     return False
