@@ -80,11 +80,8 @@ if __name__ == "__main__":
         "episode_reward_mean": args.stop_reward,
     }
 
-    results = tune.run(
-        args.run,
-        config=config,
-        stop=stop,
-        callbacks=[
+    if os.path.exists("./wandb_api_key"):
+        callbacks = [
             WandbLoggerCallback(
                 project="rl_attack_sim",
                 group="render",  # experiment category #TODO figure out a good system of categorization
@@ -92,5 +89,14 @@ if __name__ == "__main__":
                 log_config=False,
                 entity="sentience"
             )
-        ],
+        ]
+    else:
+        print("No wandb api key file was provided.")
+        callbacks = None
+
+    results = tune.run(
+        args.run,
+        config=config,
+        stop=stop,
+        callbacks=callbacks,
     )
