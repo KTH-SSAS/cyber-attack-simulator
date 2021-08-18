@@ -8,6 +8,8 @@ from attack_simulator.analysis import Analyzer
 from attack_simulator.config import make_configs
 from attack_simulator.graph import SIZES
 
+import wandb
+
 
 def dict2choices(d):
     choices = list(d.keys())
@@ -101,10 +103,6 @@ def parse_args():
 
     # Override default help argument to free the `-h` short option
     parser.add_argument(
-        "--help", action="help", default=argparse.SUPPRESS, help="Show this help message and exit"
-    )
-    parser.add_argument(
-        "-h",
         "--high_flag_reward",
         type=int,
         default=100000,
@@ -253,6 +251,8 @@ def main():
     print(agent_config)
     print(env_config)
     print(graph_config)
+
+    wandb.init(project='rl_attack_sim', entity='sentience', config=parsed_args)
 
     analyzer = Analyzer(
         agent_config, env_config, graph_config, parsed_args.random_seed, parsed_args.same_seed

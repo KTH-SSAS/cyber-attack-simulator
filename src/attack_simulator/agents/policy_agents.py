@@ -2,6 +2,7 @@
 import torch
 
 from .agent import Agent
+import wandb
 
 
 # design influenced by https://github.com/pytorch/examples/tree/master/reinforcement_learning
@@ -32,6 +33,8 @@ class ReinforceAgent(Agent):
         self.__dict__.update(agent_config)
 
         self.policy = PolicyModel(self.input_dim, self.num_actions, self.hidden_dim)
+
+        wandb.watch(self.policy)
 
         if self.use_cuda:
             self.policy = self.policy.cuda()

@@ -16,3 +16,4 @@ set_up_screen.sh
 .pytest_cache
 .coverage
 dist
+wandb
