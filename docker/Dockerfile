@@ -1,7 +1,7 @@
 FROM python:3.8
 RUN set -ex; \
     apt-get update; \
-    apt-get install -y less vim-nox locate screen \
+    apt-get install -y less vim-nox locate screen rsync \
         npm libglib2.0-0; \
     npm install -g @bazel/bazelisk; \
     pip install --upgrade pip; \
