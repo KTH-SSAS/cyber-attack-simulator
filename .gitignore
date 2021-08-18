@@ -17,3 +17,4 @@ set_up_screen.sh
 .coverage
 dist
 wandb
+wandb_api_key

@@ -13,6 +13,7 @@ import os
 
 import ray
 from ray import tune
+from ray.tune.integration.wandb import WandbLoggerCallback
 
 from attack_simulator.env import AttackSimulationEnv
 
@@ -26,6 +27,9 @@ parser.add_argument(
     "--stop-reward", type=float, default=20000.0, help="Reward at which we stop training."
 )
 
+parser.add_argument(
+    "--wandb-mode", type=str, choices=["online", "offline"], default="offline"
+)
 
 if __name__ == "__main__":
     # Note: Recording and rendering in this example
@@ -36,6 +40,8 @@ if __name__ == "__main__":
     ray.init(num_cpus=4, dashboard_host=dashboard_host)
 
     args = parser.parse_args()
+
+    os.environ["WANDB_MODE"] = args.wandb_mode
 
     env_config = dict(
         graph_size="medium",
@@ -74,4 +80,17 @@ if __name__ == "__main__":
         "episode_reward_mean": args.stop_reward,
     }
 
-    results = tune.run(args.run, config=config, stop=stop)
+    results = tune.run(
+        args.run,
+        config=config,
+        stop=stop,
+        callbacks=[
+            WandbLoggerCallback(
+                project="rl_attack_sim",
+                group="render",  # experiment category #TODO figure out a good system of categorization
+                api_key_file="./wandb_api_key",  # path to file with wandb api key 
+                log_config=False,
+                entity="sentience"
+            )
+        ],
+    )
