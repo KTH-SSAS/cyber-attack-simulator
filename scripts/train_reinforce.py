@@ -103,6 +103,10 @@ def parse_args():
 
     # Override default help argument to free the `-h` short option
     parser.add_argument(
+        "--help", action="help", default=argparse.SUPPRESS, help="Show this help message and exit"
+    )
+    parser.add_argument(
+        "-h",
         "--high_flag_reward",
         type=int,
         default=100000,
