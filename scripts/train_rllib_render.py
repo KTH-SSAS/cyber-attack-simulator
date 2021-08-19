@@ -13,6 +13,7 @@ import os
 
 import ray
 from ray import tune
+from ray.tune.integration.mlflow import MLflowLoggerCallback
 
 from attack_simulator.env import AttackSimulationEnv
 
@@ -43,6 +44,7 @@ if __name__ == "__main__":
     )
 
     config = {
+        "log_level": "WARN",
         "framework": "torch",
         "env": AttackSimulationEnv,
         "model": dict(use_lstm=True),
@@ -74,4 +76,16 @@ if __name__ == "__main__":
         "episode_reward_mean": args.stop_reward,
     }
 
-    results = tune.run(args.run, config=config, stop=stop)
+    results = tune.run(
+        args.run,
+        config=config,
+        stop=stop,
+        callbacks=[
+            MLflowLoggerCallback(
+                experiment_name="render",
+                tracking_uri="http://127.0.0.1:5000",
+                registry_uri="gs://sentience-mlflow",
+                save_artifact=True,
+            )
+        ],
+    )
