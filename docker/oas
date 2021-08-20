@@ -65,7 +65,7 @@ case ${1-} in
             --publish 127.0.0.1:6006:6006  # TensorBoard
             --publish 127.0.0.1:8888:8888  # JupyterLab
         )
-        for path in .gitconfig
+        for path in .gitconfig .ssh/known_hosts
         do ! [ -r "$HOME/$path" ] || args+=(--volume "$HOME/$path:$home/$path:ro")
         done
 
