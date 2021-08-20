@@ -360,7 +360,7 @@ class AttackSimulationEnv(gym.Env):
             self.writer.write(f"Step {self.simulation_time}: ")
             self.writer.write(f"Defender disables {self._interpret_action(self.action)}. ")
             if self.attack_index is None:
-                self.writer.write(f"Attacker didn't have a chance")
+                self.writer.write("Attacker didn't have a chance")
             else:
                 self.writer.write(f"Attacker attacks {self.g.attack_names[self.attack_index]}. ")
                 self.writer.write(f"Remaining TTC: {self.ttc_remaining[self.attack_index]}. ")
