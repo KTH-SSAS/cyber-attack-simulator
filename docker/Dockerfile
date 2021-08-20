@@ -9,7 +9,7 @@ RUN set -ex; \
     pip install poetry
 WORKDIR /root/openai_attack_simulation
 COPY . .
-RUN poetry update; \
-    poetry install
-ENV SHELL=bash
-ENTRYPOINT ["poetry", "shell"]
+RUN poetry install; \
+    ln -s /root/.cache/pypoetry/virtualenvs/* /root/venv
+ENV PATH=/root/venv/bin:$PATH
+CMD ["bash"]
