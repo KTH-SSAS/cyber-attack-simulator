@@ -276,7 +276,8 @@ class AttackSimulationEnv(gym.Env):
 
     def _render_frame(self):
         self.ax.clear()
-        self.ax.set_title(f"Step {self.simulation_time}; Reward: {self.reward}")
+        reward = self.reward if self.simulation_time else None
+        self.ax.set_title(f"Step {self.simulation_time}; Reward: {reward}")
 
         # draw "or" edges solid (default), "and" edges dashed
         self._draw_edges(self.dag.edges - self.and_edges)
@@ -358,22 +359,23 @@ class AttackSimulationEnv(gym.Env):
             self.writer.grab_frame()
         else:
             self.writer.write(f"Step {self.simulation_time}: ")
-            self.writer.write(f"Defender disables {self._interpret_action(self.action)}. ")
-            if self.attack_index is None:
-                self.writer.write("Attacker didn't have a chance")
-            else:
-                self.writer.write(f"Attacker attacks {self.g.attack_names[self.attack_index]}. ")
-                self.writer.write(f"Remaining TTC: {self.ttc_remaining[self.attack_index]}. ")
-            self.writer.write(f"Reward: {self.reward}. ")
+            if self.simulation_time:
+                self.writer.write(f"Defender disables {self._interpret_action(self.action)}. ")
+                if self.attack_index is None:
+                    self.writer.write("Attacker didn't have a chance")
+                else:
+                    self.writer.write(f"Attacker attacks {self.g.attack_names[self.attack_index]}.")
+                    self.writer.write(f" Remaining TTC: {self.ttc_remaining[self.attack_index]}. ")
+                self.writer.write(f"Reward: {self.reward}. ")
             self.writer.write(
                 "Attack surface: " f"{self._interpret_attacks(self.attack_surface)}.\n"
             )
-            if self.done:
+            if self.simulation_time and self.done:
                 self.writer.write("Attack is complete.\n")
                 self.writer.write(f"Compromised steps: {self.compromised_steps}\n")
                 self.writer.write(f"Compromised flags: {self.compromised_flags}\n")
 
-        if self.done:
+        if self.simulation_time and self.done:
             if self.save_graphs:
                 self.writer.finish()
             else:
