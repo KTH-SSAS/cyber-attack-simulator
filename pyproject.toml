@@ -15,7 +15,7 @@ repository = "https://gitr.sys.kth.se/pontusj/openai_attack_simulation"
 
 [[tool.poetry.source]]
 name = "ray-wheels"
-url = "https://mehes-kth.github.io/ray-wheels"
+url = "https://mehes-kth.github.io/ray-wheels/simple"
 
 [tool.poetry.dependencies]
 python = "~3.8"
@@ -24,7 +24,7 @@ torch = "^1.9.0"
 numpy = "~1.21.0"
 matplotlib = "^3.4.2"
 pyyaml = "^5.4.1"
-ray = {version = "^1.5.1", extras = ["default", "rllib", "k8s"]}
+ray = {version = "^1.6.0", extras = ["default", "rllib", "k8s"]}
 networkx = "^2.6.2"
 
 [tool.poetry.dev-dependencies]
