@@ -6,10 +6,20 @@ RUN set -ex; \
     apt-get install -y nodejs; \
     npm install -g @bazel/bazelisk; \
     pip install --upgrade pip; \
-    pip install poetry
+    pip install poetry; \
+    : install kubectl; \
+    g_key="/usr/share/keyrings/google.gpg"; \
+    echo "deb [signed-by=$g_key] https://apt.kubernetes.io/ kubernetes-xenial main" \
+      > /etc/apt/sources.list.d/kubernetes.list; \
+    curl http://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring "$g_key" add -; \
+    apt-get update; \
+    apt-get install -y kubectl
+
 WORKDIR /root/openai_attack_simulation
 COPY . .
 RUN poetry install; \
-    ln -s /root/.cache/pypoetry/virtualenvs/* /root/venv
+    ln -s /root/.cache/pypoetry/virtualenvs/* /root/venv; \
+    echo 'PATH=/root/venv/bin:$PATH' > /root/.bashrc
+ENV BASH_ENV=/root/.bashrc
 ENV PATH=/root/venv/bin:$PATH
 CMD ["bash"]
