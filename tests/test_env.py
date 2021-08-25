@@ -78,10 +78,16 @@ def test_env_empty_config():
     assert all(np.array(env.reset()) == [1] * 18 + [0] * 78)
 
 
-def test_env_save_graphs(test_env_config, tmpdir):
-    env = AttackSimulationEnv(dict(test_env_config, save_graphs=True))
+@pytest.mark.parametrize("save_graphs", [False, True])
+def test_env_render_save_graphs(save_graphs, test_env_config, tmpdir):
+    env = AttackSimulationEnv(dict(test_env_config, save_graphs=save_graphs))
     with tmpdir.as_cwd():
         env.seed(42)
         env.reset()
+        env.render()
         files = tmpdir.listdir()
-        assert len(files) == 1 and files[0].basename == "attack-graph-42-1.dot"
+        base = "render_42_1"
+        if save_graphs:
+            assert len(files) == 1 and files[0].basename == f"{base}_frames" and files[0].isdir()
+        else:
+            assert len(files) == 1 and files[0].basename == f"{base}.txt"
