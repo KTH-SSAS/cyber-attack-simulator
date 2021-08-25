@@ -51,6 +51,7 @@ SIZES = {
             "sea_turtle.telnet.connect",
         )
     ),
+    "medium-small": set(("buckeye.find_vulnerability",)),
     "medium": set(
         (
             "lazarus.ftp.connect",
