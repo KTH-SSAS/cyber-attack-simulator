@@ -17,7 +17,8 @@ RUN set -ex; \
 
 WORKDIR /root/openai_attack_simulation
 COPY . .
-RUN poetry install; \
+RUN set -ex; \
+    poetry install; \
     ln -s /root/.cache/pypoetry/virtualenvs/* /root/venv; \
     echo 'PATH=/root/venv/bin:$PATH' > /root/.bashrc
 ENV BASH_ENV=/root/.bashrc
