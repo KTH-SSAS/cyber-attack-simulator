@@ -11,6 +11,8 @@ name=$self
         shift
     }
 
+push=europe-west1-docker.pkg.dev/sentience-reinforce/images/$name
+
 context="$(git rev-parse --show-toplevel 2>/dev/null)" ||
     context="$(dirname "$(cd "$(dirname "$0")" && pwd)")"
 dockerfile="$context/docker/Dockerfile"
@@ -52,6 +54,10 @@ case ${1-} in
         shift
         # put original command-line arguments last to allow override
         docker build --tag $name --file "$dockerfile" "$@" "$context"
+        ;;
+    push)
+        docker tag $name $push
+        docker push $push
         ;;
     run)
         args=(
