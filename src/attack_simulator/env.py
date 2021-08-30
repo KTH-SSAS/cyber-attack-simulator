@@ -380,6 +380,7 @@ class AttackSimulationEnv(gym.Env):
                 self.writer.finish()
             else:
                 self.writer.close()
+            plt.close()
             self.writer = None
 
         return True
