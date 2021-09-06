@@ -7,7 +7,18 @@ from .graph import AttackGraph
 
 
 @dataclass
-class GraphConfig:
+class Config():
+
+    def to_dict(self):
+        dictionary = asdict(self)
+        if dictionary.get('attack_graph'):  # Since the attack graph is an object, it is excluded.
+            del dictionary['attack_graph']
+        return dictionary
+
+
+
+@dataclass
+class GraphConfig(Config):
     low_flag_reward: int
     medium_flag_reward: int
     high_flag_reward: int
@@ -17,7 +28,7 @@ class GraphConfig:
 
 
 @dataclass
-class EnvConfig:
+class EnvConfig(Config):
     attack_graph: AttackGraph
     attacker: str
     true_positive: float
@@ -27,7 +38,7 @@ class EnvConfig:
 
 
 @dataclass
-class AgentConfig:
+class AgentConfig(Config):
     agent_type: str
     random_seed: Optional[int]
     input_dim: int
@@ -49,6 +60,21 @@ def create_env(env_config: EnvConfig, **kwargs):
 def create_agent(agent_config: AgentConfig, **kwargs):
     config = dict(asdict(agent_config), **kwargs)
     return DEFENDERS[config["agent_type"]](config)
+
+
+def config_from_dicts(graph_config_dict, env_config_dict):
+    graph_config = GraphConfig(
+        **graph_config_dict
+    )
+
+    attack_graph = create_graph(graph_config)
+
+    env_config = EnvConfig(
+        attack_graph=attack_graph,
+        **env_config_dict
+    )
+
+    return env_config, graph_config
 
 
 def make_configs(parsed_args):
