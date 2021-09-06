@@ -29,6 +29,7 @@ class AttackSimulationEnv(gym.Env):
         self.true_positive = env_config.get("true_positive", 1.0)
         self.false_positive = env_config.get("false_positive", 0.0)
         self.save_graphs = env_config.get("save_graphs")
+        self.save_text = env_config.get("save_text")
         self.g = env_config.get("attack_graph")
         if self.g is None:
             self.g = AttackGraph(env_config)
@@ -48,7 +49,7 @@ class AttackSimulationEnv(gym.Env):
         self.num_actions = self.g.num_services + 1
         self.action_space = gym.spaces.Discrete(self.num_actions)
 
-        self.writer = None
+        self.writers = {}
         self.episode_count = 0
         self._seed = None
 
@@ -330,8 +331,9 @@ class AttackSimulationEnv(gym.Env):
         self._draw_labels(ko_labels, "red")
 
     def render(self, mode="human"):
-        if self.writer is None:
-            if self.save_graphs:
+
+        if self.save_graphs:
+            if 'graph' not in self.writers:
                 if not self.dag:
                     self.dag = nx_digraph(self.g)
                     self.pos = nx_dag_layout(self.dag)
@@ -349,39 +351,47 @@ class AttackSimulationEnv(gym.Env):
                 plt.xlim(xmin, xmax)
                 plt.ylim(ymin, ymax)
                 plt.axis("off")
-                self.writer = HTMLWriter()
-                self.writer.setup(fig, f"render_{self.episode_id}.html", dpi=None)
-            else:
-                self.writer = open(f"render_{self.episode_id}.txt", "w")
+                writer = HTMLWriter()
+                writer.setup(fig, f"render_{self.episode_id}.html", dpi=None)
+                self.writers['graph'] = writer
+        
+        if self.save_text:
+            if 'text' not in self.writers:
+                writer = open(f"render_{self.episode_id}.txt", "w")
+                self.writers['text'] = writer
 
         if self.save_graphs:
             self._render_frame()
-            self.writer.grab_frame()
-        else:
-            self.writer.write(f"Step {self.simulation_time}: ")
+            writer = self.writers['graph']
+            writer.grab_frame()
+        
+        if self.save_text:
+            writer = self.writers['text']
+            writer.write(f"Step {self.simulation_time}: ")
             if self.simulation_time:
-                self.writer.write(f"Defender disables {self._interpret_action(self.action)}. ")
+                writer.write(f"Defender disables {self._interpret_action(self.action)}. ")
                 if self.attack_index is None:
-                    self.writer.write("Attacker didn't have a chance")
+                    writer.write("Attacker didn't have a chance")
                 else:
-                    self.writer.write(f"Attacker attacks {self.g.attack_names[self.attack_index]}.")
-                    self.writer.write(f" Remaining TTC: {self.ttc_remaining[self.attack_index]}. ")
-                self.writer.write(f"Reward: {self.reward}. ")
-            self.writer.write(
+                    writer.write(f"Attacker attacks {self.g.attack_names[self.attack_index]}.")
+                    writer.write(f" Remaining TTC: {self.ttc_remaining[self.attack_index]}. ")
+                writer.write(f"Reward: {self.reward}. ")
+            writer.write(
                 "Attack surface: " f"{self._interpret_attacks(self.attack_surface)}.\n"
             )
             if self.simulation_time and self.done:
-                self.writer.write("Attack is complete.\n")
-                self.writer.write(f"Compromised steps: {self.compromised_steps}\n")
-                self.writer.write(f"Compromised flags: {self.compromised_flags}\n")
+                writer.write("Attack is complete.\n")
+                writer.write(f"Compromised steps: {self.compromised_steps}\n")
+                writer.write(f"Compromised flags: {self.compromised_flags}\n")
 
         if self.simulation_time and self.done:
             if self.save_graphs:
-                self.writer.finish()
+                self.writers['graph'].finish()
+                plt.close()
             else:
-                self.writer.close()
-            plt.close()
-            self.writer = None
+                self.writers['text'].close()
+            
+            self.writers = {}
 
         return True
 
