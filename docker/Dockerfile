@@ -21,6 +21,7 @@ RUN set -ex; \
     poetry install; \
     ln -s /root/.cache/pypoetry/virtualenvs/* /root/venv; \
     echo 'PATH=/root/venv/bin:$PATH' > /root/.bashrc
+ENV SHELL=bash
 ENV BASH_ENV=/root/.bashrc
 ENV PATH=/root/venv/bin:$PATH
 CMD ["bash"]
