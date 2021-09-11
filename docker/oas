@@ -70,12 +70,11 @@ _open_on_match() {
     match=$(mktemp)
     trap _kill_children_on_exit EXIT TERM INT
     {
-        set -x
         grep -qm1 :$1/
         _open $1
-        rm -vf $match
+        rm -f $match
         exit
-    } < <(tail -f $match) >& "$HOME/.oas-$1.log" &
+    } < <(tail -f $match) >& /dev/null &
 }
 
 _exec() {
