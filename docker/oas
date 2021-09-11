@@ -48,7 +48,7 @@ _bail() {
 }
 
 _check() {
-    [ "$(docker ps --quiet --filter name=$name)" = "$name" ]
+    [ "$(docker ps --filter name=$name --format '{{.Names}}')" = "$name" ]
 }
 
 _run() {
