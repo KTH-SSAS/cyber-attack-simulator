@@ -4,10 +4,15 @@ set -euo pipefail
 
 self=${0##*/}
 name=$self
+cluster=$self-cluster
+k8s=0
 
 ! [ "${1-}" ] || ! [ . = ${1::1} ] ||
     {
-        name+=$1
+        if [ . = "$1" ]
+        then ((++k8s))
+        else name+=$1
+        fi
         shift
     }
 
@@ -28,18 +33,55 @@ case $(uname -s) in
 esac
 [ "${open-}" ] || open="echo open the following URL in your browser: "
 
+
+_get_pod() {
+    [ "${pod-}" ] ||
+        pod=$(kubectl get pod --selector cluster.ray.io/component=$cluster-ray-head --output name)
+}
+
+_forward() {
+    _get_pod
+    forward="kubectl port-forward $pod $1"
+    # terminate previous forwarders, if any
+    ! pid=$(pgrep -fx "$forward") || kill $pid
+    log="$HOME/.kfwd-$1.log"
+    $forward >& "$log" &
+    grep -qm2 ^Forwarding < <(tail -f "$log")
+    sleep .1
+}
+
 _open() {
-    local url=http://127.0.0.1:$1 retries=${2:-100}
-    while ((retries)) && ! curl -s $url >& /dev/null
-    do
-        sleep .1
-        ((retries--))
-    done
-    ! ((retries)) || $open $url
+    ! ((k8s)) || _forward $1
+    $open http://127.0.0.1:$1
+}
+
+_close() {
+    _get_pod || return 0
+    ! pid=$(pgrep -fx "kubectl port-forward $pod $1") || kill $pid
+}
+
+_kill_children_on_exit() {
+    trap : EXIT TERM INT
+    kill 0
+    wait
+}
+
+_open_on_match() {
+    match=$(mktemp)
+    trap _kill_children_on_exit EXIT TERM INT
+    {
+        grep -qm1 :$1/
+        _open $1
+        rm -f $match
+        exit
+    } < <(tail -f $match) >& /dev/null &
 }
 
 _exec() {
-    exec docker exec --interactive --tty $name "${@:-bash}"
+    if ((k8s))
+    then _get_pod && kubectl exec --stdin --tty $pod -- "${@:-bash}"
+    else docker exec --interactive --tty $name "${@:-bash}"
+    fi
 }
 
 _bail() {
@@ -48,7 +90,7 @@ _bail() {
 }
 
 _check() {
-    [ "$(docker ps --quiet --filter name=$name)" = "$name" ]
+    ((k8s)) || [ "$(docker ps --filter name=$name --format '{{.Names}}')" = "$name" ]
 }
 
 _run() {
@@ -123,18 +165,24 @@ case ${1-} in
         ;;
     run)
         shift
-        _run $# "$@"
+        if ((1 == $#)) && [ - = "$1" ] 
+        then docker rm --force $(docker ps --all --quiet --filter name=$name)
+        else _run $# "$@"
+        fi
         ;;
     dash)
-        _open 8265 1
+        if [ - = "${2-}" ]
+        then _close 8265
+        else _open 8265
+        fi
         ;;
     tboard)
-        _open 6006 25 &
-        _exec tensorboard --bind_all --logdir $home/ray_results
+        _open_on_match 6006
+        _exec tensorboard --bind_all --logdir $home/ray_results | tee $match
         ;;
     jlab)
-        _open 8888 25 &
-        _spawn jupyter-lab --allow-root --no-browser --ip=0.0.0.0
+         _open_on_match 8888
+        _spawn jupyter-lab --allow-root --no-browser --ip=0.0.0.0 | tee $match
         ;;
     shell)
         _spawn
@@ -144,11 +192,54 @@ case ${1-} in
         _exec "$@"
         ;;
     *)
-        echo "Usage: $self [.FLAVOR] [build [ARGS]|run [ARGS]|dash|tboard|jlab|shell|exec [ARGS]]"
-        echo
-        echo Wrapper for handling a Docker image based on this repo.
-        echo
-        echo When an optional .FLAVOR \(the leading dot is important\!\) is specified,
-        echo the corresponding image and container will be called \`$self.FLAVOR\`.
+        cat << USAGE
+Usage: $self [.[FLAVOR]] [COMMAND [ARGS]]
+
+Convenience wrapper for working with Docker and Kubernetes based on this repo.
+
+When an optional .FLAVOR (the leading dot is important!) is specified,
+the corresponding image and container will be called '$self.FLAVOR' [$name].
+
+Using ONLY a single dot as the first argument activates Kubernetes mode.
+Some Docker-only commands ignore Kubernetes mode.  (See below!)
+Kubernetes mode assumes that the current active context points to '$cluster',
+and master access from this host is enabled.
+
+The following COMMAND arguments are available:
+
+- build [ARGS]      builds an image [$name] from the current checkout
+                    ARGS are passed to 'docker build' (overriding script defaults)
+                    Docker-only, Kubernetes mode IGNORED
+
+- push              pushes the image [$name] to the pre-configured repository
+                    '$push'
+                    no ARGS, Docker-only, Kubernetes mode IGNORED
+
+- run [ARGS|-]      runs a container [$name] using the image [$name]
+                    ARGS are passed to 'docker run' (overriding script defaults)
+                    the special argument '-' stops/removes the [$name] container
+                    Docker-only, Kubernetes mode IGNORED
+
+- exec [CMD ARGS]   executes CMD ARGS in a container or the head pod in Kubernetes
+                    when no CMD is given, 'bash' is executed by default
+                    (in Docker mode, fails if no container is available)
+
+- dash [-]          opens the Ray dashboard in a browser
+                    only useful if Ray is actually up and running
+                    (either locally in a container or in the cluster)
+                    in Kubernetes mode, the special argument '-' clears port-forwarding
+
+- tboard            launches 'tensorboard' in a local container or in the head pod
+                    and opens a browser window to access its web-UI
+                    (in Docker mode, fails if no container is available)
+
+- jlab              launches 'jupyterlab' in a local container or in the head pod
+                    and opens a browser window to access its web-UI
+                    (in Docker mode, also starts a container, if needed)
+
+- shell             spawns 'bash' in a local container or in the head pod
+                    (in Docker mode, also starts a container, if needed)
+USAGE
         exit 1
+        ;;
 esac
