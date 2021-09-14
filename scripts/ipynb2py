@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+[ -x "$(type -p jq)" ] ||
+    {
+        echo 'Cannot find required `jq` executable.  Is `jq` installed?'
+        exit 1
+    }
+
+(($#)) ||
+    {
+        shopt nullglob
+        set -- *.ipynb
+        (($#)) ||
+            {
+                echo 'No arguments given and no `*.dot` files found. Nothing to do.'
+                exit 2
+            }
+    }
+
+for i
+do jq -Cr '.cells[]
+    | select(.cell_type=="code").source[],""
+    | rtrimstr("\n")' "$i" > "${i%.ipynb}.py"
+done
