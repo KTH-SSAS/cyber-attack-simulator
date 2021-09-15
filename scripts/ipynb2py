@@ -8,7 +8,7 @@
 
 (($#)) ||
     {
-        shopt nullglob
+        shopt -s nullglob
         set -- *.ipynb
         (($#)) ||
             {

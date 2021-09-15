@@ -1,7 +1,7 @@
 FROM python:3.8
 RUN set -ex; \
     apt-get update; \
-    apt-get install -y less vim-nox locate screen rsync libglib2.0-0; \
+    apt-get install -y less vim-nox locate screen rsync jq colordiff libglib2.0-0; \
     curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -; \
     apt-get install -y nodejs; \
     npm install -g @bazel/bazelisk; \
