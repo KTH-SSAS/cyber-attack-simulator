@@ -41,7 +41,7 @@ _get_pod() {
 
 _forward() {
     _get_pod
-    forward="kubectl port-forward $pod $1"
+    forward="kubectl port-forward $pod ${2:+$2:}$1"
     # terminate previous forwarders, if any
     ! pid=$(pgrep -fx "$forward") || kill $pid
     log="$HOME/.kfwd-$1.log"
@@ -50,14 +50,14 @@ _forward() {
     sleep .1
 }
 
+_remove_forwarding() {
+    _get_pod || return 0
+    ! pid=$(pgrep -fx "kubectl port-forward $pod $1") || kill $pid
+}
+
 _open() {
     ! ((k8s)) || _forward $1
     $open http://127.0.0.1:$1
-}
-
-_close() {
-    _get_pod || return 0
-    ! pid=$(pgrep -fx "kubectl port-forward $pod $1") || kill $pid
 }
 
 _kill_children_on_exit() {
@@ -170,9 +170,15 @@ case ${1-} in
         else _run $# "$@"
         fi
         ;;
+    kfwd)
+        if [ - = "${3-}" ]
+        then _remove_forwarding $2
+        else _forward $2 ${3-}
+        fi
+        ;;
     dash)
         if [ - = "${2-}" ]
-        then _close 8265
+        then _remove_forwarding 8265
         else _open 8265
         fi
         ;;
@@ -207,38 +213,44 @@ and master access from this host is enabled.
 
 The following COMMAND arguments are available:
 
-- build [ARGS]      builds an image [$name] from the current checkout
-                    ARGS are passed to 'docker build' (overriding script defaults)
-                    Docker-only, Kubernetes mode IGNORED
+- build [ARGS]          builds an image [$name] from the current checkout
+                        ARGS are passed to 'docker build' (overriding script defaults)
+                        Docker-only, Kubernetes mode IGNORED
 
-- push              pushes the image [$name] to the pre-configured repository
-                    '$push'
-                    no ARGS, Docker-only, Kubernetes mode IGNORED
+- push                  pushes the image [$name] to the pre-configured repository
+                        '$push'
+                        no ARGS, Docker-only, Kubernetes mode IGNORED
 
-- run [ARGS|-]      runs a container [$name] using the image [$name]
-                    ARGS are passed to 'docker run' (overriding script defaults)
-                    the special argument '-' stops/removes the [$name] container
-                    Docker-only, Kubernetes mode IGNORED
+- run [ARGS|-]          runs a container [$name] using the image [$name]
+                        ARGS are passed to 'docker run' (overriding script defaults)
+                        the special argument '-' stops/removes the [$name] container
+                        Docker-only, Kubernetes mode IGNORED
 
-- exec [CMD ARGS]   executes CMD ARGS in a container or the head pod in Kubernetes
-                    when no CMD is given, 'bash' is executed by default
-                    (in Docker mode, fails if no container is available)
+- exec [CMD ARGS]       executes CMD ARGS in a container or the head pod in Kubernetes
+                        when no CMD is given, 'bash' is executed by default
+                        (in Docker mode, fails if no container is available)
 
-- dash [-]          opens the Ray dashboard in a browser
-                    only useful if Ray is actually up and running
-                    (either locally in a container or in the cluster)
-                    in Kubernetes mode, the special argument '-' clears port-forwarding
+- dash [-]              opens the Ray dashboard in a browser
+                        only useful if Ray is actually up and running
+                        (either locally in a container or in the cluster)
+                        in Kubernetes mode, the special argument '-' clears port-forwarding
 
-- tboard            launches 'tensorboard' in a local container or in the head pod
-                    and opens a browser window to access its web-UI
-                    (in Docker mode, fails if no container is available)
+- tboard                launches 'tensorboard' in a local container or in the head pod
+                        and opens a browser window to access its web-UI
+                        (in Docker mode, fails if no container is available)
 
-- jlab              launches 'jupyterlab' in a local container or in the head pod
-                    and opens a browser window to access its web-UI
-                    (in Docker mode, also starts a container, if needed)
+- jlab                  launches 'jupyterlab' in a local container or in the head pod
+                        and opens a browser window to access its web-UI
+                        (in Docker mode, also starts a container, if needed)
 
-- shell             spawns 'bash' in a local container or in the head pod
-                    (in Docker mode, also starts a container, if needed)
+- shell                 spawns 'bash' in a local container or in the head pod
+                        (in Docker mode, also starts a container, if needed)
+
+- kfwd PORT [-|LOCAL]   sets up Kubernetes port-forwarding towards the Ray head pode for PORT
+                        only useful if the Ray cluster is up and running and uses that PORT
+                        the special argument '-' clears the same port-forwarding
+                        an optional LOCAL port can be specified to handle conflicts
+                        ALWAYS works towards Kubernetes irrespective of ./.FLAVOR
 USAGE
         exit 1
         ;;
