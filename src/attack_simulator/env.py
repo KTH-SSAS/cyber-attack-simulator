@@ -45,7 +45,7 @@ class AttackSimulationEnv(gym.Env):
         # Using a Box instead of Tuple((Discrete(2),) * self.dim_observations)
         # avoids potential preprocessor issues with Ray
         # (cf. https://github.com/ray-project/ray/issues/8600)
-        self.observation_space = gym.spaces.Box(0, 1, shape=(self.dim_observations,), dtype='int8')
+        self.observation_space = gym.spaces.Box(0, 1, shape=(self.dim_observations,), dtype="int8")
 
         # The defender action space allows to disable any one service or leave all unchanged
         self.num_actions = self.g.num_services + 1
@@ -373,10 +373,12 @@ class AttackSimulationEnv(gym.Env):
             if self.simulation_time:
                 self.writer.write(f"Defender disables {self._interpret_action(self.action)}. ")
                 if self.attack_index is None:
-                    self.writer.write("Attacker didn't have a chance")
+                    self.writer.write("Attacker didn't have a chance. ")
                 else:
-                    self.writer.write(f"Attacker attacks {self.g.attack_names[self.attack_index]}.")
-                    self.writer.write(f" Remaining TTC: {self.ttc_remaining[self.attack_index]}. ")
+                    self.writer.write(
+                        f"Attacker attacks {self.g.attack_names[self.attack_index]}. "
+                    )
+                    self.writer.write(f"Remaining TTC: {self.ttc_remaining[self.attack_index]}. ")
                 self.writer.write(f"Reward: {self.reward}. ")
             self.writer.write(
                 "Attack surface: " f"{self._interpret_attacks(self.attack_surface)}.\n"

@@ -10,7 +10,7 @@ def test_env_spaces(test_env, test_graph):
     num_actions = test_env.action_space.n
     assert num_actions == num_services + 1
     num_attacks = test_graph.num_attacks
-    dim_observations = len(test_env.observation_space.spaces)
+    dim_observations = test_env.observation_space.shape[0]
     assert dim_observations == num_services + num_attacks
 
 
@@ -68,8 +68,9 @@ def test_env_first_step(attacker, action, expected, test_env_config):
     assert all(np.array(obs) == obs_) and (reward == reward_) and (done == done_)
 
 
-def test_env_render(test_env):
-    assert test_env.render() is None or test_env.render() is True
+def test_env_render(test_env, tmpdir):
+    with tmpdir.as_cwd():
+        assert test_env.render() is True
 
 
 def test_env_empty_config():
@@ -91,3 +92,16 @@ def test_env_render_save_graphs(save_graphs, test_env_config, tmpdir):
             assert len(files) == 1 and files[0].basename == f"{base}_frames" and files[0].isdir()
         else:
             assert len(files) == 1 and files[0].basename == f"{base}.txt"
+        _, _, done, _ = env.step(0)  # no action
+        assert not done
+        env.render()
+        _, _, done, _ = env.step(2)  # disable current service --> terminate
+        assert done
+        env.render()
+        if save_graphs:
+            files = files[0].listdir()
+            assert len(files) == 3
+        else:
+            with open(files[0]) as text:
+                lines = text.readlines()
+            assert 3 <= len(lines)
