@@ -5,6 +5,7 @@ set -euo pipefail
 self=${0##*/}
 name=$self
 cluster=$self-cluster
+head=$cluster-ray-head
 k8s=0
 
 ! [ "${1-}" ] || ! [ . = ${1::1} ] ||
@@ -36,23 +37,22 @@ esac
 
 _get_pod() {
     [ "${pod-}" ] ||
-        pod=$(kubectl get pod --selector cluster.ray.io/component=$cluster-ray-head --output name)
+        pod=$(kubectl get pod --selector cluster.ray.io/component=$head --output name)
+}
+
+_remove_forwarding() {
+    ! pid=$(pgrep -fx "kubectl port-forward pod/$head-.* [0-9]*:*$1") || kill $pid
 }
 
 _forward() {
     _get_pod
     forward="kubectl port-forward $pod ${2:+$2:}$1"
     # terminate previous forwarders, if any
-    ! pid=$(pgrep -fx "$forward") || kill $pid
+    _remove_forwarding $1
     log="$HOME/.kfwd-$1.log"
-    $forward >& "$log" &
+    $forward <&- >& "$log" &
     grep -qm2 ^Forwarding < <(tail -f "$log")
     sleep .1
-}
-
-_remove_forwarding() {
-    _get_pod || return 0
-    ! pid=$(pgrep -fx "kubectl port-forward $pod $1") || kill $pid
 }
 
 _open() {
