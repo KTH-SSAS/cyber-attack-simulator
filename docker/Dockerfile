@@ -19,7 +19,7 @@ WORKDIR /root/openai_attack_simulation
 COPY . .
 RUN set -ex; \
     poetry install; \
-    poetry shell jupyter lab build; \
+    poetry run jupyter lab build; \
     ln -s /root/.cache/pypoetry/virtualenvs/* /root/venv; \
     echo 'PATH=/root/venv/bin:$PATH' > /root/.bashrc
 ENV SHELL=bash
