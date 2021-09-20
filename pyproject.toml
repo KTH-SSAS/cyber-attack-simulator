@@ -28,6 +28,7 @@ ray = {version = "^1.6.0", extras = ["default", "rllib", "k8s"]}
 networkx = "^2.6.2"
 seaborn = "^0.11.2"
 GPUtil = "^1.4.0"
+tqdm = {extras = ["notebook"], version = "^4.62.3"}
 
 [tool.poetry.dev-dependencies]
 tox = "^3.23.1"
