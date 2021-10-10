@@ -312,7 +312,7 @@ class AttackSimulationEnv(gym.Env):
         # use "forward" triangles for the attack surface, vary color by TTC
         nodes = np.flatnonzero(self.attack_surface)
         colors = self.ttc_remaining[nodes]
-        self._draw_nodes(nodes, 800, colors, "red", vmin=0, vmax=256, cmap="YlOrRd", node_shape=">")
+        self._draw_nodes(nodes, 800, colors, "red", vmin=0, vmax=256, cmap="RdYlGn", node_shape=">")
 
         # show attack state by label color
         # safe(ok): GREEN, under attack(kk): BLACK, compromised(ko): RED
