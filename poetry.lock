@@ -733,7 +733,7 @@ dev = ["hypothesis"]
 
 [[package]]
 name = "jsonschema"
-version = "4.0.1"
+version = "4.1.0"
 description = "An implementation of JSON Schema validation for Python"
 category = "main"
 optional = false
@@ -1602,7 +1602,7 @@ py = {version = "*", markers = "implementation_name == \"pypy\""}
 
 [[package]]
 name = "ray"
-version = "1.7.0"
+version = "1.6.0"
 description = "Ray provides a simple, universal API for building distributed applications."
 category = "main"
 optional = false
@@ -1642,8 +1642,8 @@ tensorboardX = {version = ">=1.9", optional = true, markers = "extra == \"rllib\
 urllib3 = {version = "*", optional = true, markers = "extra == \"k8s\""}
 
 [package.extras]
-all = ["ray-cpp (==1.7.0)", "lz4", "starlette", "kubernetes", "matplotlib (!=3.4.3)", "py-spy (>=0.2.0)", "pyyaml", "uvicorn", "opencensus", "opentelemetry-api (==1.1.0)", "aioredis (<2)", "prometheus-client (>=0.7.1)", "opentelemetry-exporter-otlp (==1.1.0)", "urllib3", "jsonschema", "gpustat", "colorful", "aiohttp-cors", "tensorboardX (>=1.9)", "scikit-image", "scipy", "requests", "pandas", "aiohttp", "tabulate", "fastapi", "gym", "dm-tree", "kopf", "opentelemetry-sdk (==1.1.0)"]
-cpp = ["ray-cpp (==1.7.0)"]
+all = ["aiohttp-cors", "opentelemetry-api (==1.1.0)", "matplotlib (!=3.4.3)", "urllib3", "py-spy (>=0.2.0)", "dm-tree", "tabulate", "jsonschema", "tensorboardX (>=1.9)", "aiohttp", "fastapi", "scikit-image", "kubernetes", "opentelemetry-exporter-otlp (==1.1.0)", "starlette", "pandas", "colorful", "pyyaml", "scipy", "aioredis (<2)", "opentelemetry-sdk (==1.1.0)", "kopf", "prometheus-client (>=0.7.1)", "gpustat", "ray-cpp (==1.6.0)", "requests", "uvicorn", "lz4", "opencensus", "gym"]
+cpp = ["ray-cpp (==1.6.0)"]
 default = ["aiohttp", "aiohttp-cors", "aioredis (<2)", "colorful", "py-spy (>=0.2.0)", "jsonschema", "requests", "gpustat", "opencensus", "prometheus-client (>=0.7.1)"]
 k8s = ["kubernetes", "urllib3", "kopf"]
 observability = ["opentelemetry-api (==1.1.0)", "opentelemetry-sdk (==1.1.0)", "opentelemetry-exporter-otlp (==1.1.0)"]
@@ -1906,7 +1906,7 @@ test = ["pytest", "pathlib2"]
 
 [[package]]
 name = "tifffile"
-version = "2021.8.30"
+version = "2021.10.10"
 description = "Read and write TIFF files"
 category = "main"
 optional = false
@@ -2141,7 +2141,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "0cc21e9f6cdc929bda451a4748f77b21147b468856b97915320d4c3ca458f1f0"
+content-hash = "793c99ea555d463f594a11e644f0e308e16a7466f4a42f0b29794602eadc05f0"
 
 [metadata.files]
 absl-py = [
@@ -2608,8 +2608,8 @@ json5 = [
     {file = "json5-0.9.6.tar.gz", hash = "sha256:9175ad1bc248e22bb8d95a8e8d765958bf0008fef2fe8abab5bc04e0f1ac8302"},
 ]
 jsonschema = [
-    {file = "jsonschema-4.0.1-py3-none-any.whl", hash = "sha256:9938802041347f2c62cad2aef59e9a0826cd34584f3609db950efacb4dbf6518"},
-    {file = "jsonschema-4.0.1.tar.gz", hash = "sha256:48f4e74f8bec0c2f75e9fcfffa264e78342873e1b57e2cfeae54864cc5e9e4dd"},
+    {file = "jsonschema-4.1.0-py3-none-any.whl", hash = "sha256:2b3cca28580511d44326f0e7fc582eab3cbe31aabd1a1c2cfa74a399796ffd84"},
+    {file = "jsonschema-4.1.0.tar.gz", hash = "sha256:9dd7c33b4a96138dc37bb86b3610d3b12d30d96433d4d73435ca3025804154a8"},
 ]
 jupyter-client = [
     {file = "jupyter_client-7.0.6-py3-none-any.whl", hash = "sha256:074bdeb1ffaef4a3095468ee16313938cfdc48fc65ca95cc18980b956c2e5d79"},
@@ -3578,8 +3578,8 @@ testpath = [
     {file = "testpath-0.5.0.tar.gz", hash = "sha256:1acf7a0bcd3004ae8357409fc33751e16d37ccc650921da1094a86581ad1e417"},
 ]
 tifffile = [
-    {file = "tifffile-2021.8.30-py3-none-any.whl", hash = "sha256:524f9f3a96ca91d12e5b5ddce80209d2b07769c1764ceecf505613668143f63c"},
-    {file = "tifffile-2021.8.30.tar.gz", hash = "sha256:8760e61e30106ea0dab9ec42a238d70a3ff55dde9c54456e7b748fe717cb782d"},
+    {file = "tifffile-2021.10.10-py3-none-any.whl", hash = "sha256:ec0eb6c54a1c097b8bb92467b36819642f34646b4cb37a73a3f85d92d4181684"},
+    {file = "tifffile-2021.10.10.tar.gz", hash = "sha256:86c11d33d8101fcb9bec04d2c342982742d11e2a5a8cc770fbbcd4733bdba76a"},
 ]
 tokenize-rt = [
     {file = "tokenize_rt-4.1.0-py2.py3-none-any.whl", hash = "sha256:b37251fa28c21e8cce2e42f7769a35fba2dd2ecafb297208f9a9a8add3ca7793"},
