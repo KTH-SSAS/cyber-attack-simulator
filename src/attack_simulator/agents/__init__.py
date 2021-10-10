@@ -1,5 +1,12 @@
 from .agent import Agent
-from .attackers import InformedAttacker, RandomAttacker, RoundRobinAttacker, WellInformedAttacker
+from .attackers import (
+    InformedAttacker,
+    RandomAttacker,
+    RandomNoActionAttacker,
+    RoundRobinAttacker,
+    RoundRobinNoActionAttacker,
+    WellInformedAttacker,
+)
 from .baseline_agents import DisableProbabilityAgent, RandomAgent, RuleBasedAgent, SkipAgent
 from .policy_agents import ReinforceAgent
 from .tabular_agents import BanditAgent, QLearningAgent
@@ -7,7 +14,9 @@ from .tabular_agents import BanditAgent, QLearningAgent
 ATTACKERS = {
     "well-informed": WellInformedAttacker,
     "informed": InformedAttacker,
+    "round-robin-no-action": RoundRobinNoActionAttacker,
     "round-robin": RoundRobinAttacker,
+    "random-no-action": RandomNoActionAttacker,
     "random": RandomAttacker,
 }
 

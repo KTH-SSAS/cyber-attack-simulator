@@ -1,7 +1,9 @@
 """
 This module implements Attacker agents
 
-Note that the observation space for attackers is the current attack surface.
+Note that the observation space for attackers is the current attack surface,
+and their action space is 0 for "no action" or 1 + the index of an attack in
+the current attack surface; essentially [0, num_attacks] inclusive.
 """
 import logging
 
@@ -19,7 +21,16 @@ class RandomAttacker(Agent):
 
     def act(self, observation):
         valid_attack_indices = np.flatnonzero(observation)
-        return self.rng.choice(valid_attack_indices)
+        return self.rng.choice(valid_attack_indices) + 1
+
+
+class RandomNoActionAttacker(Agent):
+    def __init__(self, agent_config):
+        self.rng, _ = get_rng(agent_config.get("random_seed"))
+
+    def act(self, observation):
+        valid_attacks = np.concatenate([[0], np.flatnonzero(observation) + 1])
+        return self.rng.choice(valid_attacks)
 
 
 class RoundRobinAttacker(Agent):
@@ -28,6 +39,17 @@ class RoundRobinAttacker(Agent):
 
     def act(self, observation):
         valid = np.flatnonzero(observation)
+        above = valid[self.last < valid]
+        self.last = valid[0] if 0 == above.size else above[0]
+        return self.last + 1
+
+
+class RoundRobinNoActionAttacker(Agent):
+    def __init__(self, agent_config=None):
+        self.last = 0
+
+    def act(self, observation):
+        valid = np.concatenate([[0], np.flatnonzero(observation) + 1])
         above = valid[self.last < valid]
         self.last = valid[0] if 0 == above.size else above[0]
         return self.last
@@ -71,7 +93,7 @@ class WellInformedAttacker(Agent):
 
     def act(self, observation):
         """Selecting the attack step with the highest net present value."""
-        return np.argmax(self.attack_values * observation)
+        return np.argmax(self.attack_values * observation) + 1
 
 
 class InformedAttacker(WellInformedAttacker):
