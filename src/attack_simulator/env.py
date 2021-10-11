@@ -10,6 +10,7 @@ from .agents import ATTACKERS
 from .graph import AttackGraph, AttackStep
 from .nx_utils import nx_dag_layout, nx_digraph
 from .rng import get_rng
+from .svg_tooltips import add_tooltips, postprocess_frame, postprocess_html
 
 logger = logging.getLogger("simulator")
 
@@ -351,12 +352,15 @@ class AttackSimulationEnv(gym.Env):
                 plt.axis("off")
                 self.writer = HTMLWriter()
                 self.writer.setup(fig, f"render_{self.episode_id}.html", dpi=None)
+                self.writer.frame_format = "svg"
             else:
                 self.writer = open(f"render_{self.episode_id}.txt", "w")
 
         if self.save_graphs:
             self._render_frame()
+            add_tooltips(self.pos, self.g.attack_names, ax=self.ax)
             self.writer.grab_frame()
+            postprocess_frame(self.writer._temp_paths[-1], self.pos.keys())
         else:
             self.writer.write(f"Step {self.simulation_time}: ")
             if self.simulation_time:
@@ -378,9 +382,10 @@ class AttackSimulationEnv(gym.Env):
         if self.simulation_time and self.done:
             if self.save_graphs:
                 self.writer.finish()
+                postprocess_html(self.writer.outfile)
+                plt.close()
             else:
                 self.writer.close()
-            plt.close()
             self.writer = None
 
         return True
