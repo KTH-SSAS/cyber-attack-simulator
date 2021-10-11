@@ -156,32 +156,35 @@ class AttackSimulationEnv(gym.Env):
         self.attack_index = None
 
         if not self.done:
-            # obtain attacker action
-            self.attack_index = self.attacker.act(self.attack_surface)
-            assert 0 <= self.attack_index < self.g.num_attacks
+            # obtain attacker action, this _can_ be 0 for no action
+            self.attack_index = self.attacker.act(self.attack_surface) - 1
+            assert -1 <= self.attack_index < self.g.num_attacks
 
-            # compute attacker reward
-            self.ttc_remaining[self.attack_index] -= 1
-            if self.ttc_remaining[self.attack_index] == 0:
-                # successful attack, update reward, attack_state, attack_surface
-                attacker_reward = self.rewards[self.attack_index]
-                self.attack_state[self.attack_index] = 1
-                self.attack_surface[self.attack_index] = 0
+            if self.attack_index != -1:
+                # compute attacker reward
+                self.ttc_remaining[self.attack_index] -= 1
+                if self.ttc_remaining[self.attack_index] == 0:
+                    # successful attack, update reward, attack_state, attack_surface
+                    attacker_reward = self.rewards[self.attack_index]
+                    self.attack_state[self.attack_index] = 1
+                    self.attack_surface[self.attack_index] = 0
 
-                # add eligible children to the attack surface
-                children = self.g.attack_steps[self.g.attack_names[self.attack_index]].children
-                for child_name in children:
-                    child_index = self.g.attack_names.index(child_name)
-                    required_services, logic, prerequisites = self.attack_prerequisites[child_index]
-                    if (
-                        not self.attack_state[child_index]
-                        and all(enabled(required_services, self.service_state))
-                        and logic(enabled(prerequisites, self.attack_state))
-                    ):
-                        self.attack_surface[child_index] = 1
+                    # add eligible children to the attack surface
+                    children = self.g.attack_steps[self.g.attack_names[self.attack_index]].children
+                    for child_name in children:
+                        child_index = self.g.attack_names.index(child_name)
+                        required_services, logic, prerequisites = self.attack_prerequisites[
+                            child_index
+                        ]
+                        if (
+                            not self.attack_state[child_index]
+                            and all(enabled(required_services, self.service_state))
+                            and logic(enabled(prerequisites, self.attack_state))
+                        ):
+                            self.attack_surface[child_index] = 1
 
-                # end episode when attack surface becomes empty
-                self.done = not any(self.attack_surface)
+                    # end episode when attack surface becomes empty
+                    self.done = not any(self.attack_surface)
 
             # TODO: placeholder, none of the current attackers learn...
             # self.attacker.update(attack_surface, attacker_reward, self.done)
@@ -202,8 +205,12 @@ class AttackSimulationEnv(gym.Env):
             "attack_surface": self.attack_surface,
             "current_step": None
             if self.attack_index is None
+            else self.NO_ACTION
+            if self.attack_index == -1
             else self.g.attack_names[self.attack_index],
-            "ttc_remaining_on_current_step": self.ttc_remaining[self.attack_index],
+            "ttc_remaining_on_current_step": -1
+            if self.attack_index is None or self.attack_index == -1
+            else self.ttc_remaining[self.attack_index],
             "compromised_steps": self.compromised_steps,
             "compromised_flags": self.compromised_flags,
         }
@@ -366,10 +373,14 @@ class AttackSimulationEnv(gym.Env):
             if self.simulation_time:
                 self.writer.write(f"Defender disables {self._interpret_action(self.action)}. ")
                 if self.attack_index is None:
-                    self.writer.write("Attacker didn't have a chance")
+                    self.writer.write("Attacker didn't have a chance. ")
+                elif self.attack_index == -1:
+                    self.writer.write("Attacker chose not to attack. ")
                 else:
-                    self.writer.write(f"Attacker attacks {self.g.attack_names[self.attack_index]}.")
-                    self.writer.write(f" Remaining TTC: {self.ttc_remaining[self.attack_index]}. ")
+                    self.writer.write(
+                        f"Attacker attacks {self.g.attack_names[self.attack_index]}. "
+                    )
+                    self.writer.write(f"Remaining TTC: {self.ttc_remaining[self.attack_index]}. ")
                 self.writer.write(f"Reward: {self.reward}. ")
             self.writer.write(
                 "Attack surface: " f"{self._interpret_attacks(self.attack_surface)}.\n"
