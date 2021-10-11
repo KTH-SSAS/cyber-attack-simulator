@@ -20,7 +20,7 @@ url = "https://mehes-kth.github.io/ray-wheels/simple"
 [tool.poetry.dependencies]
 python = "~3.8"
 gym = "^0.18.3"
-torch = "^1.9.0"
+torch = "1.9.0"
 numpy = "~1.21.0"
 matplotlib = "^3.4.2"
 pyyaml = "^5.4.1"
