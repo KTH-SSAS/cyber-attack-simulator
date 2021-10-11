@@ -19,8 +19,10 @@ k8s=0
 
 push=europe-west1-docker.pkg.dev/sentience-reinforce/images/$name
 
-context="$(git rev-parse --show-toplevel 2>/dev/null)" ||
-    context="$(dirname "$(cd "$(dirname "$0")" && pwd)")"
+if [[ "$(git config remote.origin.url 2>/dev/null)" = *pontusj/openai_attack_simulation* ]]
+then context="$(git rev-parse --show-toplevel)"
+else context="$(dirname "$(cd "$(dirname "$0")" && pwd)")"
+fi
 dockerfile="$context/docker/Dockerfile"
 home="$(dirname "$(sed -n '/WORKDIR/{s/[^/]*//;p;}' "$dockerfile")")"
 
