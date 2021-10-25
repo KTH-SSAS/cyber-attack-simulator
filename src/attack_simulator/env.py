@@ -410,7 +410,7 @@ class AttackSimulationEnv(gym.Env):
                     string_to_write += f" Remaining TTC: {self.ttc_remaining[self.attack_index]}. "
                 string_to_write += f"Reward: {self.reward}. "
             string_to_write += (
-                "Attack surface: " f"{self._interpret_attacks(self.attack_surface)}.\n"
+                f"Attack surface: {self._interpret_attacks(self.attack_surface)}.\n"
             )
             if self.simulation_time and self.done:
                 string_to_write += "Attack is complete.\n"
