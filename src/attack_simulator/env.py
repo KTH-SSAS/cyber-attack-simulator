@@ -1,7 +1,5 @@
 import logging
 import os
-from pathlib import Path
-
 import gym
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -372,14 +370,14 @@ class AttackSimulationEnv(gym.Env):
                 plt.axis("off")
 
                 writer = HTMLWriter()
-                html_path = os.path.join(out_dir, f"render_{self.episode_id}.html")
-                writer.setup(fig, html_path, dpi=None, frame_dir=Path(os.path.join(out_dir, 'frames')))
+                html_path = os.path.join(out_dir, f"render.html")
+                writer.setup(fig, html_path, dpi=None)
                 writer.frame_format = "svg"
                 self.writers['graph'] = writer
         
         if self.save_text:
             if 'text' not in self.writers:
-                txt_path = os.path.join(out_dir, f"render_{self.episode_id}.txt")
+                txt_path = os.path.join(out_dir, f"log.txt")
                 writer = open(txt_path, "w")
                 self.writers['text'] = writer
 
