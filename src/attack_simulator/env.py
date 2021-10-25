@@ -1,4 +1,6 @@
 import logging
+import os
+from pathlib import Path
 
 import gym
 import matplotlib.pyplot as plt
@@ -332,6 +334,14 @@ class AttackSimulationEnv(gym.Env):
 
     def render(self, mode="human"):
 
+        render_dir = 'render'
+        if not os.path.isdir(render_dir):
+            os.mkdir(render_dir)
+
+        out_dir = os.path.join(render_dir, self.episode_id)
+        if not os.path.isdir(out_dir):
+            os.mkdir(out_dir)
+
         if self.save_graphs:
             if 'graph' not in self.writers:
                 if not self.dag:
@@ -352,12 +362,14 @@ class AttackSimulationEnv(gym.Env):
                 plt.ylim(ymin, ymax)
                 plt.axis("off")
                 writer = HTMLWriter()
-                writer.setup(fig, f"render_{self.episode_id}.html", dpi=None)
+                html_path = os.path.join(out_dir, f"render_{self.episode_id}.html")
+                writer.setup(fig, html_path, dpi=None, frame_dir=Path(os.path.join(out_dir, 'frames')))
                 self.writers['graph'] = writer
         
         if self.save_text:
             if 'text' not in self.writers:
-                writer = open(f"render_{self.episode_id}.txt", "w")
+                txt_path = os.path.join(out_dir, f"render_{self.episode_id}.txt")
+                writer = open(txt_path, "w")
                 self.writers['text'] = writer
 
         if self.save_graphs:
