@@ -114,7 +114,7 @@ def parse_args():
 def main(args):
 
     dashboard_host = "0.0.0.0" if os.path.exists("/.dockerenv") else "127.0.0.1"
-    ray.init(num_cpus=4, dashboard_host=dashboard_host)
+    ray.init(dashboard_host=dashboard_host)
 
     callbacks = []
 
