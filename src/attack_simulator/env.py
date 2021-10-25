@@ -416,7 +416,7 @@ class AttackSimulationEnv(gym.Env):
                 self.writers['graph'].finish()
                 plt.close()
                 postprocess_html(self.writer.outfile)
-            else:
+            if self.save_text:
                 self.writers['text'].close()
             
             self.writers = {}
