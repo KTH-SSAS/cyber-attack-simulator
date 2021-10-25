@@ -95,7 +95,7 @@ class AttackSimulationEnv(gym.Env):
             self._setup()
 
         self.episode_count += 1
-        self.episode_id = f"{self._seed}_{self.episode_count}"
+        self.episode_id = f"{self._seed}_{self.episode_count}"  # TODO connect this with ray run id/wandb run id instead of random seed.
         logger.debug(f"Starting new simulation. (#{self.episode_id})")
 
         self.ttc_remaining = np.array(
@@ -342,7 +342,8 @@ class AttackSimulationEnv(gym.Env):
 
     def render(self, mode="human"):
 
-        render_dir = 'render'
+        render_dir = 'render'  # TODO move this variable to a command line option
+
         if not os.path.isdir(render_dir):
             os.mkdir(render_dir)
 
