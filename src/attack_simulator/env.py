@@ -54,6 +54,11 @@ class AttackSimulationEnv(gym.Env):
         self.writers = {}
         self.episode_count = 0
         self._seed = None
+        self.reward = None
+        self.action = 0
+        self.attack_index = None
+        self.compromised_flags = []
+        self.compromised_steps = []
 
     def _extract_attack_step_field(self, field_name):
         field_index = AttackStep._fields.index(field_name)
