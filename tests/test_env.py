@@ -79,15 +79,34 @@ def test_env_empty_config():
 
 
 @pytest.mark.parametrize("save_graphs", [False, True])
-def test_env_render_save_graphs(save_graphs, test_env_config, tmpdir):
-    env = AttackSimulationEnv(dict(test_env_config, save_graphs=save_graphs))
+@pytest.mark.parametrize("save_text", [False, True])
+def test_env_render_save_graphs(save_graphs, save_text, test_env_config, tmpdir):
+    env = AttackSimulationEnv(dict(test_env_config, save_graphs=save_graphs, save_text=save_text))
+    seed = 42
     with tmpdir.as_cwd():
-        env.seed(42)
+        env.seed(seed)
         env.reset()
+        env.done = True
         env.render()
-        files = tmpdir.listdir()
-        base = "render_42_1"
+        render_dir = tmpdir.join("render").join(f"{seed}_1")
+        files = render_dir.listdir()
+
+        base = "render"
+
+        num_files = 2 * int(save_graphs) + int(save_text)
+
+        assert len(files) == num_files
+
+        basenames = [f.basename for f in files]
+
+        condition = f"{base}_frames" in basenames and "render.html" in basenames
         if save_graphs:
-            assert len(files) == 1 and files[0].basename == f"{base}_frames" and files[0].isdir()
+            assert condition
         else:
-            assert len(files) == 1 and files[0].basename == f"{base}.txt"
+            assert not condition
+
+        condition = "log.txt" in basenames
+        if save_text:
+            assert condition
+        else:
+            assert not condition
