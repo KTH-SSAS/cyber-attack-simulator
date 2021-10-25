@@ -1,0 +1,5 @@
+attacker: random
+false_positive: 0.0
+save_graphs: false
+save_text: false
+true_positive: 1.0
