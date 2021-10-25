@@ -23,6 +23,7 @@ class RLLibEvaluator:
         self.env_config.save_text = True
 
         self.config = {
+            "seed": 0,
             "framework": "torch",
             "env": AttackSimulationEnv,
             "env_config": asdict(self.env_config),
