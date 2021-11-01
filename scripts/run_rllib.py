@@ -106,13 +106,21 @@ def parse_args():
 
     parser.add_argument("--gpu-count", type=int, default=0)
 
+    parser.add_argument("--local", action="store_true", help="Enable ray local mode for debugger.")
+
     return parser.parse_args()
 
 
 def main(args):
 
     dashboard_host = "0.0.0.0" if os.path.exists("/.dockerenv") else "127.0.0.1"
-    ray.init(dashboard_host=dashboard_host)
+
+    if args.local:  # TODO might want to set other options if we know the program is running locally
+        local = True
+    else:
+        local = False
+
+    ray.init(dashboard_host=dashboard_host, local_mode=local)
 
     callbacks = []
 
