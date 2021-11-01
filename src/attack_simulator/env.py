@@ -1,6 +1,5 @@
 import logging
 import os
-from pathlib import Path
 
 import gym
 import matplotlib.pyplot as plt
@@ -12,6 +11,7 @@ from .agents import ATTACKERS
 from .graph import AttackGraph, AttackStep
 from .nx_utils import nx_dag_layout, nx_digraph
 from .rng import get_rng
+from .svg_tooltips import add_tooltips, postprocess_frame, postprocess_html
 
 logger = logging.getLogger("simulator")
 
@@ -54,6 +54,11 @@ class AttackSimulationEnv(gym.Env):
         self.writers = {}
         self.episode_count = 0
         self._seed = None
+        self.reward = None
+        self.action = 0
+        self.attack_index = None
+        self.compromised_flags = []
+        self.compromised_steps = []
 
     def _extract_attack_step_field(self, field_name):
         field_index = AttackStep._fields.index(field_name)
@@ -94,7 +99,7 @@ class AttackSimulationEnv(gym.Env):
             self._setup()
 
         self.episode_count += 1
-        self.episode_id = f"{self._seed}_{self.episode_count}"
+        self.episode_id = f"{self._seed}_{self.episode_count}"  # TODO connect this with ray run id/wandb run id instead of random seed.
         logger.debug(f"Starting new simulation. (#{self.episode_id})")
 
         self.ttc_remaining = np.array(
@@ -158,32 +163,35 @@ class AttackSimulationEnv(gym.Env):
         self.attack_index = None
 
         if not self.done:
-            # obtain attacker action
-            self.attack_index = self.attacker.act(self.attack_surface)
-            assert 0 <= self.attack_index < self.g.num_attacks
+            # obtain attacker action, this _can_ be 0 for no action
+            self.attack_index = self.attacker.act(self.attack_surface) - 1
+            assert -1 <= self.attack_index < self.g.num_attacks
 
-            # compute attacker reward
-            self.ttc_remaining[self.attack_index] -= 1
-            if self.ttc_remaining[self.attack_index] == 0:
-                # successful attack, update reward, attack_state, attack_surface
-                attacker_reward = self.rewards[self.attack_index]
-                self.attack_state[self.attack_index] = 1
-                self.attack_surface[self.attack_index] = 0
+            if self.attack_index != -1:
+                # compute attacker reward
+                self.ttc_remaining[self.attack_index] -= 1
+                if self.ttc_remaining[self.attack_index] == 0:
+                    # successful attack, update reward, attack_state, attack_surface
+                    attacker_reward = self.rewards[self.attack_index]
+                    self.attack_state[self.attack_index] = 1
+                    self.attack_surface[self.attack_index] = 0
 
-                # add eligible children to the attack surface
-                children = self.g.attack_steps[self.g.attack_names[self.attack_index]].children
-                for child_name in children:
-                    child_index = self.g.attack_names.index(child_name)
-                    required_services, logic, prerequisites = self.attack_prerequisites[child_index]
-                    if (
-                        not self.attack_state[child_index]
-                        and all(enabled(required_services, self.service_state))
-                        and logic(enabled(prerequisites, self.attack_state))
-                    ):
-                        self.attack_surface[child_index] = 1
+                    # add eligible children to the attack surface
+                    children = self.g.attack_steps[self.g.attack_names[self.attack_index]].children
+                    for child_name in children:
+                        child_index = self.g.attack_names.index(child_name)
+                        required_services, logic, prerequisites = self.attack_prerequisites[
+                            child_index
+                        ]
+                        if (
+                            not self.attack_state[child_index]
+                            and all(enabled(required_services, self.service_state))
+                            and logic(enabled(prerequisites, self.attack_state))
+                        ):
+                            self.attack_surface[child_index] = 1
 
-                # end episode when attack surface becomes empty
-                self.done = not any(self.attack_surface)
+                    # end episode when attack surface becomes empty
+                    self.done = not any(self.attack_surface)
 
             # TODO: placeholder, none of the current attackers learn...
             # self.attacker.update(attack_surface, attacker_reward, self.done)
@@ -204,8 +212,12 @@ class AttackSimulationEnv(gym.Env):
             "attack_surface": self.attack_surface,
             "current_step": None
             if self.attack_index is None
+            else self.NO_ACTION
+            if self.attack_index == -1
             else self.g.attack_names[self.attack_index],
-            "ttc_remaining_on_current_step": self.ttc_remaining[self.attack_index],
+            "ttc_remaining_on_current_step": -1
+            if self.attack_index is None or self.attack_index == -1
+            else self.ttc_remaining[self.attack_index],
             "compromised_steps": self.compromised_steps,
             "compromised_flags": self.compromised_flags,
         }
@@ -315,7 +327,7 @@ class AttackSimulationEnv(gym.Env):
         # use "forward" triangles for the attack surface, vary color by TTC
         nodes = np.flatnonzero(self.attack_surface)
         colors = self.ttc_remaining[nodes]
-        self._draw_nodes(nodes, 800, colors, "red", vmin=0, vmax=256, cmap="YlOrRd", node_shape=">")
+        self._draw_nodes(nodes, 800, colors, "red", vmin=0, vmax=256, cmap="RdYlGn", node_shape=">")
 
         # show attack state by label color
         # safe(ok): GREEN, under attack(kk): BLACK, compromised(ko): RED
@@ -334,7 +346,8 @@ class AttackSimulationEnv(gym.Env):
 
     def render(self, mode="human"):
 
-        render_dir = "render"
+        render_dir = "render"  # TODO move this variable to a command line option
+
         if not os.path.isdir(render_dir):
             os.mkdir(render_dir)
 
@@ -361,45 +374,56 @@ class AttackSimulationEnv(gym.Env):
                 plt.xlim(xmin, xmax)
                 plt.ylim(ymin, ymax)
                 plt.axis("off")
+
                 writer = HTMLWriter()
-                html_path = os.path.join(out_dir, f"render_{self.episode_id}.html")
-                writer.setup(
-                    fig, html_path, dpi=None, frame_dir=Path(os.path.join(out_dir, "frames"))
-                )
+                html_path = os.path.join(out_dir, "render.html")
+                writer.setup(fig, html_path, dpi=None)
+                writer.frame_format = "svg"
                 self.writers["graph"] = writer
 
         if self.save_text:
             if "text" not in self.writers:
-                txt_path = os.path.join(out_dir, f"render_{self.episode_id}.txt")
+                txt_path = os.path.join(out_dir, "log.txt")
                 writer = open(txt_path, "w")
                 self.writers["text"] = writer
 
         if self.save_graphs:
             self._render_frame()
+            add_tooltips(self.pos, self.g.attack_names, ax=self.ax)
             writer = self.writers["graph"]
             writer.grab_frame()
+            postprocess_frame(writer._temp_paths[-1], self.pos.keys())
 
         if self.save_text:
             writer = self.writers["text"]
-            writer.write(f"Step {self.simulation_time}: ")
-            if self.simulation_time:
-                writer.write(f"Defender disables {self._interpret_action(self.action)}. ")
-                if self.attack_index is None:
-                    writer.write("Attacker didn't have a chance")
-                else:
-                    writer.write(f"Attacker attacks {self.g.attack_names[self.attack_index]}.")
-                    writer.write(f" Remaining TTC: {self.ttc_remaining[self.attack_index]}. ")
-                writer.write(f"Reward: {self.reward}. ")
-            writer.write("Attack surface: " f"{self._interpret_attacks(self.attack_surface)}.\n")
-            if self.simulation_time and self.done:
-                writer.write("Attack is complete.\n")
-                writer.write(f"Compromised steps: {self.compromised_steps}\n")
-                writer.write(f"Compromised flags: {self.compromised_flags}\n")
+            string_to_write = ""
+            string_to_write += f"Step {self.simulation_time}: "
 
-        if self.simulation_time and self.done:
+            if self.simulation_time:
+                string_to_write += f"Defender disables {self._interpret_action(self.action)}. "
+                if self.attack_index is None:
+                    string_to_write += "Attacker didn't have a chance"
+                elif self.attack_index == -1:
+                    string_to_write += "Attacker chose not to attack. "
+                else:
+                    string_to_write += f"Attacker attacks {self.g.attack_names[self.attack_index]}."
+                    string_to_write += f" Remaining TTC: {self.ttc_remaining[self.attack_index]}. "
+                string_to_write += f"Reward: {self.reward}. "
+            string_to_write += (
+                f"Attack surface: {self._interpret_attacks(self.attack_surface)}.\n"
+            )
+            if self.simulation_time and self.done:
+                string_to_write += "Attack is complete.\n"
+                string_to_write += f"Compromised steps: {self.compromised_steps}\n"
+                string_to_write += f"Compromised flags: {self.compromised_flags}\n"
+            writer.write(string_to_write)
+
+        if self.done:
             if self.save_graphs:
-                self.writers["graph"].finish()
+                writer = self.writers["graph"]
+                writer.finish()
                 plt.close()
+                postprocess_html(writer.outfile)
             if self.save_text:
                 self.writers["text"].close()
 
