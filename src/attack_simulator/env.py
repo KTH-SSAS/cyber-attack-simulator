@@ -99,7 +99,8 @@ class AttackSimulationEnv(gym.Env):
             self._setup()
 
         self.episode_count += 1
-        self.episode_id = f"{self._seed}_{self.episode_count}"  # TODO connect this with ray run id/wandb run id instead of random seed.
+        # TODO connect this with ray run id/wandb run id instead of random seed.
+        self.episode_id = f"{self._seed}_{self.episode_count}"
         logger.debug(f"Starting new simulation. (#{self.episode_id})")
 
         self.ttc_remaining = np.array(
@@ -409,9 +410,7 @@ class AttackSimulationEnv(gym.Env):
                     string_to_write += f"Attacker attacks {self.g.attack_names[self.attack_index]}."
                     string_to_write += f" Remaining TTC: {self.ttc_remaining[self.attack_index]}. "
                 string_to_write += f"Reward: {self.reward}. "
-            string_to_write += (
-                f"Attack surface: {self._interpret_attacks(self.attack_surface)}.\n"
-            )
+            string_to_write += f"Attack surface: {self._interpret_attacks(self.attack_surface)}.\n"
             if self.simulation_time and self.done:
                 string_to_write += "Attack is complete.\n"
                 string_to_write += f"Compromised steps: {self.compromised_steps}\n"
