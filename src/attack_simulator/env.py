@@ -60,11 +60,17 @@ class AttackSimulationEnv(gym.Env):
         self.compromised_flags = []
         self.compromised_steps = []
 
+        self.episode_id = self._get_episode_id()
+
     def _extract_attack_step_field(self, field_name):
         field_index = AttackStep._fields.index(field_name)
         return np.array(
             [self.g.attack_steps[attack_name][field_index] for attack_name in self.g.attack_names]
         )
+
+    def _get_episode_id(self):
+        # TODO connect this with ray run id/wandb run id instead of random seed.
+        return f"{self._seed}_{self.episode_count}"
 
     def _setup(self):
         # prime RNG if not yet set by `seed`
@@ -99,8 +105,7 @@ class AttackSimulationEnv(gym.Env):
             self._setup()
 
         self.episode_count += 1
-        # TODO connect this with ray run id/wandb run id instead of random seed.
-        self.episode_id = f"{self._seed}_{self.episode_count}"
+        self.episode_id = self._get_episode_id()
         logger.debug(f"Starting new simulation. (#{self.episode_id})")
 
         self.ttc_remaining = np.array(
