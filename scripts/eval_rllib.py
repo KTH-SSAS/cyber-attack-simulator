@@ -1,10 +1,13 @@
-from ray.rllib.agents import ppo
-from attack_simulator.env import AttackSimulationEnv
-from attack_simulator.config import config_from_dicts
-from dataclasses import asdict
-import yaml
-import torch
 from argparse import ArgumentParser
+from dataclasses import asdict
+
+import torch
+import yaml
+from ray.rllib.agents import ppo
+
+from attack_simulator.config import config_from_dicts
+from attack_simulator.env import AttackSimulationEnv
+
 
 class RLLibEvaluator:
     def __init__(self, checkpoint_path) -> None:
@@ -38,7 +41,8 @@ class RLLibEvaluator:
                 "explore": False,
                 "env_config": {
                     "render_env": True,
-                    # workaround for a bug in RLLib (https://github.com/ray-project/ray/issues/17921)
+                    # workaround for a bug in RLLib
+                    # (https://github.com/ray-project/ray/issues/17921)
                     "replay_sequence_length": -1,
                 },
             },
@@ -73,15 +77,15 @@ class RLLibEvaluator:
         return episode_reward
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     parser = ArgumentParser()
 
-    parser.add_argument("-c", "--checkpoint", type=str, help="Path to RLLib checkpoint to load model from.")
+    parser.add_argument(
+        "-c", "--checkpoint", type=str, help="Path to RLLib checkpoint to load model from."
+    )
 
     args = parser.parse_args()
 
-    evaluator = RLLibEvaluator(
-        args.checkpoint
-    )
+    evaluator = RLLibEvaluator(args.checkpoint)
     evaluator.test()

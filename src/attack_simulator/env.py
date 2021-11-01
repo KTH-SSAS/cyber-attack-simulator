@@ -334,7 +334,7 @@ class AttackSimulationEnv(gym.Env):
 
     def render(self, mode="human"):
 
-        render_dir = 'render'
+        render_dir = "render"
         if not os.path.isdir(render_dir):
             os.mkdir(render_dir)
 
@@ -343,7 +343,7 @@ class AttackSimulationEnv(gym.Env):
             os.mkdir(out_dir)
 
         if self.save_graphs:
-            if 'graph' not in self.writers:
+            if "graph" not in self.writers:
                 if not self.dag:
                     self.dag = nx_digraph(self.g)
                     self.pos = nx_dag_layout(self.dag)
@@ -363,22 +363,24 @@ class AttackSimulationEnv(gym.Env):
                 plt.axis("off")
                 writer = HTMLWriter()
                 html_path = os.path.join(out_dir, f"render_{self.episode_id}.html")
-                writer.setup(fig, html_path, dpi=None, frame_dir=Path(os.path.join(out_dir, 'frames')))
-                self.writers['graph'] = writer
-        
+                writer.setup(
+                    fig, html_path, dpi=None, frame_dir=Path(os.path.join(out_dir, "frames"))
+                )
+                self.writers["graph"] = writer
+
         if self.save_text:
-            if 'text' not in self.writers:
+            if "text" not in self.writers:
                 txt_path = os.path.join(out_dir, f"render_{self.episode_id}.txt")
                 writer = open(txt_path, "w")
-                self.writers['text'] = writer
+                self.writers["text"] = writer
 
         if self.save_graphs:
             self._render_frame()
-            writer = self.writers['graph']
+            writer = self.writers["graph"]
             writer.grab_frame()
-        
+
         if self.save_text:
-            writer = self.writers['text']
+            writer = self.writers["text"]
             writer.write(f"Step {self.simulation_time}: ")
             if self.simulation_time:
                 writer.write(f"Defender disables {self._interpret_action(self.action)}. ")
@@ -388,9 +390,7 @@ class AttackSimulationEnv(gym.Env):
                     writer.write(f"Attacker attacks {self.g.attack_names[self.attack_index]}.")
                     writer.write(f" Remaining TTC: {self.ttc_remaining[self.attack_index]}. ")
                 writer.write(f"Reward: {self.reward}. ")
-            writer.write(
-                "Attack surface: " f"{self._interpret_attacks(self.attack_surface)}.\n"
-            )
+            writer.write("Attack surface: " f"{self._interpret_attacks(self.attack_surface)}.\n")
             if self.simulation_time and self.done:
                 writer.write("Attack is complete.\n")
                 writer.write(f"Compromised steps: {self.compromised_steps}\n")
@@ -398,11 +398,11 @@ class AttackSimulationEnv(gym.Env):
 
         if self.simulation_time and self.done:
             if self.save_graphs:
-                self.writers['graph'].finish()
+                self.writers["graph"].finish()
                 plt.close()
             if self.save_text:
-                self.writers['text'].close()
-            
+                self.writers["text"].close()
+
             self.writers = {}
 
         return True

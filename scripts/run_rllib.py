@@ -1,17 +1,17 @@
 import argparse
 import os
-from ray import tune
+from dataclasses import asdict
+
+import ray
 import yaml
+from ray import tune
+from ray.tune.integration.wandb import WandbLoggerCallback
 
 from attack_simulator.agents import ATTACKERS, DEFENDERS
 from attack_simulator.config import config_from_dicts
-from dataclasses import asdict
 from attack_simulator.custom_callback import AttackSimCallback
 from attack_simulator.env import AttackSimulationEnv
 from attack_simulator.graph import SIZES
-from ray.tune.integration.wandb import WandbLoggerCallback
-import ray
-import wandb
 
 
 def dict2choices(d):
@@ -86,15 +86,9 @@ def parse_args():
         help="Number of simulations to run after training, for evaluation.",
     )
 
-    parser.add_argument(
-        "--stop-iters", type=int, help="Number of iterations to train."
-    )
-    parser.add_argument(
-        "--stop-timesteps", type=int, help="Number of timesteps to train."
-    )
-    parser.add_argument(
-        "--stop-reward", type=float, help="Reward at which we stop training."
-    )
+    parser.add_argument("--stop-iters", type=int, help="Number of iterations to train.")
+    parser.add_argument("--stop-timesteps", type=int, help="Number of timesteps to train.")
+    parser.add_argument("--stop-reward", type=float, help="Reward at which we stop training.")
 
     parser.add_argument("--eval-interval", type=int, default=50)
 
@@ -150,40 +144,40 @@ def main(args):
     env_config.save_graphs = args.graph
 
     model_config = {"use_lstm": True, "lstm_cell_size": 256}
-    
+
     gpu_count = args.gpu_count
     batch_size = 4000
     num_workers = 5
     env_per_worker = 5
-    #fragment_length = 200
+    # fragment_length = 200
 
     config = {
         "framework": "torch",
         "env": AttackSimulationEnv,
         "num_gpus": gpu_count,
-        "train_batch_size": batch_size*env_per_worker,
+        "train_batch_size": batch_size * env_per_worker,
         "num_envs_per_worker": env_per_worker,
         "model": model_config,
         "env_config": asdict(env_config),
         "batch_mode": "complete_episodes",
         "sgd_minibatch_size": 256,
         # The number of iterations between renderings
-        #"evaluation_interval": args.eval_interval,
-        #"evaluation_num_episodes": 1,
-        #(setting this to 0 will cause
+        # "evaluation_interval": args.eval_interval,
+        # "evaluation_num_episodes": 1,
+        # (setting this to 0 will cause
         # evaluation to run on the local evaluation worker, blocking
         # training until evaluation is done).
-        #"evaluation_num_workers": 1,
+        # "evaluation_num_workers": 1,
         # Special evaluation config. Keys specified here will override
         # the same keys in the main config, but only for evaluation.
-        #"evaluation_config": {
-            # Render the env while evaluating.
-            # Note that this will always only render the 1st RolloutWorker's
-            # env and only the 1st sub-env in a vectorized env.
+        # "evaluation_config": {
+        # Render the env while evaluating.
+        # Note that this will always only render the 1st RolloutWorker's
+        # env and only the 1st sub-env in a vectorized env.
         #    "render_env": args.render,
-            # workaround for a bug in RLLib (https://github.com/ray-project/ray/issues/17921)
-            #"replay_sequence_length": -1,
-        #},
+        # workaround for a bug in RLLib (https://github.com/ray-project/ray/issues/17921)
+        # "replay_sequence_length": -1,
+        # },
         "num_workers": num_workers,
         "callbacks": AttackSimCallback,
     }
@@ -200,7 +194,7 @@ def main(args):
         if stop[k] is None:
             del stop[k]
 
-    analysis = tune.run(
+    tune.run(
         "PPO",
         config=config,
         stop=stop,
@@ -210,8 +204,8 @@ def main(args):
         mode="max",
         keep_checkpoints_num=5,
         checkpoint_freq=1,
-        checkpoint_score_attr='episode_reward_mean',
-        restore=args.checkpoint_path
+        checkpoint_score_attr="episode_reward_mean",
+        restore=args.checkpoint_path,
     )
 
     pass

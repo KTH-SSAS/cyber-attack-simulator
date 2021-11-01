@@ -7,14 +7,12 @@ from .graph import AttackGraph
 
 
 @dataclass
-class Config():
-
+class Config:
     def to_dict(self):
         dictionary = asdict(self)
-        if dictionary.get('attack_graph'):  # Since the attack graph is an object, it is excluded.
-            del dictionary['attack_graph']
+        if dictionary.get("attack_graph"):  # Since the attack graph is an object, it is excluded.
+            del dictionary["attack_graph"]
         return dictionary
-
 
 
 @dataclass
@@ -63,16 +61,11 @@ def create_agent(agent_config: AgentConfig, **kwargs):
 
 
 def config_from_dicts(graph_config_dict, env_config_dict):
-    graph_config = GraphConfig(
-        **graph_config_dict
-    )
+    graph_config = GraphConfig(**graph_config_dict)
 
     attack_graph = create_graph(graph_config)
 
-    env_config = EnvConfig(
-        attack_graph=attack_graph,
-        **env_config_dict
-    )
+    env_config = EnvConfig(attack_graph=attack_graph, **env_config_dict)
 
     return env_config, graph_config
 
