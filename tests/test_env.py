@@ -68,8 +68,9 @@ def test_env_first_step(attacker, action, expected, test_env_config):
     assert all(np.array(obs) == obs_) and (reward == reward_) and (done == done_)
 
 
-def test_env_render(test_env):
-    assert test_env.render() is None or test_env.render() is True
+def test_env_render(test_env, tmpdir):
+    with tmpdir.as_cwd():
+        assert test_env.render() is True
 
 
 def test_env_empty_config():
@@ -79,34 +80,41 @@ def test_env_empty_config():
 
 
 @pytest.mark.parametrize("save_graphs", [False, True])
-@pytest.mark.parametrize("save_text", [False, True])
-def test_env_render_save_graphs(save_graphs, save_text, test_env_config, tmpdir):
-    env = AttackSimulationEnv(dict(test_env_config, save_graphs=save_graphs, save_text=save_text))
+@pytest.mark.parametrize("save_logs", [False, True])
+def test_env_render_save_graphs(save_graphs, save_logs, test_env_config, tmpdir):
+    env = AttackSimulationEnv(dict(test_env_config, save_graphs=save_graphs, save_logs=save_logs))
     seed = 42
+    episode = 1
+    frames = env.HTML.replace(".html", "_frames")
     with tmpdir.as_cwd():
         env.seed(seed)
         env.reset()
-        env.done = True
         env.render()
-        render_dir = tmpdir.join("render").join(f"{seed}_1")
+        render_dir = tmpdir.join(env.RENDER_DIR).join(f"{seed}_{episode}")
+
         files = render_dir.listdir()
-
-        base = "render"
-
-        num_files = 2 * int(save_graphs) + int(save_text)
-
-        assert len(files) == num_files
-
         basenames = [f.basename for f in files]
+        assert len(files) == int(save_graphs) + int(save_logs)
+        assert (frames in basenames) == save_graphs
+        assert (env.LOGS in basenames) == save_logs
 
-        condition = f"{base}_frames" in basenames and "render.html" in basenames
+        _, _, done, _ = env.step(0)  # no action
+        assert not done
+        env.render()
+        _, _, done, _ = env.step(2)  # disable current service --> terminate
+        assert done
+        env.render()
+
+        files = render_dir.listdir()
+        basenames = [f.basename for f in files]
+        assert len(files) == 2 * int(save_graphs) + int(save_logs)
+        assert (env.HTML in basenames) == save_graphs
+
         if save_graphs:
-            assert condition
-        else:
-            assert not condition
+            files = render_dir.join(frames).listdir()
+            assert len(files) == 3
 
-        condition = "log.txt" in basenames
-        if save_text:
-            assert condition
-        else:
-            assert not condition
+        if save_logs:
+            with open(render_dir.join(env.LOGS)) as logs:
+                lines = logs.readlines()
+            assert 3 <= len(lines)
