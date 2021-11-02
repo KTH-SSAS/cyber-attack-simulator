@@ -3,6 +3,7 @@ import pytest
 
 from attack_simulator.agents import ATTACKERS
 from attack_simulator.env import AttackSimulationEnv
+from attack_simulator.renderer import AttackSimulationRenderer
 
 
 def test_env_spaces(test_env, test_graph):
@@ -85,18 +86,18 @@ def test_env_render_save_graphs(save_graphs, save_logs, test_env_config, tmpdir)
     env = AttackSimulationEnv(dict(test_env_config, save_graphs=save_graphs, save_logs=save_logs))
     seed = 42
     episode = 1
-    frames = env.HTML.replace(".html", "_frames")
+    frames = AttackSimulationRenderer.HTML.replace(".html", "_frames")
     with tmpdir.as_cwd():
         env.seed(seed)
         env.reset()
         env.render()
-        render_dir = tmpdir.join(env.RENDER_DIR).join(f"{seed}_{episode}")
+        render_dir = tmpdir.join(AttackSimulationRenderer.RENDER_DIR).join(f"{seed}_{episode}")
 
         files = render_dir.listdir()
         basenames = [f.basename for f in files]
         assert len(files) == int(save_graphs) + int(save_logs)
         assert (frames in basenames) == save_graphs
-        assert (env.LOGS in basenames) == save_logs
+        assert (AttackSimulationRenderer.LOGS in basenames) == save_logs
 
         _, _, done, _ = env.step(0)  # no action
         assert not done
@@ -108,13 +109,13 @@ def test_env_render_save_graphs(save_graphs, save_logs, test_env_config, tmpdir)
         files = render_dir.listdir()
         basenames = [f.basename for f in files]
         assert len(files) == 2 * int(save_graphs) + int(save_logs)
-        assert (env.HTML in basenames) == save_graphs
+        assert (AttackSimulationRenderer.HTML in basenames) == save_graphs
 
         if save_graphs:
             files = render_dir.join(frames).listdir()
             assert len(files) == 3
 
         if save_logs:
-            with open(render_dir.join(env.LOGS)) as logs:
+            with open(render_dir.join(AttackSimulationRenderer.LOGS)) as logs:
                 lines = logs.readlines()
             assert 3 <= len(lines)

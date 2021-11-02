@@ -1,17 +1,15 @@
 import logging
-import os
 
 import gym
 import numpy as np
 
 from .agents import ATTACKERS
 from .graph import AttackGraph, AttackStep
-from .rng import get_rng
 from .renderer import AttackSimulationRenderer
+from .rng import get_rng
 from .utils import enabled
 
 logger = logging.getLogger("simulator")
-
 
 
 class AttackSimulationEnv(gym.Env):
@@ -43,9 +41,9 @@ class AttackSimulationEnv(gym.Env):
         self.num_actions = self.g.num_services + 1
         self.action_space = gym.spaces.Discrete(self.num_actions)
 
-
         self.episode_count = 0
         self._seed = None
+        self.done = False
         self.reward = None
         self.action = 0
         self.attack_index = None
@@ -92,7 +90,8 @@ class AttackSimulationEnv(gym.Env):
             self._setup()
 
         self.episode_count += 1
-        self.episode_id = f"{self._seed}_{self.episode_count}"  # TODO connect this with ray run id/wandb run id instead of random seed.
+        # TODO: connect `self.episode_id` with ray run id/wandb run id instead of random seed.
+        self.episode_id = f"{self._seed}_{self.episode_count}"
         logger.debug(f"Starting new simulation. (#{self.episode_id})")
 
         self.ttc_remaining = np.array(
@@ -133,7 +132,6 @@ class AttackSimulationEnv(gym.Env):
         assert 0 <= action < self.num_actions
 
         self.simulation_time += 1
-        self.done = False
         attacker_reward = 0
 
         # reserve 0 for no action

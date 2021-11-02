@@ -174,14 +174,14 @@ class AttackSimulationRenderer:
                 ax.axes.get_xaxis().set_visible(False)
                 ax.axes.get_yaxis().set_visible(False)
                 self.log = ax.text(
-                    0.25/dx,
+                    0.25 / dx,
                     0.9,
                     "",
                     horizontalalignment="left",
                     verticalalignment="top",
-                    fontfamily='fantasy',
+                    fontfamily="fantasy",
                     wrap=True,
-                    bbox=dict(facecolor='lightgray', boxstyle='Round'),
+                    bbox=dict(facecolor="lightgray", boxstyle="Round"),
                 )
 
                 writer = HTMLWriter()
