@@ -16,7 +16,7 @@ wandb=WANDB_API_KEY
         shift
     }
 
-push=europe-west1-docker.pkg.dev/sentience-reinforce/images/$name
+push=europe-west4-docker.pkg.dev/sentience-reinforce/images/$name
 
 if [[ "$(git config remote.origin.url 2>/dev/null)" = *pontusj/openai_attack_simulation* ]]
 then context="$(git rev-parse --show-toplevel)"
@@ -217,8 +217,25 @@ case ${1-} in
         docker build --tag $name --file "$dockerfile" "$@" "$context"
         ;;
     push)
-        docker tag $name $push
-        docker push $push
+        # support multi-arch images (tags _may_ need to include more info to be unique)
+        tag=$push-$(uname -m)
+        docker tag $name $tag
+        docker push $tag
+        platform="$(docker manifest inspect --verbose $tag | jq -cr .Descriptor.platform)"
+        # purge any local copies of our manifest
+        docker manifest rm $push || : manifest need not exist, OK to fail here
+        # get a list of included image hashes **for other platforms** (if any)
+        others=(
+            $(docker manifest inspect $push |
+                jq -cr '.manifests[] | select(.platform != '"$platform"').digest')
+        )
+        # create a new manifest
+        docker manifest create $push $tag
+        # append pre-existing images (for other platforms)
+        ! ((${#others[*]})) ||
+            docker manifest create --amend $push $(printf "$push@%s " "${others[@]}")
+        # push the updated manifest and remove any local copies
+        docker manifest push --purge $push
         ;;
     run)
         shift
