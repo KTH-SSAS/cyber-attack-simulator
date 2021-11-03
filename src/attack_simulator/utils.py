@@ -33,3 +33,7 @@ def plot_episode(rewards, num_services, compromised_flags):
     ax3.set_ylabel("Compromised flags")
     ax3.set_xlabel("Step")
     plt.show()
+
+
+def enabled(value, state):
+    return (value & state) == value
