@@ -1,7 +1,6 @@
 import logging
 import time
-from collections import namedtuple
-from typing import NamedTuple
+from dataclasses import dataclass
 
 import numpy as np
 import torch
@@ -13,19 +12,15 @@ from .utils import plot_episode, plot_training_results
 logger = logging.getLogger("trainer")
 
 
-RunnerResults: NamedTuple = namedtuple(
-    "RunnerResults",
-    field_names=(
-        "duration",
-        "env_time",
-        "agent_time",
-        "returns",
-        "losses",
-        "lengths",
-        "num_compromised_flags",
-    ),
-    defaults=(0.0, 0.0, 0.0, None, None, None, None),
-)
+@dataclass
+class RunnerResults:
+    duration: float
+    env_time: float
+    agent_time: float
+    returns: int
+    losses: int
+    lengths: int
+    num_compromised_flags: int
 
 
 class Runner:
