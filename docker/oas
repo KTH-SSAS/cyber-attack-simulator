@@ -4,9 +4,8 @@ set -euo pipefail
 
 self=${0##*/}
 name=$self
-cluster=$self-cluster
-head=$cluster-ray-head
 k8s=0
+wandb=WANDB_API_KEY
 
 ! [ "${1-}" ] || ! [ . = ${1::1} ] ||
     {
@@ -17,7 +16,7 @@ k8s=0
         shift
     }
 
-push=europe-west1-docker.pkg.dev/sentience-reinforce/images/$name
+push=europe-west4-docker.pkg.dev/sentience-reinforce/images/$name
 
 if [[ "$(git config remote.origin.url 2>/dev/null)" = *pontusj/openai_attack_simulation* ]]
 then context="$(git rev-parse --show-toplevel)"
@@ -37,7 +36,62 @@ esac
 [ "${open-}" ] || open="echo open the following URL in your browser: "
 
 
+_get_head() {
+    if ! [ "${head-}" ]
+    then
+        local clusters
+        mapfile -t clusters < <(kubectl get rayclusters --output name)
+        clusters=("${clusters[@]#*/}")
+        case ${#clusters[*]} in
+            0)
+                _bail no Ray clusters found
+                ;;
+            1)
+                cluster=${clusters[0]}
+                ;;
+            *)
+                select cluster in "${clusters[@]}"
+                do ! [ "$cluster" ] || break
+                done
+                [ "$cluster" ] || bail no Ray cluster selected
+                ;;
+        esac
+        head=$cluster-ray-head
+        kubectl wait --for=condition=Ready --selector cluster.ray.io/component=$head pod
+    fi
+}
+
+_set_wandb_api_key() {
+    local secret=wandb-secret
+    if [ "${!wandb-}" ]
+    then
+        local key=$(kubectl get secret $secret -ojsonpath="{.data.$wandb}")
+        if ! [ "$key" ]
+        then
+            kubectl create secret generic $secret --from-literal=$wandb="${!wandb}"
+            # restart cluster pods to pick up environment variable from newly created secret
+            kubectl delete pod --selector ray-cluster-name=$cluster
+            unset pod
+            # read the newly created key for verification
+            key=$(kubectl get secret $secret -ojsonpath="{.data.$wandb}")
+        fi
+        if [ "$(base64 -d <<< "$key")" != "${!wandb}" ]
+        then
+            echo $'\x1b[1;33m'WARNING: contents of existing $secret and $wandb differ\!$'\x1b[m'
+            read -sn1 -p 'Recreate? [y/N] '
+            echo
+            if [ y = "${REPLY,}" ]
+            then
+                kubectl delete secret $secret
+                _set_wandb_api_key
+            fi
+        fi
+    fi
+}
+
 _get_pod() {
+    _get_head
+    _set_wandb_api_key
     [ "${pod-}" ] ||
         pod=$(kubectl get pod --selector cluster.ray.io/component=$head --output name)
 }
@@ -106,6 +160,7 @@ _run() {
         --publish 127.0.0.1:8265:8265  # Ray dashboard
         --publish 127.0.0.1:6006:6006  # TensorBoard
         --publish 127.0.0.1:8888:8888  # JupyterLab
+        --env $wandb # pass environment variable (if one exists)
     )
     for path in .gitconfig
     do ! [ -r "$HOME/$path" ] || args+=(--volume "$HOME/$path:$home/$path:ro")
@@ -162,8 +217,25 @@ case ${1-} in
         docker build --tag $name --file "$dockerfile" "$@" "$context"
         ;;
     push)
-        docker tag $name $push
-        docker push $push
+        # support multi-arch images (tags _may_ need to include more info to be unique)
+        tag=$push-$(uname -m)
+        docker tag $name $tag
+        docker push $tag
+        platform="$(docker manifest inspect --verbose $tag | jq -cr .Descriptor.platform)"
+        # purge any local copies of our manifest
+        docker manifest rm $push || : manifest need not exist, OK to fail here
+        # get a list of included image hashes **for other platforms** (if any)
+        others=(
+            $(docker manifest inspect $push |
+                jq -cr '.manifests[] | select(.platform != '"$platform"').digest')
+        )
+        # create a new manifest
+        docker manifest create $push $tag
+        # append pre-existing images (for other platforms)
+        ! ((${#others[*]})) ||
+            docker manifest create --amend $push $(printf "$push@%s " "${others[@]}")
+        # push the updated manifest and remove any local copies
+        docker manifest push --purge $push
         ;;
     run)
         shift
@@ -210,8 +282,9 @@ the corresponding image and container will be called '$self.FLAVOR' [$name].
 
 Using ONLY a single dot as the first argument activates Kubernetes mode.
 Some Docker-only commands ignore Kubernetes mode.  (See below!)
-Kubernetes mode assumes that the current active context points to '$cluster',
-and master access from this host is enabled.
+
+Kubernetes mode assumes that the current active context points to a Kubernetes cluster,
+with a Ray cluster managed by the Ray operator, and master access from this host is enabled.
 
 The following COMMAND arguments are available:
 
