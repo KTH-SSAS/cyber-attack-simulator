@@ -70,6 +70,7 @@ def make_configs(parsed_args):
         true_positive=parsed_args.true_positive_training,
         false_positive=parsed_args.false_positive_training,
         save_graphs=parsed_args.graph,
+        save_logs=parsed_args.save_logs
     )
     # need a dummy env to get dimensions for action/observation spaces
     dummy_env = create_env(env_config)

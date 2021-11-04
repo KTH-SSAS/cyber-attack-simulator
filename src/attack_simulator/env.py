@@ -1,10 +1,11 @@
 import logging
+from dataclasses import asdict
 
 import gym
 import numpy as np
 
 from .agents import ATTACKERS
-from .graph import AttackGraph, AttackStep
+from .graph import AttackGraph
 from .renderer import AttackSimulationRenderer
 from .rng import get_rng
 from .utils import enabled
@@ -52,9 +53,11 @@ class AttackSimulationEnv(gym.Env):
         self.renderer = None
 
     def _extract_attack_step_field(self, field_name):
-        field_index = AttackStep._fields.index(field_name)
         return np.array(
-            [self.g.attack_steps[attack_name][field_index] for attack_name in self.g.attack_names]
+            [
+                asdict(self.g.attack_steps[attack_name])[field_name]
+                for attack_name in self.g.attack_names
+            ]
         )
 
     def _setup(self):
