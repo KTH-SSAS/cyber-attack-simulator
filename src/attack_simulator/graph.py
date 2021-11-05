@@ -16,9 +16,9 @@ class AttackStep:
     service: str = ""
     flag: str = ""
     name: str = ""
-    reward: int = 0
+    reward: float = 0.0
     step_type: str = "or"
-    ttc: int = 1
+    ttc: float = 1.0
 
 
 DEFAULT_CONFIG = {
