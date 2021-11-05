@@ -11,7 +11,7 @@ def _assert_same_steps(a, b):
 
 def test_graph_as_expected(test_graph, test_services, test_attack_steps):
     assert test_graph.service_names == sorted(test_services)
-    assert test_graph.attack_names == sorted(list(test_attack_steps.keys()))
+    assert test_graph.attack_names == sorted(test_attack_steps)
     _assert_same_steps(test_graph.attack_steps, test_attack_steps)
 
 
