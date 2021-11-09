@@ -11,7 +11,7 @@ def _assert_same_steps(a, b):
 
 def test_graph_as_expected(test_graph, test_services, test_attack_steps):
     assert test_graph.service_names == sorted(test_services)
-    assert test_graph.attack_names == sorted(list(test_attack_steps.keys()))
+    assert test_graph.attack_names == sorted(test_attack_steps)
     _assert_same_steps(test_graph.attack_steps, test_attack_steps)
 
 
@@ -45,8 +45,8 @@ def test_graph_odd_root(test_graph_config, test_attack_steps):
 
     g = AttackGraph(dict(test_graph_config, root="c.x"))
     assert g.service_names == ["c", "c.u"]
-    expected = {step: test_attack_steps[step] for step in {"c.x", "c.u.x", "c.u.flag.capture"}}
-    expected["c.x"] = dataclasses.replace(expected["c.x"], parents=set())
+    expected = {step: test_attack_steps[step] for step in ["c.x", "c.u.x", "c.u.flag.capture"]}
+    expected["c.x"] = dataclasses.replace(expected["c.x"], parents=[])
     _assert_same_steps(g.attack_steps, expected)
 
 

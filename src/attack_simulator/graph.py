@@ -10,15 +10,15 @@ from yaml import safe_load
 
 @dataclass
 class AttackStep:
-    parents: Set[str] = field(default_factory=set)
-    children: Set[str] = field(default_factory=set)
+    parents: List[str] = field(default_factory=list)
+    children: List[str] = field(default_factory=list)
     asset: str = ""
     service: str = ""
     flag: str = ""
     name: str = ""
-    reward: int = 0
+    reward: float = 0.0
     step_type: str = "or"
-    ttc: int = 1
+    ttc: float = 1.0
 
 
 DEFAULT_CONFIG = {
@@ -79,6 +79,7 @@ class AttackGraph:
         self.filename: str
         self.root: str
         self.prune: Set[str]
+        self.unmalleable_assets: Set[str]
 
         # process incoming configuration
         if config is None:
@@ -101,7 +102,7 @@ class AttackGraph:
 
         # traverse through the relevant subgraph for a given pass
         def traverse(perform_pass):
-            keys = set((self.root,))
+            keys = [self.root]
             while keys:
                 next_keys = set()
                 for key in keys:
@@ -112,7 +113,7 @@ class AttackGraph:
                 keys = sorted(next_keys)
 
         # first pass: determine services and most fields
-        def determine_fields(key, node, children):
+        def determine_fields(key: str, node: dict, children: set):
             # some leaf nodes have multiple parents, no need to re-process
             if "asset" in node:
                 return
@@ -142,7 +143,8 @@ class AttackGraph:
                     node[f] = self.__dict__[node[f].lower()]
 
             if children:
-                node["children"] = set(children)
+                # Ensure a deterministic ordering of child nodes
+                node["children"] = sorted(children)
 
             node["parents"] = set()
 
@@ -153,7 +155,8 @@ class AttackGraph:
 
         # third and final pass: freeze the relevant sub-graph
         def freeze_subgraph(key, node, children):
-            node["parents"] = set(node["parents"])
+            # Ensure a deterministic ordering of parents
+            node["parents"] = sorted(node["parents"])
             self.attack_steps[key] = AttackStep(**node)
 
         for perform_pass in (determine_fields, update_parents, freeze_subgraph):
@@ -198,7 +201,7 @@ class AttackGraph:
             for key in self.attack_names:
                 node = self.attack_steps[key]
                 node_ttc = node.ttc if ttc is None else ttc[key]
-                for child in sorted(node.children):
+                for child in node.children:
                     child_node = self.attack_steps[child]
                     child_ttc = child_node.ttc if ttc is None else ttc[child]
                     f.write(
