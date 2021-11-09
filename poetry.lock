@@ -489,7 +489,6 @@ google-auth = ">=1.25.0,<3.0dev"
 googleapis-common-protos = ">=1.52.0,<2.0dev"
 protobuf = ">=3.12.0"
 requests = ">=2.18.0,<3.0.0dev"
-setuptools = ">=40.3.0"
 
 [package.extras]
 grpc = ["grpcio (>=1.33.2,<2.0dev)", "grpcio-status (>=1.33.2,<2.0dev)"]
@@ -508,7 +507,6 @@ python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*"
 cachetools = ">=2.0.0,<5.0"
 pyasn1-modules = ">=0.2.1"
 rsa = {version = ">=3.1.4,<5", markers = "python_version >= \"3.6\""}
-setuptools = ">=40.3.0"
 six = ">=1.9.0"
 
 [package.extras]
@@ -598,13 +596,13 @@ numpy = ">=1.18.0"
 
 [package.extras]
 accept-rom-license = ["autorom[accept-rom-license] (>=0.4.2,<0.5.0)"]
-all = ["mujoco_py (>=1.50,<2.0)", "lz4 (>=3.1.0)", "ale-py (>=0.7.1,<0.8.0)", "pyglet (>=1.4.0)", "scipy (>=1.4.1)", "box2d-py (==2.3.5)", "pyglet (>=1.4.0)", "ale-py (>=0.7.1,<0.8.0)", "lz4 (>=3.1.0)", "pyglet (>=1.4.0)", "box2d-py (==2.3.5)", "pyglet (>=1.4.0)", "scipy (>=1.4.1)", "mujoco_py (>=1.50,<2.0)"]
+all = ["mujoco_py (>=1.50,<2.0)", "lz4 (>=3.1.0)", "opencv-python (>=3)", "ale-py (>=0.7.1,<0.8.0)", "pyglet (>=1.4.0)", "scipy (>=1.4.1)", "box2d-py (==2.3.5)", "pyglet (>=1.4.0)", "ale-py (>=0.7.1,<0.8.0)", "lz4 (>=3.1.0)", "opencv-python (>=3)", "pyglet (>=1.4.0)", "box2d-py (==2.3.5)", "pyglet (>=1.4.0)", "scipy (>=1.4.1)", "mujoco_py (>=1.50,<2.0)"]
 atari = ["ale-py (>=0.7.1,<0.8.0)"]
 box2d = ["box2d-py (==2.3.5)", "pyglet (>=1.4.0)"]
 classic_control = ["pyglet (>=1.4.0)"]
 mujoco = ["mujoco_py (>=1.50,<2.0)"]
-nomujoco = ["lz4 (>=3.1.0)", "ale-py (>=0.7.1,<0.8.0)", "pyglet (>=1.4.0)", "scipy (>=1.4.1)", "box2d-py (==2.3.5)", "pyglet (>=1.4.0)"]
-other = ["lz4 (>=3.1.0)"]
+nomujoco = ["lz4 (>=3.1.0)", "opencv-python (>=3)", "ale-py (>=0.7.1,<0.8.0)", "pyglet (>=1.4.0)", "scipy (>=1.4.1)", "box2d-py (==2.3.5)", "pyglet (>=1.4.0)"]
+other = ["lz4 (>=3.1.0)", "opencv-python (>=3)"]
 robotics = ["mujoco_py (>=1.50,<2.0)"]
 toy_text = ["scipy (>=1.4.1)"]
 
@@ -695,7 +693,6 @@ pexpect = {version = ">4.3", markers = "sys_platform != \"win32\""}
 pickleshare = "*"
 prompt-toolkit = ">=2.0.0,<3.0.0 || >3.0.0,<3.0.1 || >3.0.1,<3.1.0"
 pygments = "*"
-setuptools = ">=18.5"
 traitlets = ">=4.2"
 
 [package.extras]
@@ -964,7 +961,6 @@ python-dateutil = ">=2.5.3"
 pyyaml = ">=5.4.1"
 requests = "*"
 requests-oauthlib = "*"
-setuptools = ">=21.0.0"
 six = ">=1.9.0"
 urllib3 = ">=1.24.2"
 websocket-client = ">=0.32.0,<0.40.0 || >0.40.0,<0.41.0 || >=0.43.0"
@@ -1868,18 +1864,6 @@ sqlalchemy = ["sqlalchemy (>=1.2)"]
 tornado = ["tornado (>=5)"]
 
 [[package]]
-name = "setuptools"
-version = "58.5.3"
-description = "Easily download, build, install, upgrade, and uninstall Python packages"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.extras]
-docs = ["sphinx", "jaraco.packaging (>=8.2)", "rst.linker (>=1.9)", "jaraco.tidelift (>=1.4)", "pygments-github-lexers (==0.0.5)", "sphinx-inline-tabs", "sphinxcontrib-towncrier", "furo"]
-testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.0.1)", "mock", "flake8-2020", "virtualenv (>=13.0.0)", "pytest-virtualenv (>=1.2.7)", "wheel", "paver", "pip (>=19.1)", "jaraco.envs", "pytest-xdist", "sphinx", "jaraco.path (>=3.2.0)", "pytest-black (>=0.3.7)", "pytest-mypy"]
-
-[[package]]
 name = "shortuuid"
 version = "1.0.7"
 description = "A generator library for concise, unambiguous and URL-safe UUIDs."
@@ -1955,11 +1939,9 @@ markdown = ">=2.6.8"
 numpy = ">=1.12.0"
 protobuf = ">=3.6.0"
 requests = ">=2.21.0,<3"
-setuptools = ">=41.0.0"
 tensorboard-data-server = ">=0.6.0,<0.7.0"
 tensorboard-plugin-wit = ">=1.6.0"
 werkzeug = ">=0.11.15"
-wheel = ">=0.26"
 
 [[package]]
 name = "tensorboard-data-server"
@@ -2271,17 +2253,6 @@ python-versions = ">=3.6"
 watchdog = ["watchdog"]
 
 [[package]]
-name = "wheel"
-version = "0.37.0"
-description = "A built-package format for Python"
-category = "dev"
-optional = false
-python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
-
-[package.extras]
-test = ["pytest (>=3.0.0)", "pytest-cov"]
-
-[[package]]
 name = "widgetsnbextension"
 version = "3.5.2"
 description = "IPython HTML widgets for Jupyter"
@@ -2318,7 +2289,7 @@ termcolor = ">=1.1.0,<2.0.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.9"
-content-hash = "66db0b1b82f7ef71d86c21bc5bce19c71d3cd073d73fe195977520bbe5e86337"
+content-hash = "48e7be2f4500f49076b522dcde75bf7618443c41f49b33abc368a5ae52a459e3"
 
 [metadata.files]
 absl-py = [
@@ -3893,6 +3864,7 @@ scikit-image = [
     {file = "scikit_image-0.18.3-cp39-cp39-win_amd64.whl", hash = "sha256:3068af85682e90fda021070969dd2fce667f89a868c6aacb2fffbc5aa002e39e"},
 ]
 scipy = [
+    {file = "scipy-1.7.2-1-cp310-cp310-win_amd64.whl", hash = "sha256:dc2d1bf41294e63c7302bf499973ac0c7f73c93c01763db43055f6525234bf11"},
     {file = "scipy-1.7.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:97eb573e361a73a553b915dc195c6f72a08249964b1a33f157f9659f3b6210d1"},
     {file = "scipy-1.7.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:359b60a0cccd17723b9d5e329a5212a710e771a3ddde800e472fb93732756c46"},
     {file = "scipy-1.7.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:82c5befebf54d799d77e5f0205c03030f57f69ba2541baa44d2e6ad138c28cd3"},
@@ -3928,10 +3900,6 @@ send2trash = [
 sentry-sdk = [
     {file = "sentry-sdk-1.4.3.tar.gz", hash = "sha256:b9844751e40710e84a457c5bc29b21c383ccb2b63d76eeaad72f7f1c808c8828"},
     {file = "sentry_sdk-1.4.3-py2.py3-none-any.whl", hash = "sha256:c091cc7115ff25fe3a0e410dbecd7a996f81a3f6137d2272daef32d6c3cfa6dc"},
-]
-setuptools = [
-    {file = "setuptools-58.5.3-py3-none-any.whl", hash = "sha256:a481fbc56b33f5d8f6b33dce41482e64c68b668be44ff42922903b03872590bf"},
-    {file = "setuptools-58.5.3.tar.gz", hash = "sha256:dae6b934a965c8a59d6d230d3867ec408bb95e73bd538ff77e71fedf1eaca729"},
 ]
 shortuuid = [
     {file = "shortuuid-1.0.7-py3-none-any.whl", hash = "sha256:7c9531a9234a37bca2fda3b91169d82506fb3a54b3f13e84b6b1350de1173271"},
@@ -4119,10 +4087,6 @@ websocket-client = [
 werkzeug = [
     {file = "Werkzeug-2.0.2-py3-none-any.whl", hash = "sha256:63d3dc1cf60e7b7e35e97fa9861f7397283b75d765afcaefd993d6046899de8f"},
     {file = "Werkzeug-2.0.2.tar.gz", hash = "sha256:aa2bb6fc8dee8d6c504c0ac1e7f5f7dc5810a9903e793b6f715a9f015bdadb9a"},
-]
-wheel = [
-    {file = "wheel-0.37.0-py2.py3-none-any.whl", hash = "sha256:21014b2bd93c6d0034b6ba5d35e4eb284340e09d63c59aef6fc14b0f346146fd"},
-    {file = "wheel-0.37.0.tar.gz", hash = "sha256:e2ef7239991699e3355d54f8e968a21bb940a1dbf34a4d226741e64462516fad"},
 ]
 widgetsnbextension = [
     {file = "widgetsnbextension-3.5.2-py2.py3-none-any.whl", hash = "sha256:763a9fdc836d141fa080005a886d63f66f73d56dba1fb5961afc239c77708569"},
