@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.9
 RUN set -ex; \
     apt-get update; \
     apt-get install -y less vim-nox locate screen rsync libglib2.0-0; \
