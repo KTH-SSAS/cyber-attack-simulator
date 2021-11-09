@@ -3,6 +3,7 @@ import pytest
 
 from attack_simulator.agents import ATTACKERS
 from attack_simulator.env import AttackSimulationEnv
+from attack_simulator.renderer import AttackSimulationRenderer
 
 
 def test_env_spaces(test_env, test_graph):
@@ -80,28 +81,41 @@ def test_env_empty_config():
 
 
 @pytest.mark.parametrize("save_graphs", [False, True])
-def test_env_render_save_graphs(save_graphs, test_env_config, tmpdir):
-    env = AttackSimulationEnv(dict(test_env_config, save_graphs=save_graphs))
+@pytest.mark.parametrize("save_logs", [False, True])
+def test_env_render_save_graphs(save_graphs, save_logs, test_env_config, tmpdir):
+    env = AttackSimulationEnv(dict(test_env_config, save_graphs=save_graphs, save_logs=save_logs))
+    seed = 42
+    episode = 1
+    frames = AttackSimulationRenderer.HTML.replace(".html", "_frames")
     with tmpdir.as_cwd():
-        env.seed(42)
+        env.seed(seed)
         env.reset()
         env.render()
-        files = tmpdir.listdir()
-        base = "render_42_1"
-        if save_graphs:
-            assert len(files) == 1 and files[0].basename == f"{base}_frames" and files[0].isdir()
-        else:
-            assert len(files) == 1 and files[0].basename == f"{base}.txt"
+        render_dir = tmpdir.join(AttackSimulationRenderer.RENDER_DIR).join(f"{seed}_{episode}")
+
+        files = render_dir.listdir()
+        basenames = [f.basename for f in files]
+        assert len(files) == int(save_graphs) + int(save_logs)
+        assert (frames in basenames) == save_graphs
+        assert (AttackSimulationRenderer.LOGS in basenames) == save_logs
+
         _, _, done, _ = env.step(0)  # no action
         assert not done
         env.render()
         _, _, done, _ = env.step(2)  # disable current service --> terminate
         assert done
         env.render()
+
+        files = render_dir.listdir()
+        basenames = [f.basename for f in files]
+        assert len(files) == 2 * int(save_graphs) + int(save_logs)
+        assert (AttackSimulationRenderer.HTML in basenames) == save_graphs
+
         if save_graphs:
-            files = files[0].listdir()
+            files = render_dir.join(frames).listdir()
             assert len(files) == 3
-        else:
-            with open(files[0]) as text:
-                lines = text.readlines()
+
+        if save_logs:
+            with open(render_dir.join(AttackSimulationRenderer.LOGS)) as logs:
+                lines = logs.readlines()
             assert 3 <= len(lines)

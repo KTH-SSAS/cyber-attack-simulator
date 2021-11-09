@@ -23,6 +23,7 @@ class EnvConfig:
     true_positive: float
     false_positive: float
     save_graphs: bool
+    save_logs: bool
 
 
 @dataclass

@@ -13,28 +13,24 @@ authors = [
 ]
 repository = "https://gitr.sys.kth.se/pontusj/openai_attack_simulation"
 
-[[tool.poetry.source]]
-name = "ray-wheels"
-url = "https://mehes-kth.github.io/ray-wheels/simple"
-
 [tool.poetry.dependencies]
 python = "~3.8"
 gym = "^0.18.3"
-torch = "~1.9.0"
+torch = "^1.10.0"
 numpy = "~1.21.0"
 matplotlib = "^3.4.2"
 pyyaml = "^5.4.1"
-ray = {version = "~1.7.0", extras = ["default", "rllib", "k8s"]}
+ray = {version = "^1.8.0", extras = ["default", "rllib", "k8s"]}
 networkx = "^2.6.2"
 seaborn = "^0.11.2"
 GPUtil = "^1.4.0"
-tqdm = {extras = ["notebook"], version = "^4.62.3"}
 
 [tool.poetry.dev-dependencies]
 tox = "^3.23.1"
 tox-poetry-dev-dependencies = "*"
 black = {version = "^21.6b", extras = ["jupyter"]}
 isort = "^5.9.1"
+flake8 = "<4.0.0"  # FIXME: temporary fix for https://github.com/flakehell/flakehell/issues/18
 flakehell = "^0.9.0"
 mypy = "^0.910"
 pydocstyle = "^6.1.1"
@@ -42,8 +38,7 @@ pytest = "^6.2.4"
 pytest-cov = "^2.12.1"
 tensorboard = "^2.6.0"
 jupyterlab = "^3.1.4"
-tqdm = "^4.62.2"
-flake8 = "<4.0.0"  # FIXME: temporary fix for https://github.com/flakehell/flakehell/issues/18
+tqdm = {extras = ["notebook"], version = "^4.62.3"}
 
 [tool.tox]
 legacy_tox_ini = """
