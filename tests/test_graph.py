@@ -45,8 +45,8 @@ def test_graph_odd_root(test_graph_config, test_attack_steps):
 
     g = AttackGraph(dict(test_graph_config, root="c.x"))
     assert g.service_names == ["c", "c.u"]
-    expected = {step: test_attack_steps[step] for step in {"c.x", "c.u.x", "c.u.flag.capture"}}
-    expected["c.x"] = dataclasses.replace(expected["c.x"], parents=set())
+    expected = {step: test_attack_steps[step] for step in ["c.x", "c.u.x", "c.u.flag.capture"]}
+    expected["c.x"] = dataclasses.replace(expected["c.x"], parents=[])
     _assert_same_steps(g.attack_steps, expected)
 
 
