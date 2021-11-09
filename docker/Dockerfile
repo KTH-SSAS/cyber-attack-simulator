@@ -6,7 +6,7 @@ RUN set -ex; \
     apt-get install -y nodejs; \
     npm install -g @bazel/bazelisk; \
     pip install --upgrade pip; \
-    pip install poetry; \
+    pip install poetry\>=1.2.\*; \
     : install kubectl; \
     g_key="/usr/share/keyrings/google.gpg"; \
     echo "deb [signed-by=$g_key] https://apt.kubernetes.io/ kubernetes-xenial main" \
@@ -18,6 +18,10 @@ RUN set -ex; \
 WORKDIR /root/openai_attack_simulation
 COPY . .
 RUN set -ex; \
+    if [ $(uname -m) = aarch64 ]; then \
+        poetry source add -vvv ray-wheels https://mehes-kth.github.io/ray-wheels/simple; \
+        poetry update; \
+    fi; \
     poetry install; \
     ln -s /root/.cache/pypoetry/virtualenvs/* /root/venv; \
     echo 'PATH=/root/venv/bin:$PATH' > /root/.bashrc
