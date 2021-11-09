@@ -151,7 +151,12 @@ class AttackGraph:
             for child in children:
                 graph[child]["parents"].add(key)
 
-        for perform_pass in (determine_fields, update_parents):
+        # third and final pass: freeze the relevant sub-graph
+        def freeze_subgraph(key, node, children):
+            node["parents"] = set(node["parents"])
+            self.attack_steps[key] = AttackStep(**node)
+
+        for perform_pass in (determine_fields, update_parents, freeze_subgraph):
             traverse(perform_pass)
 
         # set final attributes
