@@ -41,10 +41,12 @@ def test_graph_prune(test_graph_config, test_services, test_attack_steps):
 
 
 def test_graph_odd_root(test_graph_config, test_attack_steps):
+    import dataclasses
+
     g = AttackGraph(dict(test_graph_config, root="c.x"))
     assert g.service_names == ["c", "c.u"]
-    expected = {step: test_attack_steps[step] for step in ("c.x", "c.u.x", "c.u.flag.capture")}
-    expected["c.x"] = expected["c.x"]._replace(parents=())
+    expected = {step: test_attack_steps[step] for step in ["c.x", "c.u.x", "c.u.flag.capture"]}
+    expected["c.x"] = dataclasses.replace(expected["c.x"], parents=[])
     _assert_same_steps(g.attack_steps, expected)
 
 

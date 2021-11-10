@@ -41,6 +41,7 @@ def parse_args():
     )
 
     parser.add_argument("-g", "--graph", action="store_true", help="Generate a GraphViz .dot file.")
+    parser.add_argument("--save-logs", action="store_true", help="Save episode logs.")
 
     parser.add_argument(
         "-D",

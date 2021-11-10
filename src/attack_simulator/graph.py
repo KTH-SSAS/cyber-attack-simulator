@@ -2,26 +2,24 @@
 Process YAML graph description into an Attack Graph
 """
 import os
-from collections import namedtuple
-from typing import Any, Dict, List, NamedTuple, Optional, Set
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Set
 
 from yaml import safe_load
 
-AttackStep: NamedTuple = namedtuple(
-    "AttackStep",
-    field_names=(
-        "asset",
-        "service",
-        "flag",
-        "name",
-        "step_type",
-        "ttc",
-        "reward",
-        "children",
-        "parents",
-    ),
-    defaults=(None, None, None, None, "or", 1, 0, (), ()),
-)
+
+@dataclass
+class AttackStep:
+    parents: List[str] = field(default_factory=list)
+    children: List[str] = field(default_factory=list)
+    asset: str = ""
+    service: str = ""
+    flag: str = ""
+    name: str = ""
+    reward: float = 0.0
+    step_type: str = "or"
+    ttc: float = 1.0
+
 
 DEFAULT_CONFIG = {
     "filename": os.path.join(os.path.dirname(os.path.realpath(__file__)), "en2720.yaml"),
@@ -36,7 +34,7 @@ DEFAULT_CONFIG = {
     "high_flag_reward": 10000,
 }
 
-SIZES = {
+SIZES: Dict[str, Set[str]] = {
     "tiny": set(
         (
             "lazarus.tomcat.connect",
@@ -73,8 +71,15 @@ SIZES = {
 class AttackGraph:
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         # initialization
-        self.attack_steps: Dict[str, NamedTuple] = dict()
+        self.attack_steps: Dict[str, AttackStep] = dict()
         services: Set[str] = set()
+
+        # Declare attributes
+        self.graph_size: str
+        self.filename: str
+        self.root: str
+        self.prune: Set[str]
+        self.unmalleable_assets: Set[str]
 
         # process incoming configuration
         if config is None:
@@ -88,7 +93,7 @@ class AttackGraph:
                     del config[key]
         self.__dict__.update(config)
 
-        if not self.prune and self.graph_size in SIZES:
+        if len(self.prune) == 0 and self.graph_size in SIZES:
             self.prune = SIZES[self.graph_size]
 
         # load the YAML graph spec
@@ -97,7 +102,7 @@ class AttackGraph:
 
         # traverse through the relevant subgraph for a given pass
         def traverse(perform_pass):
-            keys = set((self.root,))
+            keys = [self.root]
             while keys:
                 next_keys = set()
                 for key in keys:
@@ -108,7 +113,7 @@ class AttackGraph:
                 keys = sorted(next_keys)
 
         # first pass: determine services and most fields
-        def determine_fields(key, node, children):
+        def determine_fields(key: str, node: dict, children: set):
             # some leaf nodes have multiple parents, no need to re-process
             if "asset" in node:
                 return
@@ -131,14 +136,15 @@ class AttackGraph:
                     services.add(f"{asset}.{service}")
 
             # handle `ttc` and `reward` "templates"
-            for field in ("ttc", "reward"):
-                if field in node:
+            for f in ("ttc", "reward"):
+                if f in node:
                     # translate {easy,hard}_ttc and/or {early,late,final}_reward
                     # based on upper-case "TEMPLATE" in YAML to actual values
-                    node[field] = self.__dict__[node[field].lower()]
+                    node[f] = self.__dict__[node[f].lower()]
 
             if children:
-                node["children"] = tuple(sorted(children))
+                # Ensure a deterministic ordering of child nodes
+                node["children"] = sorted(children)
 
             node["parents"] = set()
 
@@ -149,7 +155,8 @@ class AttackGraph:
 
         # third and final pass: freeze the relevant sub-graph
         def freeze_subgraph(key, node, children):
-            node["parents"] = tuple(sorted(node["parents"]))
+            # Ensure a deterministic ordering of parents
+            node["parents"] = sorted(node["parents"])
             self.attack_steps[key] = AttackStep(**node)
 
         for perform_pass in (determine_fields, update_parents, freeze_subgraph):
@@ -157,13 +164,19 @@ class AttackGraph:
 
         # set final attributes
         self.service_names: List[str] = sorted(services)
-        self.num_services = len(self.service_names)
 
         self.attack_names: List[str] = sorted(self.attack_steps)
-        self.num_attacks = len(self.attack_names)
 
         # say hello
         print(self)
+
+    @property
+    def num_attacks(self):
+        return len(self.attack_names)
+
+    @property
+    def num_services(self):
+        return len(self.service_names)
 
     def __str__(self):
         label = os.path.basename(self.filename)
