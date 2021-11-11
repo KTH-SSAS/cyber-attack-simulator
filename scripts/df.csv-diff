@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+usage() {
+    echo Usage: ${0##*/} DF1.CSV DF2.CSV
+    echo
+    echo Compare data frames saved as CSV
+}
+
+normalize() {
+    cut -d, -f2- "$1" | sed 's/\.0$//' | sort
+}
+
+[ -r "$1" ] || usage
+[ -r "$2" ] || usage
+
+colordiff -u <(normalize "$1") <(normalize "$2") | less -R

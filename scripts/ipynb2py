@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
-[ -x "$(type -p dot)" ] ||
+[ -x "$(type -p jq)" ] ||
     {
-        echo 'Cannot find required `dot` executable.  Is `graphviz` installed?'
+        echo 'Cannot find required `jq` executable.  Is `jq` installed?'
         exit 1
     }
 
 (($#)) ||
     {
         shopt -s nullglob
-        set -- *.dot
+        set -- *.ipynb
         (($#)) ||
             {
                 echo 'No arguments given and no `*.dot` files found. Nothing to do.'
@@ -18,5 +18,7 @@
     }
 
 for i
-do dot -Tpdf "$i" -o "${i%.dot}.pdf"
+do jq -Cr '.cells[]
+    | select(.cell_type=="code").source[],""
+    | rtrimstr("\n")' "$i" > "${i%.ipynb}.py"
 done
