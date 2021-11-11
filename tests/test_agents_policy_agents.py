@@ -39,7 +39,7 @@ def _run_episodes(num_episodes, env, agent, training=False):
 def test_agents_policy_reinforce(test_env):
     agent = ReinforceAgent(
         dict(
-            input_dim=len(test_env.observation_space.spaces),
+            input_dim=test_env.observation_space.shape[0],
             hidden_dim=16,
             num_actions=test_env.action_space.n,
             learning_rate=1e-2,
@@ -65,7 +65,7 @@ def test_agents_policy_reinforce(test_env):
 def test_agents_policy_reinforce_cuda(test_env):
     ReinforceAgent(
         dict(
-            input_dim=len(test_env.observation_space.spaces),
+            input_dim=test_env.observation_space.shape[0],
             hidden_dim=16,
             num_actions=test_env.action_space.n,
             learning_rate=1e-2,
