@@ -1,18 +1,20 @@
+from typing import Optional
+
 from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.rllib.env import BaseEnv
 from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
 
 
 class AttackSimCallback(DefaultCallbacks):
-    def on_episode_end(
+    def on_episode_step(
         self,
         *,
-        worker: RolloutWorker,
+        worker: "RolloutWorker",
         base_env: BaseEnv,
         episode: MultiAgentEpisode,
-        env_index: int,
+        env_index: Optional[int] = None,
         **kwargs,
-    ):
+    ) -> None:
 
         info = episode.last_info_for()
 
