@@ -44,40 +44,40 @@ c.u.flag.capture:
 TEST_SERVICES = ["a", "b", "b.u", "b.v", "c", "c.u"]
 
 TEST_ATTACK_STEPS = {
-    "a.x": AttackStep(asset="a", name="x", children=("b.x",)),
+    "a.x": AttackStep(asset="a", name="x", children=["b.x"]),
     "b.x": AttackStep(
         asset="b",
         name="x",
         ttc=10,
-        children=(
+        children=[
             "b.flag.capture",
             "b.u.y",
             "b.v.y",
-        ),
-        parents=("a.x",),
+        ],
+        parents=["a.x"],
     ),
     "b.flag.capture": AttackStep(
         asset="b",
         flag="flag",
         name="capture",
         reward=10000,
-        parents=("b.x",),
+        parents=["b.x"],
     ),
     "b.u.y": AttackStep(
         asset="b",
         service="u",
         name="y",
         ttc=10,
-        children=("c.x",),
-        parents=("b.x",),
+        children=["c.x"],
+        parents=["b.x"],
     ),
     "b.v.y": AttackStep(
         asset="b",
         service="v",
         name="y",
         ttc=100,
-        children=("b.v.flag.capture", "c.x"),
-        parents=("b.x",),
+        children=["b.v.flag.capture", "c.x"],
+        parents=["b.x"],
     ),
     "b.v.flag.capture": AttackStep(
         asset="b",
@@ -85,22 +85,22 @@ TEST_ATTACK_STEPS = {
         flag="flag",
         name="capture",
         reward=10000,
-        parents=("b.v.y",),
+        parents=["b.v.y"],
     ),
     "c.x": AttackStep(
         asset="c",
         name="x",
         step_type="and",
-        children=("c.u.x",),
-        parents=("b.u.y", "b.v.y"),
+        children=["c.u.x"],
+        parents=["b.u.y", "b.v.y"],
     ),
     "c.u.x": AttackStep(
         asset="c",
         service="u",
         name="x",
         ttc=100,
-        children=("c.u.flag.capture",),
-        parents=("c.x",),
+        children=["c.u.flag.capture"],
+        parents=["c.x"],
     ),
     "c.u.flag.capture": AttackStep(
         asset="c",
@@ -108,7 +108,7 @@ TEST_ATTACK_STEPS = {
         flag="flag",
         name="capture",
         reward=10000,
-        parents=("c.u.x",),
+        parents=["c.u.x"],
     ),
 }
 
