@@ -36,7 +36,10 @@ class AttackSimulationEnv(gym.Env):
         # a) which services are turned on; and,
         # b) which attack steps have been successfully taken
         self.dim_observations = self.g.num_services + self.g.num_attacks
-        self.observation_space = gym.spaces.Tuple((gym.spaces.Discrete(2),) * self.dim_observations)
+        # Using a Box instead of Tuple((Discrete(2),) * self.dim_observations)
+        # avoids potential preprocessor issues with Ray
+        # (cf. https://github.com/ray-project/ray/issues/8600)
+        self.observation_space = gym.spaces.Box(0, 1, shape=(self.dim_observations,), dtype="int8")
 
         # The defender action space allows to disable any one service or leave all unchanged
         self.num_actions = self.g.num_services + 1
@@ -89,6 +92,8 @@ class AttackSimulationEnv(gym.Env):
         self.reward_params = self._extract_attack_step_field("reward")
 
     def reset(self):
+        self._observation = None
+
         if self.episode_count == 0:
             self._setup()
 
@@ -116,9 +121,15 @@ class AttackSimulationEnv(gym.Env):
                 random_seed=self._seed + self.episode_count,
             )
         )
-        return self.observe()
+        return self.observation
 
-    def observe(self):
+    @property
+    def observation(self):
+        if self._observation is None:
+            self._observation = self._observe()
+        return self._observation
+
+    def _observe(self):
         # Observation of attack steps is subject to the true/false positive rates
         # of an assumed underlying intrusion detection system
         # Depending on the true and false positive rates for each step,
@@ -127,13 +138,13 @@ class AttackSimulationEnv(gym.Env):
         true_positives = self.attack_state & (probabilities <= self.true_positive)
         false_positives = (1 - self.attack_state) & (probabilities <= self.false_positive)
         detected = true_positives | false_positives
-        self.observation = tuple(np.append(self.service_state, detected))
-        return self.observation
+        return np.append(self.service_state, detected)
 
     def step(self, action):
         self.action = action
         assert 0 <= action < self.num_actions
 
+        self._observation = None
         self.simulation_time += 1
         attacker_reward = 0
 
@@ -221,7 +232,7 @@ class AttackSimulationEnv(gym.Env):
             logger.debug(f"Compromised steps: {self.compromised_steps}")
             logger.debug(f"Compromised flags: {self.compromised_flags}")
 
-        return self.observe(), self.reward, self.done, info
+        return self.observation, self.reward, self.done, info
 
     def _interpret_services(self, services=None):
         if services is None:

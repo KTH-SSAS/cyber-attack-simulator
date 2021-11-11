@@ -11,7 +11,7 @@ def test_env_spaces(test_env, test_graph):
     num_actions = test_env.action_space.n
     assert num_actions == num_services + 1
     num_attacks = test_graph.num_attacks
-    dim_observations = len(test_env.observation_space.spaces)
+    dim_observations = test_env.observation_space.shape[0]
     assert dim_observations == num_services + num_attacks
 
 
