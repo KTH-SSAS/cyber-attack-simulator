@@ -14,10 +14,16 @@ authors = [
 ]
 repository = "https://gitr.sys.kth.se/pontusj/openai_attack_simulation"
 
+[[tool.poetry.source]]
+name = "torch"
+url = "https://download.pytorch.org/whl/"
+secondary = true
+default = false
+
 [tool.poetry.dependencies]
 python = "~3.9"
 gym = "^0.21.0"
-torch = "^1.10.0"
+torch = {version = "1.10.0+cu113", source = "torch"}
 numpy = "^1.21.4"
 matplotlib = "^3.4.2"
 pyyaml = "^6.0"
