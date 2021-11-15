@@ -144,8 +144,9 @@ class AttackSimulationEnv(gym.Env):
         self.action = action
         assert 0 <= action < self.num_actions
 
-        self._observation = None
         self.simulation_time += 1
+        self._observation = None
+        self.done = False
         attacker_reward = 0
 
         # reserve 0 for no action
