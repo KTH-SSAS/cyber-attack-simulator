@@ -97,6 +97,7 @@ _get_pod() {
 }
 
 _remove_forwarding() {
+    _get_head
     ! pid=$(pgrep -fx "kubectl port-forward pod/$head-.* [0-9]*:*$1") || kill $pid
 }
 
