@@ -93,6 +93,7 @@ class AttackSimulationEnv(gym.Env):
 
     def reset(self):
         self._observation = None
+        self.done = False
 
         if self.episode_count == 0:
             self._setup()
