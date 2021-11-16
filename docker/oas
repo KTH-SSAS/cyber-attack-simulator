@@ -223,12 +223,12 @@ case ${1-} in
         docker push $tag
         platform="$(docker manifest inspect --verbose $tag | jq -cr .Descriptor.platform)"
         # purge any local copies of our manifest
-        docker manifest rm $push || : manifest need not exist, OK to fail here
+        docker manifest rm $push || : manifest need not exist, no need to fail here
         # get a list of included image hashes **for other platforms** (if any)
         others=(
             $(docker manifest inspect $push |
                 jq -cr '.manifests[] | select(.platform != '"$platform"').digest')
-        )
+        ) || : no manifest is OK
         # create a new manifest
         docker manifest create $push $tag
         # append pre-existing images (for other platforms)
