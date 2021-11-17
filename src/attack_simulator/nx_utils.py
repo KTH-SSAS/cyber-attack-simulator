@@ -6,6 +6,7 @@ import numpy as np
 
 from .graph import AttackGraph
 from .tree_layout import tree_layout
+from .tweak_layout import tweak_children
 
 logger = logging.getLogger("simulator")
 
@@ -27,21 +28,6 @@ def nx_digraph(g: AttackGraph, indices=True) -> nx.DiGraph:
             [(name, child) for name in g.attack_names for child in g.attack_steps[name].children]
         )
     return dig
-
-
-def _tweak_children(pos, root, children, skip_edges, intersection_weights, debug=0) -> bool:
-    """Tweak _order_ of children to center the graph and reduce edge lengths and crossings
-
-    Swap predetermined vertex positions leaving the total **in-tree** edge length unchanged.
-    Only lengths of edges that _skip_ between levels can change.
-    Similarly, only intersections that involve edges that _skip_ between levels are relevant.
-    For centering, the deviation from the mid-line at zero is penalized.
-
-    Returns True when a better permutation is found, False otherwise.
-    (`children` manipulated in-place as a side effect).
-    """
-    # TODO: include experimental code
-    return False
 
 
 def _handle_unassigned(
@@ -118,7 +104,7 @@ def nx_dag_layout(g: nx.DiGraph, tweak=None, debug=False) -> Dict[Any, Tuple[flo
             if len(tweak) == 1:
                 tweak += (tweak[0] ** 2,)
 
-            if _tweak_children(pos, root, tree_children, skip_edges, tweak, debug):
+            if tweak_children(pos, root, tree_children, skip_edges, tweak):
                 pos = tree_layout(root, tree_children)
 
     return _handle_unassigned(g, root, pos)
