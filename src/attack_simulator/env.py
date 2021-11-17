@@ -109,9 +109,9 @@ class AttackSimulationEnv(gym.Env):
         self.rewards = np.array([int(v) for v in self.rng.exponential(self.reward_params)])
 
         self.simulation_time = 0
-        self.service_state = np.full(self.g.num_services, 1)
-        self.attack_state = np.full(self.g.num_attacks, 0)
-        self.attack_surface = np.full(self.g.num_attacks, 0)
+        self.service_state = np.ones(self.g.num_services, dtype='int8')
+        self.attack_state = np.zeros(self.g.num_attacks, dtype='int8')
+        self.attack_surface = np.zeros(self.g.num_attacks, dtype='int8')
         self.attack_surface[self.entry_attack_index] = 1
 
         self.attacker = self.attacker_class(
