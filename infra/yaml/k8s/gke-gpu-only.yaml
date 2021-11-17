@@ -32,7 +32,7 @@ spec:
     minWorkers: 0
     maxWorkers: 0
     # https://docs.ray.io/en/master/cluster/guide.html#configuring-the-head-node
-    rayResources: {"CPU": 2, "GPU": 1}
+    rayResources: {"CPU": 1, "GPU": 1}
     podConfig:
       apiVersion: v1
       kind: Pod

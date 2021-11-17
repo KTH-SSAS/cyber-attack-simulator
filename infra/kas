@@ -263,7 +263,7 @@ case ${1-} in
         ;;
     jlab)
          _open_on_match 8888
-        _spawn jupyter-lab --allow-root --no-browser --ip=0.0.0.0 | tee $match
+        _spawn screen jupyter-lab --allow-root --no-browser --ip=0.0.0.0 | tee $match
         ;;
     shell)
         _spawn
