@@ -32,7 +32,8 @@ else
     version=${version%%+*}+$commit
     echo $'\x1b[1;35m'Using local version $version$'\x1b[m'
     echo $'\x1b[1;32m'Call this script as \`${0##*/} -\` to use version from ${toml##*/}$'\x1b[m'
-    sed -i .del "/^\[tool.poetry\]/,/^\[.*/s/^version *=.*$/version = \"$version\"/" "$toml"
+    cp "$toml" "$toml.del"
+    sed "/^\[tool.poetry\]/,/^\[.*/s/^version *=.*$/version = \"$version\"/" "$toml.del" > "$toml"
     rm "$toml.del"
 fi
 mapfile -t versions < <(gcloud artifacts versions list \
