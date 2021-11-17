@@ -107,7 +107,7 @@ class AttackSimulationEnv(gym.Env):
         return np.append(self.service_state, detected)
 
     def _get_eligible_indices(self):
-        return self.g.get_eligible_indices(self.attack_index, self.service_state, self.attack_state)
+        return self.g.get_eligible_indices(self.attack_index, self.attack_state, self.service_state)
 
     def step(self, action):
         self.action = action

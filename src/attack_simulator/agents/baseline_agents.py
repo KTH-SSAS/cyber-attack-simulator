@@ -71,7 +71,7 @@ class RuleBasedAgent(Agent):
             # then disable the corresponding service.
             if any(self.rewards[child_indices] > 0):
                 service_index = self.g.service_index_by_attack_index[attack_index]
-                if service_state[service_index]:
+                if service_index != -1 and service_state[service_index]:
                     action = service_index + 1  # + 1 because action == 0 is no action.
         return action
 
@@ -143,7 +143,11 @@ class RiskAwareAgent(NewRuleBasedAgent):
     def _should_disable(self, service_state, attack_index, child_index):
         # reward for running services
         service_index = self.g.service_index_by_attack_index[child_index]
-        S = sum(service_state[self.g.dependent_services[service_index]])
+        S = (
+            0
+            if service_index == -1
+            else sum(service_state[self.g.dependent_services[service_index]])
+        )
 
         # attackers reward for compromise
         A = self.rewards[child_index]

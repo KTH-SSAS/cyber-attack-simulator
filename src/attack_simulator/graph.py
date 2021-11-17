@@ -178,7 +178,7 @@ class AttackGraph:
             service_name = attack_step.asset
             if attack_step.service:
                 service_name += "." + attack_step.service
-            service_index = self.service_indices[service_name]
+            service_index = self.service_indices.get(service_name, -1)
             self.service_index_by_attack_index.append(service_index)
 
         self.dependent_services = [
