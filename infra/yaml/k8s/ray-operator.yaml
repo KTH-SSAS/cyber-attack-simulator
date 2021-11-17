@@ -15,9 +15,12 @@ namespacedOperator: false
 # in which to launch the operator.
 operatorNamespace: ray
 # operatorImage - The image used in the operator deployment.
-#operatorImage: europe-west4-docker.pkg.dev/sentience-reinforce/images/kas
 # `rayproject/ray:latest` contains the latest official release version of Ray.
 # `rayproject/ray:nightly` runs the current master version of Ray.
 # For a particular official release version of Ray, use `rayproject/ray:1.x.y`.
 # For a specific master commit, use the first 6 characters of the commit SHA, e.g. `rayproject/ray:050a07`.
 # The operator and Ray cluster can use different Ray versions, provided both versions are >= 1.2.0
+
+### NOTE: using the default Ray image _REQUIRES_ external access: use `gke-nat +` to enable
+# alternatively, use our own image from the Artifact Registry
+#operatorImage: europe-west4-docker.pkg.dev/sentience-reinforce/images/kas

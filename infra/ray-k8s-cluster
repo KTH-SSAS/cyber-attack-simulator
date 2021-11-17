@@ -6,7 +6,7 @@ RAY_OPERATOR=ray-operator
 RAY_OPERATOR_YAML="$(
     cd "$(dirname "${BASH_SOURCE[0]}")"
     git rev-parse --show-toplevel
-)/yaml/k8s/$RAY_OPERATOR.yaml"
+)/infra/yaml/k8s/$RAY_OPERATOR.yaml"
 RAY_OPERATOR_NAMESPACE=$(yq -er .operatorNamespace "$RAY_OPERATOR_YAML")
 
 ..() {
@@ -56,6 +56,8 @@ fi
 
 --() {
     # ensure any deployed Ray clusters get removed
+    # NOTE: attempting to delete an UNHEALTHY cluster can result in a hang, fixed by running:
+    #   kubectl patch $ray_cluster --patch '{"metadata":{"finalizers":[]}}' --type merge
     local ray_cluster
     for ray_cluster in $(kubectl get rayclusters -o name)
     do kubectl delete --wait $ray_cluster
