@@ -14,8 +14,8 @@ pip install --quiet keyrings.google-artifactregistry-auth 'poetry>=1.2.*'
 # ensure repo URL is configured
 repo=$(poetry config --list | sed -n "s|repositories\.\([^.]*\)\.url = \"$url\"|\1|p")
 [ "$repo" ] || {
-    repo=$default_repo
-    poetry config repositories.$repo.url $url
+    repo=$repo_default
+    poetry config repositories.$repo $url
 }
 
 # ensure GCP credentials are available
