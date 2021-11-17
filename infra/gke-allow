@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+set -e
+
+[ / = "${0::1}" ] || exec "$0" "$@"
+
+active=$(gcloud config configurations list --filter is_active=true --format 'value(name)')
+# safety valve: script path MUST include a component matching the relevant GCP configuration
+[[ "$0" = */"$active"/* ]] || {
+    echo GCP configuration \'$active\' does not match any path component in \'$0\'
+    exit 1
+}
+
+CLUSTER=x-ray
+ZONE=$(gcloud config get-value compute/zone)
+CIDR=$(ifconfig | sed '/broadcast/!d;s/.*inet \([^ ]*\) netmask.*/\1/')/32
+FORMAT="csv[delimiter=',',no-heading](masterAuthorizedNetworksConfig.cidrBlocks[].cidrBlock)"
+
+
+++() {
+    gcloud container clusters update $CLUSTER \
+        --zone $ZONE \
+        --enable-master-authorized-networks \
+        --master-authorized-networks $CIDR
+}
+
++() {
+    ! [ "$cidr" ] || CIDR+=,$cidr
+    ++
+}
+
+-() {
+    CIDR=${cidr//$CIDR/}
+    CIDR=${CIDR#,}
+    CIDR=${CIDR%,}
+    CIDR=${CIDR/,,/,}
+    ++
+}
+
+--() {
+    gcloud container clusters update $CLUSTER \
+        --zone $ZONE \
+        --enable-master-authorized-networks
+}
+
+=() {
+    cidr="$(gcloud container clusters describe $CLUSTER \
+            --zone $ZONE \
+            --format $FORMAT)"
+    echo {${op::1}$CIDR}
+    echo [=$cidr]
+    [[ ,"$cidr", = *,"$CIDR",* ]]
+}
+
+_() {
+    echo Usage: ${0##*/} [=\|+\|-\|++\|--]
+    exit 1
+}
+
+op=$1
+case $1 in ++) ++;; +) = || +;; -) ! = || -;; --) --;; =) :;; *) _;;esac
+= || [ - = "${1::1}" ]

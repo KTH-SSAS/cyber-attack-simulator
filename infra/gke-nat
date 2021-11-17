@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+[ / = "${0::1}" ] || exec "$0" "$@"
+
+active=$(gcloud config configurations list --filter is_active=true --format 'value(name)')
+# safety valve: script path MUST include a component matching the relevant GCP configuration
+[[ "$0" = */"$active"/* ]] || {
+    echo GCP configuration \'$active\' does not match any path component in \'$0\'
+    exit 1
+}
+
+CLUSTER=x-ray
+REGION=$(gcloud config get-value compute/region)
+NETWORK=default
+NAT=$NETWORK-$CLUSTER-nat
+ROUTER=router-$NAT
+
+enable_pod_to_internet_nat() {
+    gcloud compute routers create $ROUTER \
+        --network $NETWORK \
+        --region $REGION
+
+    gcloud compute routers nats create $NAT \
+        --router-region $REGION \
+        --router $ROUTER \
+        --nat-all-subnet-ip-ranges \
+        --auto-allocate-nat-external-ips
+}
+
+disable_pod_to_internet_nat() {
+    gcloud compute routers nats delete --router $ROUTER $NAT
+    gcloud compute routers delete $ROUTER
+}
+
+status_pod_to_internet_nat() {
+    gcloud compute routers nats list --router $ROUTER --router-region $REGION 2> /dev/null
+}
+
+case $1 in
+    +)
+        status_pod_to_internet_nat ||
+            enable_pod_to_internet_nat
+        ;;
+    -)
+        ! status_pod_to_internet_nat ||
+            disable_pod_to_internet_nat
+        ;;
+    =)
+        ;;
+    *)
+        echo Usage: ${0##*/} [=\|+\|-]
+        echo
+        echo Check/Start/Stop NAT for $CLUSTER
+        exit 1
+esac
+status_pod_to_internet_nat || [ - = "$1" ]

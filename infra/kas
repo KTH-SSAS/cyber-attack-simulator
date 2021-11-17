@@ -22,7 +22,7 @@ if [[ "$(git config remote.origin.url 2>/dev/null)" = *pontusj/openai_attack_sim
 then context="$(git rev-parse --show-toplevel)"
 else context="$(dirname "$(cd "$(dirname "$0")" && pwd)")"
 fi
-dockerfile="$context/docker/Dockerfile"
+dockerfile="$context/infra/Dockerfile"
 home="$(dirname "$(sed -n '/WORKDIR/{s/[^/]*//;p;}' "$dockerfile")")"
 
 # see if URL:s can easily be opened
@@ -167,23 +167,23 @@ _run() {
     do ! [ -r "$HOME/$path" ] || args+=(--volume "$HOME/$path:$home/$path:ro")
     done
 
-    ssh="${OAS_SSH_DIR-$HOME/.ssh}"
+    ssh="${KAS_SSH_DIR-$HOME/.ssh}"
     if [ "$ssh" ]
     then
         echo $'\x1b[1;33m'
-        echo Using \'$ssh\' as OAS_SSH_DIR...
+        echo Using \'$ssh\' as KAS_SSH_DIR...
         echo
-        echo To use an alternate path, set the environment variable OAS_SSH_DIR.
-        echo Setting OAS_SSH_DIR to the empty string \"\" disables SSH directory mapping.
+        echo To use an alternate path, set the environment variable KAS_SSH_DIR.
+        echo Setting KAS_SSH_DIR to the empty string \"\" disables SSH directory mapping.
         echo $'\x1b[m'
-        [ / = "${ssh::1}" ] || _bail OAS_SSH_DIR needs to be an absolute path
-        [ -d "$ssh" ] || _bail OAS_SSH_DIR must point to a directory
+        [ / = "${ssh::1}" ] || _bail KAS_SSH_DIR needs to be an absolute path
+        [ -d "$ssh" ] || _bail KAS_SSH_DIR must point to a directory
         keys=0
         for key in "$ssh/id_"*
         do
             ! ssh-keygen -lf "$key" || ((++keys))
         done
-        ((keys)) || _bail OAS_SSH_DIR must contain an SSH key
+        ((keys)) || _bail KAS_SSH_DIR must contain an SSH key
         args+=(--volume "$ssh:$home/.ssh")
     fi
 
@@ -277,6 +277,7 @@ case ${1-} in
 Usage: $self [.[FLAVOR]] [COMMAND [ARGS]]
 
 Convenience wrapper for working with Docker and Kubernetes based on this repo.
+NOTE: KAS stands for "KTH Attack Simulator".
 
 When an optional .FLAVOR (the leading dot is important!) is specified,
 the corresponding image and container will be called '$self.FLAVOR' [$name].
