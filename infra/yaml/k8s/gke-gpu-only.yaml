@@ -92,7 +92,7 @@ spec:
           cloud.google.com/gke-accelerator: nvidia-tesla-v100
   - name: worker-node-gpu
     # Minimum number of Ray workers of this Pod type.
-    minWorkers: 2
+    minWorkers: 0
     # Maximum number of Ray workers of this Pod type. Takes precedence over minWorkers.
     maxWorkers: 12
     # User-specified custom resources for use by Ray.

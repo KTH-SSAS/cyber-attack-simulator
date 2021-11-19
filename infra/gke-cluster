@@ -16,10 +16,12 @@ set -e
 
 [ / = "${0::1}" ] || exec "$0" "$@"
 
+self=${0##*/}
+alias=$(readlink "${0%$self}".alias)
 active=$(gcloud config configurations list --filter is_active=true --format 'value(name)')
 # safety valve: script path MUST include a component matching the relevant GCP configuration
-[[ "$0" = */"$active"/* ]] || {
-    echo GCP configuration \'$active\' does not match any path component in \'$0\'
+[[ "$active" = $alias ]] || {
+    echo GCP configuration \'$active\' does not match project alias \'$alias\'.
     exit 1
 }
 
@@ -31,7 +33,7 @@ SUBNET=default
 RULE=$CLUSTER-$NETWORK
 
 # local IP in CIDR form to allow Kube API access
-CIDR=$(ifconfig | sed '/broadcast/!d;s/.*inet \([^ ]*\) netmask.*/\1/')/32
+CIDR=$(curl -sS https://api.ipify.org)/32
 
 # basic scaling configuration
 GPU=v100
@@ -75,7 +77,9 @@ check_cluster() {
 
 setup_kubeconfig() {
     gcloud container clusters get-credentials $CLUSTER --zone $ZONE
-    sed -i .save s/gke_${PROJECT}_${ZONE}_//g $HOME/.kube/config
+    kcfg="$HOME/.kube/config"
+    cp "$kcfg" "$kcfg.save"
+    sed s/gke_${PROJECT}_${ZONE}_//g "$kcfg.save" > "$kcfg"
 }
 
 clean_kubeconfig() {
@@ -160,7 +164,7 @@ case $1 in
         setup_kubeconfig
         ;;
     *)
-        echo Usage: ${0##*/} [=\|+\|-\|,]
+        echo Usage: $self [=\|+\|-\|,]
         echo
         echo Check[=], Start[+], Stop[-] Kubernetes cluster \'$CLUSTER\'
         echo Or, get credentials[,] for \'$CLUSTER\'

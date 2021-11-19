@@ -18,7 +18,7 @@ RUN set -ex; \
     apt-get update; \
     apt-get install -y kubectl
 
-WORKDIR /root/openai_attack_simulation
+WORKDIR /root/kas
 COPY . .
 RUN set -ex; \
     if [ $(uname -m) = aarch64 ]; then \
@@ -30,6 +30,7 @@ RUN set -ex; \
         rm poetry.lock; \
     fi; \
     poetry install; \
+    poetry run jupyter lab build; \
     ln -s /root/.cache/pypoetry/virtualenvs/* /root/venv; \
     echo 'PATH=/root/venv/bin:$PATH' > /root/.bashrc
 ENV SHELL=bash

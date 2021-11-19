@@ -4,16 +4,18 @@ set -e
 
 [ / = "${0::1}" ] || exec "$0" "$@"
 
+self=${0##*/}
+alias=$(readlink "${0%$self}".alias)
 active=$(gcloud config configurations list --filter is_active=true --format 'value(name)')
 # safety valve: script path MUST include a component matching the relevant GCP configuration
-[[ "$0" = */"$active"/* ]] || {
-    echo GCP configuration \'$active\' does not match any path component in \'$0\'
+[[ "$active" = $alias ]] || {
+    echo GCP configuration \'$active\' does not match project alias \'$alias\'.
     exit 1
 }
 
 CLUSTER=x-ray
 ZONE=$(gcloud config get-value compute/zone)
-CIDR=$(ifconfig | sed '/broadcast/!d;s/.*inet \([^ ]*\) netmask.*/\1/')/32
+CIDR=$(curl -sS https://api.ipify.org)/32
 FORMAT="csv[delimiter=',',no-heading](masterAuthorizedNetworksConfig.cidrBlocks[].cidrBlock)"
 
 
@@ -53,7 +55,7 @@ FORMAT="csv[delimiter=',',no-heading](masterAuthorizedNetworksConfig.cidrBlocks[
 }
 
 _() {
-    echo Usage: ${0##*/} [=\|+\|-\|++\|--]
+    echo Usage: $self [=\|+\|-\|++\|--]
     exit 1
 }
 

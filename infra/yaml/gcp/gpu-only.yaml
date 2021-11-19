@@ -31,7 +31,7 @@ provider:
 
 # How Ray will authenticate with newly launched nodes.
 auth:
-  ssh_user: ray
+  ssh_user: kas
 # By default Ray creates a new private keypair, but you can also use your own.
 # If you do so, make sure to also set "KeyName" in the head and worker node
 # configurations below. This requires that you have added the key into the
@@ -43,6 +43,7 @@ auth:
 # The node config specifies the launch config and physical instance type.
 available_node_types:
   ray_head_gpu:
+    max_workers: 0
     # The resources provided by this node type.
     resources: {"CPU": 3, "GPU": 1}
     # Provider-specific config for this node type, e.g. instance type. By default
