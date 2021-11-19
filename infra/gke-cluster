@@ -132,6 +132,7 @@ create_cluster() {
         --max-accelerator type=nvidia-tesla-$GPU,count=$MAX_GPU \
         --autoprovisioning-scopes $(scopes logging.write monitoring devstorage.read_only compute)
 
+    clean_kubeconfig
     setup_kubeconfig
  
     deploy_gpu_driver_installer
