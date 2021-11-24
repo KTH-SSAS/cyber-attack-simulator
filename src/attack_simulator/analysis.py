@@ -5,8 +5,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm
 
-from .config import AgentConfig, EnvConfig, GraphConfig, create_agent, create_env, create_graph
-from .graph import SIZES
+from attack_simulator.env import AttackSimulationEnv
+
+from .config import AgentConfig, EnvConfig, GraphConfig, create_agent
+from .graph import SIZES, AttackGraph
 from .rng import set_seeds
 from .runner import Runner
 
@@ -47,13 +49,17 @@ class Analyzer:
 
         timing = np.zeros(3)
         if agent.trainable:  # Don't train untrainable agents
-            env = create_env(self.env_config, true_positive=tp_train, false_positive=fp_train)
+            self.env_config.true_positive = tp_train
+            self.env_config.false_positive = fp_train
+            env = AttackSimulationEnv(self.env_config)
             results = Runner(agent, env).train(episodes, self.seed_train, plot=plot)
             # duration, agent_time, env_time
             timing = np.array(results[:3])
 
         if rollouts > 0:
-            env = create_env(self.env_config, true_positive=tp_eval, false_positive=fp_eval)
+            env = AttackSimulationEnv(
+                self.env_config, true_positive=tp_eval, false_positive=fp_eval
+            )
             results = Runner(agent, env).evaluate(rollouts, self.seed_eval, plot=False)
             # duration, agent_time, env_time
             timing += np.array(results[:3])
@@ -65,7 +71,7 @@ class Analyzer:
 
     def simulations_with_different_seeds(self, seeds, episodes=10000, rollouts=100):
         """Histogram over returns for different random seeds."""
-        env = create_env(self.env_config)
+        env = AttackSimulationEnv(self.env_config)
         mean_returns = list()
         for i, seed in enumerate(seeds):
             print(f"Simulation {i+1}/{len(seeds)}")
@@ -109,14 +115,14 @@ class Analyzer:
         returns_matrix = np.zeros(shape)
 
         for graph_index, graph_size in enumerate(graph_sizes):
-            graph = create_graph(self.graph_config, graph_size=graph_size)
-            env = create_env(self.env_config, attack_graph=graph)
+            self.env_config.graph_config.graph_size = graph_size
+            env = AttackSimulationEnv(self.env_config)
 
             # Use rule-based agent as baseline.  No training needed.
             agent = create_agent(
                 self.agent_config,
                 agent_type="rule-based",
-                attack_graph=graph,
+                attack_graph=env.g,
                 input_dim=len(env.observation_space.spaces),
                 num_actions=env.action_space.n,
             )
@@ -129,7 +135,7 @@ class Analyzer:
                 agent = create_agent(
                     self.agent_config,
                     agent_type="reinforce",
-                    attack_graph=graph,
+                    attack_graph=env.g,
                     input_dim=len(env.observation_space.spaces),
                     hidden_dim=hidden_layer_size,
                     num_actions=env.action_space.n,
@@ -141,7 +147,7 @@ class Analyzer:
                 mean_reinforce_returns = np.mean(results.returns)
 
                 hls_array[graph_index, hidden_layer_index] = hidden_layer_size
-                gs_array[graph_index, hidden_layer_index] = graph.num_attacks
+                gs_array[graph_index, hidden_layer_index] = env.g.num_attacks
                 returns_matrix[graph_index, hidden_layer_index] = (
                     mean_reinforce_returns / mean_rule_based_returns
                 )
@@ -181,8 +187,9 @@ class Analyzer:
         gs_list = []
 
         for graph_size in graph_sizes:
-            graph = create_graph(self.graph_config, graph_size=graph_size)
-            env = create_env(self.env_config, attack_graph=graph)
+            self.graph_config.graph_size = graph_size
+            graph = AttackGraph(self.graph_config)
+            env = AttackSimulationEnv(self.env_config, attack_graph=graph)
             gs_list += [graph.num_attacks] * len(seeds)
 
             for agent_type in agent_types:
@@ -258,7 +265,7 @@ class Analyzer:
     ):
         """Plot the returns as a function of share of true and false positives"""
         # Training on perfect obbservations
-        env = create_env(self.env_config, true_positive=1.0, false_positive=0.0)
+        env = AttackSimulationEnv(self.env_config)
         agent = create_agent(self.agent_config)
         Runner(agent, env).train(episodes, self.seed_train, plot=False)
 
@@ -267,7 +274,9 @@ class Analyzer:
 
         def mean_returns(tp, fp):
             # Evaluate on a range of different observation qualities.
-            env = create_env(self.env_config, true_positive=tp, false_positive=fp)
+            self.env_config.false_positive = fp
+            self.env_config.true_positive = tp
+            env = AttackSimulationEnv(self.env_config)
             results = Runner(agent, env).evaluate(rollouts, self.seed_eval, plot=False)
             return np.mean(results.returns)
 

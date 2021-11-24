@@ -10,7 +10,7 @@ def tree_layout(root: Any, children: Dict[Any, Any]) -> Dict[Any, Tuple[float, f
     mod = {node: 0 for node in children}
     thread = {node: None for node in children}
     ancestor = {node: node for node in children}
-    prelim = {}
+    prelim: dict = {}
     level = {}
     pos = {}
     child_count = {node: len(children[node]) for node in children}

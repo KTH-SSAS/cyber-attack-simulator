@@ -1,10 +1,15 @@
 import logging
 from dataclasses import asdict
+from typing import List
 
 import gym
+import gym.spaces as spaces
 import numpy as np
 
-from .agents import ATTACKERS
+from attack_simulator.agents import ATTACKERS
+from attack_simulator.agents.agent import Agent
+from attack_simulator.config import EnvConfig
+
 from .graph import AttackGraph
 from .renderer import AttackSimulationRenderer
 from .rng import get_rng
@@ -16,18 +21,18 @@ logger = logging.getLogger("simulator")
 class AttackSimulationEnv(gym.Env):
     NO_ACTION = "no action"
 
-    def __init__(self, env_config):
+    def __init__(self, config: EnvConfig):
         super(AttackSimulationEnv, self).__init__()
+        env_config: EnvConfig = config
 
         # process configuration, leave the graph last, as it may destroy env_config
-        self.attacker_class = ATTACKERS[env_config.get("attacker", "random")]
-        self.true_positive = env_config.get("true_positive", 1.0)
-        self.false_positive = env_config.get("false_positive", 0.0)
-        self.save_graphs = env_config.get("save_graphs")
-        self.save_logs = env_config.get("save_logs")
-        self.g = env_config.get("attack_graph")
-        if self.g is None:
-            self.g = AttackGraph(env_config)
+        self.config = env_config
+        self.attacker_class = ATTACKERS[env_config.attacker]
+        self.true_positive = env_config.true_positive
+        self.false_positive = env_config.false_positive
+        self.save_graphs = env_config.save_graphs
+        self.save_logs = env_config.save_logs
+        self.g: AttackGraph = AttackGraph(config.graph_config)
 
         # prepare just enough to get dimensions sorted, do the rest on first `reset`
         self.entry_attack_index = self.g.attack_names.index(self.g.root)
@@ -36,11 +41,11 @@ class AttackSimulationEnv(gym.Env):
         # a) which services are turned on; and,
         # b) which attack steps have been successfully taken
         self.dim_observations = self.g.num_services + self.g.num_attacks
-        self.observation_space = gym.spaces.Tuple((gym.spaces.Discrete(2),) * self.dim_observations)
+        self.observation_space = spaces.Tuple((spaces.Discrete(2),) * self.dim_observations)
 
         # The defender action space allows to disable any one service or leave all unchanged
         self.num_actions = self.g.num_services + 1
-        self.action_space = gym.spaces.Discrete(self.num_actions)
+        self.action_space = spaces.Discrete(self.num_actions)
 
         self.episode_count = 0
         self._seed = None
@@ -48,8 +53,8 @@ class AttackSimulationEnv(gym.Env):
         self.reward = None
         self.action = 0
         self.attack_index = None
-        self.compromised_flags = []
-        self.compromised_steps = []
+        self.compromised_flags: List[str] = []
+        self.compromised_steps: List[str] = []
         self.renderer = None
 
         self.episode_id = self._get_episode_id()
@@ -113,7 +118,7 @@ class AttackSimulationEnv(gym.Env):
         self.attack_surface = np.full(self.g.num_attacks, 0)
         self.attack_surface[self.entry_attack_index] = 1
 
-        self.attacker = self.attacker_class(
+        self.attacker: Agent = self.attacker_class(
             dict(
                 attack_graph=self.g,
                 ttc=self.ttc_remaining,

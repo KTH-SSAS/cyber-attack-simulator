@@ -1,7 +1,10 @@
+import dataclasses
+
 import numpy as np
 import pytest
 
 from attack_simulator.agents import ATTACKERS
+from attack_simulator.config import EnvConfig
 from attack_simulator.env import AttackSimulationEnv
 from attack_simulator.renderer import AttackSimulationRenderer
 
@@ -43,7 +46,7 @@ def test_env_action(test_env, test_services):
         assert test_env._interpret_action(i + 1) == service
 
 
-def test_env_action_probs(test_env, test_services):
+def test_env_action_probs(test_env: AttackSimulationEnv, test_services):
     probs = [1] * test_env.num_actions
     i_probs = test_env._interpret_action_probabilities(probs)
     assert all(map(lambda v: v == 1, i_probs.values()))
@@ -60,8 +63,9 @@ def test_env_action_probs(test_env, test_services):
         (1, ([0] + [1] * 5 + [0] * 9, 5, True)),
     ],
 )
-def test_env_first_step(attacker, action, expected, test_env_config):
-    env = AttackSimulationEnv(dict(test_env_config, attacker_class=ATTACKERS[attacker]))
+def test_env_first_step(attacker, action, expected, test_env_config: EnvConfig):
+    dataclasses.replace(test_env_config, attacker=attacker)
+    env = AttackSimulationEnv(test_env_config)
     env.seed(42)
     env.reset()
     obs, reward, done, _ = env.step(action)
@@ -74,16 +78,19 @@ def test_env_render(test_env, tmpdir):
         assert test_env.render() is True
 
 
-def test_env_empty_config():
-    env = AttackSimulationEnv(dict())
+def test_env_default_config(test_env_config):
+    env = AttackSimulationEnv(test_env_config)
     # defaults for project graph
-    assert all(np.array(env.reset()) == [1] * 18 + [0] * 78)
+    num_services = 6
+    num_actions = 9
+    assert all(np.array(env.reset()) == [1] * num_services + [0] * num_actions)
 
 
 @pytest.mark.parametrize("save_graphs", [False, True])
 @pytest.mark.parametrize("save_logs", [False, True])
 def test_env_render_save_graphs(save_graphs, save_logs, test_env_config, tmpdir):
-    env = AttackSimulationEnv(dict(test_env_config, save_graphs=save_graphs, save_logs=save_logs))
+    config = dataclasses.replace(test_env_config, save_graphs=save_graphs, save_logs=save_logs)
+    env = AttackSimulationEnv(config)
     seed = 42
     episode = 1
     frames = AttackSimulationRenderer.HTML.replace(".html", "_frames")

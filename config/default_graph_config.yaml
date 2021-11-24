@@ -1,6 +1,0 @@
-easy_ttc: 10
-graph_size: full
-hard_ttc: 100
-high_flag_reward: 100000
-low_flag_reward: 1000
-medium_flag_reward: 10000

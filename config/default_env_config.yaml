@@ -1,5 +1,18 @@
 attacker: random
 false_positive: 0.0
 save_graphs: false
-save_text: false
+save_logs: false
 true_positive: 1.0
+graph_config: {
+  graph_size: full,
+  easy_ttc: 10,
+  hard_ttc: 100,
+  high_flag_reward: 100000,
+  medium_flag_reward: 10000,
+  low_flag_reward: 1000,
+  filename: graphs/en2720.yaml, # TODO the format of this filename can be debated
+  root: internet.connect,
+  prune: [],
+  unmalleable_assets: [internet, office_network, hidden_network],
+  random_seed: 0
+}
