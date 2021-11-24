@@ -28,6 +28,7 @@ ray = {version = "^1.6.0", extras = ["default", "rllib", "k8s"]}
 networkx = "^2.6.2"
 seaborn = "^0.11.2"
 autoflake = "^1.4"
+wandb = "^0.12.7"
 
 [tool.poetry.dev-dependencies]
 tox = "^3.23.1"
