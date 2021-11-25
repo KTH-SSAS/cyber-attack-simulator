@@ -68,7 +68,8 @@ class AttackGraph:
         services: Set[str] = set()
 
         # Declare attributes
-        prune: Set[str] = config.prune
+        prune: Set[str] = set(config.prune)
+        unmalleable_assets: Set[str] = set(config.unmalleable_assets)
 
         self.config = config
 
@@ -103,7 +104,7 @@ class AttackGraph:
             asset = parts[0]
             name = parts[-1]
             node.update(asset=asset, name=name)
-            if asset not in self.config.unmalleable_assets:
+            if asset not in unmalleable_assets:
                 services.add(asset)
             if 0 < rest:
                 if name == "capture" and parts[-2][:4] == "flag":

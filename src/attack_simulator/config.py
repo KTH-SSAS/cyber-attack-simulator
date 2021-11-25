@@ -1,5 +1,5 @@
 from dataclasses import asdict, dataclass, field
-from typing import Optional, Set
+from typing import List, Optional, List
 
 import yaml
 
@@ -26,17 +26,14 @@ class GraphConfig(Config):
     random_seed: int
     filename: str
     root: str
-    prune: Set[str] = field(default_factory=set)
-    unmalleable_assets: Set[str] = field(default_factory=set)
+    prune: List[str] = field(default_factory=list)
+    unmalleable_assets: List[str] = field(default_factory=list)
 
     @classmethod
     def from_yaml(cls, filename):
         with open(filename) as f:
             dictionary = yaml.safe_load(f)
             dictionary = dictionary["graph_config"]
-            # Do this since yaml does not have any syntax for sets
-            dictionary["prune"] = set(dictionary["prune"])
-            dictionary["unmalleable_assets"] = set(dictionary["unmalleable_assets"])
             return cls(**dictionary)
 
 
@@ -53,10 +50,7 @@ class EnvConfig(Config):
     def from_yaml(cls, filename):
         with open(filename) as f:
             dictionary = yaml.safe_load(f)
-            graph_config = dictionary["graph_config"]
-            graph_config["prune"] = set(graph_config["prune"])
-            graph_config["unmalleable_assets"] = set(graph_config["unmalleable_assets"])
-            dictionary["graph_config"] = GraphConfig(**graph_config)
+            dictionary["graph_config"] = GraphConfig(**dictionary["graph_config"])
             return cls(**dictionary)
 
 
