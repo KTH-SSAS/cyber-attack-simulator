@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+set -e
+
+url=https://europe-west4-python.pkg.dev/sentience-reinforce/wheels/
+pkg=attack-simulator
+repo_default=gcp
+commit=$(git rev-parse --short HEAD)
+toml=$(git rev-parse --show-toplevel)/pyproject.toml
+
+# ensure relevant keyring backend and supporting poetry version installed
+pip install --quiet keyrings.google-artifactregistry-auth 'poetry>=1.2.*'
+
+# ensure repo URL is configured
+repo=$(poetry config --list | sed -n "s|repositories\.\([^.]*\)\.url = \"$url\"|\1|p")
+[ "$repo" ] || {
+    repo=$repo_default
+    poetry config repositories.$repo $url
+}
+
+# ensure GCP credentials are available
+[ "$(gcloud auth list --filter status=active --format 'value(account)')" ] ||
+    gcloud auth application-default login
+
+# update version, since overwriting existing versions is not supported
+# BUT skip version update, if `-` is passed on the command-line
+version=$(sed -n '/^\[tool.poetry\]/,/^\[.*/s/^version *= *"\([^"]*\)"$/\1/p' "$toml")
+if [ - = "$1" ]
+then
+    echo $'\x1b[1;35m'Using version $version from ${toml##*/} \"as is\"$'\x1b[m'
+else
+    version=${version%%+*}+$commit
+    echo $'\x1b[1;35m'Using local version $version$'\x1b[m'
+    echo $'\x1b[1;32m'Call this script as \`${0##*/} -\` to use version from ${toml##*/}$'\x1b[m'
+    cp "$toml" "$toml.del"
+    sed "/^\[tool.poetry\]/,/^\[.*/s/^version *=.*$/version = \"$version\"/" "$toml.del" > "$toml"
+    rm "$toml.del"
+fi
+mapfile -t versions < <(gcloud artifacts versions list \
+    --repository wheels --package $pkg --format 'value(name)')
+if [[ " ${versions[*]} " = *\ $version\ * ]]
+then echo $'\x1b[1;31m'A wheel with version $version is already published$'\x1b[m' && exit 1
+fi
+
+# build the wheel
+poetry build --format wheel
+
+# publish the wheel to GCP
+poetry publish --repository $repo
+
+# update version information for `ray up`
+echo $version > /tmp/$pkg-version
