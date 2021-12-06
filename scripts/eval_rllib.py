@@ -5,7 +5,7 @@ import torch
 import yaml
 from ray.rllib.agents import ppo
 
-from attack_simulator.config import config_from_dicts
+from attack_simulator.config_util import config_from_dicts
 from attack_simulator.env import AttackSimulationEnv
 
 
@@ -23,7 +23,7 @@ class RLLibEvaluator:
         self.env_config, _ = config_from_dicts(graph_config_dict, env_config_dict)
 
         self.env_config.save_graphs = True
-        self.env_config.save_text = True
+        self.env_config.save_logs = True
 
         self.config = {
             "seed": 0,

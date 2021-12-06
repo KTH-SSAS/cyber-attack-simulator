@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
+import dataclasses
+
 from attack_simulator.config import GraphConfig
 from attack_simulator.graph import AttackGraph
 
-import dataclasses
 
 class Attacker:
     def __init__(self, attack_graph, compromised_steps):

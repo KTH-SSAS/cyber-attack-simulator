@@ -1,5 +1,5 @@
 from dataclasses import asdict, dataclass, field
-from typing import List, Optional, List
+from typing import List, Optional
 
 import yaml
 

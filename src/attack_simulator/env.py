@@ -1,6 +1,6 @@
 import logging
 from dataclasses import asdict
-from typing import List
+from typing import List, Union
 
 import gym
 import gym.spaces as spaces
@@ -21,17 +21,19 @@ logger = logging.getLogger("simulator")
 class AttackSimulationEnv(gym.Env):
     NO_ACTION = "no action"
 
-    def __init__(self, config: EnvConfig):
+    def __init__(self, config: Union[EnvConfig, dict]):
         super(AttackSimulationEnv, self).__init__()
-        env_config: EnvConfig = config
+
+        if isinstance(config, dict):
+            config = EnvConfig(**config)
 
         # process configuration, leave the graph last, as it may destroy env_config
-        self.config = env_config
-        self.attacker_class = ATTACKERS[env_config.attacker]
-        self.true_positive = env_config.true_positive
-        self.false_positive = env_config.false_positive
-        self.save_graphs = env_config.save_graphs
-        self.save_logs = env_config.save_logs
+        self.config = config
+        self.attacker_class = ATTACKERS[config.attacker]
+        self.true_positive = config.true_positive
+        self.false_positive = config.false_positive
+        self.save_graphs = config.save_graphs
+        self.save_logs = config.save_logs
         self.g: AttackGraph = AttackGraph(config.graph_config)
 
         # prepare just enough to get dimensions sorted, do the rest on first `reset`

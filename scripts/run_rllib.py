@@ -1,17 +1,15 @@
 import argparse
+import dataclasses
 import os
 from dataclasses import asdict
 
 import ray
-import yaml
 from ray import tune
 from ray.tune.integration.wandb import WandbLoggerCallback
 
-from attack_simulator.agents import ATTACKERS, DEFENDERS
-from attack_simulator.config import config_from_dicts
+from attack_simulator.config import EnvConfig
 from attack_simulator.custom_callback import AttackSimCallback
 from attack_simulator.env import AttackSimulationEnv
-from attack_simulator.graph import SIZES
 
 
 def dict2choices(d):
@@ -21,9 +19,6 @@ def dict2choices(d):
 
 
 def parse_args():
-    sizes, sizes_help = dict2choices(SIZES)
-    defenders, defenders_help = dict2choices(DEFENDERS)
-    attackers, attackers_help = dict2choices(ATTACKERS)
 
     parser = argparse.ArgumentParser(
         description="Reinforcement learning of a computer network defender, using RLlib"
@@ -31,60 +26,7 @@ def parse_args():
 
     parser.add_argument("-g", "--graph", action="store_true", help="Generate a GraphViz .dot file.")
 
-    parser.add_argument("--graph-config", type=str)
-
-    parser.add_argument(
-        "-D",
-        "--defender",
-        metavar="DEFENDER",
-        choices=defenders,
-        type=str,
-        default=defenders[-1],
-        help=f'Select defender. Choices are "{defenders_help}".  Default is "{defenders[-1]}"',
-    )
-
-    parser.add_argument(
-        "-A",
-        "--attacker",
-        metavar="ATTACKER",
-        choices=attackers,
-        type=str,
-        default=attackers[-1],
-        help=f'Select attacker. Choices are "{attackers_help}".  Default is "{attackers[-1]}"',
-    )
-
-    parser.add_argument(
-        "-s",
-        "--graph_size",
-        metavar="SIZE",
-        choices=sizes,
-        type=str,
-        default=sizes[-1],
-        help=f'Run simulations on a "{sizes_help}" attack graph. Default is "{sizes[-1]}".',
-    )
-
-    parser.add_argument(
-        "-r",
-        "--random_seed",
-        type=int,
-        default=None,
-        help="Random seed for simulation. Default is None, which falls back to OS entropy.",
-    )
-
-    parser.add_argument(
-        "-R",
-        "--same_seed",
-        action="store_true",
-        help="Use the same seed for BOTH training AND evaluation. Defaults to `False`",
-    )
-
-    parser.add_argument(
-        "-N",
-        "--rollouts",
-        type=int,
-        default=100,
-        help="Number of simulations to run after training, for evaluation.",
-    )
+    parser.add_argument("--config-file", type=str, help="Path to YAML configuration file.")
 
     parser.add_argument("--stop-iters", type=int, help="Number of iterations to train.")
     parser.add_argument("--stop-timesteps", type=int, help="Number of timesteps to train.")
@@ -96,7 +38,7 @@ def parse_args():
         "--render", action="store_true", help="Render an animation of the evaluation."
     )
 
-    parser.add_argument("-L", "--lr", help="Optimizer (Adam) learning rate.", default=1e-2)
+    parser.add_argument("-L", "--lr", help="Optimizer learning rate.", default=1e-2)
 
     parser.add_argument("-C", "--cuda", action="store_true", help="Use CUDA acceleration.")
 
@@ -141,15 +83,9 @@ def main(args):
             )
         )
 
-    with open("config/default_env_config.yaml") as f:
-        env_config_dict = yaml.safe_load(f)
+    env_config = EnvConfig.from_yaml(args.config_file)
 
-    with open("config/default_graph_config.yaml") as f:
-        graph_config_dict = yaml.safe_load(f)
-
-    env_config, _ = config_from_dicts(graph_config_dict, env_config_dict)
-
-    env_config.save_graphs = args.graph
+    env_config = dataclasses.replace(env_config, save_graphs=args.graph)
 
     model_config = {"use_lstm": True, "lstm_cell_size": 256}
 
@@ -216,7 +152,6 @@ def main(args):
         restore=args.checkpoint_path,
     )
 
-    pass
     # wandb.config.update(env_config_dict)
     # wandb.config.update(graph_config_dict)
     # wandb.config.update(model_config)

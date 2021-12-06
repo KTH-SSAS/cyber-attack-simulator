@@ -4,7 +4,7 @@ Process YAML graph description into an Attack Graph
 import dataclasses
 import os
 from dataclasses import asdict, dataclass, field
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Union
 
 from yaml import safe_load
 
@@ -59,9 +59,10 @@ SIZES: Dict[str, Set[str]] = {
 
 
 class AttackGraph:
-    def __init__(self, config: GraphConfig):
+    def __init__(self, config: Union[GraphConfig, dict]):
 
-        assert isinstance(config, GraphConfig), "Config was not GraphConfig"
+        if isinstance(config, dict):
+            config = GraphConfig(**config)
 
         # initialization
         self.attack_steps: Dict[str, AttackStep] = dict()
@@ -74,10 +75,12 @@ class AttackGraph:
         self.config = config
 
         if len(prune) == 0 and self.config.graph_size in SIZES:
-            self.prune = SIZES[self.config.graph_size]
+            prune = SIZES[self.config.graph_size]
+
+        filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.config.filename)
 
         # load the YAML graph spec
-        with open(self.config.filename, "r") as yaml_file:
+        with open(filename, "r") as yaml_file:
             graph = safe_load(yaml_file.read())
 
         # traverse through the relevant subgraph for a given pass

@@ -5,7 +5,7 @@ import logging
 
 from attack_simulator.agents import ATTACKERS, DEFENDERS
 from attack_simulator.analysis import Analyzer
-from attack_simulator.config import make_configs
+from attack_simulator.config_util import config_from_args
 from attack_simulator.graph import SIZES
 
 
@@ -249,7 +249,7 @@ def main():
     logging.getLogger("trainer").setLevel(logging.DEBUG)
     logging.getLogger("trainer").addHandler(logging.FileHandler("trainer.log", mode="w"))
 
-    agent_config, env_config, graph_config = make_configs(parsed_args)
+    agent_config, env_config, graph_config = config_from_args(parsed_args)
 
     print(agent_config)
     print(env_config)
