@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+set -e
+
+[ / = "${0::1}" ] || exec "$0" "$@"
+
+self=${0##*/}
+alias=$(readlink "${0%$self}".alias)
+active=$(gcloud config configurations list --filter is_active=true --format 'value(name)')
+# safety valve: script path MUST include a component matching the relevant GCP configuration
+[[ "$active" = $alias ]] || {
+    echo GCP configuration \'$active\' does not match project alias \'$alias\'.
+    exit 1
+}
+
+=() {
+    gcloud artifacts repositories describe images
+    gcloud artifacts repositories describe wheels
+}
+
++() {
+    gcloud artifacts repositories create images --repository-format docker
+    gcloud artifacts repositories create wheels --repository-format python
+}
+
+-() {
+    gcloud artifacts repositories delete images
+    gcloud artifacts repositories delete wheels
+}
+
+"$@"

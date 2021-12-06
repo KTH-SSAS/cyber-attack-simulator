@@ -1,0 +1,174 @@
+#!/usr/bin/env bash
+
+# manage a **zonal** Kubernetes cluster for Ray in GKE
+#
+# the cluster has a single e2-standard-2 node for the Ray operator
+# all Ray cluster nodes are auto-provisioned (with minimum Skylake CPU) on the fly
+#
+# relevant documentation
+# - https://cloud.google.com/sdk/gcloud/reference/container/clusters/create
+# - https://cloud.google.com/sdk/gcloud/reference/container/node-pools/create
+# - https://cloud.google.com/kubernetes-engine/docs/how-to/cluster-autoscaler
+# - https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-provisioning
+# - https://cloud.google.com/kubernetes-engine/docs/how-to/gpus
+
+set -e
+
+[ / = "${0::1}" ] || exec "$0" "$@"
+
+self=${0##*/}
+alias=$(readlink "${0%$self}".alias)
+active=$(gcloud config configurations list --filter is_active=true --format 'value(name)')
+# safety valve: script path MUST include a component matching the relevant GCP configuration
+[[ "$active" = $alias ]] || {
+    echo GCP configuration \'$active\' does not match project alias \'$alias\'.
+    exit 1
+}
+
+CLUSTER=x-ray
+PROJECT=$(gcloud config get-value project)
+ZONE=$(gcloud config get-value compute/zone)
+NETWORK=default
+SUBNET=default
+RULE=$CLUSTER-$NETWORK
+
+# local IP in CIDR form to allow Kube API access
+CIDR=$(curl -sS https://api.ipify.org)/32
+
+# basic scaling configuration
+GPU=v100
+MAX_NODES=16
+MAX_GPU=$MAX_NODES
+MAX_CPU=$((4*MAX_NODES))
+MAX_RAM=$((15*MAX_NODES))
+
+GPU_DRIVER_INSTALLER_URL="https://raw.githubusercontent.com\
+/GoogleCloudPlatform/container-engine-accelerators/master\
+/nvidia-driver-installer/ubuntu/daemonset-preloaded.yaml"
+
+
+create_pod_traffic_to_vpc_rule() {
+    pod_range=$(gcloud container clusters describe $CLUSTER \
+        --zone $ZONE \
+        --format='value(clusterIpv4Cidr)')
+    gcloud compute firewall-rules create $RULE \
+        --allow all \
+        --direction INGRESS \
+        --network $NETWORK \
+        --source-ranges $pod_range
+}
+
+delete_pod_traffic_to_vpc_rule() {
+    rule=$(gcloud compute firewall-rules list \
+        --filter name=$RULE \
+        --format 'value(name)')
+    ! [ "$rule" = $RULE ] || gcloud compute firewall-rules delete --quiet $RULE
+}
+
+
+check_cluster() {
+    cluster="$(gcloud container clusters list \
+        --filter name=$CLUSTER --format 'value(name)' 2> /dev/null)"
+    echo {$op$CLUSTER}
+    echo [=$cluster]
+    [ "$cluster" = $CLUSTER ]
+}
+
+
+setup_kubeconfig() {
+    gcloud container clusters get-credentials $CLUSTER --zone $ZONE
+    kcfg="$HOME/.kube/config"
+    cp "$kcfg" "$kcfg.save"
+    sed s/gke_${PROJECT}_${ZONE}_//g "$kcfg.save" > "$kcfg"
+}
+
+clean_kubeconfig() {
+    for i in user cluster context
+    do ! [[ "$(kubectl config get-${i}s)" = *$CLUSTER* ]] || kubectl config delete-$i $CLUSTER || :
+    done
+}
+
+
+deploy_gpu_driver_installer() {
+    kubectl apply -f $GPU_DRIVER_INSTALLER_URL
+}
+
+undeploy_gpu_driver_installer() {
+    ! kubectl get -f $GPU_DRIVER_INSTALLER_URL || kubectl delete -f $GPU_DRIVER_INSTALLER_URL
+}
+
+
+create_cluster() {
+    scopes() {
+        printf -v scopes https://www.googleapis.com/auth/%s, "$@"
+        echo ${scopes%,}
+    }
+
+    gcloud container clusters create $CLUSTER \
+        --project $PROJECT \
+        --zone $ZONE \
+        --network $NETWORK \
+        --subnetwork $SUBNET \
+        --release-channel regular \
+        --enable-private-nodes \
+        --enable-ip-alias \
+        --enable-master-authorized-networks \
+        --master-authorized-networks $CIDR \
+        --master-ipv4-cidr '10.13.37.0/28' \
+        --default-max-pods-per-node 32 \
+        --machine-type e2-standard-2 \
+        --disk-type pd-standard \
+        --disk-size 100 \
+        --enable-autoscaling \
+        --num-nodes 1 \
+        --min-nodes 1 \
+        --max-nodes $MAX_NODES \
+        --scopes $(scopes cloud-platform) \
+        --enable-autoprovisioning \
+        --autoprovisioning-min-cpu-platform "Intel Skylake" \
+        --autoprovisioning-image-type UBUNTU_CONTAINERD \
+        --max-cpu $MAX_CPU \
+        --max-memory $MAX_RAM \
+        --max-accelerator type=nvidia-tesla-$GPU,count=$MAX_GPU \
+        --autoprovisioning-scopes $(scopes logging.write monitoring devstorage.read_only compute)
+
+    clean_kubeconfig
+    setup_kubeconfig
+ 
+    deploy_gpu_driver_installer
+
+    create_pod_traffic_to_vpc_rule
+}
+
+delete_cluster() {
+    delete_pod_traffic_to_vpc_rule
+
+    undeploy_gpu_driver_installer
+
+    clean_kubeconfig
+
+    gcloud container clusters delete --quiet $CLUSTER --zone $ZONE
+}
+
+op=$1
+case $1 in
+    +)
+        check_cluster || create_cluster
+        ;;
+    -)
+        ! check_cluster || delete_cluster
+        ;;
+    =)
+        ;;
+    ,)
+        clean_kubeconfig
+        setup_kubeconfig
+        ;;
+    *)
+        echo Usage: $self [=\|+\|-\|,]
+        echo
+        echo Check[=], Start[+], Stop[-] Kubernetes cluster \'$CLUSTER\'
+        echo Or, get credentials[,] for \'$CLUSTER\'
+        exit 1
+esac
+check_cluster || [ - = "$1" ]

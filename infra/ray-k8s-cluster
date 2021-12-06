@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+RAY_OPERATOR=ray-operator
+RAY_OPERATOR_YAML="$(
+    cd "$(dirname "${BASH_SOURCE[0]}")"
+    git rev-parse --show-toplevel
+)/infra/yaml/k8s/$RAY_OPERATOR.yaml"
+RAY_OPERATOR_NAMESPACE=$(yq -er .operatorNamespace "$RAY_OPERATOR_YAML")
+
+..() {
+    echo Usage: ${0##*/} [{{=\|+\|-} RAY_CLUSTER_YAML}\|==\|++\|--]
+    ! (($#)) || printf "\n\x1b[1;31m$*\x1b[m\n"
+    exit 1
+}
+
+if [[ "${1-}" = [=+-] ]]
+then
+    RAY_CLUSTER_YAML=${2-}
+    [ -r "$RAY_CLUSTER_YAML" ] || .. RAY_CLUSTER_YAML=\"$RAY_CLUSTER_YAML\" not readable
+    RAY_CLUSTER=$(yq -er .metadata.name "$RAY_CLUSTER_YAML") ||
+        .. failed to parse cluster name from RAY_CLUSTER_YAML=\"$RAY_CLUSTER_YAML\"
+fi
+
+
+### ,{=,+,-}, for the Ray operator's namespace
+,=() {
+    kubectl get namespace "$RAY_OPERATOR_NAMESPACE" -o name 2> /dev/null
+}
+
+,+() {
+   kubectl create namespace "$RAY_OPERATOR_NAMESPACE"
+}
+
+,-() {
+   kubectl delete namespace "$RAY_OPERATOR_NAMESPACE"
+}
+
+
+### {==,++,--} for operator-only Helm chart for Ray operator (includes `raycluster` CRD)
+==() {
+    local ray_operator=$(helm list -f $RAY_OPERATOR -o json 2> /dev/null | jq -r '.[].name')
+    echo [[$ray_operator]]
+    [ $RAY_OPERATOR = "$ray_operator" ]
+}
+
+++() {
+    ,= || ,+  # ensure the operator's namespace exists
+    # fetch Ray's Helm chart (from GitHub via SVN, since it's not published anywhere [YET?])
+    local chart=$(mktemp -d)
+    trap "rm -fr \"$chart\"" EXIT
+    svn export --force https://github.com/ray-project/ray/trunk/deploy/charts/ray "$chart"
+    helm install --wait $RAY_OPERATOR $chart --values "$RAY_OPERATOR_YAML"
+}
+
+--() {
+    # ensure any deployed Ray clusters get removed
+    # NOTE: attempting to delete an UNHEALTHY cluster can result in a hang, fixed by running:
+    #   kubectl patch $ray_cluster --patch '{"metadata":{"finalizers":[]}}' --type merge
+    local ray_cluster
+    for ray_cluster in $(kubectl get rayclusters -o name)
+    do kubectl delete --wait $ray_cluster
+    done
+    helm delete --wait $RAY_OPERATOR
+    ! ,= || ,-  # ensure the operator's namespace gets removed
+    kubectl delete crd rayclusters.cluster.ray.io
+}
+
+
+### {=,+,-} for Ray cluster
+=() {
+    local ray_cluster=$(kubectl get rayclusters $RAY_CLUSTER -o name 2> /dev/null)
+    echo [$ray_cluster]
+    [ "$RAY_CLUSTER" = "${ray_cluster##*/}" ]
+}
+
++() {
+    == || ++  # ensure the Ray operator is installed
+
+    # if an imagePullSecret is needed make sure it is fresh
+    local podspec=.spec.podTypes[0].podConfig.spec
+    if secret=$(yq -er $podspec.imagePullSecrets[0].name "$RAY_CLUSTER_YAML")
+    then
+        kubectl delete secret $secret || : the secret need not exist, OK to fail here
+        image=$(yq -er $podspec.containers[0].image "$RAY_CLUSTER_YAML")
+        gcloud auth configure-docker ${image%%/*}
+        docker login $image
+        kubectl create secret generic $secret \
+            --type=kubernetes.io/dockerconfigjson \
+            --from-file=.dockerconfigjson=$HOME/.docker/config.json
+    fi
+
+    kubectl apply -f "$RAY_CLUSTER_YAML"
+}
+
+-() {
+    kubectl delete --wait -f "$RAY_CLUSTER_YAML"
+}
+
+
+### main logic
+case ${1-} in
+    =) :;;  # defer to default status check
+    +) = || +;;  # ensure Ray cluster is on
+    -) ! = || -;;  # ensure Ray cluster is off
+    ==) ==;;  # display Ray operator status
+    ++) == || ++;;  # ensure Ray operator is installed
+    --) ! == || --;;  # ensure Ray operator is uninstalled
+    *) ..;; # display usage info and exit
+esac
+((${#1} == 2)) || = || [ - = "${1::1}" ]

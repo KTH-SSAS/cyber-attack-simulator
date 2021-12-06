@@ -4,7 +4,7 @@ RUN set -ex; \
     ln -fs /usr/share/zoneinfo/Europe/Stockholm /etc/localtime; \
     apt-get update; \
     apt-get install -y python3.9 python3.9-distutils python3.9-dev build-essential \
-        curl less vim-nox locate screen rsync openssh-client; \
+        curl git less vim-nox locate screen rsync openssh-client; \
     curl https://bootstrap.pypa.io/get-pip.py | python3.9; \
     curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -; \
     apt-get install -y nodejs; \
@@ -18,7 +18,7 @@ RUN set -ex; \
     apt-get update; \
     apt-get install -y kubectl
 
-WORKDIR /root/openai_attack_simulation
+WORKDIR /root/kas
 COPY . .
 RUN set -ex; \
     if [ $(uname -m) = aarch64 ]; then \
@@ -30,6 +30,7 @@ RUN set -ex; \
         rm poetry.lock; \
     fi; \
     poetry install; \
+    poetry run jupyter lab build; \
     ln -s /root/.cache/pypoetry/virtualenvs/* /root/venv; \
     echo 'PATH=/root/venv/bin:$PATH' > /root/.bashrc
 ENV SHELL=bash
