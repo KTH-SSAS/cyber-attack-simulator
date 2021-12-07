@@ -66,7 +66,6 @@ def test_env_action_probs(test_env: AttackSimulationEnv, test_services):
 def test_env_first_step(attacker, action, expected, test_env_config: EnvConfig):
     dataclasses.replace(test_env_config, attacker=attacker)
     env = AttackSimulationEnv(test_env_config)
-    env.seed(42)
     env.reset()
     obs, reward, done, _ = env.step(action)
     obs_, reward_, done_ = expected
@@ -89,16 +88,14 @@ def test_env_default_config(test_env_config):
 @pytest.mark.parametrize("save_graphs", [False, True])
 @pytest.mark.parametrize("save_logs", [False, True])
 def test_env_render_save_graphs(save_graphs, save_logs, test_env_config, tmpdir):
-    config = dataclasses.replace(test_env_config, save_graphs=save_graphs, save_logs=save_logs)
+    config: EnvConfig = dataclasses.replace(test_env_config, save_graphs=save_graphs, save_logs=save_logs)
     env = AttackSimulationEnv(config)
-    seed = 42
     episode = 1
     frames = AttackSimulationRenderer.HTML.replace(".html", "_frames")
     with tmpdir.as_cwd():
-        env.seed(seed)
         env.reset()
         env.render()
-        render_dir = tmpdir.join(AttackSimulationRenderer.RENDER_DIR).join(f"{seed}_{episode}")
+        render_dir = tmpdir.join(AttackSimulationRenderer.RENDER_DIR).join(f"{config.seed}_{episode}")
 
         files = render_dir.listdir()
         basenames = [f.basename for f in files]

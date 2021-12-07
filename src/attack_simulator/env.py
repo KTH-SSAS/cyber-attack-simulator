@@ -64,6 +64,8 @@ class AttackSimulationEnv(gym.Env):
 
         self.episode_id = self._get_episode_id()
 
+        self.seed(config.seed)
+
     def _extract_attack_step_field(self, field_name):
         return np.array(
             [

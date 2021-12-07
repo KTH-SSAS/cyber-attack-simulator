@@ -63,7 +63,7 @@ def test_graph_odd_root(test_graph_config: GraphConfig, test_attack_steps):
             easy_ttc=10,
             hard_ttc=10,
             graph_size="full",
-            random_seed=0,
+            seed=0,
             filename="graphs/en2720.yaml",
             root="internet.connect",
             unmalleable_assets={"internet", "office_network", "hidden_network"},

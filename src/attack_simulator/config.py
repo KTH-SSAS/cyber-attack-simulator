@@ -23,7 +23,7 @@ class GraphConfig(Config):
     easy_ttc: int
     hard_ttc: int
     graph_size: str
-    random_seed: int
+    seed: int
     filename: str
     root: str
     prune: List[str] = field(default_factory=list)
@@ -45,6 +45,7 @@ class EnvConfig(Config):
     false_positive: float
     save_graphs: bool
     save_logs: bool
+    seed: int
 
     @classmethod
     def from_yaml(cls, filename):
@@ -57,7 +58,7 @@ class EnvConfig(Config):
 @dataclass(frozen=True)
 class AgentConfig(Config):
     agent_type: str
-    random_seed: Optional[int]
+    seed: Optional[int]
     input_dim: int
     hidden_dim: int
     num_actions: int

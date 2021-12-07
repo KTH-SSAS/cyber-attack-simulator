@@ -20,6 +20,7 @@ TEST_ENV_CONFIG_YAML = {
     "save_graphs": False,
     "save_logs": False,
     "true_positive": 1.0,
+    "seed": 42,
     "graph_config": {
         "graph_size": "full",
         "easy_ttc": TTC_LOW,
@@ -30,7 +31,7 @@ TEST_ENV_CONFIG_YAML = {
         "root": "a.x",
         "prune": [],
         "unmalleable_assets": {"internet", "office_network", "hidden_network"},
-        "random_seed": 42,
+        "seed": 42,
     },
 }
 

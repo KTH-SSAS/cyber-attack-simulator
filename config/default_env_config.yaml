@@ -3,6 +3,7 @@ false_positive: 0.0
 save_graphs: false
 save_logs: false
 true_positive: 1.0
+seed: 0
 graph_config: {
   graph_size: full,
   easy_ttc: 10,
@@ -14,5 +15,5 @@ graph_config: {
   root: internet.connect,
   prune: [],
   unmalleable_assets: [internet, office_network, hidden_network],
-  random_seed: 0
+  seed: 0
 }
