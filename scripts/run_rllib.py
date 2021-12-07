@@ -96,6 +96,7 @@ def main(args):
     # fragment_length = 200
 
     config = {
+        "seed": env_config.seed,
         "framework": "torch",
         "env": AttackSimulationEnv,
         "num_gpus": gpu_count,
