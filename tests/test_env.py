@@ -18,9 +18,9 @@ def test_env_spaces(test_env, test_graph):
     assert dim_observations == num_services + num_attacks
 
 
-def test_env_seed(test_env):
-    assert test_env.seed() is not None
-    assert 42 == test_env.seed(42)
+def test_env_seed(test_env: AttackSimulationEnv):
+    assert test_env.seed is not None
+    assert 42 == test_env.seed
 
 
 def test_env_reset(test_env):

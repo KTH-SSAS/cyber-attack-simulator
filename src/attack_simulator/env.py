@@ -53,7 +53,7 @@ class AttackSimulationEnv(gym.Env):
         self.action_space = spaces.Discrete(self.num_actions)
 
         self.episode_count = 0
-        self._seed = None
+        self.rng, self._seed = get_rng(config.seed)
         self.done = False
         self.reward = None
         self.action = 0
@@ -63,8 +63,6 @@ class AttackSimulationEnv(gym.Env):
         self.renderer = None
 
         self.episode_id = self._get_episode_id()
-
-        self.seed(config.seed)
 
     def _extract_attack_step_field(self, field_name):
         return np.array(
@@ -79,9 +77,6 @@ class AttackSimulationEnv(gym.Env):
         return f"{self._seed}_{self.episode_count}"
 
     def _setup(self):
-        # prime RNG if not yet set by `seed`
-        if self._seed is None:
-            self.seed()
 
         self.dependent_services = [
             [dependent.startswith(main) for dependent in self.g.service_names]
@@ -286,6 +281,6 @@ class AttackSimulationEnv(gym.Env):
         self.renderer.render()
         return True
 
-    def seed(self, seed=None):
-        self.rng, self._seed = get_rng(seed)
+    @property
+    def seed(self):
         return self._seed
