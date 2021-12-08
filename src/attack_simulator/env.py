@@ -12,7 +12,7 @@ from attack_simulator.config import EnvConfig
 
 from .graph import AttackGraph
 from .renderer import AttackSimulationRenderer
-from .rng import get_rng
+from .rng import get_rng, set_seeds
 from .utils import enabled
 
 logger = logging.getLogger("simulator")
@@ -281,6 +281,6 @@ class AttackSimulationEnv(gym.Env):
         self.renderer.render()
         return True
 
-    @property
-    def seed(self):
-        return self._seed
+
+    def seed(self, seed):
+        set_seeds(seed)

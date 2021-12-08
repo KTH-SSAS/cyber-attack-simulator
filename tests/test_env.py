@@ -19,8 +19,8 @@ def test_env_spaces(test_env, test_graph):
 
 
 def test_env_seed(test_env: AttackSimulationEnv):
-    assert test_env.seed is not None
-    assert 42 == test_env.seed
+    assert test_env._seed is not None
+    assert 42 == test_env._seed
 
 
 def test_env_reset(test_env):
