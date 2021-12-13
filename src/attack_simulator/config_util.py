@@ -25,7 +25,7 @@ def config_from_args(parsed_args):
 
     env_config = EnvConfig(
         attacker=parsed_args.attacker,
-        true_positive=parsed_args.true_positive_training,
+        false_negative=parsed_args.false_negative_training,
         false_positive=parsed_args.false_positive_training,
         save_graphs=parsed_args.graph,
         save_logs=parsed_args.save_logs,

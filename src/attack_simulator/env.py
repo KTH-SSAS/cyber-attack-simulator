@@ -30,7 +30,7 @@ class AttackSimulationEnv(gym.Env):
         # process configuration, leave the graph last, as it may destroy env_config
         self.config = config
         self.attacker_class = ATTACKERS[config.attacker]
-        self.true_positive = config.true_positive
+        self.false_negative = config.false_negative
         self.false_positive = config.false_positive
         self.save_graphs = config.save_graphs
         self.save_logs = config.save_logs
@@ -61,6 +61,8 @@ class AttackSimulationEnv(gym.Env):
         self.compromised_flags: List[str] = []
         self.compromised_steps: List[str] = []
         self.renderer = None
+        self.simulation_time = 0
+        self.attack_surface = np.zeros(self.g.num_attacks, dtype="int8")
 
         self.episode_id = self._get_episode_id()
 
@@ -145,9 +147,9 @@ class AttackSimulationEnv(gym.Env):
         # Depending on the true and false positive rates for each step,
         # ongoing attacks may not be reported, or non-existing attacks may be spuriously reported
         probabilities = self.rng.uniform(0, 1, self.g.num_attacks)
-        true_positives = self.attack_state & (probabilities <= self.true_positive)
+        false_negatives = self.attack_state & (probabilities >= self.false_negative)
         false_positives = (1 - self.attack_state) & (probabilities <= self.false_positive)
-        detected = true_positives | false_positives
+        detected = false_negatives | false_positives
         return np.append(self.service_state, detected)
 
     def step(self, action):
@@ -280,7 +282,6 @@ class AttackSimulationEnv(gym.Env):
             self.renderer = AttackSimulationRenderer(self, subdir)
         self.renderer.render()
         return True
-
 
     def seed(self, seed):
         set_seeds(seed)

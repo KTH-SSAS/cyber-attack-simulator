@@ -21,12 +21,12 @@ class AttackSimulationRenderer:
         self.writers = {}
 
         if subdir is None:
-            self.run_dir = os.path.join(self.RENDER_DIR, self.env._seed)
+            self.run_dir = os.path.join(self.RENDER_DIR, f"seed={self.env._seed}")
         else:
-            self.run_dir = os.path.join(self.RENDER_DIR, f'{subdir}_seed={self.env._seed}')
+            self.run_dir = os.path.join(self.RENDER_DIR, f"{subdir}_seed={self.env._seed}")
 
         if os.path.exists(self.run_dir):
-            raise RuntimeError('Render subdir already exists.')
+            raise RuntimeError("Render subdir already exists.")
 
     def _draw_nodes(self, nodes, size, color, border, **kwargs):
         nx.draw_networkx_nodes(

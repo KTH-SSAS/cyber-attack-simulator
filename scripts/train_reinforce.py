@@ -161,10 +161,10 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--true_positive_training",
+        "--false_negative_training",
         type=float,
         default=1.0,
-        help="Probability that compromised attack steps are reported as compromised"
+        help="Probability that compromised attack steps are reported as uncompromised"
         " during training.",
     )
 
@@ -177,10 +177,10 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--true_positive_evaluation",
+        "--false_negative_evaluation",
         type=float,
         default=1.0,
-        help="Probability that compromised attack steps are reported as compromised"
+        help="Probability that compromised attack steps are reported as uncompromised"
         " during evaluation.",
     )
 
@@ -209,18 +209,18 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--true_positive_low",
+        "--false_negative_low",
         type=float,
         default=0.0,
-        help="The lowest probability that compromised attack steps are reported as compromised."
+        help="The lowest probability that compromised attack steps are reported as uncompromised."
         " Only valid when producing the accuracy plot (i.e. `--action accuracy`).",
     )
 
     parser.add_argument(
-        "--true_positive_high",
+        "--false_negative_high",
         type=float,
         default=1.0,
-        help="The highest probability that compromised attack steps are reported as compromised."
+        help="The highest probability that compromised attack steps are reported as uncompromised."
         " Only valid when producing the accuracy plot (i.e. `--action accuracy`).",
     )
 
@@ -263,9 +263,9 @@ def main():
         analyzer.train_and_evaluate(
             parsed_args.episodes,
             parsed_args.rollouts,
-            tp_train=parsed_args.true_positive_training,
+            tp_train=parsed_args.false_negative_training,
             fp_train=parsed_args.false_positive_training,
-            tp_eval=parsed_args.true_positive_evaluation,
+            tp_eval=parsed_args.false_negative_evaluation,
             fp_eval=parsed_args.false_positive_evaluation,
         )
 
@@ -276,8 +276,8 @@ def main():
         analyzer.effect_of_measurement_accuracy_on_returns(
             episodes=parsed_args.episodes,
             rollouts=parsed_args.rollouts,
-            tp_low=parsed_args.true_positive_low,
-            tp_high=parsed_args.true_positive_high,
+            tp_low=parsed_args.false_negative_low,
+            tp_high=parsed_args.false_negative_high,
             fp_low=parsed_args.false_positive_low,
             fp_high=parsed_args.false_positive_high,
             resolution=parsed_args.accuracy_resolution,

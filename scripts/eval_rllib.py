@@ -1,15 +1,15 @@
 from argparse import ArgumentParser
 from dataclasses import asdict
 
-import torch
-import yaml
-from ray.rllib.agents import ppo
-from attack_simulator.config import EnvConfig
-
-from attack_simulator.config_util import config_from_dicts
-from attack_simulator.env import AttackSimulationEnv
-import ray
 import numpy as np
+import ray
+import torch
+from ray.rllib.agents import ppo
+
+from attack_simulator.config import EnvConfig
+from attack_simulator.env import AttackSimulationEnv
+
+
 class RLLibEvaluator:
     def __init__(self, checkpoint_path) -> None:
 
@@ -19,7 +19,9 @@ class RLLibEvaluator:
 
         self.env_config: EnvConfig = EnvConfig.from_yaml("config/default_env_config.yaml")
 
-        self.env_config = self.env_config.replace(save_graphs=True, save_logs=True, seed=5, false_positive=0.0)
+        self.env_config = self.env_config.replace(
+            save_graphs=True, save_logs=True, seed=5, false_positive=0.0
+        )
 
         self.config = {
             "seed": self.env_config.seed,
@@ -33,14 +35,12 @@ class RLLibEvaluator:
             "evaluation_interval": 1,
             # Run 1 episode each time evaluation runs.
             "evaluation_num_episodes": 1,
-            "evaluation_config": {
-                "explore": False
-            },
+            "evaluation_config": {"explore": False},
         }
 
         self.agent = ppo.PPOTrainer(config=self.config)
         self.agent.restore(checkpoint_path)
-        self.run_id = checkpoint_path.split('/')[-3]
+        self.run_id = checkpoint_path.split("/")[-3]
 
     def test(self, episodes, render=False):
         """Test trained agent for a number of episodes. Return the episode reward"""
@@ -63,7 +63,9 @@ class RLLibEvaluator:
         for e in range(0, episodes):
             episode_reward = 0
             while not done:
-                action, lstm_state, agent_info = self.agent.compute_single_action(obs, state=lstm_state)
+                action, lstm_state, agent_info = self.agent.compute_single_action(
+                    obs, state=lstm_state
+                )
                 obs, reward, done, env_info = env.step(action)
                 episode_reward += reward
                 if render:
@@ -71,7 +73,7 @@ class RLLibEvaluator:
 
             episode_rewards[e] = episode_reward
             env.reset()
-        
+
         return episode_rewards
 
 
@@ -79,13 +81,11 @@ if __name__ == "__main__":
 
     parser = ArgumentParser()
 
-    parser.add_argument(
-        "checkpoint", type=str, help="Path to RLLib checkpoint to load model from."
-    )
+    parser.add_argument("checkpoint", type=str, help="Path to RLLib checkpoint to load model from.")
 
     args = parser.parse_args()
 
     evaluator = RLLibEvaluator(args.checkpoint)
-    
+
     reward = evaluator.test(1, render=True)
     print(np.mean(reward))

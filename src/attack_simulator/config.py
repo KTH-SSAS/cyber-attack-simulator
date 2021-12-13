@@ -1,5 +1,5 @@
-from dataclasses import asdict, dataclass, field
 import dataclasses
+from dataclasses import asdict, dataclass, field
 from typing import List, Optional
 
 import yaml
@@ -17,6 +17,7 @@ class Config:
 
     def replace(self, **kwargs):
         return dataclasses.replace(self, **kwargs)
+
 
 @dataclass(frozen=True)
 class GraphConfig(Config):
@@ -44,7 +45,7 @@ class GraphConfig(Config):
 class EnvConfig(Config):
     graph_config: GraphConfig
     attacker: str
-    true_positive: float
+    false_negative: float
     false_positive: float
     save_graphs: bool
     save_logs: bool

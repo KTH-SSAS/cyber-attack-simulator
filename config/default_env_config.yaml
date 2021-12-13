@@ -2,7 +2,7 @@ attacker: random
 false_positive: 0.0
 save_graphs: false
 save_logs: false
-true_positive: 1.0
+false_negative: 0.0
 seed: 0
 graph_config: {
   graph_size: full,

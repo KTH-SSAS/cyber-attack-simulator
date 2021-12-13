@@ -39,9 +39,9 @@ class Analyzer:
         self,
         episodes,
         rollouts=0,
-        tp_train=1.0,
+        fn_train=1.0,
         fp_train=0.0,
-        tp_eval=1.0,
+        fn_eval=1.0,
         fp_eval=0.0,
         plot=True,
     ):
@@ -49,7 +49,7 @@ class Analyzer:
 
         timing = np.zeros(3)
         if agent.trainable:  # Don't train untrainable agents
-            self.env_config.true_positive = tp_train
+            self.env_config.false_negative = fn_train
             self.env_config.false_positive = fp_train
             env = AttackSimulationEnv(self.env_config)
             results = Runner(agent, env).train(episodes, self.seed_train, plot=plot)
@@ -58,7 +58,7 @@ class Analyzer:
 
         if rollouts > 0:
             env = AttackSimulationEnv(
-                self.env_config, true_positive=tp_eval, false_positive=fp_eval
+                self.env_config, false_negative=fn_eval, false_positive=fp_eval
             )
             results = Runner(agent, env).evaluate(rollouts, self.seed_eval, plot=False)
             # duration, agent_time, env_time
@@ -257,8 +257,8 @@ class Analyzer:
         self,
         episodes=10000,
         rollouts=50,
-        tp_low=0.0,
-        tp_high=1.0,
+        fn_low=0.0,
+        fn_high=1.0,
         fp_low=0.0,
         fp_high=1.0,
         resolution=5,
@@ -269,28 +269,28 @@ class Analyzer:
         agent = create_agent(self.agent_config)
         Runner(agent, env).train(episodes, self.seed_train, plot=False)
 
-        tps = np.linspace(tp_low, tp_high, resolution)
+        fns = np.linspace(fn_low, fn_high, resolution)
         fps = np.linspace(fp_low, fp_high, resolution)
 
-        def mean_returns(tp, fp):
+        def mean_returns(fn, fp):
             # Evaluate on a range of different observation qualities.
             self.env_config.false_positive = fp
-            self.env_config.true_positive = tp
+            self.env_config.false_negative = fn
             env = AttackSimulationEnv(self.env_config)
             results = Runner(agent, env).evaluate(rollouts, self.seed_eval, plot=False)
             return np.mean(results.returns)
 
-        returns_matrix = np.array([[mean_returns(tp, fp) for tp in tps] for fp in fps])
+        returns_matrix = np.array([[mean_returns(fn, fp) for fn in fns] for fp in fps])
         logger.debug(f"returns_matrix=\n{returns_matrix}")
 
-        tp_array, fp_array = np.meshgrid(tps, fps)
+        fn_array, fp_array = np.meshgrid(fns, fps)
 
         fig = plt.figure()
         ax = fig.gca(projection="3d")
 
         # Plot the surface.
         ax.plot_surface(
-            fp_array, tp_array, returns_matrix, cmap=cm.coolwarm, linewidth=0, antialiased=False
+            fp_array, fn_array, returns_matrix, cmap=cm.coolwarm, linewidth=0, antialiased=False
         )
 
         ax.set_xlabel("% false positives")

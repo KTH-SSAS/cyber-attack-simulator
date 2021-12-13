@@ -19,7 +19,7 @@ TEST_ENV_CONFIG_YAML = {
     "false_positive": 0.0,
     "save_graphs": False,
     "save_logs": False,
-    "true_positive": 1.0,
+    "false_negative": 0.0,
     "seed": 42,
     "graph_config": {
         "graph_size": "full",

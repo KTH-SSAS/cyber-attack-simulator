@@ -72,7 +72,7 @@ def test_env_first_step(attacker, action, expected, test_env_config: EnvConfig):
     assert all(np.array(obs) == obs_) and (reward == reward_) and (done == done_)
 
 
-def test_env_render(test_env, tmpdir):
+def test_env_render(test_env: AttackSimulationEnv, tmpdir):
     with tmpdir.as_cwd():
         assert test_env.render() is True
 
@@ -88,14 +88,19 @@ def test_env_default_config(test_env_config):
 @pytest.mark.parametrize("save_graphs", [False, True])
 @pytest.mark.parametrize("save_logs", [False, True])
 def test_env_render_save_graphs(save_graphs, save_logs, test_env_config, tmpdir):
-    config: EnvConfig = dataclasses.replace(test_env_config, save_graphs=save_graphs, save_logs=save_logs)
+    config: EnvConfig = dataclasses.replace(
+        test_env_config, save_graphs=save_graphs, save_logs=save_logs
+    )
     env = AttackSimulationEnv(config)
-    episode = 1
     frames = AttackSimulationRenderer.HTML.replace(".html", "_frames")
     with tmpdir.as_cwd():
         env.reset()
         env.render()
-        render_dir = tmpdir.join(AttackSimulationRenderer.RENDER_DIR).join(f"{config.seed}_{episode}")
+        render_dir = (
+            tmpdir.join(AttackSimulationRenderer.RENDER_DIR)
+            .join(f"seed={config.seed}")
+            .join(f"ep-{env.episode_count}")
+        )
 
         files = render_dir.listdir()
         basenames = [f.basename for f in files]
