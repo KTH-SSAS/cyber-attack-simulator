@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+PROJECT=$(gcloud config get-value project)
+LOCATION=$(gcloud config get-value artifacts/location)
+
+i=$LOCATION-docker.pkg.dev/$PROJECT/images/kas$1
+
+g() {
+    gcloud artifacts docker images "$@"
+}
+
+l=$(g list $i --include-tags | tee /dev/tty)
+
+read -rep 'Enter :tag or pattern to delete matching images >> '
+case $REPLY in
+    "")
+        echo bye
+        ;;
+    :*)
+        g delete --quiet --delete-tags $i$REPLY
+        tag=${REPLY#:}
+        REPLY=$(echo "$l" | sed -n "/ $tag /s/^.* 2021-//p")
+        echo [$REPLY]
+        l="$(echo "$l" | sed "/ $tag /d")"
+        ;&
+    *) 
+        echo "$l" | sed -n "/$REPLY/{s,  ,@,;s/ .*//p;}" |
+            while read; do g delete --quiet $REPLY; done
+        ;;
+esac

@@ -1,7 +1,10 @@
+import dataclasses
+
 import numpy as np
 import pytest
 
 from attack_simulator.agents import ATTACKERS
+from attack_simulator.config import EnvConfig
 from attack_simulator.env import AttackSimulationEnv
 from attack_simulator.renderer import AttackSimulationRenderer
 
@@ -15,9 +18,9 @@ def test_env_spaces(test_env, test_graph):
     assert dim_observations == num_services + num_attacks
 
 
-def test_env_seed(test_env):
-    assert test_env.seed() is not None
-    assert 42 == test_env.seed(42)
+def test_env_seed(test_env: AttackSimulationEnv):
+    assert test_env._seed is not None
+    assert 42 == test_env._seed
 
 
 def test_env_reset(test_env):
@@ -43,7 +46,7 @@ def test_env_action(test_env, test_services):
         assert test_env._interpret_action(i + 1) == service
 
 
-def test_env_action_probs(test_env, test_services):
+def test_env_action_probs(test_env: AttackSimulationEnv, test_services):
     probs = [1] * test_env.num_actions
     i_probs = test_env._interpret_action_probabilities(probs)
     assert all(map(lambda v: v == 1, i_probs.values()))
@@ -60,38 +63,44 @@ def test_env_action_probs(test_env, test_services):
         (1, ([0] + [1] * 5 + [0] * 9, 5, True)),
     ],
 )
-def test_env_first_step(attacker, action, expected, test_env_config):
-    env = AttackSimulationEnv(dict(test_env_config, attacker_class=ATTACKERS[attacker]))
-    env.seed(42)
+def test_env_first_step(attacker, action, expected, test_env_config: EnvConfig):
+    dataclasses.replace(test_env_config, attacker=attacker)
+    env = AttackSimulationEnv(test_env_config)
     env.reset()
     obs, reward, done, _ = env.step(action)
     obs_, reward_, done_ = expected
     assert all(np.array(obs) == obs_) and (reward == reward_) and (done == done_)
 
 
-def test_env_render(test_env, tmpdir):
+def test_env_render(test_env: AttackSimulationEnv, tmpdir):
     with tmpdir.as_cwd():
         assert test_env.render() is True
 
 
-def test_env_empty_config():
-    env = AttackSimulationEnv(dict())
+def test_env_default_config(test_env_config):
+    env = AttackSimulationEnv(test_env_config)
     # defaults for project graph
-    assert all(np.array(env.reset()) == [1] * 18 + [0] * 78)
+    num_services = 6
+    num_actions = 9
+    assert all(np.array(env.reset()) == [1] * num_services + [0] * num_actions)
 
 
 @pytest.mark.parametrize("save_graphs", [False, True])
 @pytest.mark.parametrize("save_logs", [False, True])
 def test_env_render_save_graphs(save_graphs, save_logs, test_env_config, tmpdir):
-    env = AttackSimulationEnv(dict(test_env_config, save_graphs=save_graphs, save_logs=save_logs))
-    seed = 42
-    episode = 1
+    config: EnvConfig = dataclasses.replace(
+        test_env_config, save_graphs=save_graphs, save_logs=save_logs
+    )
+    env = AttackSimulationEnv(config)
     frames = AttackSimulationRenderer.HTML.replace(".html", "_frames")
     with tmpdir.as_cwd():
-        env.seed(seed)
         env.reset()
         env.render()
-        render_dir = tmpdir.join(AttackSimulationRenderer.RENDER_DIR).join(f"{seed}_{episode}")
+        render_dir = (
+            tmpdir.join(AttackSimulationRenderer.RENDER_DIR)
+            .join(f"seed={config.seed}")
+            .join(f"ep-{env.episode_count}")
+        )
 
         files = render_dir.listdir()
         basenames = [f.basename for f in files]

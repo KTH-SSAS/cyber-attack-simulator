@@ -88,8 +88,7 @@ def postprocess_html(filename):
     html = re.sub(
         r"<img ([^>]*)>", rf'<object type="image/svg+xml" width="100%" \1>{FALLBACK}</object>', html
     )
-    html = re.sub(
-        "render/.+?/", "", html
-    )  # Make frames dir path relative to the episode's base directory
+    # Make frames dir path relative to the episode's base directory
+    html = re.sub(r"render/.*/ep-\d+/", "", html)
     with open(filename, "w") as replace:
         replace.write(html)

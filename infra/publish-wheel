@@ -23,21 +23,23 @@ repo=$(poetry config --list | sed -n "s|repositories\.\([^.]*\)\.url = \"$url\"|
     gcloud auth application-default login
 
 # update version, since overwriting existing versions is not supported
-# BUT skip version update, if `-` is passed on the command-line
 version=$(sed -n '/^\[tool.poetry\]/,/^\[.*/s/^version *= *"\([^"]*\)"$/\1/p' "$toml")
+# remove any local version
+version=${version%%+*}
 if [ - = "$1" ]
 then
-    echo $'\x1b[1;35m'Using version $version from ${toml##*/} \"as is\"$'\x1b[m'
+    echo $'\x1b[1;35m'Using base version $version from ${toml##*/}$'\x1b[m'
 else
+    # set local version to current commit and inform about using base version
     version=${version%%+*}+$commit
     echo $'\x1b[1;35m'Using local version $version$'\x1b[m'
-    echo $'\x1b[1;32m'Call this script as \`${0##*/} -\` to use version from ${toml##*/}$'\x1b[m'
-    cp "$toml" "$toml.del"
-    sed "/^\[tool.poetry\]/,/^\[.*/s/^version *=.*$/version = \"$version\"/" "$toml.del" > "$toml"
-    rm "$toml.del"
+    echo $'\x1b[1;32m'Call this script as \`${0##*/} -\` to use the base version$'\x1b[m'
 fi
+cp "$toml" "$toml.del"
+sed "/^\[tool.poetry\]/,/^\[.*/s/^version *=.*$/version = \"$version\"/" "$toml.del" > "$toml"
+rm -f "$toml.del"
 mapfile -t versions < <(gcloud artifacts versions list \
-    --repository wheels --package $pkg --format 'value(name)')
+    --repository wheels --package $pkg --format 'value(name)' 2> /dev/null)
 if [[ " ${versions[*]} " = *\ $version\ * ]]
 then echo $'\x1b[1;31m'A wheel with version $version is already published$'\x1b[m' && exit 1
 fi

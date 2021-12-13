@@ -1,13 +1,15 @@
 """
 Process YAML graph description into an Attack Graph
 """
+import dataclasses
 import os
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from dataclasses import asdict, dataclass, field
+from typing import Dict, List, Set, Union
 
 from yaml import safe_load
 
 from .utils import enabled
+from attack_simulator.config import GraphConfig
 
 
 @dataclass
@@ -22,19 +24,6 @@ class AttackStep:
     step_type: str = "or"
     ttc: float = 1.0
 
-
-DEFAULT_CONFIG = {
-    "filename": os.path.join(os.path.dirname(os.path.realpath(__file__)), "en2720.yaml"),
-    "root": "internet.connect",
-    "graph_size": None,
-    "prune": set(),
-    "unmalleable_assets": set(("internet", "office_network", "hidden_network")),
-    "easy_ttc": 10,
-    "hard_ttc": 100,
-    "low_flag_reward": 10000,
-    "medium_flag_reward": 10000,
-    "high_flag_reward": 10000,
-}
 
 SIZES: Dict[str, Set[str]] = {
     "tiny": set(
@@ -71,35 +60,28 @@ SIZES: Dict[str, Set[str]] = {
 
 
 class AttackGraph:
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Union[GraphConfig, dict]):
+
+        if isinstance(config, dict):
+            config = GraphConfig(**config)
+
         # initialization
         self.attack_steps: Dict[str, AttackStep] = dict()
         services: Set[str] = set()
 
         # Declare attributes
-        self.graph_size: str
-        self.filename: str
-        self.root: str
-        self.prune: Set[str]
-        self.unmalleable_assets: Set[str]
+        prune: Set[str] = set(config.prune)
+        unmalleable_assets: Set[str] = set(config.unmalleable_assets)
 
-        # process incoming configuration
-        if config is None:
-            config = DEFAULT_CONFIG
-        else:
-            for key in DEFAULT_CONFIG:
-                if key not in config:
-                    config[key] = DEFAULT_CONFIG[key]
-            for key in config.copy():
-                if key not in DEFAULT_CONFIG:
-                    del config[key]
-        self.__dict__.update(config)
+        self.config = config
 
-        if len(self.prune) == 0 and self.graph_size in SIZES:
-            self.prune = SIZES[self.graph_size]
+        if len(prune) == 0 and self.config.graph_size in SIZES:
+            prune = SIZES[self.config.graph_size]
+
+        filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.config.filename)
 
         # load the YAML graph spec
-        with open(self.filename, "r") as yaml_file:
+        with open(filename, "r") as yaml_file:
             graph = safe_load(yaml_file.read())
 
         # traverse through the relevant subgraph for a given pass
@@ -109,7 +91,7 @@ class AttackGraph:
                 next_keys = set()
                 for key in keys:
                     node = graph[key]
-                    children = set(node["children"]) - self.prune if "children" in node else set()
+                    children = set(node["children"]) - prune if "children" in node else set()
                     perform_pass(key, node, children)
                     next_keys |= set(children)
                 keys = sorted(next_keys)
@@ -126,7 +108,7 @@ class AttackGraph:
             asset = parts[0]
             name = parts[-1]
             node.update(asset=asset, name=name)
-            if asset not in self.unmalleable_assets:
+            if asset not in unmalleable_assets:
                 services.add(asset)
             if 0 < rest:
                 if name == "capture" and parts[-2][:4] == "flag":
@@ -142,7 +124,8 @@ class AttackGraph:
                 if f in node:
                     # translate {easy,hard}_ttc and/or {early,late,final}_reward
                     # based on upper-case "TEMPLATE" in YAML to actual values
-                    node[f] = self.__dict__[node[f].lower()]
+                    # TODO add better template handling
+                    node[f] = asdict(self.config)[node[f].lower()]
 
             if children:
                 # Ensure a deterministic ordering of child nodes
@@ -219,6 +202,10 @@ class AttackGraph:
         print(self)
 
     @property
+    def root(self) -> str:
+        return self.config.root
+
+    @property
     def num_attacks(self):
         return len(self.attack_names)
 
@@ -227,9 +214,9 @@ class AttackGraph:
         return len(self.service_names)
 
     def __str__(self):
-        label = os.path.basename(self.filename)
-        if self.graph_size:
-            label += f"[{self.graph_size}]"
+        label = os.path.basename(self.config.filename)
+        if self.config.graph_size:
+            label += f"[{self.config.graph_size}]"
         return (
             f"{self.__class__.__name__}({label}, {self.num_services} services,"
             f" {self.num_attacks} attack steps)"
@@ -249,7 +236,7 @@ class AttackGraph:
 
     def save_graphviz(self, filename=None, verbose=False, indexed=False, ttc=None):
         if filename is None:
-            filename = f"{'graph' if not self.graph_size else self.graph_size}.dot"
+            filename = f"{'graph' if not self.config.graph_size else self.config.graph_size}.dot"
         if indexed:
             index = {name: i + 1 for i, name in enumerate(self.attack_names)}
 
@@ -278,10 +265,11 @@ class AttackGraph:
             )
 
 
-def save_all_default_graphviz(indexed=False):
+def save_all_default_graphviz(graph_config, indexed=False):
     sizes = len(SIZES)
     for key in SIZES:
-        g = AttackGraph({"graph_size": key})
+        config = dataclasses.replace(graph_config, graph_size=key)
+        g = AttackGraph(config)
         for i in g.service_names:
             print(i)
         print()
