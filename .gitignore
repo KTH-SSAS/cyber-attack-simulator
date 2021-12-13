@@ -18,3 +18,4 @@ set_up_screen.sh
 dist
 wandb
 render
+wandb_api_key

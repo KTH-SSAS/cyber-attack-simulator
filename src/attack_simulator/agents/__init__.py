@@ -7,7 +7,14 @@ from .attackers import (
     RoundRobinNoActionAttacker,
     WellInformedAttacker,
 )
-from .baseline_agents import DisableProbabilityAgent, RandomAgent, RuleBasedAgent, SkipAgent
+from .baseline_agents import (
+    DisableProbabilityAgent,
+    NewRuleBasedAgent,
+    RandomAgent,
+    RiskAwareAgent,
+    RuleBasedAgent,
+    SkipAgent,
+)
 from .policy_agents import ReinforceAgent
 from .tabular_agents import BanditAgent, QLearningAgent
 
@@ -25,6 +32,8 @@ DEFENDERS = {
     "random": RandomAgent,
     "disable-probability": DisableProbabilityAgent,
     "rule-based": RuleBasedAgent,
+    "new-rule-based": NewRuleBasedAgent,
+    "risk-aware": RiskAwareAgent,
     "bandit": BanditAgent,
     "q-learning": QLearningAgent,
     "reinforce": ReinforceAgent,
@@ -40,6 +49,8 @@ __all__ = [
     "SkipAgent",
     "DisableProbabilityAgent",
     "RuleBasedAgent",
+    "NewRuleBasedAgent",
+    "RiskAwareAgent",
     "BanditAgent",
     "QLearningAgent",
     "ReinforceAgent",

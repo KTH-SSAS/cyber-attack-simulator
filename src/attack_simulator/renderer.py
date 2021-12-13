@@ -77,7 +77,7 @@ class AttackSimulationRenderer:
         self._draw_nodes(observed_ko - flags, 1000, "white", "red")
         self._draw_nodes(observed_ko & flags, 1000, "white", "red", node_shape="s")
 
-        fixed_attacks = [i for i in all_attacks if not any(self.env.attack_prerequisites[i][0])]
+        fixed_attacks = [i for i in all_attacks if not any(self.env.g.attack_prerequisites[i][0])]
         self._draw_nodes(fixed_attacks, 800, "white", "black", node_shape="h")
 
         # gray out disabled attacks
@@ -85,7 +85,7 @@ class AttackSimulationRenderer:
             [
                 i
                 for i in all_attacks
-                if not all(enabled(self.env.attack_prerequisites[i][0], self.env.service_state))
+                if not all(enabled(self.env.g.attack_prerequisites[i][0], self.env.service_state))
             ]
         )
         self._draw_nodes(disabled_attacks - flags, 800, "lightgray", "lightgray")

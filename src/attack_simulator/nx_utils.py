@@ -16,9 +16,9 @@ def nx_digraph(g: AttackGraph, indices=True) -> nx.DiGraph:
         dig.add_nodes_from(range(g.num_attacks))
         dig.add_edges_from(
             [
-                (i, g.attack_names.index(child))
-                for (i, name) in enumerate(g.attack_names)
-                for child in g.attack_steps[name].children
+                (attack_index, child_index)
+                for attack_index in range(g.num_attacks)
+                for child_index in g.child_indices[attack_index]
             ]
         )
     else:

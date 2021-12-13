@@ -8,6 +8,7 @@ from typing import Dict, List, Set, Union
 
 from yaml import safe_load
 
+from .utils import enabled
 from attack_simulator.config import GraphConfig
 
 
@@ -148,8 +149,54 @@ class AttackGraph:
 
         # set final attributes
         self.service_names: List[str] = sorted(services)
-
         self.attack_names: List[str] = sorted(self.attack_steps)
+
+        # index-based attributes
+        self.service_indices = {name: index for (index, name) in enumerate(self.service_names)}
+        self.attack_indices = {name: index for (index, name) in enumerate(self.attack_names)}
+
+        self.service_index_by_attack_index = []
+        for attack_name in self.attack_names:
+            attack_step = self.attack_steps[attack_name]
+            service_name = attack_step.asset
+            if attack_step.service:
+                service_name += "." + attack_step.service
+            service_index = self.service_indices.get(service_name, -1)
+            self.service_index_by_attack_index.append(service_index)
+
+        self.dependent_services = [
+            [dependent.startswith(main) for dependent in self.service_names]
+            for main in self.service_names
+        ]
+
+        self.attack_prerequisites = [
+            (
+                # required services
+                [attack_name.startswith(service_name) for service_name in self.service_names],
+                # logic function to combine prerequisites
+                any if self.attack_steps[attack_name].step_type == "or" else all,
+                # prerequisite attack steps
+                [
+                    prerequisite_name in self.attack_steps[attack_name].parents
+                    for prerequisite_name in self.attack_names
+                ],
+            )
+            for attack_name in self.attack_names
+        ]
+
+        self.ttc_params = [self.attack_steps[attack_name].ttc for attack_name in self.attack_names]
+
+        self.reward_params = [
+            self.attack_steps[attack_name].reward for attack_name in self.attack_names
+        ]
+
+        self.child_indices = [
+            [
+                self.attack_indices[child_name]
+                for child_name in self.attack_steps[attack_name].children
+            ]
+            for attack_name in self.attack_names
+        ]
 
         # say hello
         print(self)
@@ -174,6 +221,18 @@ class AttackGraph:
             f"{self.__class__.__name__}({label}, {self.num_services} services,"
             f" {self.num_attacks} attack steps)"
         )
+
+    def get_eligible_indices(self, attack_index, attack_state, service_state):
+        eligible_indices = []
+        for child_index in self.child_indices[attack_index]:
+            required_services, logic, prerequisites = self.attack_prerequisites[child_index]
+            if (
+                not attack_state[child_index]
+                and all(enabled(required_services, service_state))
+                and logic(enabled(prerequisites, attack_state))
+            ):
+                eligible_indices.append(child_index)
+        return eligible_indices
 
     def save_graphviz(self, filename=None, verbose=False, indexed=False, ttc=None):
         if filename is None:
