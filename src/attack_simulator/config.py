@@ -1,4 +1,5 @@
 from dataclasses import asdict, dataclass, field
+import dataclasses
 from typing import List, Optional
 
 import yaml
@@ -14,6 +15,8 @@ class Config:
             del dictionary["attack_graph"]
         return dictionary
 
+    def replace(self, **kwargs):
+        return dataclasses.replace(self, **kwargs)
 
 @dataclass(frozen=True)
 class GraphConfig(Config):

@@ -15,10 +15,18 @@ class AttackSimulationRenderer:
     HTML = "index.html"
     LOGS = "attack.log"
 
-    def __init__(self, env):
+    def __init__(self, env, subdir=None):
         self.env = env
         self.dag = None
         self.writers = {}
+
+        if subdir is None:
+            self.run_dir = os.path.join(self.RENDER_DIR, self.env._seed)
+        else:
+            self.run_dir = os.path.join(self.RENDER_DIR, f'{subdir}_seed={self.env._seed}')
+
+        if os.path.exists(self.run_dir):
+            raise RuntimeError('Render subdir already exists.')
 
     def _draw_nodes(self, nodes, size, color, border, **kwargs):
         nx.draw_networkx_nodes(
@@ -123,12 +131,14 @@ class AttackSimulationRenderer:
         return logs
 
     def render(self):
-        if not os.path.isdir(self.RENDER_DIR):
-            os.mkdir(self.RENDER_DIR)
 
-        out_dir = os.path.join(self.RENDER_DIR, self.env.episode_id)
-        if not os.path.isdir(out_dir):
-            os.mkdir(out_dir)
+        episode_dir = os.path.join(self.run_dir, f"ep-{self.env.episode_count}")
+
+        for d in [self.RENDER_DIR, self.run_dir, episode_dir]:
+            if not os.path.isdir(d):
+                os.mkdir(d)
+
+        out_dir = episode_dir
 
         logs = self._generate_logs()
 

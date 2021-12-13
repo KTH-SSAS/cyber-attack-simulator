@@ -275,9 +275,9 @@ class AttackSimulationEnv(gym.Env):
         keys = [self.NO_ACTION] + self.g.service_names
         return {key: value for key, value in zip(keys, action_probabilities)}
 
-    def render(self, mode="human"):
+    def render(self, mode="human", subdir=None):
         if not self.renderer:
-            self.renderer = AttackSimulationRenderer(self)
+            self.renderer = AttackSimulationRenderer(self, subdir)
         self.renderer.render()
         return True
 

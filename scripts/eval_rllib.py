@@ -4,29 +4,25 @@ from dataclasses import asdict
 import torch
 import yaml
 from ray.rllib.agents import ppo
+from attack_simulator.config import EnvConfig
 
 from attack_simulator.config_util import config_from_dicts
 from attack_simulator.env import AttackSimulationEnv
-
-
+import ray
+import numpy as np
 class RLLibEvaluator:
     def __init__(self, checkpoint_path) -> None:
 
+        ray.init(local_mode=True)
+
         model_config = {"use_lstm": True, "lstm_cell_size": 256}
 
-        with open("config/default_env_config.yaml") as f:
-            env_config_dict = yaml.safe_load(f)
+        self.env_config: EnvConfig = EnvConfig.from_yaml("config/default_env_config.yaml")
 
-        with open("config/default_graph_config.yaml") as f:
-            graph_config_dict = yaml.safe_load(f)
-
-        self.env_config, _ = config_from_dicts(graph_config_dict, env_config_dict)
-
-        self.env_config.save_graphs = True
-        self.env_config.save_logs = True
+        self.env_config = self.env_config.replace(save_graphs=True, save_logs=True, seed=5, false_positive=0.0)
 
         self.config = {
-            "seed": 0,
+            "seed": self.env_config.seed,
             "framework": "torch",
             "env": AttackSimulationEnv,
             "env_config": asdict(self.env_config),
@@ -38,26 +34,21 @@ class RLLibEvaluator:
             # Run 1 episode each time evaluation runs.
             "evaluation_num_episodes": 1,
             "evaluation_config": {
-                "explore": False,
-                "env_config": {
-                    "render_env": True,
-                    # workaround for a bug in RLLib
-                    # (https://github.com/ray-project/ray/issues/17921)
-                    "replay_sequence_length": -1,
-                },
+                "explore": False
             },
         }
 
         self.agent = ppo.PPOTrainer(config=self.config)
         self.agent.restore(checkpoint_path)
+        self.run_id = checkpoint_path.split('/')[-3]
 
-    def test(self):
-        """Test trained agent for a single episode. Return the episode reward"""
+    def test(self, episodes, render=False):
+        """Test trained agent for a number of episodes. Return the episode reward"""
         # instantiate env class
         env = AttackSimulationEnv(asdict(self.env_config))
 
         # run until episode ends
-        episode_reward = 0
+        episode_rewards = np.zeros(episodes, dtype=np.int64)
         done = False
         obs = env.reset()
 
@@ -66,15 +57,22 @@ class RLLibEvaluator:
             torch.zeros(self.config["model"]["lstm_cell_size"]),
         ]
 
-        env.render()
+        if render:
+            env.render(subdir=self.run_id)
 
-        while not done:
-            action, lstm_state, agent_info = self.agent.compute_single_action(obs, state=lstm_state)
-            obs, reward, done, env_info = env.step(action)
-            episode_reward += reward
-            env.render()
+        for e in range(0, episodes):
+            episode_reward = 0
+            while not done:
+                action, lstm_state, agent_info = self.agent.compute_single_action(obs, state=lstm_state)
+                obs, reward, done, env_info = env.step(action)
+                episode_reward += reward
+                if render:
+                    env.render()
 
-        return episode_reward
+            episode_rewards[e] = episode_reward
+            env.reset()
+        
+        return episode_rewards
 
 
 if __name__ == "__main__":
@@ -82,10 +80,12 @@ if __name__ == "__main__":
     parser = ArgumentParser()
 
     parser.add_argument(
-        "-c", "--checkpoint", type=str, help="Path to RLLib checkpoint to load model from."
+        "checkpoint", type=str, help="Path to RLLib checkpoint to load model from."
     )
 
     args = parser.parse_args()
 
     evaluator = RLLibEvaluator(args.checkpoint)
-    evaluator.test()
+    
+    reward = evaluator.test(1, render=True)
+    print(np.mean(reward))
