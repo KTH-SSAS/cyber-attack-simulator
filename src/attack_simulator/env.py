@@ -66,7 +66,7 @@ class AttackSimulationEnv(gym.Env):
 
         self.episode_id = self._get_episode_id()
 
-
+        self.max_reward = 0
         self.attack_start_time = 0
 
 
@@ -94,6 +94,8 @@ class AttackSimulationEnv(gym.Env):
         self.rewards = np.array([int(v) for v in self.rng.exponential(self.g.reward_params)])
         self.attack_start_time = self.rng.exponential(self.config.attack_start_time)
 
+        self.max_reward = sum(self.rewards)
+
         self.simulation_time = 0
         self.service_state = np.ones(self.g.num_services, dtype="int8")
         self.attack_state = np.zeros(self.g.num_attacks, dtype="int8")
@@ -115,6 +117,17 @@ class AttackSimulationEnv(gym.Env):
         if self._observation is None:
             self._observation = self._observe()
         return self._observation
+
+    def reward_function(self, attacker_reward, mode='simple'):
+
+        if mode == 'simple':
+            return sum(self.service_state) - attacker_reward
+        if mode == 'capped':
+            reward = self.max_reward
+            reward -= attacker_reward
+            reward -= sum(1-self.service_state)
+            return max(0, reward/self.max_reward)
+    
 
     def _observe(self):
         # Observation of attack steps is subject to the true/false positive rates
@@ -188,7 +201,7 @@ class AttackSimulationEnv(gym.Env):
         # positive reward for maintaining services online (1 unit per service)
         # negative reward for the attacker's gains (as measured by `attacker_reward`)
         # FIXME: the reward for maintaining services is _very_ low
-        self.reward = sum(self.service_state) - attacker_reward
+        self.reward = self.reward_function(attacker_reward, mode='capped')
 
         self.compromised_steps = self._interpret_attacks()
         self.compromised_flags = [
