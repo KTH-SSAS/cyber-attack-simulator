@@ -6,7 +6,7 @@ import numpy as np
 
 from .graph import AttackGraph
 from .tree_layout import tree_layout
-from .tweak_layout import tweak_children
+from .tweak_layout import _tweak_children
 
 logger = logging.getLogger("simulator")
 
@@ -104,7 +104,7 @@ def nx_dag_layout(g: nx.DiGraph, tweak=None, debug=False) -> Dict[Any, Tuple[flo
             if len(tweak) == 1:
                 tweak += (tweak[0] ** 2,)
 
-            if tweak_children(pos, root, tree_children, skip_edges, tweak):
+            if _tweak_children(pos, root, tree_children, skip_edges, tweak):
                 pos = tree_layout(root, tree_children)
 
     return _handle_unassigned(g, root, pos)
