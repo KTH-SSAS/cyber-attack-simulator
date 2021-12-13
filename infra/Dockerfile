@@ -18,7 +18,7 @@ RUN set -ex; \
     apt-get update; \
     apt-get install -y kubectl
 
-WORKDIR /root/openai_attack_simulation
+WORKDIR /root/kas
 COPY . .
 RUN set -ex; \
     if [ $(uname -m) = aarch64 ]; then \

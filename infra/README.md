@@ -2,11 +2,20 @@
 
 This folder contains image and infrastructure management scripts and configuration.
 
-Here's a brief inventory of what each script does.
+Below is a brief inventory of what each script does.
 Most of them follow the same `+`/`-`/`=` convention
 for `start`/`stop`/`status`, which can be useful to know,
 in case no explicit "usage" information is printed when
 a script is called without any command-line arguments.
+
+BUT, before that, the following commands should be available
+(unless otherwise noted, use `apt`, `snap`, or `brew` to install them):
+- `jq`
+- `yq` (`pip install python-yq`)
+- `gcloud` (https://cloud.google.com/sdk/docs/install)
+- `kubectl`
+- `helm`
+- `svn` [TEMPORARILY (until Ray publishes their Helm chart)]
 
 
 ## Artifacts
@@ -33,22 +42,14 @@ Other abbreviations used below include:
     - manages a service account with the necessary roles to administer GCE, GKE, and GAR
     - configures a `gcloud` profile with said service account and other relevant defaults
 
-
 *  [`artifact-registry`](artifact-registry)
     - manages two repos in GAR: one for Docker `images` and one for PyPI `wheels`
-
-*  [`clean-images`](clean-images)
-    - provides a simple UI to list and clean Docker images by matching user input
-    - mostly useful to avoid having to spawn a browser, when that's not an issue visiting  
-      https://console.cloud.google.com/artifacts?project=sentience-reinforce  
-      gives a much better user experience
 
 
 ### Kubernetes (GKE)
 
 *  [`gke-cluster`](gke-cluster)
     - manages the Kubernetes cluster (called `x-ray`) underlying any "Ray on Kubernetes" cluster
-
 
 *  [`gke-nat`](gke-nat)
     - manages a NAT that can allow pods to connect to the outside world
@@ -74,8 +75,10 @@ Other abbreviations used below include:
 *  Ray's built-in `ray` command can be used to `start`/`stop` (and `submit` jobs to) the cluster.  
    [Among other things...](https://docs.ray.io/en/latest/package-ref.html?highlight=ray%20command%20reference#the-ray-command-line-api)
 
-   - Ray's autoscaler (like many GCP-enabled applications) needs service account credentials
+   - Ray's autoscaler (like many GCP-enabled applications) uses Google's API client library,
+     which in turn needs service account credentials
      ```console
+     mehes@mehes-mba:infra$ pip install google-api-python-client
      mehes@mehes-mba:infra$ source admin-service-account
      mehes@mehes-mba:infra$ export GOOGLE_APPLICATION_CREDENTIALS="$KEYFILE"
      ```

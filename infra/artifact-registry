@@ -4,10 +4,12 @@ set -e
 
 [ / = "${0::1}" ] || exec "$0" "$@"
 
+self=${0##*/}
+alias=$(readlink "${0%$self}".alias)
 active=$(gcloud config configurations list --filter is_active=true --format 'value(name)')
 # safety valve: script path MUST include a component matching the relevant GCP configuration
-[[ "$0" = */"$active"/* ]] || {
-    echo GCP configuration \'$active\' does not match any path component in \'$0\'
+[[ "$active" = $alias ]] || {
+    echo GCP configuration \'$active\' does not match project alias \'$alias\'.
     exit 1
 }
 

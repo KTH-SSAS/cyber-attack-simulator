@@ -218,6 +218,10 @@ case ${1-} in
         docker build --tag $name --file "$dockerfile" "$@" "$context"
         ;;
     push)
+        # make sure registry access is enabled
+        repo=${push%%/*}
+        gcloud auth configure-docker --quiet $repo
+        docker login $repo
         # support multi-arch images (tags _may_ need to include more info to be unique)
         tag=$push-$(uname -m)
         docker tag $name $tag

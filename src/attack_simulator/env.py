@@ -1,13 +1,18 @@
 import logging
 from dataclasses import asdict
+from typing import List, Union
 
 import gym
+import gym.spaces as spaces
 import numpy as np
 
-from .agents import ATTACKERS
+from attack_simulator.agents import ATTACKERS
+from attack_simulator.agents.agent import Agent
+from attack_simulator.config import EnvConfig
+
 from .graph import AttackGraph
 from .renderer import AttackSimulationRenderer
-from .rng import get_rng
+from .rng import get_rng, set_seeds
 from .utils import enabled
 
 logger = logging.getLogger("simulator")
@@ -16,21 +21,23 @@ logger = logging.getLogger("simulator")
 class AttackSimulationEnv(gym.Env):
     NO_ACTION = "no action"
 
-    def __init__(self, env_config):
+    def __init__(self, config: Union[EnvConfig, dict]):
         super(AttackSimulationEnv, self).__init__()
 
+        if isinstance(config, dict):
+            config = EnvConfig(**config)
+
         # process configuration, leave the graph last, as it may destroy env_config
-        self.attacker_class = ATTACKERS[env_config.get("attacker", "random")]
-        self.true_positive = env_config.get("true_positive", 1.0)
-        self.false_positive = env_config.get("false_positive", 0.0)
-        self.save_graphs = env_config.get("save_graphs")
-        self.save_logs = env_config.get("save_logs")
-        self.g = env_config.get("attack_graph")
-        if self.g is None:
-            self.g = AttackGraph(env_config)
+        self.config = config
+        self.attacker_class = ATTACKERS[config.attacker]
+        self.false_negative = config.false_negative
+        self.false_positive = config.false_positive
+        self.save_graphs = config.save_graphs
+        self.save_logs = config.save_logs
+        self.g: AttackGraph = AttackGraph(config.graph_config)
 
         # prepare just enough to get dimensions sorted, do the rest on first `reset`
-        self.entry_attack_index = self.g.attack_names.index(self.g.root)
+        self.entry_attack_index = self.g.attack_indices[self.g.root]
 
         # An observation informs the defender of
         # a) which services are turned on; and,
@@ -43,70 +50,45 @@ class AttackSimulationEnv(gym.Env):
 
         # The defender action space allows to disable any one service or leave all unchanged
         self.num_actions = self.g.num_services + 1
-        self.action_space = gym.spaces.Discrete(self.num_actions)
+        self.action_space = spaces.Discrete(self.num_actions)
 
         self.episode_count = 0
-        self._seed = None
+        self.rng, self._seed = get_rng(config.seed)
         self.done = False
         self.reward = None
         self.action = 0
         self.attack_index = None
-        self.compromised_flags = []
-        self.compromised_steps = []
+        self.compromised_flags: List[str] = []
+        self.compromised_steps: List[str] = []
         self.renderer = None
+        self.simulation_time = 0
+        self.attack_surface = np.zeros(self.g.num_attacks, dtype="int8")
 
-    def _extract_attack_step_field(self, field_name):
-        return np.array(
-            [
-                asdict(self.g.attack_steps[attack_name])[field_name]
-                for attack_name in self.g.attack_names
-            ]
-        )
+        self.episode_id = self._get_episode_id()
 
-    def _setup(self):
-        # prime RNG if not yet set by `seed`
-        if self._seed is None:
-            self.seed()
 
-        self.dependent_services = [
-            [dependent.startswith(main) for dependent in self.g.service_names]
-            for main in self.g.service_names
-        ]
+    def _get_episode_id(self):
+        # TODO connect this with ray run id/wandb run id instead of random seed.
+        return f"{self._seed}_{self.episode_count}"
 
-        self.attack_prerequisites = [
-            (
-                # required services
-                [attack_name.startswith(service_name) for service_name in self.g.service_names],
-                # logic function to combine prerequisites
-                any if self.g.attack_steps[attack_name].step_type == "or" else all,
-                # prerequisite attack steps
-                [
-                    prerequisite_name in self.g.attack_steps[attack_name].parents
-                    for prerequisite_name in self.g.attack_names
-                ],
-            )
-            for attack_name in self.g.attack_names
-        ]
-
-        self.ttc_params = self._extract_attack_step_field("ttc")
-        self.reward_params = self._extract_attack_step_field("reward")
 
     def reset(self):
         self._observation = None
         self.done = False
 
         if self.episode_count == 0:
-            self._setup()
+            # prime RNG if not yet set by `seed`
+            if self._seed is None:
+                self.seed()
 
         self.episode_count += 1
-        # TODO: connect `self.episode_id` with ray run id/wandb run id instead of random seed.
-        self.episode_id = f"{self._seed}_{self.episode_count}"
+        self.episode_id = self._get_episode_id()
         logger.debug(f"Starting new simulation. (#{self.episode_id})")
 
         self.ttc_remaining = np.array(
-            [max(1, int(v)) for v in self.rng.exponential(self.ttc_params)]
+            [max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)]
         )
-        self.rewards = np.array([int(v) for v in self.rng.exponential(self.reward_params)])
+        self.rewards = np.array([int(v) for v in self.rng.exponential(self.g.reward_params)])
 
         self.simulation_time = 0
         self.service_state = np.ones(self.g.num_services, dtype="int8")
@@ -114,7 +96,7 @@ class AttackSimulationEnv(gym.Env):
         self.attack_surface = np.zeros(self.g.num_attacks, dtype="int8")
         self.attack_surface[self.entry_attack_index] = 1
 
-        self.attacker = self.attacker_class(
+        self.attacker: Agent = self.attacker_class(
             dict(
                 attack_graph=self.g,
                 ttc=self.ttc_remaining,
@@ -136,10 +118,13 @@ class AttackSimulationEnv(gym.Env):
         # Depending on the true and false positive rates for each step,
         # ongoing attacks may not be reported, or non-existing attacks may be spuriously reported
         probabilities = self.rng.uniform(0, 1, self.g.num_attacks)
-        true_positives = self.attack_state & (probabilities <= self.true_positive)
+        false_negatives = self.attack_state & (probabilities >= self.false_negative)
         false_positives = (1 - self.attack_state) & (probabilities <= self.false_positive)
-        detected = true_positives | false_positives
+        detected = false_negatives | false_positives
         return np.append(self.service_state, detected)
+
+    def _get_eligible_indices(self):
+        return self.g.get_eligible_indices(self.attack_index, self.attack_state, self.service_state)
 
     def step(self, action):
         self.action = action
@@ -157,10 +142,10 @@ class AttackSimulationEnv(gym.Env):
             # only disable services that are still on
             if self.service_state[service]:
                 # disable the service itself and any dependent services
-                self.service_state[self.dependent_services[service]] = 0
+                self.service_state[self.g.dependent_services[service]] = 0
                 # remove dependent attacks from the attack surface
                 for attack_index in np.flatnonzero(self.attack_surface):
-                    required_services, _, _ = self.attack_prerequisites[attack_index]
+                    required_services, _, _ = self.g.attack_prerequisites[attack_index]
                     if not all(enabled(required_services, self.service_state)):
                         self.attack_surface[attack_index] = 0
 
@@ -184,18 +169,7 @@ class AttackSimulationEnv(gym.Env):
                     self.attack_surface[self.attack_index] = 0
 
                     # add eligible children to the attack surface
-                    children = self.g.attack_steps[self.g.attack_names[self.attack_index]].children
-                    for child_name in children:
-                        child_index = self.g.attack_names.index(child_name)
-                        required_services, logic, prerequisites = self.attack_prerequisites[
-                            child_index
-                        ]
-                        if (
-                            not self.attack_state[child_index]
-                            and all(enabled(required_services, self.service_state))
-                            and logic(enabled(prerequisites, self.attack_state))
-                        ):
-                            self.attack_surface[child_index] = 1
+                    self.attack_surface[self._get_eligible_indices()] = 1
 
                     # end episode when attack surface becomes empty
                     self.done = not any(self.attack_surface)
@@ -266,12 +240,11 @@ class AttackSimulationEnv(gym.Env):
         keys = [self.NO_ACTION] + self.g.service_names
         return {key: value for key, value in zip(keys, action_probabilities)}
 
-    def render(self, mode="human"):
+    def render(self, mode="human", subdir=None):
         if not self.renderer:
-            self.renderer = AttackSimulationRenderer(self)
+            self.renderer = AttackSimulationRenderer(self, subdir)
         self.renderer.render()
         return True
 
-    def seed(self, seed=None):
-        self.rng, self._seed = get_rng(seed)
-        return self._seed
+    def seed(self, seed):
+        set_seeds(seed)
