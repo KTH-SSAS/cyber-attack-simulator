@@ -67,6 +67,9 @@ class AttackSimulationEnv(gym.Env):
         self.episode_id = self._get_episode_id()
 
 
+        self.attack_start_time = 0
+
+
     def _get_episode_id(self):
         # TODO connect this with ray run id/wandb run id instead of random seed.
         return f"{self._seed}_{self.episode_count}"
@@ -89,6 +92,7 @@ class AttackSimulationEnv(gym.Env):
             [max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)]
         )
         self.rewards = np.array([int(v) for v in self.rng.exponential(self.g.reward_params)])
+        self.attack_start_time = self.rng.exponential(self.config.attack_start_time)
 
         self.simulation_time = 0
         self.service_state = np.ones(self.g.num_services, dtype="int8")
@@ -155,27 +159,30 @@ class AttackSimulationEnv(gym.Env):
         self.attack_index = None
 
         if not self.done:
-            # obtain attacker action, this _can_ be 0 for no action
-            self.attack_index = self.attacker.act(self.attack_surface) - 1
-            assert -1 <= self.attack_index < self.g.num_attacks
 
-            if self.attack_index != -1:
-                # compute attacker reward
-                self.ttc_remaining[self.attack_index] -= 1
-                if self.ttc_remaining[self.attack_index] == 0:
-                    # successful attack, update reward, attack_state, attack_surface
-                    attacker_reward = self.rewards[self.attack_index]
-                    self.attack_state[self.attack_index] = 1
-                    self.attack_surface[self.attack_index] = 0
+            # Check if the attack has started
+            if self.simulation_time > self.attack_start_time:
+                # obtain attacker action, this _can_ be 0 for no action
+                self.attack_index = self.attacker.act(self.attack_surface) - 1
+                assert -1 <= self.attack_index < self.g.num_attacks
 
-                    # add eligible children to the attack surface
-                    self.attack_surface[self._get_eligible_indices()] = 1
+                if self.attack_index != -1:
+                    # compute attacker reward
+                    self.ttc_remaining[self.attack_index] -= 1
+                    if self.ttc_remaining[self.attack_index] == 0:
+                        # successful attack, update reward, attack_state, attack_surface
+                        attacker_reward = self.rewards[self.attack_index]
+                        self.attack_state[self.attack_index] = 1
+                        self.attack_surface[self.attack_index] = 0
 
-                    # end episode when attack surface becomes empty
-                    self.done = not any(self.attack_surface)
+                        # add eligible children to the attack surface
+                        self.attack_surface[self._get_eligible_indices()] = 1
 
-            # TODO: placeholder, none of the current attackers learn...
-            # self.attacker.update(attack_surface, attacker_reward, self.done)
+                        # end episode when attack surface becomes empty
+                        self.done = not any(self.attack_surface)
+
+                # TODO: placeholder, none of the current attackers learn...
+                # self.attacker.update(attack_surface, attacker_reward, self.done)
 
         # compute defender reward
         # positive reward for maintaining services online (1 unit per service)

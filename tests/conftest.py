@@ -20,6 +20,7 @@ TEST_ENV_CONFIG_YAML = {
     "save_graphs": False,
     "save_logs": False,
     "false_negative": 0.0,
+    "attack_start_time": 0,
     "seed": 42,
     "graph_config": {
         "graph_size": "full",

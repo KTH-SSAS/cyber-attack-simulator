@@ -50,6 +50,7 @@ class EnvConfig(Config):
     save_graphs: bool
     save_logs: bool
     seed: int
+    attack_start_time: int
 
     @classmethod
     def from_yaml(cls, filename):
