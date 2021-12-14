@@ -50,6 +50,9 @@ def parse_args():
 
     parser.add_argument("--local", action="store_true", help="Enable ray local mode for debugger.")
 
+    parser.add_argument("--num-workers", type=int)
+    parser.add_argument("--env-per-worker", type=int)
+
     return parser.parse_args()
 
 
@@ -91,8 +94,8 @@ def main(args):
 
     gpu_count = args.gpu_count
     batch_size = 4000
-    num_workers = 5
-    env_per_worker = 5
+    num_workers = args.num_workers
+    env_per_worker = args.env_per_worker
     # fragment_length = 200
 
     config = {
