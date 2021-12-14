@@ -127,6 +127,11 @@ class AttackSimulationEnv(gym.Env):
             reward -= attacker_reward
             reward -= sum(1-self.service_state)
             return max(0, reward/self.max_reward)
+        if mode == 'delayed':
+            if self.done:
+                return sum(self.service_state)-sum(self.rewards[self.attack_state])
+            else:
+                return sum(self.service_state)
     
 
     def _observe(self):
