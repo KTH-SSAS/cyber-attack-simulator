@@ -4,6 +4,7 @@ save_graphs: false
 save_logs: false
 false_negative: 0.0
 seed: 0
+attack_start_time: 0 # average of exponential dist.
 graph_config: {
   graph_size: full,
   easy_ttc: 10,
