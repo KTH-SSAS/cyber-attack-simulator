@@ -91,8 +91,9 @@ class AttackSimulationEnv(gym.Env):
         self.ttc_remaining = np.array(
             [max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)]
         )
-        self.rewards = np.array([int(v) for v in self.rng.exponential(self.g.reward_params)])
-        self.attack_start_time = self.rng.exponential(self.config.attack_start_time)
+        self.rewards = np.array(self.g.reward_params)
+        self.attack_start_time = int(self.rng.exponential(self.config.attack_start_time))
+        self.ttc_total = sum(self.ttc_remaining)
 
         self.max_reward = sum(self.rewards)
 
@@ -206,7 +207,7 @@ class AttackSimulationEnv(gym.Env):
         # positive reward for maintaining services online (1 unit per service)
         # negative reward for the attacker's gains (as measured by `attacker_reward`)
         # FIXME: the reward for maintaining services is _very_ low
-        self.reward = self.reward_function(attacker_reward, mode='capped')
+        self.reward = self.reward_function(attacker_reward, mode='delayed')
 
         self.compromised_steps = self._interpret_attacks()
         self.compromised_flags = [
