@@ -11,6 +11,7 @@ from attack_simulator.config import EnvConfig
 from attack_simulator.custom_callback import AttackSimCallback
 from attack_simulator.env import AttackSimulationEnv
 
+from time import strftime
 
 def dict2choices(d):
     choices = list(d.keys())
@@ -47,11 +48,13 @@ def parse_args():
     parser.add_argument("--checkpoint-path", type=str)
 
     parser.add_argument("--gpu-count", type=int, default=0)
-
+    parser.add_argument("--batch-size", type=int)
     parser.add_argument("--local", action="store_true", help="Enable ray local mode for debugger.")
 
     parser.add_argument("--num-workers", type=int)
     parser.add_argument("--env-per-worker", type=int)
+
+    parser.add_argument("--run-type", type=str, default=None)
 
     return parser.parse_args()
 
@@ -79,10 +82,11 @@ def main(args):
         callbacks.append(
             WandbLoggerCallback(
                 project="rl_attack_sim",
-                group="single",
+                group=f"sweep_{strftime('%H:%M')}",
                 api_key_file=api_key_file,
                 log_config=False,
                 entity="sentience",
+                job_type=args.run_type,
             )
         )
 
@@ -93,18 +97,26 @@ def main(args):
     model_config = {"use_lstm": True, "lstm_cell_size": 256}
 
     gpu_count = args.gpu_count
-    batch_size = 4000
+    batch_size = args.batch_size
     num_workers = args.num_workers
     env_per_worker = args.env_per_worker
+    
+    # Allocate GPU power to workers
+    # This is optimized for a single machine with multiple CPU-cores and a single GPU
+    num_gpus = 0.0001
+    gpus_per_worker = (gpu_count-num_gpus)/num_workers if num_workers > 0 else 0
+
     # fragment_length = 200
 
     config = {
         "seed": env_config.seed,
         "framework": "torch",
         "env": AttackSimulationEnv,
-        "num_gpus": gpu_count,
-        "train_batch_size": batch_size * env_per_worker,
+        "num_gpus": num_gpus,
+        "train_batch_size": batch_size,
+        "num_workers": num_workers,
         "num_envs_per_worker": env_per_worker,
+        "num_gpus_per_worker": gpus_per_worker,
         "model": model_config,
         "env_config": asdict(env_config),
         "batch_mode": "complete_episodes",
@@ -126,7 +138,6 @@ def main(args):
         # workaround for a bug in RLLib (https://github.com/ray-project/ray/issues/17921)
         # "replay_sequence_length": -1,
         # },
-        "num_workers": num_workers,
         "callbacks": AttackSimCallback,
     }
 
@@ -150,7 +161,7 @@ def main(args):
         checkpoint_at_end=True,
         metric="episode_reward_mean",
         mode="max",
-        keep_checkpoints_num=5,
+        keep_checkpoints_num=2,
         checkpoint_freq=1,
         checkpoint_score_attr="episode_reward_mean",
         restore=args.checkpoint_path,
