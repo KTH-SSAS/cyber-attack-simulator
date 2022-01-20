@@ -1,5 +1,4 @@
 import logging
-from dataclasses import asdict
 from typing import List, Union
 
 import gym
@@ -69,11 +68,9 @@ class AttackSimulationEnv(gym.Env):
         self.max_reward = 0
         self.attack_start_time = 0
 
-
     def _get_episode_id(self):
         # TODO connect this with ray run id/wandb run id instead of random seed.
         return f"{self._seed}_{self.episode_count}"
-
 
     def reset(self):
         self._observation = None
@@ -119,21 +116,20 @@ class AttackSimulationEnv(gym.Env):
             self._observation = self._observe()
         return self._observation
 
-    def reward_function(self, attacker_reward, mode='simple'):
+    def reward_function(self, attacker_reward, mode="simple"):
 
-        if mode == 'simple':
+        if mode == "simple":
             return sum(self.service_state) - attacker_reward
-        if mode == 'capped':
+        if mode == "capped":
             reward = self.max_reward
             reward -= attacker_reward
-            reward -= sum(1-self.service_state)
-            return max(0, reward/self.max_reward)
-        if mode == 'delayed':
+            reward -= sum(1 - self.service_state)
+            return max(0, reward / self.max_reward)
+        if mode == "delayed":
             if self.done:
-                return sum(self.service_state)-sum(self.rewards[self.attack_state])
+                return sum(self.service_state) - sum(self.rewards[self.attack_state])
             else:
                 return sum(self.service_state)
-    
 
     def _observe(self):
         # Observation of attack steps is subject to the true/false positive rates
@@ -207,7 +203,7 @@ class AttackSimulationEnv(gym.Env):
         # positive reward for maintaining services online (1 unit per service)
         # negative reward for the attacker's gains (as measured by `attacker_reward`)
         # FIXME: the reward for maintaining services is _very_ low
-        self.reward = self.reward_function(attacker_reward, mode='delayed')
+        self.reward = self.reward_function(attacker_reward, mode="delayed")
 
         self.compromised_steps = self._interpret_attacks()
         self.compromised_flags = [

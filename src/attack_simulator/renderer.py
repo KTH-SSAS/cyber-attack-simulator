@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -8,7 +9,7 @@ from matplotlib.animation import HTMLWriter
 from .nx_utils import nx_dag_layout, nx_digraph
 from .svg_tooltips import add_tooltips, postprocess_frame, postprocess_html
 from .utils import enabled
-import shutil
+
 
 class AttackSimulationRenderer:
     RENDER_DIR = "render"
@@ -36,7 +37,7 @@ class AttackSimulationRenderer:
         for d in [self.RENDER_DIR, self.run_dir, self.out_dir]:
             if not os.path.isdir(d):
                 os.mkdir(d)
-      
+
         if self.save_logs:
             self.writers["logs"] = open(os.path.join(self.out_dir, self.LOGS), "w")
 
@@ -48,9 +49,7 @@ class AttackSimulationRenderer:
                 for i, j in self.dag.edges
                 if self.env.g.attack_steps[self.env.g.attack_names[j]].step_type == "and"
             ]
-            self.xlim, self.ylim = tuple(
-                map(lambda l: (min(l), max(l)), zip(*self.pos.values()))
-            )
+            self.xlim, self.ylim = tuple(map(lambda l: (min(l), max(l)), zip(*self.pos.values())))
 
             xmin, xmax = self.xlim
             ymin, ymax = self.ylim
