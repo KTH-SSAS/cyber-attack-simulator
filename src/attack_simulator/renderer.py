@@ -8,17 +8,19 @@ from matplotlib.animation import HTMLWriter
 from .nx_utils import nx_dag_layout, nx_digraph
 from .svg_tooltips import add_tooltips, postprocess_frame, postprocess_html
 from .utils import enabled
-
+import shutil
 
 class AttackSimulationRenderer:
     RENDER_DIR = "render"
     HTML = "index.html"
     LOGS = "attack.log"
 
-    def __init__(self, env, subdir=None):
+    def __init__(self, env, subdir=None, destructive=False, save_graph=False, save_logs=False):
         self.env = env
         self.dag = None
         self.writers = {}
+        self.save_graph = save_graph
+        self.save_logs = save_logs
 
         if subdir is None:
             self.run_dir = os.path.join(self.RENDER_DIR, f"seed={self.env._seed}")
@@ -26,7 +28,69 @@ class AttackSimulationRenderer:
             self.run_dir = os.path.join(self.RENDER_DIR, f"{subdir}_seed={self.env._seed}")
 
         if os.path.exists(self.run_dir):
-            raise RuntimeError("Render subdir already exists.")
+            if destructive:
+                shutil.rmtree(self.run_dir)
+            else:
+                raise RuntimeError("Render subdir already exists.")
+
+        for d in [self.RENDER_DIR, self.run_dir, self.out_dir]:
+            if not os.path.isdir(d):
+                os.mkdir(d)
+      
+        if self.save_logs:
+            self.writers["logs"] = open(os.path.join(self.out_dir, self.LOGS), "w")
+
+        if self.save_graph:
+            self.dag = nx_digraph(self.env.g)
+            self.pos = nx_dag_layout(self.dag)
+            self.and_edges = [
+                (i, j)
+                for i, j in self.dag.edges
+                if self.env.g.attack_steps[self.env.g.attack_names[j]].step_type == "and"
+            ]
+            self.xlim, self.ylim = tuple(
+                map(lambda l: (min(l), max(l)), zip(*self.pos.values()))
+            )
+
+            xmin, xmax = self.xlim
+            ymin, ymax = self.ylim
+            dx = xmax - xmin
+            dy = ymax - ymin
+
+            # create a figure with two areas: one for the graph and another for the logs
+            fig, (self.ax, ax) = plt.subplots(
+                nrows=2,
+                figsize=(dx, dy + 1.25),
+                gridspec_kw=dict(height_ratios=[dy, 1]),
+                constrained_layout=True,
+            )
+
+            # graph area
+            self.ax.set_xlim(xmin, xmax)
+            self.ax.set_ylim(ymin, ymax)
+            self.ax.axes.get_xaxis().set_visible(False)
+            self.ax.axes.get_yaxis().set_visible(False)
+
+            # log area
+            ax.set_frame_on(False)
+            ax.axes.get_xaxis().set_visible(False)
+            ax.axes.get_yaxis().set_visible(False)
+            self.log = ax.text(
+                0.25 / dx,
+                0.9,
+                "",
+                horizontalalignment="left",
+                verticalalignment="top",
+                fontfamily="fantasy",
+                wrap=True,
+                bbox=dict(facecolor="lightgray", boxstyle="Round"),
+            )
+
+            writer = HTMLWriter()
+            html_path = os.path.join(self.out_dir, self.HTML)
+            writer.setup(fig, html_path, dpi=None)
+            writer.frame_format = "svg"
+            self.writers["graph"] = writer
 
     def _draw_nodes(self, nodes, size, color, border, **kwargs):
         nx.draw_networkx_nodes(
@@ -130,76 +194,18 @@ class AttackSimulationRenderer:
             logs += f"Compromised flags: {self.env.compromised_flags}\n"
         return logs
 
+    @property
+    def out_dir(self):
+        return os.path.join(self.run_dir, f"ep-{self.env.episode_count}")
+
     def render(self):
-
-        episode_dir = os.path.join(self.run_dir, f"ep-{self.env.episode_count}")
-
-        for d in [self.RENDER_DIR, self.run_dir, episode_dir]:
-            if not os.path.isdir(d):
-                os.mkdir(d)
-
-        out_dir = episode_dir
 
         logs = self._generate_logs()
 
         if self.env.save_logs:
-            if "logs" not in self.writers:
-                self.writers["logs"] = open(os.path.join(out_dir, self.LOGS), "w")
             self.writers["logs"].write(logs)
 
         if self.env.save_graphs:
-            if "graph" not in self.writers:
-                if not self.dag:
-                    self.dag = nx_digraph(self.env.g)
-                    self.pos = nx_dag_layout(self.dag)
-                    self.and_edges = [
-                        (i, j)
-                        for i, j in self.dag.edges
-                        if self.env.g.attack_steps[self.env.g.attack_names[j]].step_type == "and"
-                    ]
-                    self.xlim, self.ylim = tuple(
-                        map(lambda l: (min(l), max(l)), zip(*self.pos.values()))
-                    )
-                xmin, xmax = self.xlim
-                ymin, ymax = self.ylim
-                dx = xmax - xmin
-                dy = ymax - ymin
-
-                # create a figure with two areas: one for the graph and another for the logs
-                fig, (self.ax, ax) = plt.subplots(
-                    nrows=2,
-                    figsize=(dx, dy + 1.25),
-                    gridspec_kw=dict(height_ratios=[dy, 1]),
-                    constrained_layout=True,
-                )
-
-                # graph area
-                self.ax.set_xlim(xmin, xmax)
-                self.ax.set_ylim(ymin, ymax)
-                self.ax.axes.get_xaxis().set_visible(False)
-                self.ax.axes.get_yaxis().set_visible(False)
-
-                # log area
-                ax.set_frame_on(False)
-                ax.axes.get_xaxis().set_visible(False)
-                ax.axes.get_yaxis().set_visible(False)
-                self.log = ax.text(
-                    0.25 / dx,
-                    0.9,
-                    "",
-                    horizontalalignment="left",
-                    verticalalignment="top",
-                    fontfamily="fantasy",
-                    wrap=True,
-                    bbox=dict(facecolor="lightgray", boxstyle="Round"),
-                )
-
-                writer = HTMLWriter()
-                html_path = os.path.join(out_dir, self.HTML)
-                writer.setup(fig, html_path, dpi=None)
-                writer.frame_format = "svg"
-                self.writers["graph"] = writer
-
             self.log.set_text(logs)
             self._render_graph()
             add_tooltips(self.pos, self.env.g.attack_names, ax=self.ax)

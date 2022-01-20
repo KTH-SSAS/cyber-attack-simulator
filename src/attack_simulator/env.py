@@ -268,7 +268,9 @@ class AttackSimulationEnv(gym.Env):
 
     def render(self, mode="human", subdir=None):
         if not self.renderer:
-            self.renderer = AttackSimulationRenderer(self, subdir)
+            self.renderer = AttackSimulationRenderer(
+                self, subdir, save_graph=self.config.save_graphs, save_logs=self.config.save_logs
+            )
         self.renderer.render()
         return True
 
