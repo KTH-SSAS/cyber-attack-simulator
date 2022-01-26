@@ -207,7 +207,7 @@ class AttackSimulationEnv(gym.Env):
         # positive reward for maintaining services online (1 unit per service)
         # negative reward for the attacker's gains (as measured by `attacker_reward`)
         # FIXME: the reward for maintaining services is _very_ low
-        self.reward = self.reward_function(attacker_reward, mode="delayed")
+        self.reward = self.reward_function(attacker_reward, mode=self.config.reward_mode)
 
         self.compromised_steps = self._interpret_attacks()
         self.compromised_flags = [

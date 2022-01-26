@@ -22,6 +22,7 @@ TEST_ENV_CONFIG_YAML = {
     "false_negative": 0.0,
     "attack_start_time": 0,
     "seed": 42,
+    "reward_mode": "simple",
     "graph_config": {
         "graph_size": "full",
         "easy_ttc": TTC_LOW,
@@ -217,3 +218,19 @@ def test_env_config(config_yaml):
 @pytest.fixture(scope="session")
 def test_env(test_env_config):
     return AttackSimulationEnv(test_env_config)
+
+
+@pytest.fixture(scope="session")
+def rllib_config(test_env_config):
+    model_config = {"use_lstm": True, "lstm_cell_size": 256}
+
+    config = {
+        "seed": test_env_config.seed,
+        "framework": "torch",
+        "env": AttackSimulationEnv,
+        "env_config": dataclasses.asdict(test_env_config),
+        "num_workers": 0,
+        "model": model_config,
+    }
+
+    return config

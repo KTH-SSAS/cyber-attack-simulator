@@ -51,6 +51,7 @@ class EnvConfig(Config):
     save_logs: bool
     seed: int
     attack_start_time: int
+    reward_mode: str
 
     @classmethod
     def from_yaml(cls, filename):
