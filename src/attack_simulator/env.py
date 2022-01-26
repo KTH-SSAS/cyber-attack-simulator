@@ -67,6 +67,10 @@ class AttackSimulationEnv(gym.Env):
 
         self.max_reward = 0
         self.attack_start_time = 0
+        self._observation = None
+        self.service_state = np.ones(self.g.num_services, dtype="int8")
+        self.attack_state = np.zeros(self.g.num_attacks, dtype="int8")
+        self.attack_surface = np.zeros(self.g.num_attacks, dtype="int8")
 
     def _get_episode_id(self):
         # TODO connect this with ray run id/wandb run id instead of random seed.
@@ -95,9 +99,9 @@ class AttackSimulationEnv(gym.Env):
         self.max_reward = sum(self.rewards)
 
         self.simulation_time = 0
-        self.service_state = np.ones(self.g.num_services, dtype="int8")
-        self.attack_state = np.zeros(self.g.num_attacks, dtype="int8")
-        self.attack_surface = np.zeros(self.g.num_attacks, dtype="int8")
+        self.service_state = (0 * self.service_state) + 1
+        self.attack_state *= 0
+        self.attack_surface *= 0
         self.attack_surface[self.entry_attack_index] = 1
 
         self.attacker: Agent = self.attacker_class(
