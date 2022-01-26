@@ -2,6 +2,7 @@ import argparse
 import dataclasses
 import os
 from dataclasses import asdict
+from time import strftime
 
 import ray
 from ray import tune
@@ -11,7 +12,6 @@ from attack_simulator.config import EnvConfig
 from attack_simulator.custom_callback import AttackSimCallback
 from attack_simulator.env import AttackSimulationEnv
 
-from time import strftime
 
 def dict2choices(d):
     choices = list(d.keys())
@@ -48,7 +48,7 @@ def parse_args():
     parser.add_argument("--checkpoint-path", type=str)
 
     parser.add_argument("--gpu-count", type=int, default=0)
-    parser.add_argument("--batch-size", type=int)
+    parser.add_argument("--batch-size", type=int, default=12000)
     parser.add_argument("--local", action="store_true", help="Enable ray local mode for debugger.")
 
     parser.add_argument("--num-workers", type=int)
@@ -100,11 +100,13 @@ def main(args):
     batch_size = args.batch_size
     num_workers = args.num_workers
     env_per_worker = args.env_per_worker
-    
+
     # Allocate GPU power to workers
     # This is optimized for a single machine with multiple CPU-cores and a single GPU
-    num_gpus = 0.0001
-    gpus_per_worker = (gpu_count-num_gpus)/num_workers if num_workers > 0 else 0
+    num_gpus = 0.0001 if gpu_count > 0 else 0
+    gpus_per_worker = (
+        (gpu_count - num_gpus) / num_workers if num_workers > 0 and num_gpus > 0 else 0
+    )
 
     # fragment_length = 200
 
