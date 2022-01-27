@@ -11,25 +11,6 @@ from .tweak_layout import _tweak_children
 logger = logging.getLogger("simulator")
 
 
-def nx_digraph(g: AttackGraph, indices=True) -> nx.DiGraph:
-    dig = nx.DiGraph()
-    if indices:
-        dig.add_nodes_from(range(g.num_attacks))
-        dig.add_edges_from(
-            [
-                (attack_index, child_index)
-                for attack_index in range(g.num_attacks)
-                for child_index in g.child_indices[attack_index]
-            ]
-        )
-    else:
-        dig.add_nodes_from(g.attack_names)
-        dig.add_edges_from(
-            [(name, child) for name in g.attack_names for child in g.attack_steps[name].children]
-        )
-    return dig
-
-
 def _handle_unassigned(
     g: nx.Graph, root: Any, pos: Dict[Any, Tuple[float, float]]
 ) -> Dict[Any, Tuple[float, float]]:

@@ -10,6 +10,7 @@ from yaml import safe_load
 
 from .utils import enabled
 from attack_simulator.config import GraphConfig
+import networkx as nx
 
 
 @dataclass
@@ -263,6 +264,28 @@ class AttackGraph:
                 f"   dot -Tpdf {filename} -o {filename[:-3]}pdf\n"
                 "or viewed online at, e.g., https://dreampuf.github.io/GraphvizOnline."
             )
+
+    def to_networkx(self, indices=True) -> nx.DiGraph:
+        dig = nx.DiGraph()
+        if indices:
+            dig.add_nodes_from(range(self.num_attacks))
+            dig.add_edges_from(
+                [
+                    (attack_index, child_index)
+                    for attack_index in range(self.num_attacks)
+                    for child_index in self.child_indices[attack_index]
+                ]
+            )
+        else:
+            dig.add_nodes_from(self.attack_names)
+            dig.add_edges_from(
+                [
+                    (name, child)
+                    for name in self.attack_names
+                    for child in self.attack_steps[name].children
+                ]
+            )
+        return dig
 
 
 def save_all_default_graphviz(graph_config, indexed=False):

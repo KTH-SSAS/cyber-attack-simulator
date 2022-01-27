@@ -6,7 +6,7 @@ import networkx as nx
 import numpy as np
 from matplotlib.animation import HTMLWriter
 
-from .nx_utils import nx_dag_layout, nx_digraph
+from .nx_utils import nx_dag_layout
 from .svg_tooltips import add_tooltips, postprocess_frame, postprocess_html
 from .utils import enabled
 
@@ -42,7 +42,7 @@ class AttackSimulationRenderer:
             self.writers["logs"] = open(os.path.join(self.out_dir, self.LOGS), "w")
 
         if self.save_graph:
-            self.dag = nx_digraph(self.env.g)
+            self.dag = self.env.g.to_networkx()
             self.pos = nx_dag_layout(self.dag)
             self.and_edges = [
                 (i, j)
