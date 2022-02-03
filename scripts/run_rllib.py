@@ -11,6 +11,7 @@ from ray.tune.integration.wandb import WandbLoggerCallback
 from attack_simulator.config import EnvConfig
 from attack_simulator.custom_callback import AttackSimCallback
 from attack_simulator.env import AttackSimulationEnv
+from attack_simulator.rng import set_seeds
 
 
 def dict2choices(d):
@@ -59,11 +60,13 @@ def parse_args():
     return parser.parse_args()
 
 
-def main(args):
+def main():
+
+    args = parse_args()
 
     dashboard_host = "0.0.0.0" if os.path.exists("/.dockerenv") else "127.0.0.1"
 
-    if args.local:  # TODO might want to set other options if we know the program is running locally
+    if args.local:
         local = True
     else:
         local = False
@@ -100,6 +103,9 @@ def main(args):
     batch_size = args.batch_size
     num_workers = args.num_workers
     env_per_worker = args.env_per_worker
+
+    # Set global seeds
+    set_seeds(env_config.seed)
 
     # Allocate GPU power to workers
     # This is optimized for a single machine with multiple CPU-cores and a single GPU
@@ -177,5 +183,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    args = parse_args()
-    main(args)
+    main()
