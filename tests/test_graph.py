@@ -9,7 +9,7 @@ from attack_simulator.graph import SIZES, AttackGraph, save_all_default_graphviz
 def _assert_same_steps(a, b):
     assert a.keys() == b.keys()
     for key in a:
-        assert a[key] == b[key]
+        assert a[key] == b[key], key
 
 
 def test_graph_as_expected(test_graph: AttackGraph, test_services, test_attack_steps):

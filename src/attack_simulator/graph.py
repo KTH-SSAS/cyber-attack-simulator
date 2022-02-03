@@ -17,9 +17,7 @@ import networkx as nx
 class AttackStep:
     parents: List[str] = field(default_factory=list)
     children: List[str] = field(default_factory=list)
-    asset: str = ""
-    service: str = ""
-    flag: str = ""
+    conditions: List[str] = field(default_factory=list)
     name: str = ""
     reward: float = 0.0
     step_type: str = "or"
@@ -100,25 +98,12 @@ class AttackGraph:
         # first pass: determine services and most fields
         def determine_fields(key: str, node: dict, children: set):
             # some leaf nodes have multiple parents, no need to re-process
-            if "asset" in node:
-                return
-            parts = key.split(".")
-            rest = len(parts) - 2
-            if rest < 0:
-                raise ValueError("Attack step key has fewer than 2 components")
-            asset = parts[0]
-            name = parts[-1]
-            node.update(asset=asset, name=name)
-            if asset not in unmalleable_assets:
-                services.add(asset)
-            if 0 < rest:
-                if name == "capture" and parts[-2][:4] == "flag":
-                    node.update(flag=parts[-2])
-                    rest -= 1
-                if rest:
-                    service = parts[1]
-                    node.update(service=service)
-                    services.add(f"{asset}.{service}")
+
+            # Assets that a step belongs to are listed in "conditions"
+            if "conditions" in node:
+                for asset in node["conditions"]:
+                    if asset not in unmalleable_assets and "flag" not in asset:
+                        services.add(asset)
 
             # handle `ttc` and `reward` "templates"
             for f in ("ttc", "reward"):
@@ -126,7 +111,8 @@ class AttackGraph:
                     # translate {easy,hard}_ttc and/or {early,late,final}_reward
                     # based on upper-case "TEMPLATE" in YAML to actual values
                     # TODO add better template handling
-                    node[f] = asdict(self.config)[node[f].lower()]
+                    if isinstance(node[f], str):
+                        node[f] = asdict(self.config)[node[f].lower()]
 
             if children:
                 # Ensure a deterministic ordering of child nodes
@@ -135,12 +121,12 @@ class AttackGraph:
             node["parents"] = set()
 
         # second pass: update parents
-        def update_parents(key, node, children):
+        def update_parents(key, _, children):
             for child in children:
                 graph[child]["parents"].add(key)
 
         # third and final pass: freeze the relevant sub-graph
-        def freeze_subgraph(key, node, children):
+        def freeze_subgraph(key, node, _):
             # Ensure a deterministic ordering of parents
             node["parents"] = sorted(node["parents"])
             self.attack_steps[key] = AttackStep(**node)
@@ -159,14 +145,19 @@ class AttackGraph:
         self.service_index_by_attack_index = []
         for attack_name in self.attack_names:
             attack_step = self.attack_steps[attack_name]
-            service_name = attack_step.asset
-            if attack_step.service:
-                service_name += "." + attack_step.service
-            service_index = self.service_indices.get(service_name, -1)
-            self.service_index_by_attack_index.append(service_index)
+            indexes = []
+            for service_name in attack_step.conditions:
+                if service_name in self.service_indices:
+                    service_index = self.service_indices[service_name]
+                    indexes.append(service_index)
+            self.service_index_by_attack_index.append(indexes)
 
         self.dependent_services = [
-            [dependent.startswith(main) for dependent in self.service_names]
+            [
+                self.service_indices[dependent]
+                for dependent in self.service_names
+                if dependent.startswith(main)
+            ]
             for main in self.service_names
         ]
 

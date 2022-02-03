@@ -1,277 +1,560 @@
 internet.connect:
   children:
-    - office_network.connect
+  - office_network.connect
+  conditions:
+  - internet
+  name: connect
 office_network.connect:
   children:
-    - office_network.map
+  - office_network.map
+  conditions:
+  - office_network
+  name: connect
 office_network.map:
   ttc: EASY_TTC
   children:
-    - lazarus.ftp.connect
-    - lazarus.tomcat.connect
-    - energetic_bear.apache.connect
-    - sea_turtle.telnet.connect
+  - lazarus.ftp.connect
+  - lazarus.tomcat.connect
+  - energetic_bear.apache.connect
+  - sea_turtle.telnet.connect
+  conditions:
+  - office_network
+  name: map
 lazarus.ftp.connect:
   children:
-    - lazarus.ftp.dictionary_attack
+  - lazarus.ftp.dictionary_attack
+  conditions:
+  - lazarus
+  - lazarus.ftp
+  name: connect
 lazarus.ftp.dictionary_attack:
   ttc: HARD_TTC
   children:
-    - lazarus.ftp.login
+  - lazarus.ftp.login
+  conditions:
+  - lazarus
+  - lazarus.ftp
+  name: dictionary_attack
 lazarus.ftp.login:
   children:
-    - lazarus.ftp.flag_adcb1f.capture
+  - lazarus.ftp.flag_adcb1f.capture
+  conditions:
+  - lazarus
+  - lazarus.ftp
+  name: login
 lazarus.ftp.flag_adcb1f.capture:
   reward: LOW_FLAG_REWARD
+  conditions:
+  - lazarus
+  - lazarus.ftp
+  - lazarus.ftp.flag_adcb1f
+  name: capture
 lazarus.tomcat.connect:
   children:
-    - lazarus.tomcat.gather_information
+  - lazarus.tomcat.gather_information
+  conditions:
+  - lazarus
+  - lazarus.tomcat
+  name: connect
 lazarus.tomcat.gather_information:
   ttc: EASY_TTC
   children:
-    - lazarus.tomcat.dictionary_attack
+  - lazarus.tomcat.dictionary_attack
+  conditions:
+  - lazarus
+  - lazarus.tomcat
+  name: gather_information
 lazarus.tomcat.dictionary_attack:
   ttc: EASY_TTC
   children:
-    - lazarus.tomcat.flag_90b353.capture
-    - lazarus.tomcat.find_vulnerability
+  - lazarus.tomcat.flag_90b353.capture
+  - lazarus.tomcat.find_vulnerability
+  conditions:
+  - lazarus
+  - lazarus.tomcat
+  name: dictionary_attack
 lazarus.tomcat.flag_90b353.capture:
   reward: LOW_FLAG_REWARD
+  conditions:
+  - lazarus
+  - lazarus.tomcat
+  - lazarus.tomcat.flag_90b353
+  name: capture
 lazarus.tomcat.find_vulnerability:
   ttc: EASY_TTC
   children:
-    - lazarus.tomcat.exploit_vulnerability
+  - lazarus.tomcat.exploit_vulnerability
+  conditions:
+  - lazarus
+  - lazarus.tomcat
+  name: find_vulnerability
 lazarus.tomcat.exploit_vulnerability:
   ttc: EASY_TTC
   children:
-    - lazarus.terminal_access
+  - lazarus.terminal_access
+  conditions:
+  - lazarus
+  - lazarus.tomcat
+  name: exploit_vulnerability
 lazarus.terminal_access:
   children:
-    - lazarus.flag_cd699a.capture
-    - lazarus.find_credentials
-    - lazarus.ftp.flag_adcb1f.capture
+  - lazarus.flag_cd699a.capture
+  - lazarus.find_credentials
+  - lazarus.ftp.flag_adcb1f.capture
+  conditions:
+  - lazarus
+  name: terminal_access
 lazarus.flag_cd699a.capture:
   reward: LOW_FLAG_REWARD
+  conditions:
+  - lazarus
+  - lazarus.flag_cd699a
+  name: capture
 lazarus.find_credentials:
   ttc: EASY_TTC
   children:
-    - sea_turtle.telnet.obtain_credentials
+  - sea_turtle.telnet.obtain_credentials
+  conditions:
+  - lazarus
+  name: find_credentials
 energetic_bear.apache.connect:
   children:
-    - energetic_bear.apache.gather_information
+  - energetic_bear.apache.gather_information
+  conditions:
+  - energetic_bear
+  - energetic_bear.apache
+  name: connect
 energetic_bear.apache.gather_information:
   ttc: EASY_TTC
   children:
-    - energetic_bear.apache.flag_521bce.capture
-    - energetic_bear.apache.find_vulnerability
+  - energetic_bear.apache.flag_521bce.capture
+  - energetic_bear.apache.find_vulnerability
+  conditions:
+  - energetic_bear
+  - energetic_bear.apache
+  name: gather_information
 energetic_bear.apache.flag_521bce.capture:
   reward: LOW_FLAG_REWARD
+  conditions:
+  - energetic_bear
+  - energetic_bear.apache
+  - energetic_bear.apache.flag_521bce
+  name: capture
 energetic_bear.apache.find_vulnerability:
   ttc: HARD_TTC
   children:
-    - energetic_bear.apache.exploit_vulnerability
+  - energetic_bear.apache.exploit_vulnerability
+  conditions:
+  - energetic_bear
+  - energetic_bear.apache
+  name: find_vulnerability
 energetic_bear.apache.exploit_vulnerability:
   ttc: EASY_TTC
   children:
-    - energetic_bear.flag_de3b1c.capture
-    - energetic_bear.terminal_access
+  - energetic_bear.flag_de3b1c.capture
+  - energetic_bear.terminal_access
+  conditions:
+  - energetic_bear
+  - energetic_bear.apache
+  name: exploit_vulnerability
 energetic_bear.flag_de3b1c.capture:
   reward: LOW_FLAG_REWARD
+  conditions:
+  - energetic_bear
+  - energetic_bear.flag_de3b1c
+  name: capture
 energetic_bear.terminal_access:
   ttc: EASY_TTC
   children:
-    - energetic_bear.flag_3b2000.capture
-    - energetic_bear.find_vulnerability
+  - energetic_bear.flag_3b2000.capture
+  - energetic_bear.find_vulnerability
+  conditions:
+  - energetic_bear
+  name: terminal_access
 energetic_bear.flag_3b2000.capture:
   reward: LOW_FLAG_REWARD
+  conditions:
+  - energetic_bear
+  - energetic_bear.flag_3b2000
+  name: capture
 energetic_bear.find_vulnerability:
   ttc: HARD_TTC
   children:
-    - energetic_bear.exploit_vulnerability
+  - energetic_bear.exploit_vulnerability
+  conditions:
+  - energetic_bear
+  name: find_vulnerability
 energetic_bear.exploit_vulnerability:
   ttc: HARD_TTC
   children:
-    - energetic_bear.escalate_to_root
+  - energetic_bear.escalate_to_root
+  conditions:
+  - energetic_bear
+  name: exploit_vulnerability
 energetic_bear.escalate_to_root:
   ttc: EASY_TTC
   children:
-    - energetic_bear.flag_73cb43.capture
-    - energetic_bear.capture_traffic
+  - energetic_bear.flag_73cb43.capture
+  - energetic_bear.capture_traffic
+  conditions:
+  - energetic_bear
+  name: escalate_to_root
 energetic_bear.flag_73cb43.capture:
   reward: LOW_FLAG_REWARD
+  conditions:
+  - energetic_bear
+  - energetic_bear.flag_73cb43
+  name: capture
 energetic_bear.capture_traffic:
   ttc: EASY_TTC
   children:
-    - buckeye.firefox.flag_14ce18.capture
-    - buckeye.firefox.connect
+  - buckeye.firefox.flag_14ce18.capture
+  - buckeye.firefox.connect
+  conditions:
+  - energetic_bear
+  name: capture_traffic
 sea_turtle.telnet.connect:
   children:
-    - sea_turtle.telnet.login
+  - sea_turtle.telnet.login
+  conditions:
+  - sea_turtle
+  - sea_turtle.telnet
+  name: connect
 sea_turtle.telnet.obtain_credentials:
   children:
-    - sea_turtle.telnet.login
+  - sea_turtle.telnet.login
+  conditions:
+  - sea_turtle
+  - sea_turtle.telnet
+  name: obtain_credentials
 sea_turtle.telnet.login:
   step_type: and
   children:
-    - sea_turtle.flag_f9038f.capture
-    - sea_turtle.find_vulnerability
+  - sea_turtle.flag_f9038f.capture
+  - sea_turtle.find_vulnerability
+  conditions:
+  - sea_turtle
+  - sea_turtle.telnet
+  name: login
 sea_turtle.flag_f9038f.capture:
   reward: MEDIUM_FLAG_REWARD
+  conditions:
+  - sea_turtle
+  - sea_turtle.flag_f9038f
+  name: capture
 sea_turtle.find_vulnerability:
   ttc: HARD_TTC
   children:
-    - sea_turtle.exploit_vulnerability
+  - sea_turtle.exploit_vulnerability
+  conditions:
+  - sea_turtle
+  name: find_vulnerability
 sea_turtle.exploit_vulnerability:
   ttc: HARD_TTC
   children:
-    - sea_turtle.escalate_to_root
+  - sea_turtle.escalate_to_root
+  conditions:
+  - sea_turtle
+  name: exploit_vulnerability
 sea_turtle.escalate_to_root:
   ttc: HARD_TTC
   children:
-    - sea_turtle.flag_6be6ef.capture
-    - sea_turtle.capture_traffic
+  - sea_turtle.flag_6be6ef.capture
+  - sea_turtle.capture_traffic
+  conditions:
+  - sea_turtle
+  name: escalate_to_root
 sea_turtle.flag_6be6ef.capture:
   reward: MEDIUM_FLAG_REWARD
+  conditions:
+  - sea_turtle
+  - sea_turtle.flag_6be6ef
+  name: capture
 sea_turtle.capture_traffic:
   ttc: EASY_TTC
   children:
-    - buckeye.firefox.flag_14ce18.capture
-    - buckeye.firefox.connect
+  - buckeye.firefox.flag_14ce18.capture
+  - buckeye.firefox.connect
+  conditions:
+  - sea_turtle
+  name: capture_traffic
 buckeye.firefox.flag_14ce18.capture:
   reward: MEDIUM_FLAG_REWARD
+  conditions:
+  - buckeye
+  - buckeye.firefox
+  - buckeye.firefox.flag_14ce18
+  name: capture
 buckeye.firefox.connect:
   children:
-    - buckeye.firefox.find_vulnerability
+  - buckeye.firefox.find_vulnerability
+  conditions:
+  - buckeye
+  - buckeye.firefox
+  name: connect
 buckeye.firefox.find_vulnerability:
   ttc: EASY_TTC
   children:
-    - buckeye.firefox.exploit_vulnerability
+  - buckeye.firefox.exploit_vulnerability
+  conditions:
+  - buckeye
+  - buckeye.firefox
+  name: find_vulnerability
 buckeye.firefox.exploit_vulnerability:
   ttc: EASY_TTC
   children:
-    - buckeye.terminal_access
+  - buckeye.terminal_access
+  conditions:
+  - buckeye
+  - buckeye.firefox
+  name: exploit_vulnerability
 buckeye.terminal_access:
   children:
-    - buckeye.flag_5d402e.capture
-    - buckeye.find_vulnerability
+  - buckeye.flag_5d402e.capture
+  - buckeye.find_vulnerability
+  conditions:
+  - buckeye
+  name: terminal_access
 buckeye.flag_5d402e.capture:
   reward: MEDIUM_FLAG_REWARD
+  conditions:
+  - buckeye
+  - buckeye.flag_5d402e
+  name: capture
 buckeye.find_vulnerability:
   ttc: EASY_TTC
   children:
-    - buckeye.exploit_vulnerability
+  - buckeye.exploit_vulnerability
+  conditions:
+  - buckeye
+  name: find_vulnerability
 buckeye.exploit_vulnerability:
   ttc: EASY_TTC
   children:
-    - buckeye.escalate_to_root
+  - buckeye.escalate_to_root
+  conditions:
+  - buckeye
+  name: exploit_vulnerability
 buckeye.escalate_to_root:
   children:
-    - buckeye.flag_2362e5.capture
-    - hidden_network.connect
+  - buckeye.flag_2362e5.capture
+  - hidden_network.connect
+  conditions:
+  - buckeye
+  name: escalate_to_root
 buckeye.flag_2362e5.capture:
   reward: MEDIUM_FLAG_REWARD
+  conditions:
+  - buckeye
+  - buckeye.flag_2362e5
+  name: capture
 hidden_network.connect:
   children:
-    - hidden_network.map
+  - hidden_network.map
+  conditions:
+  - hidden_network
+  name: connect
 hidden_network.map:
   ttc: EASY_TTC
   children:
-    - cloud_hopper.smb.connect
-    - fancy_bear.ssh.connect
+  - cloud_hopper.smb.connect
+  - fancy_bear.ssh.connect
+  conditions:
+  - hidden_network
+  name: map
 cloud_hopper.smb.connect:
   children:
-    - cloud_hopper.smb.find_vulnerability
+  - cloud_hopper.smb.find_vulnerability
+  conditions:
+  - cloud_hopper
+  - cloud_hopper.smb
+  name: connect
 cloud_hopper.smb.find_vulnerability:
   ttc: EASY_TTC
   children:
-    - cloud_hopper.smb.exploit_vulnerability
+  - cloud_hopper.smb.exploit_vulnerability
+  conditions:
+  - cloud_hopper
+  - cloud_hopper.smb
+  name: find_vulnerability
 cloud_hopper.smb.exploit_vulnerability:
   ttc: EASY_TTC
   children:
-    - cloud_hopper.terminal_access
+  - cloud_hopper.terminal_access
+  conditions:
+  - cloud_hopper
+  - cloud_hopper.smb
+  name: exploit_vulnerability
 cloud_hopper.terminal_access:
   children:
-    - cloud_hopper.flag_93b00a.capture
-    - cloud_hopper.gather_information
+  - cloud_hopper.flag_93b00a.capture
+  - cloud_hopper.gather_information
+  conditions:
+  - cloud_hopper
+  name: terminal_access
 cloud_hopper.flag_93b00a.capture:
   reward: MEDIUM_FLAG_REWARD
+  conditions:
+  - cloud_hopper
+  - cloud_hopper.flag_93b00a
+  name: capture
 cloud_hopper.gather_information:
   ttc: EASY_TTC
   children:
-    - cloud_bucket.list
+  - cloud_bucket.list
+  conditions:
+  - cloud_hopper
+  name: gather_information
 cloud_bucket.list:
   children:
-    - cloud_bucket.flag_21077e.capture
-    - cloud_bucket.find_credentials
-    - cloud_function.gather_information
+  - cloud_bucket.flag_21077e.capture
+  - cloud_bucket.find_credentials
+  - cloud_function.gather_information
+  conditions:
+  - cloud_bucket
+  name: list
 cloud_bucket.flag_21077e.capture:
   reward: MEDIUM_FLAG_REWARD
+  conditions:
+  - cloud_bucket
+  - cloud_bucket.flag_21077e
+  name: capture
 cloud_bucket.find_credentials:
   children:
-    - fancy_bear.ssh.obtain_credentials
+  - fancy_bear.ssh.obtain_credentials
+  conditions:
+  - cloud_bucket
+  name: find_credentials
 cloud_function.gather_information:
   children:
-    - cloud_function.flag_d8d9da.capture
-    - cloud_function.find_vulnerability
+  - cloud_function.flag_d8d9da.capture
+  - cloud_function.find_vulnerability
+  conditions:
+  - cloud_function
+  name: gather_information
 cloud_function.flag_d8d9da.capture:
   reward: MEDIUM_FLAG_REWARD
+  conditions:
+  - cloud_function
+  - cloud_function.flag_d8d9da
+  name: capture
 cloud_function.find_vulnerability:
   children:
-    - cloud_function.exploit_vulnerability
+  - cloud_function.exploit_vulnerability
+  conditions:
+  - cloud_function
+  name: find_vulnerability
 cloud_function.exploit_vulnerability:
   children:
-    - cloud_function.flag_831865.capture
+  - cloud_function.flag_831865.capture
+  conditions:
+  - cloud_function
+  name: exploit_vulnerability
 cloud_function.flag_831865.capture:
   reward: MEDIUM_FLAG_REWARD
+  conditions:
+  - cloud_function
+  - cloud_function.flag_831865
+  name: capture
 fancy_bear.ssh.connect:
   children:
-    - fancy_bear.ssh.login
+  - fancy_bear.ssh.login
+  conditions:
+  - fancy_bear
+  - fancy_bear.ssh
+  name: connect
 fancy_bear.ssh.obtain_credentials:
   children:
-    - fancy_bear.ssh.login
+  - fancy_bear.ssh.login
+  conditions:
+  - fancy_bear
+  - fancy_bear.ssh
+  name: obtain_credentials
 fancy_bear.ssh.login:
   step_type: and
   children:
-    - fancy_bear.gather_information
+  - fancy_bear.gather_information
+  conditions:
+  - fancy_bear
+  - fancy_bear.ssh
+  name: login
 fancy_bear.gather_information:
   ttc: EASY_TTC
   children:
-    - wifi_network.capture_traffic
+  - wifi_network.capture_traffic
+  conditions:
+  - fancy_bear
+  name: gather_information
 wifi_network.capture_traffic:
   ttc: EASY_TTC
   children:
-    - wifi_network.find_credentials
-    - wifi_network.decrypt_traffic
-    - wifi_network.connect
+  - wifi_network.find_credentials
+  - wifi_network.decrypt_traffic
+  - wifi_network.connect
+  conditions:
+  - wifi_network
+  name: capture_traffic
 wifi_network.find_credentials:
   children:
-    - wifi_network.obtain_credentials
+  - wifi_network.obtain_credentials
+  conditions:
+  - wifi_network
+  name: find_credentials
 wifi_network.obtain_credentials:
   ttc: EASY_TTC
   children:
-    - wifi_network.decrypt_traffic
-    - wifi_network.connect
+  - wifi_network.decrypt_traffic
+  - wifi_network.connect
+  conditions:
+  - wifi_network
+  name: obtain_credentials
 wifi_network.decrypt_traffic:
   step_type: and
   ttc: EASY_TTC
   children:
-    - wifi_network.flag_d582aa.capture
+  - wifi_network.flag_d582aa.capture
+  conditions:
+  - wifi_network
+  name: decrypt_traffic
 wifi_network.flag_d582aa.capture:
   reward: MEDIUM_FLAG_REWARD
+  conditions:
+  - wifi_network
+  - wifi_network.flag_d582aa
+  name: capture
 wifi_network.connect:
   step_type: and
   children:
-    - wifi_network.map
+  - wifi_network.map
+  conditions:
+  - wifi_network
+  name: connect
 wifi_network.map:
   ttc: EASY_TTC
   children:
-    - wifi_host.http_server.connect
+  - wifi_host.http_server.connect
+  conditions:
+  - wifi_network
+  name: map
 wifi_host.http_server.connect:
   children:
-    - wifi_host.http_server.gather_information
+  - wifi_host.http_server.gather_information
+  conditions:
+  - wifi_host
+  - wifi_host.http_server
+  name: connect
 wifi_host.http_server.gather_information:
   ttc: EASY_TTC
   children:
-    - wifi_host.http_server.flag_18dd8f.capture
+  - wifi_host.http_server.flag_18dd8f.capture
+  conditions:
+  - wifi_host
+  - wifi_host.http_server
+  name: gather_information
 wifi_host.http_server.flag_18dd8f.capture:
   reward: HIGH_FLAG_REWARD
+  conditions:
+  - wifi_host
+  - wifi_host.http_server
+  - wifi_host.http_server.flag_18dd8f
+  name: capture
