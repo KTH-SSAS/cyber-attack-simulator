@@ -8,153 +8,123 @@ import numpy as np
 from attack_simulator.agents import ATTACKERS
 from attack_simulator.agents.agent import Agent
 from attack_simulator.config import EnvConfig
+from attack_simulator.rng import get_rng
+from attack_simulator.sim import AttackSimulator
 
-from .graph import AttackGraph
 from .renderer import AttackSimulationRenderer
-from .rng import get_rng, set_seeds
-from .utils import enabled
 
 logger = logging.getLogger("simulator")
 
 
 class AttackSimulationEnv(gym.Env):
+    """
+    Handles reinforcement learning matters.
+    """
+
     NO_ACTION = "no action"
 
+    sim: AttackSimulator
+    attacker: Agent
+
     def __init__(self, config: Union[EnvConfig, dict]):
+
         super(AttackSimulationEnv, self).__init__()
 
         if isinstance(config, dict):
             config = EnvConfig(**config)
 
+        self.rng, self.env_seed = get_rng(config.seed)
+
         # process configuration, leave the graph last, as it may destroy env_config
         self.config = config
         self.attacker_class = ATTACKERS[config.attacker]
-        self.false_negative = config.false_negative
-        self.false_positive = config.false_positive
         self.save_graphs = config.save_graphs
         self.save_logs = config.save_logs
-        self.g: AttackGraph = AttackGraph(config.graph_config)
 
-        # prepare just enough to get dimensions sorted, do the rest on first `reset`
-        self.entry_attack_index = self.g.attack_indices[self.g.root]
+        self.sim = AttackSimulator(self.config, self.rng)
+        self.rewards = np.array(self.sim.g.reward_params)
 
         # An observation informs the defender of
         # a) which services are turned on; and,
         # b) which attack steps have been successfully taken
-        self.dim_observations = self.g.num_services + self.g.num_attacks
+        self.dim_observations = self.sim.num_assets + self.sim.num_attack_steps
         # Using a Box instead of Tuple((Discrete(2),) * self.dim_observations)
         # avoids potential preprocessor issues with Ray
         # (cf. https://github.com/ray-project/ray/issues/8600)
-        self.observation_space = gym.spaces.Box(0, 1, shape=(self.dim_observations,), dtype="int8")
+        self.observation_space = spaces.Box(0, 1, shape=(self.dim_observations,), dtype="int8")
 
         # The defender action space allows to disable any one service or leave all unchanged
-        self.num_actions = self.g.num_services + 1
+        self.num_actions = self.sim.num_assets + 1
         self.action_space = spaces.Discrete(self.num_actions)
 
         self.episode_count = 0
-        self.rng, self._seed = get_rng(config.seed)
+
         self.done = False
         self.reward = None
-        self.action = 0
-        self.attack_index = None
-        self.compromised_flags: List[str] = []
-        self.compromised_steps: List[str] = []
         self.renderer = None
-        self.simulation_time = 0
-        self.attack_surface = np.zeros(self.g.num_attacks, dtype="int8")
 
         self.episode_id = self._get_episode_id()
 
         self.max_reward = 0
         self.attack_start_time = 0
-        self._observation = None
-        self.service_state = np.ones(self.g.num_services, dtype="int8")
-        self.attack_state = np.zeros(self.g.num_attacks, dtype="int8")
-        self.attack_surface = np.zeros(self.g.num_attacks, dtype="int8")
+
+    def _create_attacker(self):
+        return self.attacker_class(
+            dict(
+                attack_graph=self.sim.g,
+                ttc=self.sim.ttc_remaining,
+                rewards=self.rewards,
+                random_seed=self.config.seed + self.episode_count,
+            )
+        )
 
     def _get_episode_id(self):
         # TODO connect this with ray run id/wandb run id instead of random seed.
-        return f"{self._seed}_{self.episode_count}"
+        return f"{self.config.seed}_{self.episode_count}"
 
     def reset(self):
-        self._observation = None
+        logger.debug("Starting new simulation. (%d)", self.episode_id)
         self.done = False
-
-        if self.episode_count == 0:
-            # prime RNG if not yet set by `seed`
-            if self._seed is None:
-                self.seed()
 
         self.episode_count += 1
         self.episode_id = self._get_episode_id()
-        logger.debug(f"Starting new simulation. (#{self.episode_id})")
-
-        self.ttc_remaining = np.array(
-            [max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)]
-        )
-        self.rewards = np.array(self.g.reward_params)
         self.attack_start_time = int(self.rng.exponential(self.config.attack_start_time))
-        self.ttc_total = sum(self.ttc_remaining)
-
         self.max_reward = sum(self.rewards)
 
-        self.simulation_time = 0
-        self.service_state = (0 * self.service_state) + 1
-        self.attack_state *= 0
-        self.attack_surface *= 0
-        self.attack_surface[self.entry_attack_index] = 1
+        # Set up a new simulation environment
+        self.sim = AttackSimulator(self.config, self.rng)
+        self.rewards = np.array(self.sim.g.reward_params)
 
-        self.attacker: Agent = self.attacker_class(
-            dict(
-                attack_graph=self.g,
-                ttc=self.ttc_remaining,
-                rewards=self.rewards,
-                random_seed=self._seed + self.episode_count,
-            )
-        )
-        return self.observation
+        # Set up a new attacker
+        self.attacker = self._create_attacker()
 
-    @property
-    def observation(self):
-        if self._observation is None:
-            self._observation = self._observe()
-        return self._observation
+        return self.sim.observe()
 
     def reward_function(self, attacker_reward, mode="simple"):
+        service_state = self.sim.service_state
+
+        reward = 0
 
         if mode == "simple":
-            return sum(self.service_state) - attacker_reward
-        if mode == "capped":
+            reward = sum(service_state) - attacker_reward
+        elif mode == "capped":
             reward = self.max_reward
             reward -= attacker_reward
-            reward -= sum(1 - self.service_state)
-            return max(0, reward / self.max_reward)
-        if mode == "delayed":
+            reward -= sum(1 - service_state)
+            reward = max(0, reward / self.max_reward)
+        elif mode == "delayed":
             if self.done:
-                return sum(self.service_state) - sum(self.rewards[self.attack_state])
+                reward = sum(service_state) - sum(self.rewards[self.sim.attack_state])
             else:
-                return sum(self.service_state)
+                reward = sum(service_state)
+        else:
+            raise Exception("Invalid Reward Method.")
 
-    def _observe(self):
-        # Observation of attack steps is subject to the true/false positive rates
-        # of an assumed underlying intrusion detection system
-        # Depending on the true and false positive rates for each step,
-        # ongoing attacks may not be reported, or non-existing attacks may be spuriously reported
-        probabilities = self.rng.uniform(0, 1, self.g.num_attacks)
-        false_negatives = self.attack_state & (probabilities >= self.false_negative)
-        false_positives = (1 - self.attack_state) & (probabilities <= self.false_positive)
-        detected = false_negatives | false_positives
-        return np.append(self.service_state, detected)
-
-    def _get_eligible_indices(self):
-        return self.g.get_eligible_indices(self.attack_index, self.attack_state, self.service_state)
+        return reward
 
     def step(self, action):
-        self.action = action
         assert 0 <= action < self.num_actions
 
-        self.simulation_time += 1
-        self._observation = None
         self.done = False
         attacker_reward = 0
 
@@ -162,117 +132,72 @@ class AttackSimulationEnv(gym.Env):
         if action:
             # decrement to obtain index
             service = action - 1
-            # only disable services that are still on
-            if self.service_state[service]:
-                # disable the service itself and any dependent services
-                self.service_state[self.g.dependent_services[service]] = 0
-                # remove dependent attacks from the attack surface
-                for attack_index in np.flatnonzero(self.attack_surface):
-                    required_services, _, _ = self.g.attack_prerequisites[attack_index]
-                    if not all(enabled(required_services, self.service_state)):
-                        self.attack_surface[attack_index] = 0
-
-                # end episode when attack surface becomes empty
-                self.done = not any(self.attack_surface)
-
-        self.attack_index = None
+            self.done = self.sim.defense_action(service)
 
         if not self.done:
-
             # Check if the attack has started
-            if self.simulation_time > self.attack_start_time:
-                # obtain attacker action, this _can_ be 0 for no action
-                self.attack_index = self.attacker.act(self.attack_surface) - 1
-                assert -1 <= self.attack_index < self.g.num_attacks
+            if self.sim.time >= self.attack_start_time:
+                # Obtain attacker action, this _can_ be 0 for no action
+                attack_index = self.attacker.act(self.sim.attack_surface) - 1
+                assert -1 <= attack_index < self.sim.num_attack_steps
 
-                if self.attack_index != -1:
-                    # compute attacker reward
-                    self.ttc_remaining[self.attack_index] -= 1
-                    if self.ttc_remaining[self.attack_index] == 0:
-                        # successful attack, update reward, attack_state, attack_surface
-                        attacker_reward = self.rewards[self.attack_index]
-                        self.attack_state[self.attack_index] = 1
-                        self.attack_surface[self.attack_index] = 0
-
-                        # add eligible children to the attack surface
-                        self.attack_surface[self._get_eligible_indices()] = 1
-
-                        # end episode when attack surface becomes empty
-                        self.done = not any(self.attack_surface)
+                if attack_index != -1:
+                    self.done = self.sim.attack_action(attack_index)
+                    attacker_reward = self.rewards[attack_index]
 
                 # TODO: placeholder, none of the current attackers learn...
                 # self.attacker.update(attack_surface, attacker_reward, self.done)
+
+        self.sim.step()
 
         # compute defender reward
         # positive reward for maintaining services online (1 unit per service)
         # negative reward for the attacker's gains (as measured by `attacker_reward`)
         # FIXME: the reward for maintaining services is _very_ low
+
         self.reward = self.reward_function(attacker_reward, mode=self.config.reward_mode)
 
-        self.compromised_steps = self._interpret_attacks()
-        self.compromised_flags = [
-            step_name for step_name in self.compromised_steps if "flag" in step_name
-        ]
+        compromised_steps = self.sim.compromised_steps
+        compromised_flags = self.sim.compromised_flags
+        current_step, ttc_remaining = self.sim.current_attack_step()
 
         info = {
-            "time": self.simulation_time,
-            "attack_surface": self.attack_surface,
-            "current_step": None
-            if self.attack_index is None
-            else self.NO_ACTION
-            if self.attack_index == -1
-            else self.g.attack_names[self.attack_index],
-            "ttc_remaining_on_current_step": -1
-            if self.attack_index is None or self.attack_index == -1
-            else self.ttc_remaining[self.attack_index],
-            "compromised_steps": self.compromised_steps,
-            "compromised_flags": self.compromised_flags,
+            "time": self.sim.time,
+            "attack_surface": self.sim.attack_surface,
+            "current_step": current_step,
+            "ttc_remaining_on_current_step": ttc_remaining,
+            "compromised_steps": compromised_steps,
+            "compromised_flags": compromised_flags,
         }
 
         if self.done:
             logger.debug("Attacker done")
-            logger.debug(f"Compromised steps: {self.compromised_steps}")
-            logger.debug(f"Compromised flags: {self.compromised_flags}")
+            logger.debug("Compromised steps: %s", compromised_steps)
+            logger.debug("Compromised flags: %s", compromised_flags)
 
-        return self.observation, self.reward, self.done, info
-
-    def _interpret_services(self, services=None):
-        if services is None:
-            services = self.service_state
-        return list(np.array(self.g.service_names)[np.flatnonzero(services)])
-
-    def _interpret_attacks(self, attacks=None):
-        if attacks is None:
-            attacks = self.attack_state
-        return list(np.array(self.g.attack_names)[np.flatnonzero(attacks)])
-
-    def _interpret_observation(self, observation=None):
-        if observation is None:
-            observation = self.observation
-        services = observation[: self.g.num_services]
-        attacks = observation[self.g.num_services :]
-        return self._interpret_services(services), self._interpret_attacks(attacks)
-
-    def _interpret_action(self, action):
-        return (
-            self.NO_ACTION
-            if action == 0
-            else self.g.service_names[action - 1]
-            if 0 < action <= self.g.num_services
-            else "invalid action"
-        )
-
-    def _interpret_action_probabilities(self, action_probabilities):
-        keys = [self.NO_ACTION] + self.g.service_names
-        return {key: value for key, value in zip(keys, action_probabilities)}
+        return self.sim.observe(), self.reward, self.done, info
 
     def render(self, mode="human", subdir=None):
         if not self.renderer:
             self.renderer = AttackSimulationRenderer(
-                self, subdir, save_graph=self.config.save_graphs, save_logs=self.config.save_logs
+                self.sim,
+                self.episode_count,
+                self.rewards,
+                subdir=subdir,
+                save_graph=self.config.save_graphs,
+                save_logs=self.config.save_logs,
             )
-        self.renderer.render()
+        self.renderer.render(self.reward)
         return True
 
-    def seed(self, seed):
-        set_seeds(seed)
+    def interpret_action_probabilities(self, action_probabilities):
+        keys = [self.NO_ACTION] + self.sim.g.service_names
+        return {key: value for key, value in zip(keys, action_probabilities)}
+
+    def seed(self, seed: int = None) -> List[int]:
+        if seed is None:
+            return [self.env_seed]
+
+        self.rng, self.env_seed = get_rng(seed)
+
+        return [seed]

@@ -1,16 +1,17 @@
 import pytest
 
 from attack_simulator.agents import ReinforceAgent
+from attack_simulator.env import AttackSimulationEnv
 from attack_simulator.rng import set_seeds
 
 
-def _run_episodes(num_episodes, env, agent, training=False):
+def _run_episodes(num_episodes, env: AttackSimulationEnv, agent, training=False):
     assert agent.trainable
 
     if hasattr(agent, "train"):
         agent.train(training)
 
-    set_seeds(-42)
+    set_seeds(42)
 
     total_length = 0
     total_mean = 0.0
@@ -36,12 +37,12 @@ def _run_episodes(num_episodes, env, agent, training=False):
     return total_length, total_mean
 
 
-def test_agents_policy_reinforce(test_env):
+def test_agents_policy_reinforce(env):
     agent = ReinforceAgent(
         dict(
-            input_dim=test_env.observation_space.shape[0],
+            input_dim=env.observation_space.shape[0],
             hidden_dim=16,
-            num_actions=test_env.action_space.n,
+            num_actions=env.action_space.n,
             learning_rate=1e-2,
             random_seed=42,
         )
@@ -50,10 +51,10 @@ def test_agents_policy_reinforce(test_env):
     num_episodes = 1000
 
     # train
-    _, train_mean = _run_episodes(num_episodes, test_env, agent, True)
+    _, train_mean = _run_episodes(num_episodes, env, agent, True)
 
     # evaluate
-    _, eval_mean = _run_episodes(num_episodes, test_env, agent)
+    _, eval_mean = _run_episodes(num_episodes, env, agent)
 
     # did we learn anything?
     assert train_mean <= eval_mean
@@ -62,12 +63,12 @@ def test_agents_policy_reinforce(test_env):
 # RuntimeError if torch was compiled with CUDA, but the host doesn't have it
 # AssertionError when torch was compiled **without** CUDA
 @pytest.mark.xfail(raises=(RuntimeError, AssertionError))
-def test_agents_policy_reinforce_cuda(test_env):
+def test_agents_policy_reinforce_cuda(env):
     ReinforceAgent(
         dict(
-            input_dim=test_env.observation_space.shape[0],
+            input_dim=env.observation_space.shape[0],
             hidden_dim=16,
-            num_actions=test_env.action_space.n,
+            num_actions=env.action_space.n,
             learning_rate=1e-2,
             random_seed=42,
             use_cuda=True,

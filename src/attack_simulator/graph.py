@@ -6,11 +6,12 @@ import os
 from dataclasses import asdict, dataclass, field
 from typing import Dict, List, Set, Union
 
+import networkx as nx
 from yaml import safe_load
 
-from .utils import enabled
 from attack_simulator.config import GraphConfig
-import networkx as nx
+
+from .utils import enabled
 
 
 @dataclass
@@ -80,7 +81,7 @@ class AttackGraph:
         filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.config.filename)
 
         # load the YAML graph spec
-        with open(filename, "r") as yaml_file:
+        with open(filename, "r", encoding="utf8") as yaml_file:
             graph = safe_load(yaml_file.read())
 
         # traverse through the relevant subgraph for a given pass
@@ -235,7 +236,7 @@ class AttackGraph:
         def label(key):
             return key if not indexed else f"{index[key]} :: {key}"
 
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="utf8") as f:
             f.write("digraph G {\n")
             for key in self.attack_names:
                 node = self.attack_steps[key]

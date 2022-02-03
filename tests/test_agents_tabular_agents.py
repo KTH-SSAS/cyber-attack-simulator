@@ -39,20 +39,20 @@ def test_agents_tabular_bandit():
     assert all(visited)
 
 
-def test_agents_tabular_qlearning(test_env):
-    agent = QLearningAgent(dict(num_actions=test_env.action_space.n, random_seed=42))
+def test_agents_tabular_qlearning(env):
+    agent = QLearningAgent(dict(num_actions=env.action_space.n, random_seed=42))
 
     # train
-    _, train_mean = _run_episodes(NUM_TRIALS, test_env, agent, True)
+    _, train_mean = _run_episodes(NUM_TRIALS, env, agent, True)
 
     # evaluate
-    _, eval_mean = _run_episodes(NUM_TRIALS, test_env, agent)
+    _, eval_mean = _run_episodes(NUM_TRIALS, env, agent)
 
     # did we learn anything?
     assert train_mean <= eval_mean
 
 
 @pytest.mark.parametrize("agent_class", [BanditAgent, QLearningAgent])
-def test_trainable(agent_class, test_env):
+def test_trainable(agent_class):
     agent = agent_class(dict(num_actions=11, random_seed=42))
     assert agent.trainable

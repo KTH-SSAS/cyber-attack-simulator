@@ -6,6 +6,7 @@ import yaml
 from attack_simulator.config import EnvConfig, GraphConfig
 from attack_simulator.env import AttackSimulationEnv
 from attack_simulator.graph import AttackGraph, AttackStep
+from attack_simulator.sim import AttackSimulator
 
 REWARD_HIGH = 1000
 REWARD_MEDIUM = 100
@@ -201,25 +202,25 @@ def test_graph_dot():
     return TEST_DOT.strip()
 
 
-@pytest.fixture(scope="session")
-def graph_yaml(tmpdir_factory):
+@pytest.fixture(scope="session", name="graph_yaml")
+def fixture_graph_yaml(tmpdir_factory):
     graph_yaml = tmpdir_factory.mktemp("test").join("graph.yaml")
     graph_yaml.write(TEST_GRAPH_YAML)
     return graph_yaml
 
 
-@pytest.fixture(scope="session")
-def config_yaml(tmpdir_factory, graph_yaml):
-    config_yaml = tmpdir_factory.mktemp("graph_config").join("config.yaml")
+@pytest.fixture(scope="session", name="config_yaml")
+def fixture_config_yaml(tmpdir_factory, graph_yaml):
+    config = tmpdir_factory.mktemp("graph_config").join("config.yaml")
     TEST_ENV_CONFIG_YAML["graph_config"]["filename"] = str(graph_yaml)
     to_write = yaml.dump(TEST_ENV_CONFIG_YAML)
 
-    config_yaml.write(to_write)
-    return config_yaml
+    config.write(to_write)
+    return config
 
 
-@pytest.fixture(scope="session")
-def test_graph_config(config_yaml, graph_yaml):
+@pytest.fixture(scope="session", name="graph_config")
+def fixture_graph_config(config_yaml):
 
     config: GraphConfig = GraphConfig.from_yaml(config_yaml)
     config = dataclasses.replace(
@@ -229,32 +230,37 @@ def test_graph_config(config_yaml, graph_yaml):
     return config
 
 
-@pytest.fixture(scope="session")
-def test_graph(test_graph_config):
-    return AttackGraph(test_graph_config)
+@pytest.fixture(scope="session", name="attack_graph")
+def fixture_graph(graph_config):
+    return AttackGraph(graph_config)
 
 
-@pytest.fixture(scope="session")
-def test_env_config(config_yaml):
+@pytest.fixture(scope="session", name="env_config")
+def fixture_env_config(config_yaml):
     config: EnvConfig = EnvConfig.from_yaml(config_yaml)
     dataclasses.replace(config, attacker="well-informed")
     return config
 
 
-@pytest.fixture(scope="session")
-def test_env(test_env_config):
-    return AttackSimulationEnv(test_env_config)
+@pytest.fixture(scope="session", name="env")
+def fixture_env(env_config):
+    return AttackSimulationEnv(env_config)
+
+
+@pytest.fixture(name="simulator")
+def fixture_simulator(env):
+    return AttackSimulator(env.config, env.rng)
 
 
 @pytest.fixture(scope="session")
-def rllib_config(test_env_config):
+def rllib_config(env_config):
     model_config = {"use_lstm": True, "lstm_cell_size": 256}
 
     config = {
-        "seed": test_env_config.seed,
+        "seed": env_config.seed,
         "framework": "torch",
         "env": AttackSimulationEnv,
-        "env_config": dataclasses.asdict(test_env_config),
+        "env_config": dataclasses.asdict(env_config),
         "num_workers": 0,
         "model": model_config,
     }

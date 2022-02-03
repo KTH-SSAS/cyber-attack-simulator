@@ -22,10 +22,10 @@ def test_rng_get_rng(seed):
     assert np.all(samples0 == samples1)
 
 
-@pytest.mark.parametrize("seed", [42, None])
+@pytest.mark.parametrize("seed", [42, 43])
 def test_rng_set_seeds(seed):
-    seed_train0, seed_eval0 = set_seeds(seed)
-    assert seed is None or seed_train0 == seed
+
+    set_seeds(seed)
 
     u = torch.tensor([1 / 11] * 11)
     samples0 = np.array(
@@ -42,8 +42,7 @@ def test_rng_set_seeds(seed):
         )
     )
 
-    seed_train1, seed_eval1 = set_seeds(seed_train0)
-    assert seed_train0 == seed_train1
+    set_seeds(seed)
 
     samples1 = np.array(
         (
