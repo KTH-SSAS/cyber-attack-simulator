@@ -6,6 +6,8 @@ and their action space is 0 for "no action" or 1 + the index of an attack in
 the current attack surface; essentially [0, num_attacks] inclusive.
 """
 import logging
+from operator import itemgetter
+from typing import List
 
 import numpy as np
 
@@ -17,6 +19,7 @@ logger = logging.getLogger("simulator")
 
 class RandomAttacker(Agent):
     def __init__(self, agent_config):
+        super().__init__()
         self.rng, _ = get_rng(agent_config.get("random_seed"))
 
     def act(self, observation):
@@ -26,6 +29,7 @@ class RandomAttacker(Agent):
 
 class RandomNoActionAttacker(Agent):
     def __init__(self, agent_config):
+        super().__init__()
         self.rng, _ = get_rng(agent_config.get("random_seed"))
 
     def act(self, observation):
@@ -35,6 +39,7 @@ class RandomNoActionAttacker(Agent):
 
 class RoundRobinAttacker(Agent):
     def __init__(self, agent_config=None):
+        super().__init__()
         self.last = 0
 
     def act(self, observation):
@@ -46,6 +51,7 @@ class RoundRobinAttacker(Agent):
 
 class RoundRobinNoActionAttacker(Agent):
     def __init__(self, agent_config=None):
+        super().__init__()
         self.last = 0
 
     def act(self, observation):
@@ -59,15 +65,20 @@ class WellInformedAttacker(Agent):
     """An Attacker with complete information on the underlying AttackGraph"""
 
     def __init__(self, agent_config):
+        super().__init__()
         graph = agent_config["attack_graph"]
         steps = graph.attack_steps
         names = graph.attack_names
         self._ttc = dict(zip(names, agent_config["ttc"]))
         self._rewards = dict(zip(names, agent_config["rewards"]))
         values = {}
+        """
+        self._value = (
+        lambda x, y, z: (_ for _ in ()).throw(RuntimeError("called disabled method"))
+        )
+        """
         total = self._value(steps, values, graph.root)
-        self._value = lambda: (_ for _ in ()).throw(RuntimeError("called disabled method"))
-        logger.info(f"{self.__class__.__name__}: total discounted value: {total}")
+        logger.info("%s: total discounted value: %d", self.__class__.__name__, total)
         del self._ttc
         del self._rewards
 

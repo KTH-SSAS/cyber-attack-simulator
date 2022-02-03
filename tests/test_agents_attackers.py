@@ -11,9 +11,9 @@ from attack_simulator.agents import (
 from .test_tests_utils import np_bits
 
 
-def test_agents_attackers_informed(test_graph):
-    a = InformedAttacker(dict(attack_graph=test_graph))
-    n = len(test_graph.attack_steps)
+def test_agents_attackers_informed(attack_graph):
+    a = InformedAttacker(dict(attack_graph=attack_graph))
+    n = len(attack_graph.attack_steps)
 
     for i in range(1, 1 << n):
         obs = np_bits(i, size=n)

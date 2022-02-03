@@ -35,7 +35,7 @@ class GraphConfig(Config):
 
     @classmethod
     def from_yaml(cls, filename):
-        with open(filename) as f:
+        with open(filename, encoding="utf8") as f:
             dictionary = yaml.safe_load(f)
             dictionary = dictionary["graph_config"]
             return cls(**dictionary)
@@ -49,13 +49,13 @@ class EnvConfig(Config):
     false_positive: float
     save_graphs: bool
     save_logs: bool
-    seed: int
     attack_start_time: int
     reward_mode: str
+    seed: Optional[int] = None
 
     @classmethod
     def from_yaml(cls, filename):
-        with open(filename) as f:
+        with open(filename, encoding="utf8") as f:
             dictionary = yaml.safe_load(f)
             dictionary["graph_config"] = GraphConfig(**dictionary["graph_config"])
             return cls(**dictionary)

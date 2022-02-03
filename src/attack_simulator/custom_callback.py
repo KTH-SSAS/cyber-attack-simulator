@@ -1,8 +1,11 @@
-from typing import Optional
+from typing import Dict, Optional
 
 from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.rllib.env import BaseEnv
-from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
+from ray.rllib.evaluation import RolloutWorker
+from ray.rllib.evaluation.episode import Episode
+from ray.rllib.policy import Policy
+from ray.rllib.utils.typing import PolicyID
 
 
 class AttackSimCallback(DefaultCallbacks):
@@ -11,8 +14,8 @@ class AttackSimCallback(DefaultCallbacks):
         *,
         worker: "RolloutWorker",
         base_env: BaseEnv,
-        episode: MultiAgentEpisode,
-        env_index: Optional[int] = None,
+        policies: Optional[Dict[PolicyID, Policy]] = None,
+        episode: Episode,
         **kwargs,
     ) -> None:
 

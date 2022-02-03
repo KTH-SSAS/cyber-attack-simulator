@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from attack_simulator.agents import DisableProbabilityAgent, RandomAgent, RuleBasedAgent, SkipAgent
+from attack_simulator.graph import AttackGraph
 
 from .test_tests_utils import np_bits
 
@@ -30,9 +31,9 @@ def test_agents_baseline_skip():
         assert action == 0
 
 
-def test_agents_baseline_disable_probability(test_graph):
-    num_services = test_graph.num_services
-    num_attacks = test_graph.num_attacks
+def test_agents_baseline_disable_probability(attack_graph: AttackGraph):
+    num_services = attack_graph.num_services
+    num_attacks = attack_graph.num_attacks
     dim_observations = num_services + num_attacks
 
     num_actions = num_services + 1
@@ -61,10 +62,10 @@ def test_agents_baseline_disable_probability(test_graph):
 
 
 @pytest.mark.skip(reason="Not working with new conditions. Need to think about rules.")
-def test_agents_baseline_rule_based(test_graph):
-    agent = RuleBasedAgent(dict(attack_graph=test_graph))
-    num_services = test_graph.num_services
-    num_attacks = test_graph.num_attacks
+def test_agents_baseline_rule_based(attack_graph: AttackGraph):
+    agent = RuleBasedAgent(dict(attack_graph=attack_graph))
+    num_services = attack_graph.num_services
+    num_attacks = attack_graph.num_attacks
     dim_observations = num_services + num_attacks
 
     for i in range(1, 1 << num_services):
@@ -79,8 +80,8 @@ def test_agents_baseline_rule_based(test_graph):
 @pytest.mark.parametrize(
     "agent_class", [RandomAgent, SkipAgent, DisableProbabilityAgent, RuleBasedAgent]
 )
-def test_not_trainable(agent_class, test_graph):
+def test_not_trainable(agent_class, attack_graph):
     agent = agent_class(
-        dict(disable_probability=0.5, num_actions=13, random_seed=42, attack_graph=test_graph)
+        dict(disable_probability=0.5, num_actions=13, random_seed=42, attack_graph=attack_graph)
     )
     assert not agent.trainable
