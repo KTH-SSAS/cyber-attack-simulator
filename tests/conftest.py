@@ -39,48 +39,82 @@ TEST_ENV_CONFIG_YAML = {
 
 TEST_GRAPH_YAML = """\
 ---
-
 a.x:
   children:
-    - b.x
-b.x:
-  ttc: EASY_TTC
-  children:
-    - b.flag.capture
-    - b.u.y
-    - b.v.y
+  - b.x
+  conditions:
+  - a
+  name: x
 b.flag.capture:
+  conditions:
+  - b
+  - b.flag
+  name: capture
   reward: LOW_FLAG_REWARD
 b.u.y:
+  children:
+  - c.x
+  conditions:
+  - b
+  - b.u
+  name: y
   ttc: EASY_TTC
-  children:
-    - c.x
-b.v.y:
-  ttc: HARD_TTC
-  children:
-    - b.v.flag.capture
-    - c.x
 b.v.flag.capture:
+  conditions:
+  - b
+  - b.v
+  - b.v.flag
+  name: capture
   reward: MEDIUM_FLAG_REWARD
+b.v.y:
+  children:
+  - b.v.flag.capture
+  - c.x
+  conditions:
+  - b
+  - b.v
+  name: y
+  ttc: HARD_TTC
+b.x:
+  children:
+  - b.flag.capture
+  - b.u.y
+  - b.v.y
+  conditions:
+  - b
+  name: x
+  ttc: EASY_TTC
+c.u.flag.capture:
+  conditions:
+  - c
+  - c.u
+  - c.u.flag
+  name: capture
+  reward: HIGH_FLAG_REWARD
+c.u.x:
+  children:
+  - c.u.flag.capture
+  conditions:
+  - c
+  - c.u
+  name: x
+  ttc: HARD_TTC
 c.x:
   children:
-    - c.u.x
+  - c.u.x
+  conditions:
+  - c
+  name: x
   step_type: and
-c.u.x:
-  ttc: HARD_TTC
-  children:
-    - c.u.flag.capture
-c.u.flag.capture:
-  reward: HIGH_FLAG_REWARD
 """
 
 TEST_SERVICES = ["a", "b", "b.u", "b.v", "c", "c.u"]
 
 TEST_ATTACK_STEPS = {
-    "a.x": AttackStep(asset="a", name="x", children=["b.x"]),
+    "a.x": AttackStep(name="x", conditions=["a"], children=["b.x"]),
     "b.x": AttackStep(
-        asset="b",
         name="x",
+        conditions=["b"],
         ttc=TTC_LOW,
         children=[
             "b.flag.capture",
@@ -90,56 +124,48 @@ TEST_ATTACK_STEPS = {
         parents=["a.x"],
     ),
     "b.flag.capture": AttackStep(
-        asset="b",
-        flag="flag",
         name="capture",
+        conditions=["b", "b.flag"],
         reward=REWARD_LOW,
         parents=["b.x"],
     ),
     "b.u.y": AttackStep(
-        asset="b",
-        service="u",
         name="y",
+        conditions=["b", "b.u"],
         ttc=TTC_LOW,
         children=["c.x"],
         parents=["b.x"],
     ),
     "b.v.y": AttackStep(
-        asset="b",
-        service="v",
         name="y",
+        conditions=["b", "b.v"],
         ttc=TTC_HIGH,
         children=["b.v.flag.capture", "c.x"],
         parents=["b.x"],
     ),
     "b.v.flag.capture": AttackStep(
-        asset="b",
-        service="v",
-        flag="flag",
         name="capture",
+        conditions=["b", "b.v", "b.v.flag"],
         reward=REWARD_MEDIUM,
         parents=["b.v.y"],
     ),
     "c.x": AttackStep(
-        asset="c",
         name="x",
         step_type="and",
+        conditions=["c"],
         children=["c.u.x"],
         parents=["b.u.y", "b.v.y"],
     ),
     "c.u.x": AttackStep(
-        asset="c",
-        service="u",
         name="x",
+        conditions=["c", "c.u"],
         ttc=TTC_HIGH,
         children=["c.u.flag.capture"],
         parents=["c.x"],
     ),
     "c.u.flag.capture": AttackStep(
-        asset="c",
-        service="u",
-        flag="flag",
         name="capture",
+        conditions=["c", "c.u", "c.u.flag"],
         reward=REWARD_HIGH,
         parents=["c.u.x"],
     ),
