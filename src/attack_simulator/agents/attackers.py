@@ -153,10 +153,10 @@ class PathFinderAttacker:
         self.current_flag_index = 0
         self.current_flag_target = self.flags[self.current_flag_index]
 
-        self.find_path_to(self.current_flag_target)
-
         # Path to use as a stack
-        self.planned_path = list(reversed(self.total_path))
+        self.planned_path = None
+
+        self.find_path_to(self.current_flag_target)
 
         self.current_attack_target = self.planned_path.pop()
 
@@ -183,11 +183,10 @@ class PathFinderAttacker:
         # If we ultimately did not find any path, we are done
         done = not path_found
 
-        self.planned_path = list(reversed(self.total_path))
-
         return done
 
     def find_path_to(self, target):
+        self.total_path = []
         try:
             path, _ = self._find_path_to(target)
         except nx.NodeNotFound:
@@ -198,6 +197,7 @@ class PathFinderAttacker:
         for step in path:
             _add_unique(self.total_path, step)
 
+        self.planned_path = list(reversed(self.total_path))
         return len(self.total_path) != 0
 
     def _find_path_to(self, target):
@@ -241,15 +241,16 @@ class PathFinderAttacker:
             return 0
 
         # If the defender has shut something down, recreate the internal attack graph
-        if not all(self.service_states == self.sim.service_state):
-            self.service_states = np.array(self.sim.service_state)
+        update_graph = not all(self.service_states == self.sim.service_state)
+        if update_graph:
             self.attack_graph: nx.DiGraph = self.sim.g.to_networkx(
-                indices=False, system_state=self.service_states
+                indices=False, system_state=self.sim.service_state
             )
+            self.service_states = np.array(self.sim.service_state)
 
         attack_target = self.current_attack_target
         attack_index = self.sim.g.attack_indices[attack_target]
-        current_step_is_compromised = self.sim.attack_state[attack_index]
+        current_step_is_compromised = bool(self.sim.attack_state[attack_index])
 
         if current_step_is_compromised:
             # Check if we have taken the current flag target
@@ -276,6 +277,11 @@ class PathFinderAttacker:
                     return 0
             attack_target, attack_index = self.skip_steps()
 
+
+        dependent_services = self.sim.g.service_index_by_attack_index[attack_index]
+        dependent_service_states = self.sim.service_state[dependent_services]
+        assert all(dependent_service_states)
+            
         assert (
             self.sim.g.attack_indices[attack_target] in self.sim.valid_actions
         ), "Attacker tried to perform an attack not in attack surface"
