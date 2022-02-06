@@ -260,13 +260,10 @@ class PathFinderAttacker:
                 # If there are no more flags to take we are done
                 if self.done:
                     return 0
-                attack_target, attack_index = self.skip_steps()
-            else:
-                # If the step we are working on is compromised, start working on the next in the path.
-                # Select the next attack step to work on
-                attack_target = self.planned_path.pop()
-                attack_index = self.sim.g.attack_indices[attack_target]
 
+            # Select the next attack step to work on
+            attack_target, attack_index = self.skip_steps()
+                
         # Check that the action we chose can be done. Otherwise, select a new path
         attack_step_not_available = not observation[attack_index]
         if attack_step_not_available:
