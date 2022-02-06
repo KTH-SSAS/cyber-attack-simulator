@@ -8,6 +8,7 @@ from typing import Dict, List, Set, Union
 
 import networkx as nx
 from yaml import safe_load
+import numpy as np
 
 from attack_simulator.config import GraphConfig
 
@@ -192,7 +193,7 @@ class AttackGraph:
         ]
 
         # say hello
-        print(self)
+        # print(self)
 
     @property
     def root(self) -> str:
@@ -257,27 +258,51 @@ class AttackGraph:
                 "or viewed online at, e.g., https://dreampuf.github.io/GraphvizOnline."
             )
 
-    def to_networkx(self, indices=True) -> nx.DiGraph:
+    def to_networkx(self, indices=True, system_state=None) -> nx.DiGraph:
         dig = nx.DiGraph()
-        if indices:
-            dig.add_nodes_from(range(self.num_attacks))
-            dig.add_edges_from(
-                [
-                    (attack_index, child_index)
-                    for attack_index in range(self.num_attacks)
-                    for child_index in self.child_indices[attack_index]
-                ]
-            )
-        else:
-            dig.add_nodes_from(self.attack_names)
-            dig.add_edges_from(
-                [
-                    (name, child)
-                    for name in self.attack_names
-                    for child in self.attack_steps[name].children
-                ]
-            )
+
+        if system_state is None:
+            system_state = np.ones(len(self.service_names))
+
+        for name, a_s in self.attack_steps.items():
+            dict_t = asdict(a_s)
+
+            as_idx = self.attack_indices[name]
+
+            # No need to add edge information to node
+            del dict_t["parents"]
+            del dict_t["children"]
+
+            if not self._attack_step_reachable(as_idx, system_state):
+                # If any of the attack steps conditions are not fulfilled,
+                # do not add it to the graph
+                continue
+
+            # Add the attack step to the graph
+            if indices:
+                dig.add_node(as_idx, **dict_t)
+                dig.add_edges_from(
+                    [
+                        (as_idx, child_index)
+                        for child_index in self.child_indices[as_idx]
+                        if self._attack_step_reachable(child_index, system_state)
+                    ]
+                )
+            else:
+                dig.add_node(name, **dict_t)
+                dig.add_edges_from(
+                    [
+                        (name, child)
+                        for child in a_s.children
+                        if self._attack_step_reachable(self.attack_indices[child], system_state)
+                    ]
+                )
+
         return dig
+
+    def _attack_step_reachable(self, step: int, state):
+        asset_enabled = state[self.service_index_by_attack_index[step]]
+        return all(asset_enabled)
 
 
 def save_all_default_graphviz(graph_config, indexed=False):
