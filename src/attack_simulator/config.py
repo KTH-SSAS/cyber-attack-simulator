@@ -4,8 +4,6 @@ from typing import List, Optional
 
 import yaml
 
-from .agents import DEFENDERS
-
 
 @dataclass(frozen=True)
 class Config:
@@ -72,6 +70,3 @@ class AgentConfig(Config):
     use_cuda: bool
 
 
-def create_agent(agent_config: AgentConfig, **kwargs):
-    config = dict(asdict(agent_config), **kwargs)
-    return DEFENDERS[config["agent_type"]](config)
