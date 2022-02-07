@@ -12,6 +12,9 @@ from .utils import enabled
 
 
 class AttackSimulationRenderer:
+    """
+    Render a simulation
+    """
     RENDER_DIR = "render"
     HTML = "index.html"
     LOGS = "attack.log"
@@ -92,7 +95,7 @@ class AttackSimulationRenderer:
                 "",
                 horizontalalignment="left",
                 verticalalignment="top",
-                fontfamily="fantasy",
+                fontfamily="DejaVu Sans",
                 wrap=True,
                 bbox=dict(facecolor="lightgray", boxstyle="Round"),
             )
@@ -209,8 +212,8 @@ class AttackSimulationRenderer:
     def out_dir(self):
         return os.path.join(self.run_dir, f"ep-{self.episode}")
 
-    def render(self, defender_reward):
-
+    def render(self, defender_reward, done):
+        """Render a frame"""
         logs = self._generate_logs(defender_reward)
 
         if self.save_logs:
@@ -228,7 +231,7 @@ class AttackSimulationRenderer:
                     writer._temp_paths[-1], self.pos.keys()
                 )  # pylint: disable=protected-access
 
-        if self.sim.done:
+        if done:
             if self.save_graph:
                 writer: HTMLWriter = self.writers["graph"]
                 writer.finish()

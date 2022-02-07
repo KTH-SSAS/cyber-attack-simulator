@@ -192,7 +192,7 @@ class AttackSimulationEnv(gym.Env):
                 save_graph=self.config.save_graphs,
                 save_logs=self.config.save_logs,
             )
-        self.renderer.render(self.reward)
+        self.renderer.render(self.reward, self.done)
         return True
 
     def interpret_action_probabilities(self, action_probabilities):
