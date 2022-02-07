@@ -68,5 +68,3 @@ class AgentConfig(Config):
     num_actions: int
     learning_rate: float
     use_cuda: bool
-
-

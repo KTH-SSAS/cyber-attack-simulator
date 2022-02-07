@@ -7,8 +7,8 @@ from dataclasses import asdict, dataclass, field
 from typing import Dict, List, Set, Union
 
 import networkx as nx
-from yaml import safe_load
 import numpy as np
+from yaml import safe_load
 
 from attack_simulator.config import GraphConfig
 
@@ -271,7 +271,7 @@ class AttackGraph:
 
             # No need to add child information to node
             del dict_t["children"]
-            #del dict_t["parents"]
+            # del dict_t["parents"]
 
             if not self._attack_step_reachable(as_idx, system_state):
                 # If any of the attack steps conditions are not fulfilled,

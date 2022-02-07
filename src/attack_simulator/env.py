@@ -136,18 +136,18 @@ class AttackSimulationEnv(gym.Env):
         if action:
             # decrement to obtain index
             service = action - 1
-            self.done = self.sim.defense_action(service)
+            self.done |= self.sim.defense_action(service)
 
         if not self.done:
             # Check if the attack has started
             if self.sim.time >= self.attack_start_time:
                 # Obtain attacker action, this _can_ be 0 for no action
                 attack_index = self.attacker.act(self.sim.attack_surface) - 1
-                self.done = self.attacker.done
+                self.done |= self.attacker.done
                 assert -1 <= attack_index < self.sim.num_attack_steps
 
                 if attack_index != -1:
-                    self.done = self.sim.attack_action(attack_index)
+                    self.done |= self.sim.attack_action(attack_index)
                     attacker_reward = self.rewards[attack_index]
 
                 # TODO: placeholder, none of the current attackers learn...

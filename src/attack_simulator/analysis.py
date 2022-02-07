@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+from dataclasses import asdict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,19 +8,19 @@ from matplotlib import cm
 
 from attack_simulator.env import AttackSimulationEnv
 
+from .agents import DEFENDERS
 from .config import AgentConfig, EnvConfig, GraphConfig
 from .graph import SIZES, AttackGraph
 from .rng import set_seeds
 from .runner import Runner
 
-from .agents import DEFENDERS
-from dataclasses import asdict
-
 logger = logging.getLogger("trainer")
+
 
 def create_agent(agent_config: AgentConfig, **kwargs):
     config = dict(asdict(agent_config), **kwargs)
     return DEFENDERS[config["agent_type"]](config)
+
 
 class Analyzer:
     """Metaclass to manage different forms of runs"""
