@@ -87,6 +87,9 @@ class AttackSimulationEnv(gym.Env):
         self.done = False
 
         self.episode_count += 1
+
+        self.renderer = None
+
         self.episode_id = self._get_episode_id()
         self.attack_start_time = int(self.rng.exponential(self.config.attack_start_time))
         self.max_reward = sum(self.rewards)
