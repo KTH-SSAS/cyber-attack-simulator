@@ -72,8 +72,21 @@ class AttackSimulator:
         self.done = done
         return done
 
+    @property
+    def valid_actions(self):
+        return np.nonzero(self.attack_surface)[0]
+
     def attack_action(self, action):
+        """
+        Have the attacker perform an action
+        """
         done = False
+
+        assert (
+            action in self.valid_actions
+        ), "Attacker tried to perform an attack not in attack surface"
+        self.attack_index = action
+
         self.ttc_remaining[action] -= 1
         if self.ttc_remaining[action] == 0:
             # successful attack, update reward, attack_state, attack_surface
@@ -81,17 +94,16 @@ class AttackSimulator:
             self.attack_surface[action] = 0
 
             # add eligible children to the attack surface
-            self.attack_surface[self._get_eligible_indices()] = 1
+            self.attack_surface[self._get_eligible_indices(action)] = 1
 
             # end episode when attack surface becomes empty
             done = not any(self.attack_surface)
 
-        self.attack_index = action
         self.done = done
         return done
 
-    def _get_eligible_indices(self):
-        return self.g.get_eligible_indices(self.attack_index, self.attack_state, self.service_state)
+    def _get_eligible_indices(self, attack_index):
+        return self.g.get_eligible_indices(attack_index, self.attack_state, self.service_state)
 
     def step(self):
         self.time += 1
@@ -161,8 +173,10 @@ class AttackSimulator:
         )
         return current_step, ttc_remaining
 
+    @property
     def compromised_steps(self):
         return self.interpret_attacks()
 
+    @property
     def compromised_flags(self):
-        return [step_name for step_name in self.compromised_steps() if "flag" in step_name]
+        return [step_name for step_name in self.compromised_steps if "flag" in step_name]
