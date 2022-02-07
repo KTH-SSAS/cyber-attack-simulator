@@ -156,16 +156,18 @@ class PathFinderAttacker:
 
         self.done = False
 
-        # Decide on a target
-        self.current_flag_index = 0
-        self.current_flag_target = self.flags[self.current_flag_index]
-
         # Path to use as a stack
         self.planned_path: List[str] = []
 
-        self.find_path_to(self.current_flag_target)
+        # Decide on a target
+        self.current_flag_index = -1
+        self.current_flag_target = None
 
-        self.current_attack_target = self.planned_path.pop()
+        self.done = self.decide_next_target()
+        
+        # Cover the case of the attacker not being able to do anything the first iteration
+        if not self.done:
+            self.current_attack_target = self.planned_path.pop()
 
     def skip_steps(self):
         """
