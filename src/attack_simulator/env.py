@@ -71,6 +71,7 @@ class AttackSimulationEnv(gym.Env):
     def _create_attacker(self):
         return self.attacker_class(
             dict(
+                simulator=self.sim,
                 attack_graph=self.sim.g,
                 ttc=self.sim.ttc_remaining,
                 rewards=self.rewards,

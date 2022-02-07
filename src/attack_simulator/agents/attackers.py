@@ -13,7 +13,6 @@ import networkx as nx
 import numpy as np
 from networkx.algorithms.shortest_paths.generic import shortest_path
 
-from attack_simulator.graph import AttackGraph
 from attack_simulator.sim import AttackSimulator
 
 from ..rng import get_rng
@@ -131,9 +130,9 @@ class PathFinderAttacker:
     Will decide on a series of flags to pursue, 
     and will calculate the shortest paths to them.
     """
-    def __init__(self, simulator: AttackSimulator) -> None:
+    def __init__(self, agent_config) -> None:
 
-        self.sim = simulator
+        self.sim: AttackSimulator = agent_config["simulator"]
         # graph : AttackGraph = simulator.g #agent_config["attack_graph"]
 
         self.attack_surface = [self.sim.g.attack_names[idx] for idx in self.sim.valid_actions]
