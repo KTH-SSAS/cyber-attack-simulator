@@ -139,6 +139,7 @@ class AttackSimulationEnv(gym.Env):
             if self.sim.time >= self.attack_start_time:
                 # Obtain attacker action, this _can_ be 0 for no action
                 attack_index = self.attacker.act(self.sim.attack_surface) - 1
+                self.done = self.attacker.done
                 assert -1 <= attack_index < self.sim.num_attack_steps
 
                 if attack_index != -1:
