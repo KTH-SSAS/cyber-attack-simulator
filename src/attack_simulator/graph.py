@@ -269,9 +269,9 @@ class AttackGraph:
 
             as_idx = self.attack_indices[name]
 
-            # No need to add edge information to node
-            del dict_t["parents"]
+            # No need to add child information to node
             del dict_t["children"]
+            #del dict_t["parents"]
 
             if not self._attack_step_reachable(as_idx, system_state):
                 # If any of the attack steps conditions are not fulfilled,

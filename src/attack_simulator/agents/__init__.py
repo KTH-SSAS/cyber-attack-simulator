@@ -1,6 +1,7 @@
 from .agent import Agent
 from .attackers import (
     InformedAttacker,
+    PathFinderAttacker,
     RandomAttacker,
     RandomNoActionAttacker,
     RoundRobinAttacker,
@@ -25,6 +26,7 @@ ATTACKERS = {
     "round-robin": RoundRobinAttacker,
     "random-no-action": RandomNoActionAttacker,
     "random": RandomAttacker,
+    "pathplanner": PathFinderAttacker,
 }
 
 DEFENDERS = {

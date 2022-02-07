@@ -126,17 +126,24 @@ class InformedAttacker(WellInformedAttacker):
 
 
 class PathFinderAttacker:
+    """
+    Attacker with full information of the system.
+    Will decide on a series of flags to pursue, 
+    and will calculate the shortest paths to them.
+    """
     def __init__(self, simulator: AttackSimulator) -> None:
 
         self.sim = simulator
         # graph : AttackGraph = simulator.g #agent_config["attack_graph"]
+
+        self.attack_surface = [self.sim.g.attack_names[idx] for idx in self.sim.valid_actions]
 
         self.flags = [
             self.sim.g.attack_names[idx] for idx in np.nonzero(self.sim.g.reward_params)[0]
         ]
         self.flags_taken = []
         # Create a random order in which to do flags
-        np.random.shuffle(self.flags)
+        self.sim.rng.shuffle(self.flags)
 
         self.service_states = np.array(self.sim.service_state)
         self.attack_graph: nx.DiGraph = self.sim.g.to_networkx(
@@ -161,7 +168,9 @@ class PathFinderAttacker:
         self.current_attack_target = self.planned_path.pop()
 
     def skip_steps(self):
-        # Skip over steps in path that are already taken
+        """
+        Skip over steps in path that are already taken
+        """
         attack_target = self.planned_path.pop()
         attack_index = self.sim.g.attack_indices[attack_target]
         while self.sim.attack_state[attack_index]:
@@ -171,7 +180,9 @@ class PathFinderAttacker:
         return attack_target, attack_index
 
     def decide_next_target(self):
-
+        """
+        Select the next flag to target
+        """
         path_found = False
         done = True
 
@@ -186,7 +197,13 @@ class PathFinderAttacker:
         return done
 
     def find_path_to(self, target):
+        """Find a path to an attack step,
+        with respect to AND-steps"""
         self.total_path = []
+        # Don't bother pathfinding if the target's conditions are unavailable
+        if not self.sim.g._attack_step_reachable(self.sim.g.attack_indices[target], self.sim.service_state):
+            return False
+
         try:
             path, _ = self._find_path_to(target)
         except nx.NodeNotFound:
@@ -200,33 +217,50 @@ class PathFinderAttacker:
         self.planned_path = list(reversed(self.total_path))
         return len(self.total_path) != 0
 
-    def _find_path_to(self, target):
-
+    def _validate_path(self, path):
         ttc_cost = 0
-
-        # Find the shortest path to the target
-        path_to_target: list = shortest_path(
-            self.attack_graph, source=self.start_node, target=target, weight="ttc"
-        )
-
         # Check that each step in the path is reacable with respect to AND-steps.
-        for node_id in path_to_target:
+        for node_id in path:
             step = self.attack_graph.nodes[node_id]
             # If node is AND step, go to parents first.
             if step["step_type"] == "and" and node_id not in self.total_path:
-                parents = self.attack_graph.predecessors(node_id)
+                parents = self.attack_graph.nodes[node_id]["parents"]
                 paths_to_parents = []
                 for parent in parents:
                     # If the parent is already in the path, there is no need to find a path to it
                     if parent not in self.total_path:
                         paths_to_parents.append(self._find_path_to(parent))
 
-                    _add_paths_to_total_path(paths_to_parents, self.total_path)
+                    ttc_cost += _add_paths_to_total_path(paths_to_parents, self.total_path)
 
             ttc_cost += step["ttc"]
             _add_unique(self.total_path, node_id)
 
-        return path_to_target, ttc_cost
+        return path, ttc_cost
+
+    def _find_path_to(self, target):
+        # Look for paths from every available step in the attack surface.
+        paths = []
+        for initial_step in self.attack_surface:
+            try:
+                # Find the shortest path to the target
+                path_to_target: list = shortest_path(
+                    self.attack_graph, source=initial_step, target=target, weight="ttc"
+                )
+                path_cost = sum([self.attack_graph.nodes[n]["ttc"] for n in path_to_target])
+                paths.append((path_to_target, path_cost))
+            except nx.NetworkXNoPath:
+                continue
+
+        for path_to_target, _ in sorted(paths, key=itemgetter(1)):
+            try:
+                return self._validate_path(path_to_target)
+            except nx.NetworkXNoPath:
+                continue
+        
+        # None of the paths worked
+        raise nx.NetworkXNoPath
+
 
     def act(self, observation):
         """
@@ -235,6 +269,7 @@ class PathFinderAttacker:
         try to recalculate a path. If no path can be found,
         select a new target.
         """
+        self.attack_surface = [self.sim.g.attack_names[idx] for idx in self.sim.valid_actions]
 
         # If there are no more flags to take, do nothing
         if self.done:
@@ -293,9 +328,16 @@ class PathFinderAttacker:
 def _add_unique(path: list, item):
     if item not in path:
         path.append(item)
+        return True
+    else:
+        return False
 
 
 def _add_paths_to_total_path(paths, total_path):
-    for path, _ in sorted(paths, key=itemgetter(1)):
+    added_ttc_cost = 0 
+    for path, ttc in sorted(paths, key=itemgetter(1)):
         for node in path:
-            _add_unique(total_path, node)
+            added = _add_unique(total_path, node)
+            if added:
+                added_ttc_cost += ttc
+    return added_ttc_cost
