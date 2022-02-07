@@ -8,7 +8,7 @@ from matplotlib.animation import HTMLWriter
 
 from .nx_utils import nx_dag_layout
 from .sim import AttackSimulator
-from .svg_tooltips import add_tooltips, postprocess_frame, postprocess_html
+from .svg_tooltips import add_tooltips, make_paths_relative, postprocess_frame, postprocess_html
 from .utils import enabled
 
 
@@ -33,6 +33,7 @@ class AttackSimulationRenderer:
         self.save_graph = save_graph
         self.save_logs = save_logs
         self.episode = episode
+        self.add_tooltips = False
         self.rewards = rewards
 
         if subdir is None:
@@ -40,11 +41,11 @@ class AttackSimulationRenderer:
         else:
             self.run_dir = os.path.join(self.RENDER_DIR, f"{subdir}_seed={self.sim.config.seed}")
 
-        if os.path.exists(self.run_dir):
-            if destructive:
-                shutil.rmtree(self.run_dir)
-            else:
-                raise RuntimeError("Render subdir already exists.")
+        # if os.path.exists(self.run_dir):
+        #     if destructive:
+        #         shutil.rmtree(self.run_dir)
+        #     else:
+        #         raise RuntimeError("Render subdir already exists.")
 
         for d in [self.RENDER_DIR, self.run_dir, self.out_dir]:
             if not os.path.isdir(d):
@@ -219,19 +220,23 @@ class AttackSimulationRenderer:
         if self.save_graph:
             self.log.set_text(logs)
             self._render_graph(self.rewards)
-            add_tooltips(self.pos, self.sim.g.attack_names, ax=self.ax)
+            if self.add_tooltips:
+                add_tooltips(self.pos, self.sim.g.attack_names, ax=self.ax)
             writer: HTMLWriter = self.writers["graph"]
             writer.grab_frame()
-            postprocess_frame(
-                writer._temp_paths[-1], self.pos.keys()
-            )  # pylint: disable=protected-access
+            if self.add_tooltips:
+                postprocess_frame(
+                    writer._temp_paths[-1], self.pos.keys()
+                )  # pylint: disable=protected-access
 
         if self.sim.done:
             if self.save_graph:
                 writer: HTMLWriter = self.writers["graph"]
                 writer.finish()
                 plt.close()
-                postprocess_html(writer.outfile)
+                if self.add_tooltips:
+                    postprocess_html(writer.outfile)
+                make_paths_relative(writer.outfile)
             if self.save_logs:
                 self.writers["logs"].close()
             self.writers = {}

@@ -88,7 +88,12 @@ def postprocess_html(filename):
     html = re.sub(
         r"<img ([^>]*)>", rf'<object type="image/svg+xml" width="100%" \1>{FALLBACK}</object>', html
     )
+
+
+def make_paths_relative(filename):
     # Make frames dir path relative to the episode's base directory
+    with open(filename) as saved:
+        html = saved.read()
     html = re.sub(r"render/.*/ep-\d+/", "", html)
     with open(filename, "w") as replace:
         replace.write(html)
