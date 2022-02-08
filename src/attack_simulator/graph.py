@@ -1,6 +1,4 @@
-"""
-Process YAML graph description into an Attack Graph
-"""
+"""Process YAML graph description into an Attack Graph."""
 import dataclasses
 import os
 from dataclasses import asdict, dataclass, field
@@ -61,6 +59,8 @@ SIZES: Dict[str, Set[str]] = {
 
 
 class AttackGraph:
+    """Attack Graph."""
+
     def __init__(self, config: Union[GraphConfig, dict]):
 
         if isinstance(config, dict):
@@ -271,6 +271,7 @@ class AttackGraph:
 
             # No need to add child information to node
             del dict_t["children"]
+            del dict_t["name"]
             # del dict_t["parents"]
 
             if not self._attack_step_reachable(as_idx, system_state):

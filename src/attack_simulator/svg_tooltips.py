@@ -31,7 +31,7 @@ BBOX = dict(boxstyle="round,pad=.5", color="white", alpha=0.75, zorder=100)
 
 
 def add_tooltips(pos, tooltips, radius=0.3, ax=None):
-    """Add trigger areas and tooltip text"""
+    """Add trigger areas and tooltip text."""
     if ax is None:
         ax = plt.gca()
     for i in pos:
@@ -61,7 +61,7 @@ def add_tooltips(pos, tooltips, radius=0.3, ax=None):
 
 
 def postprocess_frame(filename, keys):
-    """Add script and callbacks to SVG frame, hide tooltips by default"""
+    """Add script and callbacks to SVG frame, hide tooltips by default."""
     tree = ET.ElementTree(file=filename)
     root = tree.getroot()
     root.set("onload", "init(event)")
@@ -76,10 +76,10 @@ def postprocess_frame(filename, keys):
 
 
 def postprocess_html(filename):
-    """Change `img` to `object` to allow interactivity
+    """Change `img` to `object` to allow interactivity.
 
-    This hack relies on the contents of `matplotlib._animation_data`
-    for the HTML source included by `matplotlib.animation.HTMLWriter`.
+    This hack relies on the contents of `matplotlib._animation_data` for
+    the HTML source included by `matplotlib.animation.HTMLWriter`.
     """
     with open(filename) as saved:
         html = saved.read()

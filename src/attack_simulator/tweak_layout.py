@@ -6,7 +6,8 @@ import numpy as np
 def _tweak_children(
     pos, root, children, skip_edges, intersection_weights, generations=3, attempts_per_generation=13
 ):
-    """Tweak _order_ of children to center the graph and reduce edge lengths and crossings
+    """Tweak _order_ of children to center the graph and reduce edge lengths
+    and crossings.
 
     Swap predetermined vertex positions leaving the total **in-tree** edge length unchanged.
     Only lengths of edges that _skip_ between levels can change.

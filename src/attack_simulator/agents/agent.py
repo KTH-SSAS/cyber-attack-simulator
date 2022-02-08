@@ -2,9 +2,7 @@ from abc import ABC, abstractmethod
 
 
 class Agent(ABC):
-    """
-    Base class for agents that operate in the simulator
-    """
+    """Base class for agents that operate in the simulator."""
 
     @abstractmethod
     def __init__(self, agent_config=None):

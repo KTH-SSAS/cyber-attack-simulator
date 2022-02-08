@@ -6,9 +6,7 @@ from .utils import enabled
 
 
 class AttackSimulator:
-    """
-    Does the simulation.
-    """
+    """Does the simulation."""
 
     NO_ACTION = 0
     NO_ACTION_STR = "no action"
@@ -77,9 +75,7 @@ class AttackSimulator:
         return np.nonzero(self.attack_surface)[0]
 
     def attack_action(self, action):
-        """
-        Have the attacker perform an action
-        """
+        """Have the attacker perform an action."""
         done = False
 
         assert (
@@ -137,18 +133,15 @@ class AttackSimulator:
         )
 
     def generate_noise(self):
-        """
-        Generates a "noise" mask to use for false positives and negatives.
-        """
+        """Generates a "noise" mask to use for false positives and
+        negatives."""
         return self.rng.uniform(0, 1, self.num_attack_steps)
 
     def observe(self):
-        """ "
-        Observation of attack steps is subject to the true/false positive rates
-        of an assumed underlying intrusion detection system
-        Depending on the true and false positive rates for each step,
-        ongoing attacks may not be reported, or non-existing attacks may be spuriously reported
-        """
+        """ " Observation of attack steps is subject to the true/false positive
+        rates of an assumed underlying intrusion detection system Depending on
+        the true and false positive rates for each step, ongoing attacks may
+        not be reported, or non-existing attacks may be spuriously reported."""
         probabilities = self.noise
         false_negatives = self.attack_state & (probabilities >= self.false_negative)
         false_positives = (1 - self.attack_state) & (probabilities <= self.false_positive)
@@ -156,9 +149,7 @@ class AttackSimulator:
         return np.append(self.service_state, detected)
 
     def current_attack_step(self):
-        """
-        Returns the attack step the attacker is currently targeting.
-        """
+        """Returns the attack step the attacker is currently targeting."""
         current_step = (
             None
             if self.attack_index is None

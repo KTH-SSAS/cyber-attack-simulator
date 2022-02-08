@@ -17,9 +17,7 @@ logger = logging.getLogger("simulator")
 
 
 class AttackSimulationEnv(gym.Env):
-    """
-    Handles reinforcement learning matters.
-    """
+    """Handles reinforcement learning matters."""
 
     NO_ACTION = "no action"
 
