@@ -28,6 +28,8 @@ seaborn = "^0.11.2"
 wandb = "^0.12.7"
 GPUtil = {version = "^1.4.0", optional = true}
 autoflake = "^1.4"
+python-telegram-bot = {version = "^13.9", optional = true}
+pydot = "^1.4.2"
 
 [tool.poetry.dev-dependencies]
 tox = "^3.24.4"
