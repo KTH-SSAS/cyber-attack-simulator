@@ -24,6 +24,7 @@ class AttackSimulationRenderer:
         sim: AttackSimulator,
         episode,
         rewards,
+        seed,
         subdir=None,
         destructive=True,
         save_graph=False,
@@ -39,9 +40,9 @@ class AttackSimulationRenderer:
         self.rewards = rewards
 
         if subdir is None:
-            self.run_dir = os.path.join(self.RENDER_DIR, f"seed={self.sim.config.seed}")
+            self.run_dir = os.path.join(self.RENDER_DIR, f"seed={seed}")
         else:
-            self.run_dir = os.path.join(self.RENDER_DIR, f"{subdir}_seed={self.sim.config.seed}")
+            self.run_dir = os.path.join(self.RENDER_DIR, f"{subdir}_seed={seed}")
 
         # if os.path.exists(self.run_dir):
         #     if destructive:

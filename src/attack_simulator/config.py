@@ -25,7 +25,6 @@ class GraphConfig(Config):
     easy_ttc: int
     hard_ttc: int
     graph_size: str
-    seed: int
     filename: str
     root: str
     prune: List[str] = field(default_factory=list)

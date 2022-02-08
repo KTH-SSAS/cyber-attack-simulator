@@ -75,7 +75,7 @@ class AttackSimulationEnv(gym.Env):
                 attack_graph=self.sim.g,
                 ttc=self.sim.ttc_remaining,
                 rewards=self.rewards,
-                random_seed=self.config.seed + self.episode_count,
+                random_seed=self.env_seed + self.episode_count,
             )
         )
 
@@ -188,6 +188,7 @@ class AttackSimulationEnv(gym.Env):
                 self.sim,
                 self.episode_count,
                 self.rewards,
+                self.env_seed,
                 subdir=subdir,
                 save_graph=self.config.save_graphs,
                 save_logs=self.config.save_logs,
