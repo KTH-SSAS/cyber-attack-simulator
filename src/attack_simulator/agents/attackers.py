@@ -1,13 +1,13 @@
-"""
-This module implements Attacker agents
+"""This module implements Attacker agents.
 
-Note that the observation space for attackers is the current attack surface,
-and their action space is 0 for "no action" or 1 + the index of an attack in
-the current attack surface; essentially [0, num_attacks] inclusive.
+Note that the observation space for attackers is the current attack
+surface, and their action space is 0 for "no action" or 1 + the index of
+an attack in the current attack surface; essentially [0, num_attacks]
+inclusive.
 """
 import logging
 from operator import itemgetter
-from typing import List
+from typing import List, Tuple, Union
 
 import networkx as nx
 import numpy as np
@@ -66,7 +66,7 @@ class RoundRobinNoActionAttacker(Agent):
 
 
 class WellInformedAttacker(Agent):
-    """An Attacker with complete information on the underlying AttackGraph"""
+    """An Attacker with complete information on the underlying AttackGraph."""
 
     def __init__(self, agent_config):
         super().__init__()
@@ -89,8 +89,7 @@ class WellInformedAttacker(Agent):
         self.attack_values = np.array([values[name] for name in names])
 
     def _value(self, attack_steps, attack_values, attack_name, discount_rate=0.1):
-        """
-        Recursively compute the value of each attack step.
+        """Recursively compute the value of each attack step.
 
         The discount rate is meant to account for uncertainity in future rewards
         due the defender's actions possibly disabling relevant services.
@@ -112,7 +111,8 @@ class WellInformedAttacker(Agent):
 
 
 class InformedAttacker(WellInformedAttacker):
-    """An Attacker with access to the AttackGraph **without sampled TTC and rewards**"""
+    """An Attacker with access to the AttackGraph **without sampled TTC and
+    rewards**"""
 
     def __init__(self, agent_config):
         graph = agent_config["attack_graph"]
@@ -125,18 +125,16 @@ class InformedAttacker(WellInformedAttacker):
 
 
 class PathFinderAttacker:
-    """
-    Attacker with full information of the system.
-    Will decide on a series of flags to pursue,
-    and will calculate the shortest paths to them.
+    """Attacker with full information of the system.
+
+    Will decide on a series of flags to pursue, and will calculate the
+    shortest paths to them.
     """
 
     def __init__(self, agent_config) -> None:
 
         self.sim: AttackSimulator = agent_config["simulator"]
         # graph : AttackGraph = simulator.g #agent_config["attack_graph"]
-
-        self.attack_surface = [self.sim.g.attack_names[idx] for idx in self.sim.valid_actions]
 
         self.flags = [
             self.sim.g.attack_names[idx] for idx in np.nonzero(self.sim.g.reward_params)[0]
@@ -152,100 +150,110 @@ class PathFinderAttacker:
         self.start_node = self.sim.g.attack_names[
             self.sim.entry_attack_index
         ]  # self.sim.entry_attack_index #agent_config["initial_step"]
-        self.total_path: List[int] = []
 
         self.done = False
-
-        # Path to use as a stack
-        self.planned_path: List[str] = []
 
         # Decide on a target
         self.current_flag_index = -1
         self.current_flag_target = None
 
-        self.done = self.decide_next_target()
-        
+        self.done, planned_path = self.decide_next_target()
+
+        # Path to use as a stack
+        self.planned_path: List[str] = planned_path
+
         # Cover the case of the attacker not being able to do anything the first iteration
         if not self.done:
             self.current_attack_target = self.planned_path.pop()
 
+    def atk_step_idx(self, step_name):
+
+        if isinstance(step_name, int):
+            return step_name
+
+        return self.sim.g.attack_indices[step_name]
+
+    def atk_step_compromised(self, step: Union[int, str]):
+        if isinstance(step, str):
+            step = self.atk_step_idx(step)
+        return bool(self.sim.attack_state[step])
+
     def skip_steps(self):
-        """
-        Skip over steps in path that are already taken
-        """
+        """Skip over steps in path that are already taken."""
         attack_target = self.planned_path.pop()
-        attack_index = self.sim.g.attack_indices[attack_target]
-        while self.sim.attack_state[attack_index]:
+        while self.atk_step_compromised(attack_target):
             attack_target = self.planned_path.pop()
-            attack_index = self.sim.g.attack_indices[attack_target]
 
-        return attack_target, attack_index
+        return attack_target
 
-    def decide_next_target(self):
-        """
-        Select the next flag to target
-        """
+    def decide_next_target(self) -> Tuple[bool, List[str]]:
+        """Select the next flag to target."""
         path_found = False
         done = True
 
         while (not path_found) and self.current_flag_index < len(self.flags) - 1:
             self.current_flag_index += 1
             self.current_flag_target = self.flags[self.current_flag_index]
-            path_found = self.find_path_to(self.current_flag_target)
+            path_found, path = self.find_path_to(self.current_flag_target)
 
         # If we ultimately did not find any path, we are done
         done = not path_found
 
-        return done
+        return done, path
 
-    def find_path_to(self, target):
-        """Find a path to an attack step,
-        with respect to AND-steps"""
-        self.total_path = []
+    def find_path_to(self, target) -> Tuple[bool, list]:
+        """Find a path to an attack step, with respect to AND-steps."""
+        total_path: list = []
         # Don't bother pathfinding if the target's conditions are unavailable
         if not self.sim.g._attack_step_reachable(
             self.sim.g.attack_indices[target], self.sim.service_state
         ):
-            return False
+            return False, []
 
         try:
-            path, _ = self._find_path_to(target)
+            path, _ = self._find_path_to(target, total_path)
         except nx.NodeNotFound:
-            return False
+            return False, []
         except nx.NetworkXNoPath:
-            return False
+            return False, []
 
         for step in path:
-            _add_unique(self.total_path, step)
+            _add_unique(total_path, step)
 
-        self.planned_path = list(reversed(self.total_path))
-        return len(self.total_path) != 0
+        # The planned path is the steps we actually need to
+        # take to reach the target.
+        planned_path = list(reversed(total_path))
 
-    def _validate_path(self, path):
+        planned_path = [step for step in planned_path if not self.atk_step_compromised(step)]
+
+        return len(total_path) != 0, planned_path
+
+    def _validate_path(self, path, total_path):
         ttc_cost = 0
         # Check that each step in the path is reacable with respect to AND-steps.
         for node_id in path:
             step = self.attack_graph.nodes[node_id]
             # If node is AND step, go to parents first.
-            if step["step_type"] == "and" and node_id not in self.total_path:
+            if step["step_type"] == "and" and node_id not in total_path:
                 parents = self.attack_graph.nodes[node_id]["parents"]
                 paths_to_parents = []
                 for parent in parents:
                     # If the parent is already in the path, there is no need to find a path to it
-                    if parent not in self.total_path:
-                        paths_to_parents.append(self._find_path_to(parent))
+                    if parent not in total_path:
+                        paths_to_parents.append(self._find_path_to(parent, total_path))
 
-                    ttc_cost += _add_paths_to_total_path(paths_to_parents, self.total_path)
+                    ttc_cost += _add_paths_to_total_path(paths_to_parents, total_path)
 
             ttc_cost += step["ttc"]
-            _add_unique(self.total_path, node_id)
+            _add_unique(total_path, node_id)
 
         return path, ttc_cost
 
-    def _find_path_to(self, target):
-        # Look for paths from every available step in the attack surface.
+    def _find_path_to(self, target, total_path):
+        """Look for paths from steps in the attack surface."""
         paths = []
-        for initial_step in self.attack_surface:
+        surface = self.attack_surface
+        for initial_step in surface:
             try:
                 # Find the shortest path to the target
                 path_to_target: list = shortest_path(
@@ -256,23 +264,29 @@ class PathFinderAttacker:
             except nx.NetworkXNoPath:
                 continue
 
+        # Go through the available paths in order of decreasing cost
+        # and select the first viable one.
         for path_to_target, _ in sorted(paths, key=itemgetter(1)):
             try:
-                return self._validate_path(path_to_target)
+                return self._validate_path(path_to_target, total_path)
             except nx.NetworkXNoPath:
                 continue
 
         # None of the paths worked
         raise nx.NetworkXNoPath
 
+    @property
+    def attack_surface(self):
+        """Returns all attack steps that are possible to attack."""
+        return [self.sim.g.attack_names[idx] for idx in self.sim.valid_actions]
+
     def act(self, observation):
+        """Follow the current planned path.
+
+        If it's no longer possible to reach the targeted node try to
+        recalculate a path. If no path can be found, select a new
+        target.
         """
-        Follow the current planned path.
-        If it's no longer possible to reach the targeted node
-        try to recalculate a path. If no path can be found,
-        select a new target.
-        """
-        self.attack_surface = [self.sim.g.attack_names[idx] for idx in self.sim.valid_actions]
 
         # If there are no more flags to take, do nothing
         if self.done:
@@ -287,35 +301,37 @@ class PathFinderAttacker:
             self.service_states = np.array(self.sim.service_state)
 
         attack_target = self.current_attack_target
-        attack_index = self.sim.g.attack_indices[attack_target]
-        current_step_is_compromised = bool(self.sim.attack_state[attack_index])
+        current_step_is_compromised = self.atk_step_compromised(attack_target)
 
         if current_step_is_compromised:
             # Check if we have taken the current flag target
-            if attack_target == self.current_flag_target:
+            flag_taken = attack_target == self.current_flag_target
+            if flag_taken:
                 # If so, select the next target
                 self.flags_taken.append(self.current_flag_target)
-                self.done = self.decide_next_target()
+                self.done, self.planned_path = self.decide_next_target()
                 # If there are no more flags to take we are done
                 if self.done:
                     return 0
 
             # Select the next attack step to work on
-            attack_target, attack_index = self.skip_steps()
+            attack_target = self.skip_steps()
 
         # Check that the action we chose can be done. Otherwise, select a new path
-        attack_step_not_available = not observation[attack_index]
+        attack_step_not_available = not observation[self.atk_step_idx(attack_target)]
         if attack_step_not_available:
-            path_found = self.find_path_to(self.current_flag_target)
+            path_found, self.planned_path = self.find_path_to(self.current_flag_target)
             # If a new path could not be found to the target, target the next flag
             if not path_found:
-                self.done = self.decide_next_target()
+                self.done, self.planned_path = self.decide_next_target()
                 # If there are no more flags to take we are done
                 if self.done:
                     return 0
-            attack_target, attack_index = self.skip_steps()
+            attack_target = self.skip_steps()
 
-        dependent_services = self.sim.g.service_index_by_attack_index[attack_index]
+        dependent_services = self.sim.g.service_index_by_attack_index[
+            self.atk_step_idx(attack_target)
+        ]
         dependent_service_states = self.sim.service_state[dependent_services]
         assert all(dependent_service_states)
 
@@ -331,8 +347,8 @@ def _add_unique(path: list, item):
     if item not in path:
         path.append(item)
         return True
-    else:
-        return False
+
+    return False
 
 
 def _add_paths_to_total_path(paths, total_path):
