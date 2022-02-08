@@ -1,20 +1,19 @@
 import os
+import time
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from matplotlib.animation import HTMLWriter
 
-from .nx_utils import nx_dag_layout
 from .sim import AttackSimulator
 from .svg_tooltips import add_tooltips, make_paths_relative, postprocess_frame, postprocess_html
 from .utils import enabled
 
 
 class AttackSimulationRenderer:
-    """
-    Render a simulation
-    """
+    """Render a simulation."""
+
     RENDER_DIR = "render"
     HTML = "index.html"
     LOGS = "attack.log"
@@ -44,6 +43,8 @@ class AttackSimulationRenderer:
         else:
             self.run_dir = os.path.join(self.RENDER_DIR, f"{subdir}_seed={seed}")
 
+        self.run_dir += "_" + time.strftime("%H:%M")
+
         # if os.path.exists(self.run_dir):
         #     if destructive:
         #         shutil.rmtree(self.run_dir)
@@ -59,7 +60,9 @@ class AttackSimulationRenderer:
 
         if self.save_graph:
             self.dag = self.sim.g.to_networkx()
-            self.pos = nx_dag_layout(self.dag)
+            self.pos = nx.nx_pydot.graphviz_layout(
+                self.dag, root=self.sim.entry_attack_index, prog="dot"
+            )
             self.and_edges = [
                 (i, j)
                 for i, j in self.dag.edges
@@ -75,7 +78,7 @@ class AttackSimulationRenderer:
             # create a figure with two areas: one for the graph and another for the logs
             fig, (self.ax, ax) = plt.subplots(
                 nrows=2,
-                figsize=(dx, dy + 1.25),
+                figsize=(dx / 100, dy / 100 + 1.25),
                 gridspec_kw=dict(height_ratios=[dy, 1]),
                 constrained_layout=True,
             )
@@ -214,7 +217,7 @@ class AttackSimulationRenderer:
         return os.path.join(self.run_dir, f"ep-{self.episode}")
 
     def render(self, defender_reward, done):
-        """Render a frame"""
+        """Render a frame."""
         logs = self._generate_logs(defender_reward)
 
         if self.save_logs:
