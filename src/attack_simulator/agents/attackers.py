@@ -190,7 +190,7 @@ class PathFinderAttacker:
         """Select the next flag to target."""
         path_found = False
         done = True
-        path = []
+        path: list = []
 
         while (not path_found) and self.current_flag_index < len(self.flags) - 1:
             self.current_flag_index += 1
@@ -322,9 +322,9 @@ class PathFinderAttacker:
                 # On rare occasions the planned path turns out empty
                 # For now, just mark the attacker as done if this happens
                 # TODO actually fix the error that causes this
+                print(f"The odd error happened with flag_taken={flag_taken}")
                 self.done = True
                 return 0
-
 
         # Check that the action we chose can be done. Otherwise, select a new path
         attack_step_not_available = not observation[self.atk_step_idx(attack_target)]
