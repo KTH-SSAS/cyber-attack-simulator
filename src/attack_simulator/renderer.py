@@ -8,7 +8,6 @@ from matplotlib.animation import HTMLWriter
 
 from .sim import AttackSimulator
 from .svg_tooltips import add_tooltips, make_paths_relative, postprocess_frame, postprocess_html
-from .utils import enabled
 
 
 class AttackSimulationRenderer:
@@ -167,7 +166,7 @@ class AttackSimulationRenderer:
             [
                 i
                 for i in all_attacks
-                if not all(enabled(self.sim.g.attack_prerequisites[i][0], self.sim.service_state))
+                if not all(self.sim.service_state[self.sim.g.attack_prerequisites[i][0]])
             ]
         )
         self._draw_nodes(disabled_attacks - flags, 800, "lightgray", "lightgray")

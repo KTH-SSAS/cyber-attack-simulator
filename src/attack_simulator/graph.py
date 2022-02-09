@@ -10,8 +10,6 @@ from yaml import safe_load
 
 from attack_simulator.config import GraphConfig
 
-from .utils import enabled
-
 
 @dataclass
 class AttackStep:
@@ -81,7 +79,7 @@ class AttackGraph:
 
         base_dir = os.path.dirname(os.path.realpath(__file__))
 
-        filename = os.path.join(base_dir, "graphs", "ag_" +self.config.filename)
+        filename = os.path.join(base_dir, "graphs", "ag_" + self.config.filename)
 
         instance_filename = os.path.join(base_dir, "graphs", "instance_" + self.config.filename)
 
@@ -169,13 +167,16 @@ class AttackGraph:
         self.attack_prerequisites = [
             (
                 # required services
-                [attack_name.startswith(service_name) for service_name in self.service_names],
+                [
+                    self.service_indices[service_name]
+                    for service_name in self.attack_steps[attack_name].conditions
+                ],
                 # logic function to combine prerequisites
                 any if self.attack_steps[attack_name].step_type == "or" else all,
                 # prerequisite attack steps
                 [
-                    prerequisite_name in self.attack_steps[attack_name].parents
-                    for prerequisite_name in self.attack_names
+                    self.attack_indices[prerequisite_name]
+                    for prerequisite_name in self.attack_steps[attack_name].parents
                 ],
             )
             for attack_name in self.attack_names
@@ -220,13 +221,14 @@ class AttackGraph:
         )
 
     def get_eligible_indices(self, attack_index, attack_state, service_state):
+        """Get all viable attack steps."""
         eligible_indices = []
         for child_index in self.child_indices[attack_index]:
             required_services, logic, prerequisites = self.attack_prerequisites[child_index]
             if (
                 not attack_state[child_index]
-                and all(enabled(required_services, service_state))
-                and logic(enabled(prerequisites, attack_state))
+                and all(service_state[required_services])
+                and logic(attack_state[prerequisites])
             ):
                 eligible_indices.append(child_index)
         return eligible_indices
@@ -262,6 +264,7 @@ class AttackGraph:
             )
 
     def to_networkx(self, indices=True, system_state=None) -> nx.DiGraph:
+        """Convert the AttackGraph to an NetworkX DiGraph."""
         dig = nx.DiGraph()
 
         if system_state is None:

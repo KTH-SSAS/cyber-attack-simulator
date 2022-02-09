@@ -2,7 +2,6 @@ import numpy as np
 
 from .config import EnvConfig
 from .graph import AttackGraph
-from .utils import enabled
 
 
 class AttackSimulator:
@@ -53,6 +52,7 @@ class AttackSimulator:
         return self.disable_asset(action)
 
     def disable_asset(self, asset):
+        """Disable an asset in the simulation."""
         done = False
         # only disable services that are still on
         if self.service_state[asset]:
@@ -62,8 +62,9 @@ class AttackSimulator:
             # remove dependent attacks from the attack surface
             for attack_index in np.flatnonzero(self.attack_surface):
                 required_services, _, _ = self.g.attack_prerequisites[attack_index]
-                if not all(enabled(required_services, self.service_state)):
-                    self.attack_surface[attack_index] = 0
+                if len(required_services) > 0:
+                    if not all(self.service_state[required_services]):
+                        self.attack_surface[attack_index] = 0
 
             # end episode when attack surface becomes empty
             done = not any(self.attack_surface)
