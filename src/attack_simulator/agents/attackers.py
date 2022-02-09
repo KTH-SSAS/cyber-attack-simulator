@@ -190,6 +190,7 @@ class PathFinderAttacker:
         """Select the next flag to target."""
         path_found = False
         done = True
+        path = []
 
         while (not path_found) and self.current_flag_index < len(self.flags) - 1:
             self.current_flag_index += 1
