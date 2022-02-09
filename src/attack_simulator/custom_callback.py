@@ -9,9 +9,8 @@ from ray.rllib.utils.typing import PolicyID
 
 
 class AttackSimCallback(DefaultCallbacks):
-    """
-    Custom callback for AttackSim env.
-    """
+    """Custom callback for AttackSim env."""
+
     def on_episode_step(
         self,
         *,
@@ -29,4 +28,3 @@ class AttackSimCallback(DefaultCallbacks):
         episode.custom_metrics["attacker_reward"] = info["attacker_reward"]
         episode.custom_metrics["services_online"] = info["services_online"]
         episode.custom_metrics["attacker_start_time"] = info["attacker_start_time"]
-
