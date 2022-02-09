@@ -79,11 +79,18 @@ class AttackGraph:
         if len(prune) == 0 and self.config.graph_size in SIZES:
             prune = SIZES[self.config.graph_size]
 
-        filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.config.filename)
+        base_dir = os.path.dirname(os.path.realpath(__file__))
+
+        filename = os.path.join(base_dir, "graphs", "ag_" +self.config.filename)
+
+        instance_filename = os.path.join(base_dir, "graphs", "instance_" + self.config.filename)
 
         # load the YAML graph spec
         with open(filename, "r", encoding="utf8") as yaml_file:
             graph = safe_load(yaml_file.read())
+
+        with open(instance_filename, "r", encoding="utf8") as yaml_file:
+            self.instance_model = safe_load(yaml_file.read())
 
         # traverse through the relevant subgraph for a given pass
         def traverse(perform_pass):
@@ -155,12 +162,8 @@ class AttackGraph:
             self.service_index_by_attack_index.append(indexes)
 
         self.dependent_services = [
-            [
-                self.service_indices[dependent]
-                for dependent in self.service_names
-                if dependent.startswith(main)
-            ]
-            for main in self.service_names
+            [self.service_indices[dependent] for dependent in self.instance_model[name]]
+            for name in self.service_names
         ]
 
         self.attack_prerequisites = [

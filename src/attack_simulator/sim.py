@@ -57,6 +57,7 @@ class AttackSimulator:
         # only disable services that are still on
         if self.service_state[asset]:
             # disable the service itself and any dependent services
+            self.service_state[asset] = 0
             self.service_state[self.g.dependent_services[asset]] = 0
             # remove dependent attacks from the attack surface
             for attack_index in np.flatnonzero(self.attack_surface):
