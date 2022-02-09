@@ -73,7 +73,7 @@ class AttackSimulator:
 
     @property
     def valid_actions(self):
-        return np.nonzero(self.attack_surface)[0]
+        return np.flatnonzero(self.attack_surface)
 
     def attack_action(self, action):
         """Have the attacker perform an action."""

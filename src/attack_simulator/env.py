@@ -103,6 +103,7 @@ class AttackSimulationEnv(gym.Env):
         return self.sim.observe()
 
     def reward_function(self, attacker_reward, mode="simple"):
+        """Calculates the defender reward"""
         service_state = self.sim.service_state
 
         reward = 0
@@ -171,6 +172,9 @@ class AttackSimulationEnv(gym.Env):
             "ttc_remaining_on_current_step": ttc_remaining,
             "compromised_steps": compromised_steps,
             "compromised_flags": compromised_flags,
+            "attacker_reward": attacker_reward,
+            "services_online": sum(self.sim.service_state),
+            "attacker_start_time": self.attack_start_time
         }
 
         if self.done:
@@ -181,6 +185,9 @@ class AttackSimulationEnv(gym.Env):
         return self.sim.observe(), self.reward, self.done, info
 
     def render(self, mode="human", subdir=None):
+        """
+        Render a frame of the environment
+        """
         if not self.renderer:
             self.renderer = AttackSimulationRenderer(
                 self.sim,
