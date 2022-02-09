@@ -315,7 +315,15 @@ class PathFinderAttacker:
                     return 0
 
             # Select the next attack step to work on
-            attack_target = self.skip_steps()
+            try:
+                attack_target = self.skip_steps()
+            except IndexError:
+                # On rare occasions the planned path turns out empty
+                # For now, just mark the attacker as done if this happens
+                # TODO actually fix the error that causes this
+                self.done = True
+                return 0
+
 
         # Check that the action we chose can be done. Otherwise, select a new path
         attack_step_not_available = not observation[self.atk_step_idx(attack_target)]
