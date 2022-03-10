@@ -23,7 +23,6 @@ class GraphConfig(Config):
     high_flag_reward: int
     easy_ttc: int
     hard_ttc: int
-    graph_size: str
     filename: str
     root: str
     prune: List[str] = field(default_factory=list)

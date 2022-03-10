@@ -10,7 +10,7 @@ from attack_simulator.env import AttackSimulationEnv
 
 from .agents import DEFENDERS
 from .config import AgentConfig, EnvConfig, GraphConfig
-from .graph import SIZES, AttackGraph
+from .graph import AttackGraph
 from .rng import set_seeds
 from .runner import Runner
 
@@ -111,7 +111,7 @@ class Analyzer:
         """Plot the returns as a function of the size of the hidden layer and
         the graph size."""
         hidden_layer_sizes = [16, 64, 256]
-        graph_sizes = list(SIZES)
+        graph_sizes = []
 
         # This function doesn't work with 0 evaluation episodes
         if rollouts == 0:
@@ -123,7 +123,6 @@ class Analyzer:
         returns_matrix = np.zeros(shape)
 
         for graph_index, graph_size in enumerate(graph_sizes):
-            self.env_config.graph_config.graph_size = graph_size
             env = AttackSimulationEnv(self.env_config)
 
             # Use rule-based agent as baseline.  No training needed.

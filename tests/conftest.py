@@ -25,7 +25,6 @@ TEST_ENV_CONFIG_YAML = {
     "seed": 42,
     "reward_mode": "simple",
     "graph_config": {
-        "graph_size": "full",
         "easy_ttc": TTC_LOW,
         "hard_ttc": TTC_HIGH,
         "high_flag_reward": REWARD_HIGH,

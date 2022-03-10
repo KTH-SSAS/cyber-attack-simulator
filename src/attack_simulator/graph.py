@@ -22,40 +22,6 @@ class AttackStep:
     ttc: float = 1.0
 
 
-SIZES: Dict[str, Set[str]] = {
-    "tiny": set(
-        (
-            "lazarus.tomcat.connect",
-            "energetic_bear.apache.connect",
-            "sea_turtle.telnet.connect",
-        )
-    ),
-    "small": set(
-        (
-            "lazarus.find_credentials",
-            "energetic_bear.capture_traffic",
-            "sea_turtle.telnet.connect",
-        )
-    ),
-    "medium-small": set(("buckeye.find_vulnerability",)),
-    "medium": set(
-        (
-            "lazarus.ftp.connect",
-            "lazarus.tomcat.connect",
-            "sea_turtle.telnet.connect",
-        )
-    ),
-    "large": set(
-        (
-            "lazarus.ftp.connect",
-            "energetic_bear.apache.connect",
-        )
-    ),
-    "extra-large": set(("energetic_bear.apache.connect",)),
-    "full": set(),
-}
-
-
 class AttackGraph:
     """Attack Graph."""
 
@@ -227,9 +193,7 @@ class AttackGraph:
                 eligible_indices.append(child_index)
         return eligible_indices
 
-    def save_graphviz(self, filename=None, verbose=False, indexed=False, ttc=None):
-        if filename is None:
-            filename = f"{'graph' if not self.config.graph_size else self.config.graph_size}.dot"
+    def save_graphviz(self, filename="graph.dot", verbose=False, indexed=False, ttc=None):
         if indexed:
             index = {name: i + 1 for i, name in enumerate(self.attack_names)}
 
@@ -305,16 +269,3 @@ class AttackGraph:
         asset_enabled = state[self.service_index_by_attack_index[step]]
         return all(asset_enabled)
 
-
-def save_all_default_graphviz(graph_config, indexed=False):
-    sizes = len(SIZES)
-    for key in SIZES:
-        config = dataclasses.replace(graph_config, graph_size=key)
-        g = AttackGraph(config)
-        for i in g.service_names:
-            print(i)
-        print()
-        sizes -= 1
-        g.save_graphviz(verbose=(sizes == 0), indexed=indexed)
-        print()
-        del g
