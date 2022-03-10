@@ -74,21 +74,21 @@ class AttackGraph:
 
         self.config = config
 
-        if len(prune) == 0 and self.config.graph_size in SIZES:
-            prune = SIZES[self.config.graph_size]
-
-        base_dir = os.path.dirname(os.path.realpath(__file__))
-
-        filename = os.path.join(base_dir, "graphs", "ag_" + self.config.filename)
-
-        instance_filename = os.path.join(base_dir, "graphs", "instance_" + self.config.filename)
+        filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.config.filename)
 
         # load the YAML graph spec
         with open(filename, "r", encoding="utf8") as yaml_file:
-            graph = safe_load(yaml_file.read())
+            data = safe_load(yaml_file.read())
 
-        with open(instance_filename, "r", encoding="utf8") as yaml_file:
-            self.instance_model = safe_load(yaml_file.read())
+        graph = data["attack_graph"]
+        self.instance_model = data["instance_model"]
+
+        for k in self.instance_model:
+            # to deal with the concept of flags
+            if "flag" in k:
+                unmalleable_assets.add(k)
+            if not k in unmalleable_assets:
+                services.add(k)
 
         # traverse through the relevant subgraph for a given pass
         def traverse(perform_pass):
@@ -105,12 +105,6 @@ class AttackGraph:
         # first pass: determine services and most fields
         def determine_fields(key: str, node: dict, children: set):
             # some leaf nodes have multiple parents, no need to re-process
-
-            # Assets that a step belongs to are listed in "conditions"
-            if "conditions" in node:
-                for asset in node["conditions"]:
-                    if asset not in unmalleable_assets and "flag" not in asset:
-                        services.add(asset)
 
             # handle `ttc` and `reward` "templates"
             for f in ("ttc", "reward"):
@@ -160,7 +154,7 @@ class AttackGraph:
             self.service_index_by_attack_index.append(indexes)
 
         self.dependent_services = [
-            [self.service_indices[dependent] for dependent in self.instance_model[name]]
+            [self.service_indices[dependent] for dependent in self.instance_model[name] if not dependent in unmalleable_assets]
             for name in self.service_names
         ]
 
@@ -169,7 +163,7 @@ class AttackGraph:
                 # required services
                 [
                     self.service_indices[service_name]
-                    for service_name in self.attack_steps[attack_name].conditions
+                    for service_name in self.attack_steps[attack_name].conditions if not service_name in unmalleable_assets
                 ],
                 # logic function to combine prerequisites
                 any if self.attack_steps[attack_name].step_type == "or" else all,
