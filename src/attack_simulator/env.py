@@ -184,7 +184,7 @@ class AttackSimulationEnv(gym.Env):
 
         return self.sim.observe(), self.reward, self.done, info
 
-    def render(self, mode="human", subdir=None):
+    def render(self, mode="human"):
         """Render a frame of the environment."""
         if not self.renderer:
             self.renderer = AttackSimulationRenderer(
@@ -192,7 +192,6 @@ class AttackSimulationEnv(gym.Env):
                 self.episode_count,
                 self.rewards,
                 self.env_seed,
-                subdir=subdir,
                 save_graph=self.config.save_graphs,
                 save_logs=self.config.save_logs,
             )

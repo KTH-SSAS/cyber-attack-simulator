@@ -23,13 +23,12 @@ class AttackSimulationRenderer:
         episode,
         rewards,
         seed,
-        subdir=None,
         destructive=True,
         save_graph=False,
         save_logs=False,
     ):
         self.sim: AttackSimulator = sim
-        self.dag: nx.DiGraph = None
+        self.dag: nx.DiGraph
         self.writers = {}
         self.save_graph = save_graph
         self.save_logs = save_logs
@@ -37,10 +36,7 @@ class AttackSimulationRenderer:
         self.add_tooltips = False
         self.rewards = rewards
 
-        if subdir is None:
-            self.run_dir = os.path.join(self.RENDER_DIR, f"seed={seed}")
-        else:
-            self.run_dir = os.path.join(self.RENDER_DIR, f"{subdir}_seed={seed}")
+        self.run_dir = os.path.join(self.RENDER_DIR, f"seed={seed}")
 
         self.run_dir += "_" + time.strftime("%H:%M")
 
