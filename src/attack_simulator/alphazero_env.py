@@ -7,7 +7,7 @@ from .env import AttackSimulationEnv
 
 
 class AttackSimulationAlphaZeroEnv(AttackSimulationEnv):
-    """Adapt AttackSimulationEnv for Ray's `contrib/AlphaZero` implementation
+    """Adapt AttackSimulationEnv for Ray's `contrib/AlphaZero` implementation.
 
     NOTE: 'contrib/AlphaZero' does NOT appear to work without its custom dense model
 

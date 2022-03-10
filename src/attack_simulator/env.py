@@ -17,9 +17,7 @@ logger = logging.getLogger("simulator")
 
 
 class AttackSimulationEnv(gym.Env):
-    """
-    Handles reinforcement learning matters.
-    """
+    """Handles reinforcement learning matters."""
 
     NO_ACTION = "no action"
 
@@ -71,10 +69,11 @@ class AttackSimulationEnv(gym.Env):
     def _create_attacker(self):
         return self.attacker_class(
             dict(
+                simulator=self.sim,
                 attack_graph=self.sim.g,
                 ttc=self.sim.ttc_remaining,
                 rewards=self.rewards,
-                random_seed=self.config.seed + self.episode_count,
+                random_seed=self.env_seed + self.episode_count,
             )
         )
 
@@ -87,6 +86,9 @@ class AttackSimulationEnv(gym.Env):
         self.done = False
 
         self.episode_count += 1
+
+        self.renderer = None
+
         self.episode_id = self._get_episode_id()
         self.attack_start_time = int(self.rng.exponential(self.config.attack_start_time))
         self.max_reward = sum(self.rewards)
@@ -101,6 +103,7 @@ class AttackSimulationEnv(gym.Env):
         return self.sim.observe()
 
     def reward_function(self, attacker_reward, mode="simple"):
+        """Calculates the defender reward."""
         service_state = self.sim.service_state
 
         reward = 0
@@ -132,17 +135,18 @@ class AttackSimulationEnv(gym.Env):
         if action:
             # decrement to obtain index
             service = action - 1
-            self.done = self.sim.defense_action(service)
+            self.done |= self.sim.defense_action(service)
 
         if not self.done:
             # Check if the attack has started
             if self.sim.time >= self.attack_start_time:
                 # Obtain attacker action, this _can_ be 0 for no action
                 attack_index = self.attacker.act(self.sim.attack_surface) - 1
+                self.done |= self.attacker.done
                 assert -1 <= attack_index < self.sim.num_attack_steps
 
                 if attack_index != -1:
-                    self.done = self.sim.attack_action(attack_index)
+                    self.done |= self.sim.attack_action(attack_index)
                     attacker_reward = self.rewards[attack_index]
 
                 # TODO: placeholder, none of the current attackers learn...
@@ -168,6 +172,9 @@ class AttackSimulationEnv(gym.Env):
             "ttc_remaining_on_current_step": ttc_remaining,
             "compromised_steps": compromised_steps,
             "compromised_flags": compromised_flags,
+            "attacker_reward": attacker_reward,
+            "services_online": sum(self.sim.service_state),
+            "attacker_start_time": self.attack_start_time,
         }
 
         if self.done:
@@ -177,17 +184,18 @@ class AttackSimulationEnv(gym.Env):
 
         return self.sim.observe(), self.reward, self.done, info
 
-    def render(self, mode="human", subdir=None):
+    def render(self, mode="human"):
+        """Render a frame of the environment."""
         if not self.renderer:
             self.renderer = AttackSimulationRenderer(
                 self.sim,
                 self.episode_count,
                 self.rewards,
-                subdir=subdir,
+                self.env_seed,
                 save_graph=self.config.save_graphs,
                 save_logs=self.config.save_logs,
             )
-        self.renderer.render(self.reward)
+        self.renderer.render(self.reward, self.done)
         return True
 
     def interpret_action_probabilities(self, action_probabilities):

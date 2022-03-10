@@ -2,13 +2,37 @@ import numpy as np
 
 from attack_simulator.agents import (
     InformedAttacker,
+    PathFinderAttacker,
     RandomAttacker,
     RandomNoActionAttacker,
     RoundRobinAttacker,
     RoundRobinNoActionAttacker,
 )
+from attack_simulator.sim import AttackSimulator
 
 from .test_tests_utils import np_bits
+
+
+def test_agents_attackers_planning(simulator: AttackSimulator):
+
+    # n = len(simulator.g.attack_steps)
+    a = PathFinderAttacker(dict(simulator=simulator))
+
+    done = False
+
+    while not done:
+        attack_index = a.act(simulator.attack_surface) - 1
+        done = a.done
+
+        if done:
+            break
+
+        assert -1 <= attack_index < simulator.num_attack_steps
+
+        if attack_index != -1:
+            done = simulator.attack_action(attack_index)
+
+    assert True
 
 
 def test_agents_attackers_informed(attack_graph):

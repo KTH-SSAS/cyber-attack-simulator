@@ -11,7 +11,7 @@ def config_from_dicts(env_config_dict):
 
 
 def config_from_args(parsed_args):
-    """Create base configurations from parsed arguments"""
+    """Create base configurations from parsed arguments."""
 
     graph_config = GraphConfig(
         low_flag_reward=parsed_args.low_flag_reward,

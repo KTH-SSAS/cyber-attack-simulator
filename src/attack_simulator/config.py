@@ -1,33 +1,28 @@
 import dataclasses
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from typing import List, Optional
 
 import yaml
 
-from .agents import DEFENDERS
-
 
 @dataclass(frozen=True)
 class Config:
-    def to_dict(self):
-        dictionary = asdict(self)
-        if dictionary.get("attack_graph"):  # Since the attack graph is an object, it is excluded.
-            del dictionary["attack_graph"]
-        return dictionary
+    """Base config class."""
 
     def replace(self, **kwargs):
+        """Wrapper function for dataclasses.replace."""
         return dataclasses.replace(self, **kwargs)
 
 
 @dataclass(frozen=True)
 class GraphConfig(Config):
+    """Config class for attack graph."""
+
     low_flag_reward: int
     medium_flag_reward: int
     high_flag_reward: int
     easy_ttc: int
     hard_ttc: int
-    graph_size: str
-    seed: int
     filename: str
     root: str
     prune: List[str] = field(default_factory=list)
@@ -35,6 +30,7 @@ class GraphConfig(Config):
 
     @classmethod
     def from_yaml(cls, filename):
+        """Load configuration data from YAML file."""
         with open(filename, encoding="utf8") as f:
             dictionary = yaml.safe_load(f)
             dictionary = dictionary["graph_config"]
@@ -43,6 +39,8 @@ class GraphConfig(Config):
 
 @dataclass(frozen=True)
 class EnvConfig(Config):
+    """Config class for RL environment."""
+
     graph_config: GraphConfig
     attacker: str
     false_negative: float
@@ -55,6 +53,7 @@ class EnvConfig(Config):
 
     @classmethod
     def from_yaml(cls, filename):
+        """Load configuration data from YAML file."""
         with open(filename, encoding="utf8") as f:
             dictionary = yaml.safe_load(f)
             dictionary["graph_config"] = GraphConfig(**dictionary["graph_config"])
@@ -63,6 +62,8 @@ class EnvConfig(Config):
 
 @dataclass(frozen=True)
 class AgentConfig(Config):
+    """Config class for RL agents."""
+
     agent_type: str
     seed: Optional[int]
     input_dim: int
@@ -70,8 +71,3 @@ class AgentConfig(Config):
     num_actions: int
     learning_rate: float
     use_cuda: bool
-
-
-def create_agent(agent_config: AgentConfig, **kwargs):
-    config = dict(asdict(agent_config), **kwargs)
-    return DEFENDERS[config["agent_type"]](config)

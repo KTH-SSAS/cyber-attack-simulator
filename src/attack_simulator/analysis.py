@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+from dataclasses import asdict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,16 +8,22 @@ from matplotlib import cm
 
 from attack_simulator.env import AttackSimulationEnv
 
-from .config import AgentConfig, EnvConfig, GraphConfig, create_agent
-from .graph import SIZES, AttackGraph
+from .agents import DEFENDERS
+from .config import AgentConfig, EnvConfig, GraphConfig
+from .graph import AttackGraph
 from .rng import set_seeds
 from .runner import Runner
 
 logger = logging.getLogger("trainer")
 
 
+def create_agent(agent_config: AgentConfig, **kwargs):
+    config = dict(asdict(agent_config), **kwargs)
+    return DEFENDERS[config["agent_type"]](config)
+
+
 class Analyzer:
-    """Metaclass to manage different forms of runs"""
+    """Metaclass to manage different forms of runs."""
 
     def __init__(
         self,
@@ -101,9 +108,10 @@ class Analyzer:
         return mean_returns
 
     def effect_of_hidden_layer_size_on_return(self, episodes=10000, rollouts=100):
-        """Plot the returns as a function of the size of the hidden layer and the graph size."""
+        """Plot the returns as a function of the size of the hidden layer and
+        the graph size."""
         hidden_layer_sizes = [16, 64, 256]
-        graph_sizes = list(SIZES)
+        graph_sizes = []
 
         # This function doesn't work with 0 evaluation episodes
         if rollouts == 0:
@@ -115,7 +123,6 @@ class Analyzer:
         returns_matrix = np.zeros(shape)
 
         for graph_index, graph_size in enumerate(graph_sizes):
-            self.env_config.graph_config.graph_size = graph_size
             env = AttackSimulationEnv(self.env_config)
 
             # Use rule-based agent as baseline.  No training needed.
@@ -171,8 +178,8 @@ class Analyzer:
         plt.show()
 
     def effect_of_size_on_returns(self, seeds, episodes=10000, rollouts=100):
-        """
-        Plot the returns as a function of graph size for different agents.
+        """Plot the returns as a function of graph size for different agents.
+
         Do this for multiple random seeds.
         """
         graph_sizes = list(SIZES)
@@ -263,7 +270,8 @@ class Analyzer:
         fp_high=1.0,
         resolution=5,
     ):
-        """Plot the returns as a function of share of true and false positives"""
+        """Plot the returns as a function of share of true and false
+        positives."""
         # Training on perfect obbservations
         env = AttackSimulationEnv(self.env_config)
         agent = create_agent(self.agent_config)

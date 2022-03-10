@@ -2,7 +2,8 @@ from typing import Any, Dict, Tuple
 
 
 def tree_layout(root: Any, children: Dict[Any, Any]) -> Dict[Any, Tuple[float, float]]:
-    """Adapted from http://e-archive.informatik.uni-koeln.de/431/1/zaik2002-431.ps"""
+    """Adapted from http://e-archive.informatik.uni-
+    koeln.de/431/1/zaik2002-431.ps."""
 
     distance = 1
     changes = {node: 0 for node in children}

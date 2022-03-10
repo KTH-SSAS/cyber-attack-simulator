@@ -119,13 +119,12 @@ def test_env_render_save_graphs(save_graphs, save_logs, env_config, tmpdir):
     with tmpdir.as_cwd():
         env.reset()
         env.render()
-        render_dir = (
-            tmpdir.join(AttackSimulationRenderer.RENDER_DIR)
-            .join(f"seed={config.seed}")
-            .join(f"ep-{env.episode_count}")
-        )
+        assert env.renderer is not None
+        render_dir = tmpdir.join(env.renderer.run_dir)
+        render_dir = render_dir.join("ep-1")
 
         files = render_dir.listdir()
+
         basenames = [f.basename for f in files]
         assert len(files) == int(save_graphs) + int(save_logs)
         assert (frames in basenames) == save_graphs

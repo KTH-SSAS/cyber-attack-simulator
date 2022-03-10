@@ -25,7 +25,6 @@ TEST_ENV_CONFIG_YAML = {
     "seed": 42,
     "reward_mode": "simple",
     "graph_config": {
-        "graph_size": "full",
         "easy_ttc": TTC_LOW,
         "hard_ttc": TTC_HIGH,
         "high_flag_reward": REWARD_HIGH,
@@ -34,79 +33,97 @@ TEST_ENV_CONFIG_YAML = {
         "root": "a.x",
         "prune": [],
         "unmalleable_assets": {"internet", "office_network", "hidden_network"},
-        "seed": 42,
     },
 }
 
 TEST_GRAPH_YAML = """\
 ---
-a.x:
-  children:
-  - b.x
-  conditions:
-  - a
-  name: x
-b.flag.capture:
-  conditions:
-  - b
-  - b.flag
-  name: capture
-  reward: LOW_FLAG_REWARD
-b.u.y:
-  children:
-  - c.x
-  conditions:
-  - b
-  - b.u
-  name: y
-  ttc: EASY_TTC
-b.v.flag.capture:
-  conditions:
-  - b
-  - b.v
-  - b.v.flag
-  name: capture
-  reward: MEDIUM_FLAG_REWARD
-b.v.y:
-  children:
-  - b.v.flag.capture
-  - c.x
-  conditions:
-  - b
-  - b.v
-  name: y
-  ttc: HARD_TTC
-b.x:
-  children:
-  - b.flag.capture
-  - b.u.y
-  - b.v.y
-  conditions:
-  - b
-  name: x
-  ttc: EASY_TTC
-c.u.flag.capture:
-  conditions:
-  - c
+attack_graph:
+  a.x:
+    children:
+    - b.x
+    conditions:
+    - a
+    name: x
+  b.x:
+    ttc: EASY_TTC
+    children:
+    - b.flag.capture
+    - b.u.y
+    - b.v.y
+    conditions:
+    - b
+    name: x
+  b.flag.capture:
+    reward: LOW_FLAG_REWARD
+    conditions:
+    - b
+    - b.flag
+    name: capture
+  b.u.y:
+    ttc: EASY_TTC
+    children:
+    - c.x
+    conditions:
+    - b
+    - b.u
+    name: y
+  b.v.y:
+    ttc: HARD_TTC
+    children:
+    - b.v.flag.capture
+    - c.x
+    conditions:
+    - b
+    - b.v
+    name: y
+  b.v.flag.capture:
+    reward: MEDIUM_FLAG_REWARD
+    conditions:
+    - b
+    - b.v
+    - b.v.flag
+    name: capture
+  c.x:
+    children:
+    - c.u.x
+    step_type: and
+    conditions:
+    - c
+    name: x
+  c.u.x:
+    ttc: HARD_TTC
+    children:
+    - c.u.flag.capture
+    conditions:
+    - c
+    - c.u
+    name: x
+  c.u.flag.capture:
+    reward: HIGH_FLAG_REWARD
+    conditions:
+    - c
+    - c.u
+    - c.u.flag
+    name: capture
+instance_model:
+  c.u:
+  - c.u.flag
+  c:
   - c.u
   - c.u.flag
-  name: capture
-  reward: HIGH_FLAG_REWARD
-c.u.x:
-  children:
-  - c.u.flag.capture
-  conditions:
-  - c
-  - c.u
-  name: x
-  ttc: HARD_TTC
-c.x:
-  children:
-  - c.u.x
-  conditions:
-  - c
-  name: x
-  step_type: and
+  b.u: []
+  a: []
+  b.v.flag: []
+  c.u.flag: []
+  b.v:
+  - b.v.flag
+  b.flag: []
+  b:
+  - b.u
+  - b.v.flag
+  - b.v
+  - b.flag
 """
 
 TEST_SERVICES = ["a", "b", "b.u", "b.v", "c", "c.u"]
@@ -204,7 +221,8 @@ def test_graph_dot():
 
 @pytest.fixture(scope="session", name="graph_yaml")
 def fixture_graph_yaml(tmpdir_factory):
-    graph_yaml = tmpdir_factory.mktemp("test").join("graph.yaml")
+    folder = tmpdir_factory.mktemp("test")
+    graph_yaml = folder.join("test.yaml")
     graph_yaml.write(TEST_GRAPH_YAML)
     return graph_yaml
 

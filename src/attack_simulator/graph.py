@@ -1,17 +1,14 @@
-"""
-Process YAML graph description into an Attack Graph
-"""
+"""Process YAML graph description into an Attack Graph."""
 import dataclasses
 import os
 from dataclasses import asdict, dataclass, field
 from typing import Dict, List, Set, Union
 
 import networkx as nx
+import numpy as np
 from yaml import safe_load
 
 from attack_simulator.config import GraphConfig
-
-from .utils import enabled
 
 
 @dataclass
@@ -25,41 +22,9 @@ class AttackStep:
     ttc: float = 1.0
 
 
-SIZES: Dict[str, Set[str]] = {
-    "tiny": set(
-        (
-            "lazarus.tomcat.connect",
-            "energetic_bear.apache.connect",
-            "sea_turtle.telnet.connect",
-        )
-    ),
-    "small": set(
-        (
-            "lazarus.find_credentials",
-            "energetic_bear.capture_traffic",
-            "sea_turtle.telnet.connect",
-        )
-    ),
-    "medium-small": set(("buckeye.find_vulnerability",)),
-    "medium": set(
-        (
-            "lazarus.ftp.connect",
-            "lazarus.tomcat.connect",
-            "sea_turtle.telnet.connect",
-        )
-    ),
-    "large": set(
-        (
-            "lazarus.ftp.connect",
-            "energetic_bear.apache.connect",
-        )
-    ),
-    "extra-large": set(("energetic_bear.apache.connect",)),
-    "full": set(),
-}
-
-
 class AttackGraph:
+    """Attack Graph."""
+
     def __init__(self, config: Union[GraphConfig, dict]):
 
         if isinstance(config, dict):
@@ -75,14 +40,21 @@ class AttackGraph:
 
         self.config = config
 
-        if len(prune) == 0 and self.config.graph_size in SIZES:
-            prune = SIZES[self.config.graph_size]
-
         filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.config.filename)
 
         # load the YAML graph spec
         with open(filename, "r", encoding="utf8") as yaml_file:
-            graph = safe_load(yaml_file.read())
+            data = safe_load(yaml_file.read())
+
+        graph = data["attack_graph"]
+        self.instance_model = data["instance_model"]
+
+        for k in self.instance_model:
+            # to deal with the concept of flags
+            if "flag" in k:
+                unmalleable_assets.add(k)
+            if not k in unmalleable_assets:
+                services.add(k)
 
         # traverse through the relevant subgraph for a given pass
         def traverse(perform_pass):
@@ -99,12 +71,6 @@ class AttackGraph:
         # first pass: determine services and most fields
         def determine_fields(key: str, node: dict, children: set):
             # some leaf nodes have multiple parents, no need to re-process
-
-            # Assets that a step belongs to are listed in "conditions"
-            if "conditions" in node:
-                for asset in node["conditions"]:
-                    if asset not in unmalleable_assets and "flag" not in asset:
-                        services.add(asset)
 
             # handle `ttc` and `reward` "templates"
             for f in ("ttc", "reward"):
@@ -154,24 +120,23 @@ class AttackGraph:
             self.service_index_by_attack_index.append(indexes)
 
         self.dependent_services = [
-            [
-                self.service_indices[dependent]
-                for dependent in self.service_names
-                if dependent.startswith(main)
-            ]
-            for main in self.service_names
+            [self.service_indices[dependent] for dependent in self.instance_model[name] if not dependent in unmalleable_assets]
+            for name in self.service_names
         ]
 
         self.attack_prerequisites = [
             (
                 # required services
-                [attack_name.startswith(service_name) for service_name in self.service_names],
+                [
+                    self.service_indices[service_name]
+                    for service_name in self.attack_steps[attack_name].conditions if not service_name in unmalleable_assets
+                ],
                 # logic function to combine prerequisites
                 any if self.attack_steps[attack_name].step_type == "or" else all,
                 # prerequisite attack steps
                 [
-                    prerequisite_name in self.attack_steps[attack_name].parents
-                    for prerequisite_name in self.attack_names
+                    self.attack_indices[prerequisite_name]
+                    for prerequisite_name in self.attack_steps[attack_name].parents
                 ],
             )
             for attack_name in self.attack_names
@@ -192,7 +157,7 @@ class AttackGraph:
         ]
 
         # say hello
-        print(self)
+        # print(self)
 
     @property
     def root(self) -> str:
@@ -216,20 +181,19 @@ class AttackGraph:
         )
 
     def get_eligible_indices(self, attack_index, attack_state, service_state):
+        """Get all viable attack steps."""
         eligible_indices = []
         for child_index in self.child_indices[attack_index]:
             required_services, logic, prerequisites = self.attack_prerequisites[child_index]
             if (
                 not attack_state[child_index]
-                and all(enabled(required_services, service_state))
-                and logic(enabled(prerequisites, attack_state))
+                and all(service_state[required_services])
+                and logic(attack_state[prerequisites])
             ):
                 eligible_indices.append(child_index)
         return eligible_indices
 
-    def save_graphviz(self, filename=None, verbose=False, indexed=False, ttc=None):
-        if filename is None:
-            filename = f"{'graph' if not self.config.graph_size else self.config.graph_size}.dot"
+    def save_graphviz(self, filename="graph.dot", verbose=False, indexed=False, ttc=None):
         if indexed:
             index = {name: i + 1 for i, name in enumerate(self.attack_names)}
 
@@ -257,38 +221,51 @@ class AttackGraph:
                 "or viewed online at, e.g., https://dreampuf.github.io/GraphvizOnline."
             )
 
-    def to_networkx(self, indices=True) -> nx.DiGraph:
+    def to_networkx(self, indices=True, system_state=None) -> nx.DiGraph:
+        """Convert the AttackGraph to an NetworkX DiGraph."""
         dig = nx.DiGraph()
-        if indices:
-            dig.add_nodes_from(range(self.num_attacks))
-            dig.add_edges_from(
-                [
-                    (attack_index, child_index)
-                    for attack_index in range(self.num_attacks)
-                    for child_index in self.child_indices[attack_index]
-                ]
-            )
-        else:
-            dig.add_nodes_from(self.attack_names)
-            dig.add_edges_from(
-                [
-                    (name, child)
-                    for name in self.attack_names
-                    for child in self.attack_steps[name].children
-                ]
-            )
+
+        if system_state is None:
+            system_state = np.ones(len(self.service_names))
+
+        for name, a_s in self.attack_steps.items():
+            dict_t = asdict(a_s)
+
+            as_idx = self.attack_indices[name]
+
+            # No need to add child information to node
+            del dict_t["children"]
+            del dict_t["name"]
+            # del dict_t["parents"]
+
+            if not self._attack_step_reachable(as_idx, system_state):
+                # If any of the attack steps conditions are not fulfilled,
+                # do not add it to the graph
+                continue
+
+            # Add the attack step to the graph
+            if indices:
+                dig.add_node(as_idx, **dict_t)
+                dig.add_edges_from(
+                    [
+                        (as_idx, child_index)
+                        for child_index in self.child_indices[as_idx]
+                        if self._attack_step_reachable(child_index, system_state)
+                    ]
+                )
+            else:
+                dig.add_node(name, **dict_t)
+                dig.add_edges_from(
+                    [
+                        (name, child)
+                        for child in a_s.children
+                        if self._attack_step_reachable(self.attack_indices[child], system_state)
+                    ]
+                )
+
         return dig
 
+    def _attack_step_reachable(self, step: int, state):
+        asset_enabled = state[self.service_index_by_attack_index[step]]
+        return all(asset_enabled)
 
-def save_all_default_graphviz(graph_config, indexed=False):
-    sizes = len(SIZES)
-    for key in SIZES:
-        config = dataclasses.replace(graph_config, graph_size=key)
-        g = AttackGraph(config)
-        for i in g.service_names:
-            print(i)
-        print()
-        sizes -= 1
-        g.save_graphviz(verbose=(sizes == 0), indexed=indexed)
-        print()
-        del g

@@ -1,18 +1,18 @@
 import os
-import shutil
+import time
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from matplotlib.animation import HTMLWriter
 
-from .nx_utils import nx_dag_layout
 from .sim import AttackSimulator
-from .svg_tooltips import add_tooltips, postprocess_frame, postprocess_html
-from .utils import enabled
+from .svg_tooltips import add_tooltips, make_paths_relative, postprocess_frame, postprocess_html
 
 
 class AttackSimulationRenderer:
+    """Render a simulation."""
+
     RENDER_DIR = "render"
     HTML = "index.html"
     LOGS = "attack.log"
@@ -22,29 +22,29 @@ class AttackSimulationRenderer:
         sim: AttackSimulator,
         episode,
         rewards,
-        subdir=None,
+        seed,
         destructive=True,
         save_graph=False,
         save_logs=False,
     ):
         self.sim: AttackSimulator = sim
-        self.dag: nx.DiGraph = None
+        self.dag: nx.DiGraph
         self.writers = {}
         self.save_graph = save_graph
         self.save_logs = save_logs
         self.episode = episode
+        self.add_tooltips = False
         self.rewards = rewards
 
-        if subdir is None:
-            self.run_dir = os.path.join(self.RENDER_DIR, f"seed={self.sim.config.seed}")
-        else:
-            self.run_dir = os.path.join(self.RENDER_DIR, f"{subdir}_seed={self.sim.config.seed}")
+        self.run_dir = os.path.join(self.RENDER_DIR, f"seed={seed}")
 
-        if os.path.exists(self.run_dir):
-            if destructive:
-                shutil.rmtree(self.run_dir)
-            else:
-                raise RuntimeError("Render subdir already exists.")
+        self.run_dir += "_" + time.strftime("%H:%M")
+
+        # if os.path.exists(self.run_dir):
+        #     if destructive:
+        #         shutil.rmtree(self.run_dir)
+        #     else:
+        #         raise RuntimeError("Render subdir already exists.")
 
         for d in [self.RENDER_DIR, self.run_dir, self.out_dir]:
             if not os.path.isdir(d):
@@ -55,7 +55,9 @@ class AttackSimulationRenderer:
 
         if self.save_graph:
             self.dag = self.sim.g.to_networkx()
-            self.pos = nx_dag_layout(self.dag)
+            self.pos = nx.nx_pydot.graphviz_layout(
+                self.dag, root=self.sim.entry_attack_index, prog="dot"
+            )
             self.and_edges = [
                 (i, j)
                 for i, j in self.dag.edges
@@ -71,7 +73,7 @@ class AttackSimulationRenderer:
             # create a figure with two areas: one for the graph and another for the logs
             fig, (self.ax, ax) = plt.subplots(
                 nrows=2,
-                figsize=(dx, dy + 1.25),
+                figsize=(dx / 100, dy / 100 + 1.25),
                 gridspec_kw=dict(height_ratios=[dy, 1]),
                 constrained_layout=True,
             )
@@ -92,7 +94,7 @@ class AttackSimulationRenderer:
                 "",
                 horizontalalignment="left",
                 verticalalignment="top",
-                fontfamily="fantasy",
+                fontfamily="DejaVu Sans",
                 wrap=True,
                 bbox=dict(facecolor="lightgray", boxstyle="Round"),
             )
@@ -160,7 +162,7 @@ class AttackSimulationRenderer:
             [
                 i
                 for i in all_attacks
-                if not all(enabled(self.sim.g.attack_prerequisites[i][0], self.sim.service_state))
+                if not all(self.sim.service_state[self.sim.g.attack_prerequisites[i][0]])
             ]
         )
         self._draw_nodes(disabled_attacks - flags, 800, "lightgray", "lightgray")
@@ -209,8 +211,8 @@ class AttackSimulationRenderer:
     def out_dir(self):
         return os.path.join(self.run_dir, f"ep-{self.episode}")
 
-    def render(self, defender_reward):
-
+    def render(self, defender_reward, done):
+        """Render a frame."""
         logs = self._generate_logs(defender_reward)
 
         if self.save_logs:
@@ -219,19 +221,23 @@ class AttackSimulationRenderer:
         if self.save_graph:
             self.log.set_text(logs)
             self._render_graph(self.rewards)
-            add_tooltips(self.pos, self.sim.g.attack_names, ax=self.ax)
+            if self.add_tooltips:
+                add_tooltips(self.pos, self.sim.g.attack_names, ax=self.ax)
             writer: HTMLWriter = self.writers["graph"]
             writer.grab_frame()
-            postprocess_frame(
-                writer._temp_paths[-1], self.pos.keys()
-            )  # pylint: disable=protected-access
+            if self.add_tooltips:
+                postprocess_frame(
+                    writer._temp_paths[-1], self.pos.keys()
+                )  # pylint: disable=protected-access
 
-        if self.sim.done:
+        if done:
             if self.save_graph:
                 writer: HTMLWriter = self.writers["graph"]
                 writer.finish()
                 plt.close()
-                postprocess_html(writer.outfile)
+                if self.add_tooltips:
+                    postprocess_html(writer.outfile)
+                make_paths_relative(writer.outfile)
             if self.save_logs:
                 self.writers["logs"].close()
             self.writers = {}

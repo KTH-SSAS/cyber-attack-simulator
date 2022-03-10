@@ -1,4 +1,4 @@
-"""Simple agents that can be used as baselines for performance"""
+"""Simple agents that can be used as baselines for performance."""
 import numpy as np
 
 from ..rng import get_rng
@@ -18,7 +18,8 @@ class RandomAgent(Agent):
 
 
 class SkipAgent(Agent):
-    """Agent that will always select no action, i.e. does nothing (or "skips"), on each turn."""
+    """Agent that will always select no action, i.e. does nothing (or "skips"),
+    on each turn."""
 
     def __init__(self, agent_config=None):
         super().__init__()
@@ -28,7 +29,8 @@ class SkipAgent(Agent):
 
 
 class DisableProbabilityAgent(Agent):
-    """An agent that mixes `no action` and `random action` with a given `disable_probability`."""
+    """An agent that mixes `no action` and `random action` with a given
+    `disable_probability`."""
 
     def __init__(self, agent_config):
         super().__init__()
@@ -43,11 +45,10 @@ class DisableProbabilityAgent(Agent):
 
 
 class RuleBasedAgent(Agent):
-    """
-    Rule-based agent following a simple IF-THIS-THEN-THAT rule.
+    """Rule-based agent following a simple IF-THIS-THEN-THAT rule.
 
-    IF the attacker seems to have compromised an attack step preceeding valuable step,
-    THEN disable the corresponding service.
+    IF the attacker seems to have compromised an attack step preceeding
+    valuable step, THEN disable the corresponding service.
     """
 
     def __init__(self, agent_config):
@@ -80,8 +81,7 @@ class RuleBasedAgent(Agent):
 
 
 class NewRuleBasedAgent(RuleBasedAgent):
-    """
-    Rule-based agent following a simple IF-THIS-THEN-THAT rule.
+    """Rule-based agent following a simple IF-THIS-THEN-THAT rule.
 
     IF the attacker seems to have compromised an attack step preceeding valuable step,
     THEN disable the corresponding service.
@@ -125,8 +125,8 @@ class NewRuleBasedAgent(RuleBasedAgent):
 
 
 class RiskAwareAgent(NewRuleBasedAgent):
-    """
-    Risk-aware agent that uses TTC *and* reward information to decide WHEN to disable a service.
+    """Risk-aware agent that uses TTC *and* reward information to decide WHEN
+    to disable a service.
 
     Greedy decision based on a single attack step, change of reward on next step:
       (a) disable service:  -S
