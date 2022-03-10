@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import dataclasses
 
 from attack_simulator.config import GraphConfig
 from attack_simulator.graph import AttackGraph
@@ -94,7 +93,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config = GraphConfig.from_yaml("config/default_env_config.yaml")
-    config = dataclasses.replace(graph_size=args.graph_size)
+    config = config.replace(graph_size=args.graph_size)
     attack_graph = AttackGraph(config)
     attacker = Attacker(attack_graph, args.compromised_steps.split(","))
     attacker.explore(args.verbose)

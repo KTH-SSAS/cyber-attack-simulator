@@ -9,6 +9,7 @@ class RandomAgent(Agent):
     """Agent that will pick a random action each turn."""
 
     def __init__(self, agent_config):
+        super().__init__()
         self.rng, _ = get_rng(agent_config.get("random_seed"))
         self.num_actions = agent_config["num_actions"]
 
@@ -20,7 +21,7 @@ class SkipAgent(Agent):
     """Agent that will always select no action, i.e. does nothing (or "skips"), on each turn."""
 
     def __init__(self, agent_config=None):
-        pass
+        super().__init__()
 
     def act(self, observation=None):
         return 0
@@ -30,6 +31,7 @@ class DisableProbabilityAgent(Agent):
     """An agent that mixes `no action` and `random action` with a given `disable_probability`."""
 
     def __init__(self, agent_config):
+        super().__init__()
         self.rng, _ = get_rng(agent_config.get("random_seed"))
         self.num_services = agent_config["num_actions"] - 1
         self.disable_probability = agent_config.get("disable_probability", 0.1)
@@ -49,6 +51,7 @@ class RuleBasedAgent(Agent):
     """
 
     def __init__(self, agent_config):
+        super().__init__()
         self.g = agent_config["attack_graph"]
         self.rewards = np.array(self.g.reward_params)
         self.attack_state = np.full(self.g.num_attacks, 0)
@@ -71,7 +74,7 @@ class RuleBasedAgent(Agent):
             # then disable the corresponding service.
             if any(self.rewards[child_indices] > 0):
                 service_index = self.g.service_index_by_attack_index[attack_index]
-                if service_index != -1 and service_state[service_index]:
+                if all(service_state[service_index]):
                     action = service_index + 1  # + 1 because action == 0 is no action.
         return action
 

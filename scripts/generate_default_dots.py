@@ -15,4 +15,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    save_all_default_graphviz(indexed=args.indexed)
+    save_all_default_graphviz(None, indexed=args.indexed)

@@ -4,7 +4,6 @@ from typing import Any, Dict, Tuple
 import networkx as nx
 import numpy as np
 
-from .graph import AttackGraph
 from .tree_layout import tree_layout
 from .tweak_layout import _tweak_children
 
