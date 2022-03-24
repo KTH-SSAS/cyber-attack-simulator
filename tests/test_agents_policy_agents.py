@@ -41,14 +41,14 @@ def test_agents_policy_reinforce(env):
     agent = ReinforceAgent(
         dict(
             input_dim=env.observation_space.shape[0],
-            hidden_dim=16,
+            hidden_dim=8,
             num_actions=env.action_space.n,
             learning_rate=1e-2,
             random_seed=42,
         )
     )
 
-    num_episodes = 1000
+    num_episodes = 500
 
     # train
     _, train_mean = _run_episodes(num_episodes, env, agent, True)
