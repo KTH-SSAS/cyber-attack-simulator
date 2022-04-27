@@ -67,19 +67,7 @@ class Attacker:
 if __name__ == "__main__":
     import argparse
 
-    from attack_simulator.graph import SIZES
-
     parser = argparse.ArgumentParser(description="State explorer.")
-    choices = list(SIZES.keys())
-    choices_help = '", "'.join(choices[:-1]) + f'" or "{choices[-1]}'
-    parser.add_argument(
-        "-s",
-        "--graph_size",
-        choices=choices,
-        type=str,
-        default=choices[-3],
-        help='Run simulations on a "{choices_help}" attack graph. Default is "{choice[-3]}".',
-    )
     parser.add_argument(
         "-c",
         "--compromised_steps",
