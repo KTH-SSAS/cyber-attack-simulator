@@ -5,7 +5,7 @@ from attack_simulator.agents.tabular_agents import BanditAgent, QLearningAgent, 
 
 from .test_agents_policy_agents import _run_episodes
 
-NUM_TRIALS = 1000
+NUM_TRIALS = 100
 
 
 def test_agents_tabular_epsilon_greedy():

@@ -11,7 +11,7 @@ def _run_episodes(num_episodes, env: AttackSimulationEnv, agent, training=False)
     if hasattr(agent, "train"):
         agent.train(training)
 
-    set_seeds(42)
+    set_seeds(env.seed()[0])
 
     total_length = 0
     total_mean = 0.0
@@ -44,7 +44,7 @@ def test_agents_policy_reinforce(env):
             hidden_dim=8,
             num_actions=env.action_space.n,
             learning_rate=1e-2,
-            random_seed=42,
+            random_seed=env.seed()[0],
         )
     )
 

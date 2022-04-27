@@ -3,7 +3,6 @@ import dataclasses
 import numpy as np
 import pytest
 
-from attack_simulator.agents import ATTACKERS
 from attack_simulator.config import EnvConfig
 from attack_simulator.env import AttackSimulationEnv
 from attack_simulator.graph import AttackGraph
@@ -12,12 +11,12 @@ from attack_simulator.sim import AttackSimulator
 
 
 def test_env_spaces(env, attack_graph: AttackGraph):
-    num_services = attack_graph.num_services
+    num_defenses = attack_graph.num_defenses
     num_actions = env.action_space.n
-    assert num_actions == num_services + 1
+    assert num_actions == num_defenses + 1
     num_attacks = attack_graph.num_attacks
     dim_observations = env.observation_space.shape[0]
-    assert dim_observations == num_services + num_attacks
+    assert dim_observations == num_defenses + num_attacks
 
 
 def test_env_seed(env: AttackSimulationEnv):
@@ -32,7 +31,7 @@ def test_env_reset(env: AttackSimulationEnv):
 
 def test_env_first_observation(simulator: AttackSimulator):
     obs = np.array(simulator.observe())
-    assert all(obs == [1] * simulator.g.num_services + [0] * simulator.g.num_attacks)
+    assert all(obs == [1] * simulator.g.num_defenses + [0] * simulator.g.num_attacks)
 
 
 def test_sim_noisy_observation(simulator: AttackSimulator):
@@ -58,41 +57,22 @@ def test_sim_noisy_observation(simulator: AttackSimulator):
 def test_env_interpretations(simulator: AttackSimulator):
     obs = simulator.observe()
     i_obs = simulator.interpret_observation(obs)
-    i_srv = simulator.interpret_services()
+    i_def = simulator.interpret_defenses()
     i_att = simulator.interpret_attacks()
-    assert i_obs == (i_srv, i_att)
+    assert i_obs == (i_def, i_att)
 
 
-def test_env_action(simulator: AttackSimulator, test_services):
+def test_env_action(simulator: AttackSimulator, test_defense_steps):
     assert simulator.interpret_action(0) == simulator.NO_ACTION_STR
-    for i, service in enumerate(test_services):
+    for i, service in enumerate(test_defense_steps):
         assert simulator.interpret_action(i + 1) == service
 
 
-def test_env_action_probs(env: AttackSimulationEnv, test_services):
+def test_env_action_probs(env: AttackSimulationEnv, test_defense_steps):
     probs = [1] * env.num_actions
     i_probs = env.interpret_action_probabilities(probs)
     assert all(map(lambda v: v == 1, i_probs.values()))
-    assert list(i_probs) == [env.NO_ACTION] + test_services
-
-
-@pytest.mark.parametrize("attacker", list(ATTACKERS))
-@pytest.mark.parametrize(
-    "action,expected",
-    [
-        # no defender action, attacker compromises root node
-        (0, ([1] * 6 + [1] + [0] * 8, 6, False)),
-        # defender disables root node, attack surface empty, episode ends
-        (1, ([0] + [1] * 5 + [0] * 9, 5, True)),
-    ],
-)
-def test_env_first_step(attacker, action, expected, env_config: EnvConfig):
-    dataclasses.replace(env_config, attacker=attacker)
-    env = AttackSimulationEnv(env_config)
-    env.reset()
-    obs, reward, done, _ = env.step(action)
-    obs_, reward_, done_ = expected
-    assert all(np.array(obs) == obs_) and (reward == reward_) and (done == done_)
+    assert list(i_probs) == [env.NO_ACTION] + test_defense_steps
 
 
 def test_env_render(env: AttackSimulationEnv, tmpdir):
@@ -103,9 +83,9 @@ def test_env_render(env: AttackSimulationEnv, tmpdir):
 def test_env_default_config(env_config):
     env = AttackSimulationEnv(env_config)
     # defaults for project graph
-    num_services = 6
-    num_actions = 9
-    assert all(np.array(env.reset()) == [1] * num_services + [0] * num_actions)
+    num_defenses = 2
+    num_attacks = 6
+    assert all(np.array(env.reset()) == [1] * num_defenses + [0] * num_attacks)
 
 
 @pytest.mark.parametrize("save_graphs", [False, True])
@@ -133,7 +113,10 @@ def test_env_render_save_graphs(save_graphs, save_logs, env_config, tmpdir):
         _, _, done, _ = env.step(0)  # no action
         assert not done
         env.render()
-        _, _, done, _ = env.step(2)  # disable current service --> terminate
+        _, _, done, _ = env.step(1)  # disable first defense
+        assert not done
+        env.render()
+        _, _, done, _ = env.step(2)  # disable second defense --> terminate
         assert done
         env.render()
 
@@ -144,9 +127,9 @@ def test_env_render_save_graphs(save_graphs, save_logs, env_config, tmpdir):
 
         if save_graphs:
             files = render_dir.join(frames).listdir()
-            assert len(files) == 3
+            assert len(files) == 4
 
         if save_logs:
             with open(render_dir.join(AttackSimulationRenderer.LOGS), encoding="utf8") as logs:
                 lines = logs.readlines()
-            assert 3 <= len(lines)
+            assert 4 <= len(lines)
