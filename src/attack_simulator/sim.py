@@ -17,6 +17,7 @@ class AttackSimulator:
         self.g: AttackGraph = AttackGraph(config.graph_config)
         self.time = 0
         self.service_state = np.ones(self.g.num_services, dtype="int8")
+        self.defense_state = np.ones(self.g.num_defenses, dtype="int8")
         self.attack_state = np.zeros(self.g.num_attacks, dtype="int8")
         self.attack_surface = np.zeros(self.g.num_attacks, dtype="int8")
         self.false_negative = config.false_negative
@@ -46,25 +47,23 @@ class AttackSimulator:
     def num_assets(self):
         return self.g.num_services
 
-    def defense_action(self, action):
-        self.defender_action = action
-        # Currently, the only defense action is to disable assets
-        return self.disable_asset(action)
+    @property
+    def num_defense_steps(self):
+        return self.g.num_defenses
 
-    def disable_asset(self, asset):
-        """Disable an asset in the simulation."""
+    def defense_action(self, defense_index):
+        """Enable (disable) a defense step."""
+        self.defender_action = defense_index
+
         done = False
-        # only disable services that are still on
-        if self.service_state[asset]:
-            # disable the service itself and any dependent services
-            self.service_state[asset] = 0
-            self.service_state[self.g.dependent_services[asset]] = 0
-            # remove dependent attacks from the attack surface
-            for attack_index in np.flatnonzero(self.attack_surface):
-                required_services, _, _ = self.g.attack_prerequisites[attack_index]
-                if len(required_services) > 0:
-                    if not all(self.service_state[required_services]):
-                        self.attack_surface[attack_index] = 0
+        # Only enable defenses that are disabled
+        if self.defense_state[defense_index]:
+            # Enable (disable) the denfense step
+            self.defense_state[defense_index] = 0
+
+            # Remove all affected attacks from the attack surface
+            affected_steps = self.g.attack_steps_by_defense_step[defense_index]
+            self.attack_surface[affected_steps] = 0
 
             # end episode when attack surface becomes empty
             done = not any(self.attack_surface)
@@ -91,8 +90,8 @@ class AttackSimulator:
             self.attack_state[action] = 1
             self.attack_surface[action] = 0
 
-            # add eligible children to the attack surface
-            self.attack_surface[self._get_eligible_indices(action)] = 1
+            # add reachable steps to the attack surface
+            self.attack_surface[self._get_reachable_steps(action)] = 1
 
             # end episode when attack surface becomes empty
             done = not any(self.attack_surface)
@@ -100,8 +99,8 @@ class AttackSimulator:
         self.done = done
         return done
 
-    def _get_eligible_indices(self, attack_index):
-        return self.g.get_eligible_indices(attack_index, self.attack_state, self.service_state)
+    def _get_reachable_steps(self, attack_index):
+        return self.g.get_reachable_steps(attack_index, self.attack_state, self.defense_state)
 
     def step(self):
         self.time += 1
@@ -114,6 +113,11 @@ class AttackSimulator:
             services = self.service_state
         return list(np.array(self.g.service_names)[np.flatnonzero(services)])
 
+    def interpret_defenses(self, defenses=None):
+        if defenses is None:
+            defenses = self.defense_state
+        return list(np.array(self.g.defense_names)[np.flatnonzero(defenses)])
+
     def interpret_attacks(self, attacks=None):
         if attacks is None:
             attacks = self.attack_state
@@ -121,16 +125,16 @@ class AttackSimulator:
 
     def interpret_observation(self, observation):
 
-        services = observation[: self.g.num_services]
-        attacks = observation[self.g.num_services :]
-        return self.interpret_services(services), self.interpret_attacks(attacks)
+        defenses = observation[: self.g.num_defenses]
+        attacks = observation[self.g.num_defenses :]
+        return self.interpret_defenses(defenses), self.interpret_attacks(attacks)
 
     def interpret_action(self, action):
         return (
             self.NO_ACTION_STR
             if action == self.NO_ACTION
-            else self.g.service_names[action - 1]
-            if 0 < action <= self.g.num_services
+            else self.g.defense_names[action - 1]
+            if 0 < action <= self.g.num_defenses
             else "invalid action"
         )
 
@@ -140,7 +144,7 @@ class AttackSimulator:
         return self.rng.uniform(0, 1, self.num_attack_steps)
 
     def observe(self):
-        """ " Observation of attack steps is subject to the true/false positive
+        """Observation of attack steps is subject to the true/false positive
         rates of an assumed underlying intrusion detection system Depending on
         the true and false positive rates for each step, ongoing attacks may
         not be reported, or non-existing attacks may be spuriously reported."""
@@ -148,7 +152,7 @@ class AttackSimulator:
         false_negatives = self.attack_state & (probabilities >= self.false_negative)
         false_positives = (1 - self.attack_state) & (probabilities <= self.false_positive)
         detected = false_negatives | false_positives
-        return np.append(self.service_state, detected)
+        return np.append(self.defense_state, detected)
 
     def current_attack_step(self):
         """Returns the attack step the attacker is currently targeting."""

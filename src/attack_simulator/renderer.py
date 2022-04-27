@@ -146,25 +146,27 @@ class AttackSimulationRenderer:
         flags = set([i for i in all_attacks if "flag" in self.sim.g.attack_names[i]])
         observed_attacks = np.array(self.sim.observe()[self.sim.g.num_services :])
 
+        # Draw uncompromised steps as green squares
         observed_ok = set(np.flatnonzero(1 - observed_attacks))
         self._draw_nodes(observed_ok - flags, 1000, "white", "green")
         self._draw_nodes(observed_ok & flags, 1000, "white", "green", node_shape="s")
 
+        # Draw compromised steps as red squares
         observed_ko = set(np.flatnonzero(observed_attacks))
         self._draw_nodes(observed_ko - flags, 1000, "white", "red")
         self._draw_nodes(observed_ko & flags, 1000, "white", "red", node_shape="s")
 
-        fixed_attacks = [i for i in all_attacks if not any(self.sim.g.attack_prerequisites[i][0])]
+        # Draw attacks without defense steps as hexagons
+        fixed_attacks = [i for i in all_attacks if not self.sim.g.defense_steps_by_attack_step[i]]
         self._draw_nodes(fixed_attacks, 800, "white", "black", node_shape="h")
 
-        # gray out disabled attacks
-        disabled_attacks = set(
-            [
-                i
-                for i in all_attacks
-                if not all(self.sim.service_state[self.sim.g.attack_prerequisites[i][0]])
-            ]
-        )
+        # Gray out disabled attacks
+        disabled_attacks = {
+            i
+            for i in all_attacks
+            if not all(self.sim.defense_state[self.sim.g.defense_steps_by_attack_step[i]])
+        }
+
         self._draw_nodes(disabled_attacks - flags, 800, "lightgray", "lightgray")
         self._draw_nodes(disabled_attacks & flags, 800, "lightgray", "lightgray", node_shape="s")
 

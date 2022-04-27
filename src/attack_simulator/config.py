@@ -26,7 +26,6 @@ class GraphConfig(Config):
     filename: str
     root: str
     prune: List[str] = field(default_factory=list)
-    unmalleable_assets: List[str] = field(default_factory=list)
 
     @classmethod
     def from_yaml(cls, filename):
