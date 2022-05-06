@@ -2,6 +2,7 @@
 
 An agent learns to defend a computer network by playing games against an unlearning attacker in a [static attack graph](docs/graphviz.pdf) of the computer network. The computer network is modelled on the cyber range for the KTH Ethical Hacking course. The defender receives positive rewards for maintaining services (FTP, web server, etc) and negative rewards when the attacker captures flags. 
 
+(Project Kanban)[https://github.com/KTH-SSAS/attack-simulator/projects/1]
 
 ## Usage
 
