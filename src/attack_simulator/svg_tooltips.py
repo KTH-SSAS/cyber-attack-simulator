@@ -1,4 +1,5 @@
 import re
+from xml.dom.minidom import Element
 import xml.etree.ElementTree as ET
 
 import matplotlib.pyplot as plt
@@ -67,10 +68,12 @@ def postprocess_frame(filename, keys):
     root.set("onload", "init(event)")
     for key in keys:
         e = root.find(f'.//*[@id="trigger_{key}"]')
-        e.set("onmouseover", "tooltip(this, 'visible')")
-        e.set("onmouseout", "tooltip(this, 'hidden')")
+        if isinstance(e, Element):
+            e.set("onmouseover", "tooltip(this, 'visible')")
+            e.set("onmouseout", "tooltip(this, 'hidden')")
         e = root.find(f'.//*[@id="tooltip_{key}"]')
-        e.set("visibility", "hidden")
+        if isinstance(e, Element):
+            e.set("visibility", "hidden")
     root.insert(0, ET.XML(SCRIPT))
     tree.write(filename)
 

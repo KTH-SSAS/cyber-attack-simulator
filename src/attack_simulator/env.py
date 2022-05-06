@@ -45,14 +45,14 @@ class AttackSimulationEnv(gym.Env):
         # An observation informs the defender of
         # a) which services are turned on; and,
         # b) which attack steps have been successfully taken
-        self.dim_observations = self.sim.num_assets + self.sim.num_attack_steps
+        self.dim_observations = self.sim.num_defense_steps + self.sim.num_attack_steps
         # Using a Box instead of Tuple((Discrete(2),) * self.dim_observations)
         # avoids potential preprocessor issues with Ray
         # (cf. https://github.com/ray-project/ray/issues/8600)
         self.observation_space = spaces.Box(0, 1, shape=(self.dim_observations,), dtype="int8")
 
         # The defender action space allows to disable any one service or leave all unchanged
-        self.num_actions = self.sim.num_assets + 1
+        self.num_actions = self.sim.num_defense_steps + 1
         self.action_space = spaces.Discrete(self.num_actions)
 
         self.episode_count = 0
@@ -103,23 +103,29 @@ class AttackSimulationEnv(gym.Env):
         return self.sim.observe()
 
     def reward_function(self, attacker_reward, mode="simple"):
-        """Calculates the defender reward."""
-        service_state = self.sim.service_state
+        """Calculates the defender reward.
 
+        Only 'simple' works at the moment.
+        """
+
+        active_defense_costs = self.sim.g.defense_costs * self.sim.defense_state
+        upkeep_reward = sum(active_defense_costs)
         reward = 0
 
         if mode == "simple":
-            reward = sum(service_state) - attacker_reward
+            reward = upkeep_reward - attacker_reward
         elif mode == "capped":
             reward = self.max_reward
+            # Penalty for attacker gains
             reward -= attacker_reward
-            reward -= sum(1 - service_state)
+            # Penalty for defenses activated
+            reward -= self.sim.g.defense_costs * (not self.sim.defense_state)
             reward = max(0, reward / self.max_reward)
         elif mode == "delayed":
             if self.done:
-                reward = sum(service_state) - sum(self.rewards[self.sim.attack_state])
+                reward = upkeep_reward - sum(self.rewards[self.sim.attack_state])
             else:
-                reward = sum(service_state)
+                reward = upkeep_reward
         else:
             raise Exception("Invalid Reward Method.")
 
@@ -199,7 +205,7 @@ class AttackSimulationEnv(gym.Env):
         return True
 
     def interpret_action_probabilities(self, action_probabilities):
-        keys = [self.NO_ACTION] + self.sim.g.service_names
+        keys = [self.NO_ACTION] + self.sim.g.defense_names
         return {key: value for key, value in zip(keys, action_probabilities)}
 
     def seed(self, seed: int = None) -> List[int]:

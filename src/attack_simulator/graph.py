@@ -1,8 +1,7 @@
-"""Process YAML graph description into an Attack Graph."""
-import dataclasses
+"""Process graph description into an Attack Graph."""
 import os
 from dataclasses import asdict, dataclass, field
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Union
 
 import networkx as nx
 import numpy as np
@@ -10,16 +9,37 @@ from yaml import safe_load
 
 from attack_simulator.config import GraphConfig
 
+DEFENSE = "DEFENSE"
+AND = "AND"
+OR = "OR"
+
 
 @dataclass
 class AttackStep:
+    id: str
     parents: List[str] = field(default_factory=list)
     children: List[str] = field(default_factory=list)
     conditions: List[str] = field(default_factory=list)
-    name: str = ""
+    asset: str = "asset"
+    name: str = "attack"
+    step_type: str = OR
     reward: float = 0.0
-    step_type: str = "or"
-    ttc: float = 1.0
+    ttc: float = 0.0
+
+
+def replace_templates(node: Dict, config: Dict):
+    # some leaf nodes have multiple parents, no need to re-process
+    attributes = node.copy()
+    # handle `ttc` and `reward` "templates"
+    for f in ("ttc", "reward"):
+        if f in attributes:
+            # translate {easy,hard}_ttc and/or {early,late,final}_reward
+            # based on upper-case "TEMPLATE" in YAML to actual values
+            # TODO add better template handling
+            if isinstance(attributes[f], str):
+                attributes[f] = config[attributes[f].lower()]
+
+    return attributes
 
 
 class AttackGraph:
@@ -27,18 +47,7 @@ class AttackGraph:
 
     def __init__(self, config: Union[GraphConfig, dict]):
 
-        if isinstance(config, dict):
-            config = GraphConfig(**config)
-
-        # initialization
-        self.attack_steps: Dict[str, AttackStep] = dict()
-        services: Set[str] = set()
-
-        # Declare attributes
-        prune: Set[str] = set(config.prune)
-        unmalleable_assets: Set[str] = set(config.unmalleable_assets)
-
-        self.config = config
+        self.config = GraphConfig(**config) if isinstance(config, dict) else config
 
         filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.config.filename)
 
@@ -46,93 +55,79 @@ class AttackGraph:
         with open(filename, "r", encoding="utf8") as yaml_file:
             data = safe_load(yaml_file.read())
 
-        graph = data["attack_graph"]
-        self.instance_model = data["instance_model"]
+        services = {x["id"]: x["dependents"] for x in data["instance_model"]}
 
-        for k in self.instance_model:
-            # to deal with the concept of flags
-            if "flag" in k:
-                unmalleable_assets.add(k)
-            if not k in unmalleable_assets:
-                services.add(k)
+        steps = [
+            AttackStep(**replace_templates(node, asdict(self.config)))
+            for node in data["attack_graph"]
+        ]
 
-        # traverse through the relevant subgraph for a given pass
-        def traverse(perform_pass):
-            keys = [self.root]
-            while keys:
-                next_keys = set()
-                for key in keys:
-                    node = graph[key]
-                    children = set(node["children"]) - prune if "children" in node else set()
-                    perform_pass(key, node, children)
-                    next_keys |= set(children)
-                keys = sorted(next_keys)
+        self.defense_steps = {step.id: step for step in steps if step.step_type == "DEFENSE"}
 
-        # first pass: determine services and most fields
-        def determine_fields(key: str, node: dict, children: set):
-            # some leaf nodes have multiple parents, no need to re-process
+        self.defense_costs = [step.reward for step in self.defense_steps.values()]
 
-            # handle `ttc` and `reward` "templates"
-            for f in ("ttc", "reward"):
-                if f in node:
-                    # translate {easy,hard}_ttc and/or {early,late,final}_reward
-                    # based on upper-case "TEMPLATE" in YAML to actual values
-                    # TODO add better template handling
-                    if isinstance(node[f], str):
-                        node[f] = asdict(self.config)[node[f].lower()]
+        self.attack_steps = {step.id: step for step in steps if step.step_type != "DEFENSE"}
 
-            if children:
-                # Ensure a deterministic ordering of child nodes
-                node["children"] = sorted(children)
+        # Add parents for attack steps.
+        # Defense steps are not included as parents
+        for step in self.attack_steps.values():
 
-            node["parents"] = set()
+            step.parents = sorted(
+                [
+                    other_step.id
+                    for other_step in self.attack_steps.values()
+                    if step.id in other_step.children
+                ]
+            )
 
-        # second pass: update parents
-        def update_parents(key, _, children):
-            for child in children:
-                graph[child]["parents"].add(key)
+            # Ensure deterministic ordering of children
+            step.children = sorted(step.children)
 
-        # third and final pass: freeze the relevant sub-graph
-        def freeze_subgraph(key, node, _):
-            # Ensure a deterministic ordering of parents
-            node["parents"] = sorted(node["parents"])
-            self.attack_steps[key] = AttackStep(**node)
-
-        for perform_pass in (determine_fields, update_parents, freeze_subgraph):
-            traverse(perform_pass)
-
-        # set final attributes
+        # Store ordered list of names
         self.service_names: List[str] = sorted(services)
+        self.defense_names: List[str] = sorted(self.defense_steps)
         self.attack_names: List[str] = sorted(self.attack_steps)
 
-        # index-based attributes
+        # Store index-based attributes
         self.service_indices = {name: index for (index, name) in enumerate(self.service_names)}
         self.attack_indices = {name: index for (index, name) in enumerate(self.attack_names)}
+        self.defense_indices = {name: index for (index, name) in enumerate(self.defense_names)}
 
-        self.service_index_by_attack_index = []
-        for attack_name in self.attack_names:
-            attack_step = self.attack_steps[attack_name]
-            indexes = []
-            for service_name in attack_step.conditions:
-                if service_name in self.service_indices:
-                    service_index = self.service_indices[service_name]
-                    indexes.append(service_index)
-            self.service_index_by_attack_index.append(indexes)
+        self.service_index_by_attack_index = [
+            [
+                self.service_indices[service_name]
+                for service_name in self.attack_steps[attack_name].conditions
+                if service_name in self.service_indices
+            ]
+            for attack_name in self.attack_names
+        ]
 
         self.dependent_services = [
-            [self.service_indices[dependent] for dependent in self.instance_model[name] if not dependent in unmalleable_assets]
+            [self.service_indices[dependent] for dependent in services[name]]
             for name in self.service_names
+        ]
+
+        self.attack_steps_by_defense_step = [
+            [
+                self.attack_indices[attack_step]
+                for attack_step in self.defense_steps[defense_step].children
+            ]
+            for defense_step in self.defense_names
+        ]
+
+        self.defense_steps_by_attack_step = [
+            [
+                self.defense_indices[defense_name]
+                for defense_name in self.defense_names
+                if attack_step in self.defense_steps[defense_name].children
+            ]
+            for attack_step in self.attack_names
         ]
 
         self.attack_prerequisites = [
             (
-                # required services
-                [
-                    self.service_indices[service_name]
-                    for service_name in self.attack_steps[attack_name].conditions if not service_name in unmalleable_assets
-                ],
                 # logic function to combine prerequisites
-                any if self.attack_steps[attack_name].step_type == "or" else all,
+                any if self.attack_steps[attack_name].step_type == OR else all,
                 # prerequisite attack steps
                 [
                     self.attack_indices[prerequisite_name]
@@ -144,9 +139,10 @@ class AttackGraph:
 
         self.ttc_params = [self.attack_steps[attack_name].ttc for attack_name in self.attack_names]
 
-        self.reward_params = [
+        reward_iterator = (
             self.attack_steps[attack_name].reward for attack_name in self.attack_names
-        ]
+        )
+        self.reward_params = [reward if reward is not None else 0.0 for reward in reward_iterator]
 
         self.child_indices = [
             [
@@ -155,9 +151,6 @@ class AttackGraph:
             ]
             for attack_name in self.attack_names
         ]
-
-        # say hello
-        # print(self)
 
     @property
     def root(self) -> str:
@@ -168,30 +161,43 @@ class AttackGraph:
         return len(self.attack_names)
 
     @property
+    def num_defenses(self):
+        return len(self.defense_steps)
+
+    @property
     def num_services(self):
         return len(self.service_names)
 
     def __str__(self):
         label = os.path.basename(self.config.filename)
-        if self.config.graph_size:
-            label += f"[{self.config.graph_size}]"
         return (
             f"{self.__class__.__name__}({label}, {self.num_services} services,"
             f" {self.num_attacks} attack steps)"
         )
 
-    def get_eligible_indices(self, attack_index, attack_state, service_state):
-        """Get all viable attack steps."""
-        eligible_indices = []
-        for child_index in self.child_indices[attack_index]:
-            required_services, logic, prerequisites = self.attack_prerequisites[child_index]
-            if (
-                not attack_state[child_index]
-                and all(service_state[required_services])
-                and logic(attack_state[prerequisites])
-            ):
-                eligible_indices.append(child_index)
-        return eligible_indices
+    def get_reachable_steps(self, attack_index, attack_state, defense_state):
+        """Get all reachable attack steps in the graph, given supplied current
+        state vectors."""
+
+        children = self.child_indices[attack_index]
+        prerequisite_iterator = (self.attack_prerequisites[child] for child in children)
+        defense_iterator = (
+            defense_state[self.defense_steps_by_attack_step[child]] for child in children
+        )
+
+        reachable_steps = [
+            child_index
+            for (child_index, (logic, prerequisites), defenses) in zip(
+                children, prerequisite_iterator, defense_iterator
+            )
+            if (  # Add step to attack surface if:
+                not attack_state[child_index]  # Attack step isn't already compromised
+                and logic(attack_state[prerequisites])  # Prerequisite(s) are compromised
+                and all(defenses)  # A connected defense step isn't activated (0 if activated)
+            )
+        ]
+
+        return reachable_steps
 
     def save_graphviz(self, filename="graph.dot", verbose=False, indexed=False, ttc=None):
         if indexed:
@@ -226,7 +232,7 @@ class AttackGraph:
         dig = nx.DiGraph()
 
         if system_state is None:
-            system_state = np.ones(len(self.service_names))
+            system_state = np.ones(len(self.defense_steps))
 
         for name, a_s in self.attack_steps.items():
             dict_t = asdict(a_s)
@@ -235,6 +241,7 @@ class AttackGraph:
 
             # No need to add child information to node
             del dict_t["children"]
+            del dict_t["id"]
             del dict_t["name"]
             # del dict_t["parents"]
 
@@ -244,28 +251,28 @@ class AttackGraph:
                 continue
 
             # Add the attack step to the graph
-            if indices:
-                dig.add_node(as_idx, **dict_t)
-                dig.add_edges_from(
-                    [
-                        (as_idx, child_index)
-                        for child_index in self.child_indices[as_idx]
-                        if self._attack_step_reachable(child_index, system_state)
-                    ]
+
+            node_name = as_idx if indices else name
+
+            edges = (
+                (
+                    (as_idx, child_index)
+                    for child_index in self.child_indices[as_idx]
+                    if self._attack_step_reachable(child_index, system_state)
                 )
-            else:
-                dig.add_node(name, **dict_t)
-                dig.add_edges_from(
-                    [
-                        (name, child)
-                        for child in a_s.children
-                        if self._attack_step_reachable(self.attack_indices[child], system_state)
-                    ]
+                if indices
+                else (
+                    (name, child)
+                    for child in a_s.children
+                    if self._attack_step_reachable(self.attack_indices[child], system_state)
                 )
+            )
+
+            dig.add_node(node_name, **dict_t)
+            dig.add_edges_from(edges)
 
         return dig
 
     def _attack_step_reachable(self, step: int, state):
-        asset_enabled = state[self.service_index_by_attack_index[step]]
-        return all(asset_enabled)
-
+        defense_enabled = all(state[self.defense_steps_by_attack_step[step]])
+        return defense_enabled

@@ -30,183 +30,133 @@ TEST_ENV_CONFIG_YAML = {
         "high_flag_reward": REWARD_HIGH,
         "medium_flag_reward": REWARD_MEDIUM,
         "low_flag_reward": REWARD_LOW,
-        "root": "a.x",
-        "prune": [],
-        "unmalleable_assets": {"internet", "office_network", "hidden_network"},
+        "root": "a.attack",
     },
 }
 
-TEST_GRAPH_YAML = """\
----
-attack_graph:
-  a.x:
-    children:
-    - b.x
-    conditions:
-    - a
-    name: x
-  b.x:
-    ttc: EASY_TTC
-    children:
-    - b.flag.capture
-    - b.u.y
-    - b.v.y
-    conditions:
-    - b
-    name: x
-  b.flag.capture:
-    reward: LOW_FLAG_REWARD
-    conditions:
-    - b
-    - b.flag
-    name: capture
-  b.u.y:
-    ttc: EASY_TTC
-    children:
-    - c.x
-    conditions:
-    - b
-    - b.u
-    name: y
-  b.v.y:
-    ttc: HARD_TTC
-    children:
-    - b.v.flag.capture
-    - c.x
-    conditions:
-    - b
-    - b.v
-    name: y
-  b.v.flag.capture:
-    reward: MEDIUM_FLAG_REWARD
-    conditions:
-    - b
-    - b.v
-    - b.v.flag
-    name: capture
-  c.x:
-    children:
-    - c.u.x
-    step_type: and
-    conditions:
-    - c
-    name: x
-  c.u.x:
-    ttc: HARD_TTC
-    children:
-    - c.u.flag.capture
-    conditions:
-    - c
-    - c.u
-    name: x
-  c.u.flag.capture:
-    reward: HIGH_FLAG_REWARD
-    conditions:
-    - c
-    - c.u
-    - c.u.flag
-    name: capture
-instance_model:
-  c.u:
-  - c.u.flag
-  c:
-  - c.u
-  - c.u.flag
-  b.u: []
-  a: []
-  b.v.flag: []
-  c.u.flag: []
-  b.v:
-  - b.v.flag
-  b.flag: []
-  b:
-  - b.u
-  - b.v.flag
-  - b.v
-  - b.flag
-"""
+"""Simple model for testing. C and B are children of A. B has to be compromised before D."""
+TEST_GRAPH = {
+    "attack_graph": [
+        {
+            "id": "a.attack",
+            "children": ["b.attack", "c.attack"],
+            "asset": "a",
+            "name": "attack",
+            "ttc": "EASY_TTC",
+        },
+        {
+            "id": "b.attack",
+            "ttc": "EASY_TTC",
+            "children": ["b.capture", "d.attack"],
+            "asset": "b",
+            "name": "attack",
+        },
+        {
+            "id": "b.capture",
+            "reward": "LOW_FLAG_REWARD",
+            "asset": "b",
+            "name": "capture",
+            "ttc": "EASY_TTC",
+        },
+        {
+            "id": "c.attack",
+            "children": ["d.attack"],
+            "asset": "c",
+            "name": "attack",
+            "ttc": "EASY_TTC",
+        },
+        {
+            "id": "d.attack",
+            "children": ["d.capture"],
+            "asset": "d",
+            "name": "attack",
+            "step_type": "AND",
+            "ttc": "EASY_TTC",
+        },
+        {
+            "id": "d.capture",
+            "reward": "HIGH_FLAG_REWARD",
+            "asset": "d",
+            "name": "capture",
+            "ttc": "HARD_TTC",
+        },
+        {
+            "id": "c.defend",
+            "step_type": "DEFENSE",
+            "name": "defend",
+            "children": ["c.attack"],
+            "asset": "c",
+            "reward": 2,
+        },
+        {
+            "id": "b.defend",
+            "name": "defend",
+            "step_type": "DEFENSE",
+            "children": ["b.attack", "b.capture"],
+            "asset": "b",
+            "reward": 1,
+        },
+    ],
+    "instance_model": [
+        {"id": "a", "dependents": ["b"]},
+        {"id": "b", "dependents": []},
+        {"id": "c", "dependents": ["d"]},
+        {"id": "d", "dependents": []},
+    ],
+}
 
-TEST_SERVICES = ["a", "b", "b.u", "b.v", "c", "c.u"]
+TEST_ASSETS = ["a", "b", "c", "d"]
 
 TEST_ATTACK_STEPS = {
-    "a.x": AttackStep(name="x", conditions=["a"], children=["b.x"]),
-    "b.x": AttackStep(
-        name="x",
-        conditions=["b"],
-        ttc=TTC_LOW,
-        children=[
-            "b.flag.capture",
-            "b.u.y",
-            "b.v.y",
-        ],
-        parents=["a.x"],
+    "a.attack": AttackStep(
+        id="a.attack", children=["b.attack", "c.attack"], asset="a", ttc=TTC_LOW
     ),
-    "b.flag.capture": AttackStep(
-        name="capture",
-        conditions=["b", "b.flag"],
+    "b.attack": AttackStep(
+        id="b.attack",
+        name="attack",
+        ttc=TTC_LOW,
+        children=["b.capture", "d.attack"],
+        parents=["a.attack"],
+        asset="b",
+    ),
+    "b.capture": AttackStep(
+        id="b.capture",
         reward=REWARD_LOW,
-        parents=["b.x"],
-    ),
-    "b.u.y": AttackStep(
-        name="y",
-        conditions=["b", "b.u"],
+        parents=["b.attack"],
+        name="capture",
+        asset="b",
         ttc=TTC_LOW,
-        children=["c.x"],
-        parents=["b.x"],
     ),
-    "b.v.y": AttackStep(
-        name="y",
-        conditions=["b", "b.v"],
+    "c.attack": AttackStep(
+        id="c.attack", ttc=TTC_LOW, children=["d.attack"], parents=["a.attack"], asset="c"
+    ),
+    "d.attack": AttackStep(
+        id="d.attack",
+        ttc=TTC_LOW,
+        children=["d.capture"],
+        parents=["b.attack", "c.attack"],
+        step_type="AND",
+        asset="d",
+    ),
+    "d.capture": AttackStep(
+        id="d.capture",
         ttc=TTC_HIGH,
-        children=["b.v.flag.capture", "c.x"],
-        parents=["b.x"],
-    ),
-    "b.v.flag.capture": AttackStep(
-        name="capture",
-        conditions=["b", "b.v", "b.v.flag"],
-        reward=REWARD_MEDIUM,
-        parents=["b.v.y"],
-    ),
-    "c.x": AttackStep(
-        name="x",
-        step_type="and",
-        conditions=["c"],
-        children=["c.u.x"],
-        parents=["b.u.y", "b.v.y"],
-    ),
-    "c.u.x": AttackStep(
-        name="x",
-        conditions=["c", "c.u"],
-        ttc=TTC_HIGH,
-        children=["c.u.flag.capture"],
-        parents=["c.x"],
-    ),
-    "c.u.flag.capture": AttackStep(
-        name="capture",
-        conditions=["c", "c.u", "c.u.flag"],
         reward=REWARD_HIGH,
-        parents=["c.u.x"],
+        parents=["d.attack"],
+        asset="d",
+        name="capture",
     ),
 }
-
-TEST_DOT = """
-digraph G {
-"1 :: a.x, 1" -> "6 :: b.x, 10";
-"3 :: b.u.y, 10" -> "9 :: c.x, 1";
-"5 :: b.v.y, 100" -> "4 :: b.v.flag.capture, 1";
-"5 :: b.v.y, 100" -> "9 :: c.x, 1";
-"6 :: b.x, 10" -> "2 :: b.flag.capture, 1";
-"6 :: b.x, 10" -> "3 :: b.u.y, 10";
-"6 :: b.x, 10" -> "5 :: b.v.y, 100";
-"8 :: c.u.x, 100" -> "7 :: c.u.flag.capture, 1";
-"9 :: c.x, 1" -> "8 :: c.u.x, 100";
-}
-"""
 
 
 @pytest.fixture(scope="session")
 def test_services():
-    return TEST_SERVICES
+    return TEST_ASSETS
+
+
+@pytest.fixture(scope="session")
+def test_defense_steps():
+    return ["b.defend", "c.defend"]
 
 
 @pytest.fixture(scope="session")
@@ -214,16 +164,11 @@ def test_attack_steps():
     return TEST_ATTACK_STEPS
 
 
-@pytest.fixture(scope="session")
-def test_graph_dot():
-    return TEST_DOT.strip()
-
-
 @pytest.fixture(scope="session", name="graph_yaml")
 def fixture_graph_yaml(tmpdir_factory):
     folder = tmpdir_factory.mktemp("test")
     graph_yaml = folder.join("test.yaml")
-    graph_yaml.write(TEST_GRAPH_YAML)
+    graph_yaml.write(yaml.dump(TEST_GRAPH))
     return graph_yaml
 
 
