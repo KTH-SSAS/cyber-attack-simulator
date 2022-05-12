@@ -9,9 +9,7 @@ from yaml import safe_load
 
 from attack_simulator.config import GraphConfig
 
-DEFENSE = "DEFENSE"
-AND = "AND"
-OR = "OR"
+from .constant import DEFENSE, OR
 
 
 @dataclass
@@ -27,18 +25,12 @@ class AttackStep:
     ttc: float = 0.0
 
 
-def replace_templates(node: Dict, config: Dict):
-    # some leaf nodes have multiple parents, no need to re-process
+def replace_template(node: Dict, config: Dict, key: str) -> dict:
     attributes = node.copy()
-    # handle `ttc` and `reward` "templates"
-    for f in ("ttc", "reward"):
-        if f in attributes:
-            # translate {easy,hard}_ttc and/or {early,late,final}_reward
-            # based on upper-case "TEMPLATE" in YAML to actual values
-            # TODO add better template handling
-            if isinstance(attributes[f], str):
-                attributes[f] = config[attributes[f].lower()]
-
+    if key in attributes:
+        entry = attributes[key]
+        if isinstance(entry, str):
+            attributes[key] = config[entry.lower()]
     return attributes
 
 
@@ -49,7 +41,7 @@ class AttackGraph:
 
         self.config = GraphConfig(**config) if isinstance(config, dict) else config
 
-        filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.config.filename)
+        filename = self.config.filename
 
         # load the YAML graph spec
         with open(filename, "r", encoding="utf8") as yaml_file:
@@ -57,16 +49,21 @@ class AttackGraph:
 
         services = {x["id"]: x["dependents"] for x in data["instance_model"]}
 
+        flags: dict = data["flags"]
+
         steps = [
-            AttackStep(**replace_templates(node, asdict(self.config)))
+            AttackStep(**replace_template(node, asdict(self.config), "ttc"))
             for node in data["attack_graph"]
         ]
 
-        self.defense_steps = {step.id: step for step in steps if step.step_type == "DEFENSE"}
 
-        self.defense_costs = [step.reward for step in self.defense_steps.values()]
+        flags = {key: asdict(self.config)[value.lower()] for key, value in flags.items()}
 
-        self.attack_steps = {step.id: step for step in steps if step.step_type != "DEFENSE"}
+        self.defense_steps = {step.id: step for step in steps if step.step_type == DEFENSE}
+
+        self.defense_costs = np.array([step.reward for step in self.defense_steps.values()])
+
+        self.attack_steps = {step.id: step for step in steps if step.step_type != DEFENSE}
 
         # Add parents for attack steps.
         # Defense steps are not included as parents
@@ -137,12 +134,25 @@ class AttackGraph:
             for attack_name in self.attack_names
         ]
 
-        self.ttc_params = [self.attack_steps[attack_name].ttc for attack_name in self.attack_names]
+        self.ttc_params = np.array(
+            [self.attack_steps[attack_name].ttc for attack_name in self.attack_names]
+        )
 
         reward_iterator = (
             self.attack_steps[attack_name].reward for attack_name in self.attack_names
         )
-        self.reward_params = [reward if reward is not None else 0.0 for reward in reward_iterator]
+
+        # Don't iterate over flags to ensure determinism
+
+        self.flags = np.array(
+            [self.attack_indices[step] for step in self.attack_names if step in flags]
+        )
+        flag_rewards = np.array([flags[step] for step in self.attack_names if step in flags])
+
+        self.reward_params = np.array(
+            [reward if reward is not None else 0.0 for reward in reward_iterator]
+        )
+        self.reward_params[self.flags] = flag_rewards
 
         self.child_indices = [
             [
@@ -157,25 +167,27 @@ class AttackGraph:
         return self.config.root
 
     @property
-    def num_attacks(self):
+    def num_attacks(self) -> int:
         return len(self.attack_names)
 
     @property
-    def num_defenses(self):
+    def num_defenses(self) -> int:
         return len(self.defense_steps)
 
     @property
-    def num_services(self):
+    def num_services(self) -> int:
         return len(self.service_names)
 
-    def __str__(self):
+    def __str__(self) -> str:
         label = os.path.basename(self.config.filename)
         return (
             f"{self.__class__.__name__}({label}, {self.num_services} services,"
             f" {self.num_attacks} attack steps)"
         )
 
-    def get_reachable_steps(self, attack_index, attack_state, defense_state):
+    def get_reachable_steps(
+        self, attack_index: int, attack_state: np.ndarray, defense_state: np.ndarray
+    ) -> List[int]:
         """Get all reachable attack steps in the graph, given supplied current
         state vectors."""
 
@@ -199,11 +211,17 @@ class AttackGraph:
 
         return reachable_steps
 
-    def save_graphviz(self, filename="graph.dot", verbose=False, indexed=False, ttc=None):
+    def save_graphviz(
+        self,
+        filename: str = "graph.dot",
+        verbose: bool = False,
+        indexed: bool = False,
+        ttc: dict = {},
+    ) -> None:
         if indexed:
             index = {name: i + 1 for i, name in enumerate(self.attack_names)}
 
-        def label(key):
+        def label(key: str) -> str:
             return key if not indexed else f"{index[key]} :: {key}"
 
         with open(filename, "w", encoding="utf8") as f:
@@ -227,12 +245,9 @@ class AttackGraph:
                 "or viewed online at, e.g., https://dreampuf.github.io/GraphvizOnline."
             )
 
-    def to_networkx(self, indices=True, system_state=None) -> nx.DiGraph:
+    def to_networkx(self, indices: bool, system_state: np.ndarray) -> nx.DiGraph:
         """Convert the AttackGraph to an NetworkX DiGraph."""
         dig = nx.DiGraph()
-
-        if system_state is None:
-            system_state = np.ones(len(self.defense_steps))
 
         for name, a_s in self.attack_steps.items():
             dict_t = asdict(a_s)
@@ -245,7 +260,7 @@ class AttackGraph:
             del dict_t["name"]
             # del dict_t["parents"]
 
-            if not self._attack_step_reachable(as_idx, system_state):
+            if not self.step_is_reachable(as_idx, system_state):
                 # If any of the attack steps conditions are not fulfilled,
                 # do not add it to the graph
                 continue
@@ -254,25 +269,27 @@ class AttackGraph:
 
             node_name = as_idx if indices else name
 
-            edges = (
-                (
-                    (as_idx, child_index)
-                    for child_index in self.child_indices[as_idx]
-                    if self._attack_step_reachable(child_index, system_state)
+            if indices:
+                dig.add_edges_from(
+                    (
+                        (as_idx, child_index)
+                        for child_index in self.child_indices[as_idx]
+                        if self.step_is_reachable(child_index, system_state)
+                    )
                 )
-                if indices
-                else (
-                    (name, child)
-                    for child in a_s.children
-                    if self._attack_step_reachable(self.attack_indices[child], system_state)
+            else:
+                dig.add_edges_from(
+                    (
+                        (name, child)
+                        for child in a_s.children
+                        if self.step_is_reachable(self.attack_indices[child], system_state)
+                    )
                 )
-            )
 
             dig.add_node(node_name, **dict_t)
-            dig.add_edges_from(edges)
 
         return dig
 
-    def _attack_step_reachable(self, step: int, state):
-        defense_enabled = all(state[self.defense_steps_by_attack_step[step]])
+    def step_is_reachable(self, step: int, defense_state: np.ndarray) -> bool:
+        defense_enabled = all(defense_state[self.defense_steps_by_attack_step[step]])
         return defense_enabled

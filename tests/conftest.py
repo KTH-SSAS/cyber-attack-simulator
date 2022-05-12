@@ -4,6 +4,7 @@ import pytest
 import yaml
 
 from attack_simulator.config import EnvConfig, GraphConfig
+from attack_simulator.constant import AND, DEFENSE
 from attack_simulator.env import AttackSimulationEnv
 from attack_simulator.graph import AttackGraph, AttackStep
 from attack_simulator.sim import AttackSimulator
@@ -24,6 +25,7 @@ TEST_ENV_CONFIG_YAML = {
     "attack_start_time": 0,
     "seed": 42,
     "reward_mode": "simple",
+    "run_id": "test",
     "graph_config": {
         "easy_ttc": TTC_LOW,
         "hard_ttc": TTC_HIGH,
@@ -53,7 +55,6 @@ TEST_GRAPH = {
         },
         {
             "id": "b.capture",
-            "reward": "LOW_FLAG_REWARD",
             "asset": "b",
             "name": "capture",
             "ttc": "EASY_TTC",
@@ -70,19 +71,18 @@ TEST_GRAPH = {
             "children": ["d.capture"],
             "asset": "d",
             "name": "attack",
-            "step_type": "AND",
+            "step_type": AND,
             "ttc": "EASY_TTC",
         },
         {
             "id": "d.capture",
-            "reward": "HIGH_FLAG_REWARD",
             "asset": "d",
             "name": "capture",
             "ttc": "HARD_TTC",
         },
         {
             "id": "c.defend",
-            "step_type": "DEFENSE",
+            "step_type": DEFENSE,
             "name": "defend",
             "children": ["c.attack"],
             "asset": "c",
@@ -91,7 +91,7 @@ TEST_GRAPH = {
         {
             "id": "b.defend",
             "name": "defend",
-            "step_type": "DEFENSE",
+            "step_type": DEFENSE,
             "children": ["b.attack", "b.capture"],
             "asset": "b",
             "reward": 1,
@@ -103,6 +103,7 @@ TEST_GRAPH = {
         {"id": "c", "dependents": ["d"]},
         {"id": "d", "dependents": []},
     ],
+    "flags": {"b.capture": "LOW_FLAG_REWARD", "d.capture": "HIGH_FLAG_REWARD"}
 }
 
 TEST_ASSETS = ["a", "b", "c", "d"]
@@ -121,7 +122,6 @@ TEST_ATTACK_STEPS = {
     ),
     "b.capture": AttackStep(
         id="b.capture",
-        reward=REWARD_LOW,
         parents=["b.attack"],
         name="capture",
         asset="b",
@@ -135,13 +135,12 @@ TEST_ATTACK_STEPS = {
         ttc=TTC_LOW,
         children=["d.capture"],
         parents=["b.attack", "c.attack"],
-        step_type="AND",
+        step_type=AND,
         asset="d",
     ),
     "d.capture": AttackStep(
         id="d.capture",
         ttc=TTC_HIGH,
-        reward=REWARD_HIGH,
         parents=["d.attack"],
         asset="d",
         name="capture",

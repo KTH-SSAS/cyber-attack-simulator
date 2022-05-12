@@ -7,14 +7,12 @@ seed: 0
 attack_start_time: 0 # average of exponential dist.
 reward_mode: simple
 graph_config: {
-  easy_ttc: 10,
-  hard_ttc: 100,
-  high_flag_reward: 100000,
-  medium_flag_reward: 10000,
-  low_flag_reward: 1000,
-  filename: graphs/en2720.yaml, # TODO the format of this filename can be debated
-  root: internet.connect,
-  prune: [],
-  unmalleable_assets: [internet, office_network, hidden_network],
+  easy_ttc: 1,
+  hard_ttc: 10,
+  high_flag_reward: 100,
+  medium_flag_reward: 10,
+  low_flag_reward: 1,
+  filename: graphs/test_graph.yaml, # TODO the format of this filename can be debated
+  root: "a.attack",
   seed: 0
 }

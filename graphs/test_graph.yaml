@@ -1,0 +1,65 @@
+attack_graph:
+- asset: a
+  children:
+  - b.attack
+  - c.attack
+  id: a.attack
+  name: attack
+  ttc: EASY_TTC
+- asset: b
+  children:
+  - b.capture
+  - d.attack
+  id: b.attack
+  name: attack
+  ttc: EASY_TTC
+- asset: b
+  id: b.capture
+  name: capture
+  ttc: EASY_TTC
+- asset: c
+  children:
+  - d.attack
+  id: c.attack
+  name: attack
+  ttc: EASY_TTC
+- asset: d
+  children:
+  - d.capture
+  id: d.attack
+  name: attack
+  step_type: and
+  ttc: EASY_TTC
+- asset: d
+  id: d.capture
+  name: capture
+  ttc: HARD_TTC
+- asset: c
+  children:
+  - c.attack
+  id: c.defend
+  name: defend
+  reward: 2
+  step_type: defense
+- asset: b
+  children:
+  - b.attack
+  - b.capture
+  id: b.defend
+  name: defend
+  reward: 1
+  step_type: defense
+instance_model:
+- dependents:
+  - b
+  id: a
+- dependents: []
+  id: b
+- dependents:
+  - d
+  id: c
+- dependents: []
+  id: d
+flags:
+  b.capture: LOW_FLAG_REWARD
+  d.capture: HIGH_FLAG_REWARD 

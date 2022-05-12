@@ -16,7 +16,7 @@ def test_agents_baseline_random():
     agent = RandomAgent(dict(num_actions=num_actions))
 
     for _ in range(NUM_TRIALS):
-        action = agent.act()
+        action = agent.act(np.ones(1))
         assert 0 <= action < num_actions
         visited[action] += 1
 
@@ -24,10 +24,10 @@ def test_agents_baseline_random():
 
 
 def test_agents_baseline_skip():
-    agent = SkipAgent()
+    agent = SkipAgent({})
 
     for _ in range(NUM_TRIALS):
-        action = agent.act()
+        action = agent.act(np.ones(1))
         assert action == 0
 
 

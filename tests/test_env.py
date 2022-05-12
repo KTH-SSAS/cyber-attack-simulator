@@ -57,8 +57,8 @@ def test_sim_noisy_observation(simulator: AttackSimulator):
 def test_env_interpretations(simulator: AttackSimulator):
     obs = simulator.observe()
     i_obs = simulator.interpret_observation(obs)
-    i_def = simulator.interpret_defenses()
-    i_att = simulator.interpret_attacks()
+    i_def = simulator.interpret_defenses(simulator.defense_state)
+    i_att = simulator.interpret_attacks(simulator.attack_state)
     assert i_obs == (i_def, i_att)
 
 
@@ -99,16 +99,19 @@ def test_env_render_save_graphs(save_graphs, save_logs, env_config, tmpdir):
     with tmpdir.as_cwd():
         env.reset()
         env.render()
-        assert env.renderer is not None
-        render_dir = tmpdir.join(env.renderer.run_dir)
-        render_dir = render_dir.join("ep-1")
+        if (save_graphs or save_logs):
+            assert env.renderer is not None
 
-        files = render_dir.listdir()
+        render_dir = tmpdir.join("render")
+        render_dir = render_dir.join("test")
+        render_dir = render_dir.join("ep-0")
 
-        basenames = [f.basename for f in files]
-        assert len(files) == int(save_graphs) + int(save_logs)
-        assert (frames in basenames) == save_graphs
-        assert (AttackSimulationRenderer.LOGS in basenames) == save_logs
+        if (save_graphs or save_logs):
+            files = render_dir.listdir()
+            basenames = [f.basename for f in files]
+            assert len(files) == int(save_graphs) + int(save_logs)
+            assert (frames in basenames) == save_graphs
+            assert (AttackSimulationRenderer.LOGS in basenames) == save_logs
 
         _, _, done, _ = env.step(0)  # no action
         assert not done
@@ -120,16 +123,18 @@ def test_env_render_save_graphs(save_graphs, save_logs, env_config, tmpdir):
         assert done
         env.render()
 
-        files = render_dir.listdir()
-        basenames = [f.basename for f in files]
-        assert len(files) == 2 * int(save_graphs) + int(save_logs)
-        assert (AttackSimulationRenderer.HTML in basenames) == save_graphs
+        if (save_graphs or save_logs):
+            files = render_dir.listdir()
+            basenames = [f.basename for f in files]
+            assert len(files) == 2 * int(save_graphs) + int(save_logs)
+            assert (AttackSimulationRenderer.HTML in basenames) == save_graphs
 
-        if save_graphs:
-            files = render_dir.join(frames).listdir()
-            assert len(files) == 4
+            if save_graphs:
+                files = render_dir.join(frames).listdir()
+                assert len(files) == 5
 
-        if save_logs:
-            with open(render_dir.join(AttackSimulationRenderer.LOGS), encoding="utf8") as logs:
-                lines = logs.readlines()
-            assert 4 <= len(lines)
+            if save_logs:
+                with open(render_dir.join(AttackSimulationRenderer.LOGS), encoding="utf8") as logs:
+                    lines = logs.readlines()
+                assert 4 <= len(lines)
+

@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 import numpy as np
 
 from .config import EnvConfig
@@ -8,9 +10,9 @@ class AttackSimulator:
     """Does the simulation."""
 
     NO_ACTION = 0
-    NO_ACTION_STR = "no action"
+    NO_ACTION_STR = "nothing"
 
-    def __init__(self, config: EnvConfig, rng) -> None:
+    def __init__(self, config: EnvConfig, rng: np.random.Generator) -> None:
 
         self.config = config
         self.rng = rng
@@ -32,7 +34,7 @@ class AttackSimulator:
         )
         self.ttc_total = sum(self.ttc_remaining)
 
-        self.attack_index = self.entry_attack_index
+        self.attack_index: int = self.entry_attack_index
         self.defender_action = self.NO_ACTION
         self.done = False
         self.last_observation = None
@@ -40,18 +42,18 @@ class AttackSimulator:
         self.noise = self.generate_noise()
 
     @property
-    def num_attack_steps(self):
+    def num_attack_steps(self) -> int:
         return self.g.num_attacks
 
     @property
-    def num_assets(self):
+    def num_assets(self) -> int:
         return self.g.num_services
 
     @property
-    def num_defense_steps(self):
+    def num_defense_steps(self) -> int:
         return self.g.num_defenses
 
-    def defense_action(self, defense_index):
+    def defense_action(self, defense_index: int) -> bool:
         """Enable (disable) a defense step."""
         self.defender_action = defense_index
 
@@ -72,10 +74,10 @@ class AttackSimulator:
         return done
 
     @property
-    def valid_actions(self):
+    def valid_actions(self) -> np.ndarray:
         return np.flatnonzero(self.attack_surface)
 
-    def attack_action(self, action):
+    def attack_action(self, action: int) -> bool:
         """Have the attacker perform an action."""
         done = False
 
@@ -99,37 +101,35 @@ class AttackSimulator:
         self.done = done
         return done
 
-    def _get_reachable_steps(self, attack_index):
+    def _get_reachable_steps(self, attack_index: int) -> List[int]:
         return self.g.get_reachable_steps(attack_index, self.attack_state, self.defense_state)
 
-    def step(self):
+    def step(self) -> bool:
         self.time += 1
 
         # Generate new noise so that FP and FN alerts change
         self.noise = self.generate_noise()
 
-    def interpret_services(self, services=None):
-        if services is None:
-            services = self.service_state
+        # Nothing here to end the episode yet
+        done = False
+
+        return done
+
+    def interpret_services(self, services: np.ndarray) -> List[str]:
         return list(np.array(self.g.service_names)[np.flatnonzero(services)])
 
-    def interpret_defenses(self, defenses=None):
-        if defenses is None:
-            defenses = self.defense_state
+    def interpret_defenses(self, defenses: np.ndarray) -> List[str]:
         return list(np.array(self.g.defense_names)[np.flatnonzero(defenses)])
 
-    def interpret_attacks(self, attacks=None):
-        if attacks is None:
-            attacks = self.attack_state
+    def interpret_attacks(self, attacks: np.ndarray) -> List[str]:
         return list(np.array(self.g.attack_names)[np.flatnonzero(attacks)])
 
-    def interpret_observation(self, observation):
-
+    def interpret_observation(self, observation: np.ndarray) -> Tuple[List[str], List[str]]:
         defenses = observation[: self.g.num_defenses]
         attacks = observation[self.g.num_defenses :]
         return self.interpret_defenses(defenses), self.interpret_attacks(attacks)
 
-    def interpret_action(self, action):
+    def interpret_action(self, action: int) -> str:
         return (
             self.NO_ACTION_STR
             if action == self.NO_ACTION
@@ -138,12 +138,12 @@ class AttackSimulator:
             else "invalid action"
         )
 
-    def generate_noise(self):
+    def generate_noise(self) -> np.ndarray:
         """Generates a "noise" mask to use for false positives and
         negatives."""
         return self.rng.uniform(0, 1, self.num_attack_steps)
 
-    def observe(self):
+    def observe(self) -> np.ndarray:
         """Observation of attack steps is subject to the true/false positive
         rates of an assumed underlying intrusion detection system Depending on
         the true and false positive rates for each step, ongoing attacks may
@@ -154,26 +154,23 @@ class AttackSimulator:
         detected = false_negatives | false_positives
         return np.append(self.defense_state, detected)
 
-    def current_attack_step(self):
-        """Returns the attack step the attacker is currently targeting."""
+    def current_attack_step(self) -> Tuple[str, int]:
+        """Returns name of the attack step the attacker is currently
+        targeting."""
         current_step = (
-            None
-            if self.attack_index is None
-            else self.NO_ACTION
-            if self.attack_index == -1
+            self.NO_ACTION_STR
+            if self.attack_index == self.NO_ACTION
             else self.g.attack_names[self.attack_index]
         )
         ttc_remaining = (
-            -1
-            if self.attack_index is None or self.attack_index == -1
-            else self.ttc_remaining[self.attack_index]
+            0 if self.attack_index == self.NO_ACTION else self.ttc_remaining[self.attack_index]
         )
         return current_step, ttc_remaining
 
     @property
-    def compromised_steps(self):
-        return self.interpret_attacks()
+    def compromised_steps(self) -> np.ndarray:
+        return np.flatnonzero(self.attack_state)
 
     @property
-    def compromised_flags(self):
-        return [step_name for step_name in self.compromised_steps if "flag" in step_name]
+    def compromised_flags(self) -> List[int]:
+        return [flag for flag in self.g.flags if self.attack_state[flag]]

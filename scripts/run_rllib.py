@@ -1,8 +1,11 @@
 import argparse
 import dataclasses
 import os
+import socket
 from dataclasses import asdict
+from datetime import datetime
 from time import strftime
+from typing import Tuple
 
 import ray
 from ray import tune
@@ -14,13 +17,13 @@ from attack_simulator.env import AttackSimulationEnv
 from attack_simulator.rng import set_seeds
 
 
-def dict2choices(d):
+def dict2choices(d: dict) -> Tuple[list, str]:
     choices = list(d.keys())
     choices_help = '", "'.join(choices[:-1]) + f'" or "{choices[-1]}'
     return choices, choices_help
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(
         description="Reinforcement learning of a computer network defender, using RLlib"
@@ -60,8 +63,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def main():
-
+def main() -> None:
     args = parse_args()
 
     dashboard_host = "0.0.0.0" if os.path.exists("/.dockerenv") else "127.0.0.1"
@@ -95,7 +97,9 @@ def main():
 
     env_config = EnvConfig.from_yaml(args.config_file)
 
-    env_config = dataclasses.replace(env_config, save_graphs=args.graph)
+    current_time = datetime.now().strftime(r"%m-%d_%H:%M:%S")
+    id_string = f"{current_time}@{socket.gethostname()}"
+    env_config = dataclasses.replace(env_config, save_graphs=args.graph, run_id=id_string)
 
     model_config = {"use_lstm": True, "lstm_cell_size": 256}
 

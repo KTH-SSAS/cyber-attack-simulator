@@ -68,7 +68,7 @@ def test_agents_attackers_random():
 
 
 def test_agents_attackers_round_robin_no_action():
-    a = RoundRobinNoActionAttacker()
+    a = RoundRobinNoActionAttacker({})
     for size in np.random.randint(1, 99, size=4):
         obs = np.full(size, 1)
         zeros = np.random.randint(size, size=size // 3)
@@ -84,7 +84,7 @@ def test_agents_attackers_round_robin_no_action():
 
 
 def test_agents_attackers_round_robin():
-    a = RoundRobinAttacker()
+    a = RoundRobinAttacker({})
     for size in np.random.randint(1, 99, size=4):
         obs = np.full(size, 1)
         zeros = np.random.randint(size, size=size // 3)
