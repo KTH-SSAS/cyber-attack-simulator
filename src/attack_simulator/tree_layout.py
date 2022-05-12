@@ -13,17 +13,17 @@ def tree_layout(root: Any, children: Dict[Any, Any]) -> Dict[Any, Tuple[float, f
     ancestor = {node: node for node in children}
     prelim: dict = {}
     level = {}
-    pos = {}
+    pos: Dict[Any, Tuple[float, float]] = {}
     child_count = {node: len(children[node]) for node in children}
     parent = {child: node for node in children for child in children[node]}
 
-    def next_left(node):
+    def next_left(node: Any) -> Any:
         return thread[node] if not child_count[node] else children[node][0]
 
-    def next_right(node):
+    def next_right(node: Any) -> Any:
         return thread[node] if not child_count[node] else children[node][-1]
 
-    def apportion(node, default_ancestor, left_sibling):
+    def apportion(node: Any, default_ancestor: Any, left_sibling: Any) -> None:
         if left_sibling is not None:
             siblings = children[parent[node]]
 
@@ -95,7 +95,7 @@ def tree_layout(root: Any, children: Dict[Any, Any]) -> Dict[Any, Tuple[float, f
 
                     default_ancestor = node
 
-    def first_walk(node, depth=0, left_sibling=None):
+    def first_walk(node: Any, depth: int = 0, left_sibling: Any = None) -> None:
         level[node] = depth
         if child_count[node] == 0:
             prelim[node] = 0 if left_sibling is None else prelim[left_sibling] + distance
@@ -123,7 +123,7 @@ def tree_layout(root: Any, children: Dict[Any, Any]) -> Dict[Any, Tuple[float, f
             else:
                 prelim[node] = midpoint
 
-    def second_walk(node, shift):
+    def second_walk(node: Any, shift: float) -> None:
         pos[node] = (level[node], prelim[node] + shift)
         for child in children[node]:
             second_walk(child, shift + mod[node])

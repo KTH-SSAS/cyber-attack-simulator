@@ -34,7 +34,9 @@ def _handle_unassigned(
     return pos
 
 
-def nx_dag_layout(g: nx.DiGraph, tweak=None, debug=False) -> Dict[Any, Tuple[float, float]]:
+def nx_dag_layout(
+    g: nx.DiGraph, tweak: tuple = (), debug: bool = False
+) -> Dict[Any, Tuple[float, float]]:
     # pick a root
     # TODO: handle multiple roots better
     roots = [node for node, in_degree in g.in_degree if in_degree == 0]
@@ -80,7 +82,7 @@ def nx_dag_layout(g: nx.DiGraph, tweak=None, debug=False) -> Dict[Any, Tuple[flo
             if isinstance(tweak, (int, float)):
                 tweak = (tweak,)
             if not isinstance(tweak, tuple) or len(tweak) == 0:
-                tweak = (depth ** 2,)
+                tweak = (depth**2,)
             if len(tweak) == 1:
                 tweak += (tweak[0] ** 2,)
 

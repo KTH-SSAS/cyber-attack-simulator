@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import dataclasses
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import yaml
 
@@ -9,7 +11,7 @@ import yaml
 class Config:
     """Base config class."""
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs: Any) -> Config:
         """Wrapper function for dataclasses.replace."""
         return dataclasses.replace(self, **kwargs)
 
@@ -28,7 +30,7 @@ class GraphConfig(Config):
     prune: List[str] = field(default_factory=list)
 
     @classmethod
-    def from_yaml(cls, filename):
+    def from_yaml(cls, filename: str) -> GraphConfig:
         """Load configuration data from YAML file."""
         with open(filename, encoding="utf8") as f:
             dictionary = yaml.safe_load(f)
@@ -51,7 +53,7 @@ class EnvConfig(Config):
     seed: Optional[int] = None
 
     @classmethod
-    def from_yaml(cls, filename):
+    def from_yaml(cls, filename: str) -> EnvConfig:
         """Load configuration data from YAML file."""
         with open(filename, encoding="utf8") as f:
             dictionary = yaml.safe_load(f)

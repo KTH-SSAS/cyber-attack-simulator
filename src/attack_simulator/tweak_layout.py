@@ -4,8 +4,14 @@ import numpy as np
 
 
 def _tweak_children(
-    pos, root, children, skip_edges, intersection_weights, generations=3, attempts_per_generation=13
-):
+    pos: dict,
+    root: int,
+    children: dict,
+    skip_edges: list,
+    intersection_weights: tuple,
+    generations: int = 3,
+    attempts_per_generation: int = 13,
+) -> bool:
     """Tweak _order_ of children to center the graph and reduce edge lengths
     and crossings.
 
@@ -21,14 +27,14 @@ def _tweak_children(
     counts = {}
     sizes = {}
     costs = {}
-    skips = {}
+    skips: dict = {}
     weights = {}
-    excludes = {}
+    excludes: dict = {}
 
-    def edge_length(u, v):
-        return np.linalg.norm(np.array(pos[u]) - np.array(pos[v]))
+    def edge_length(u: int, v: int) -> float:
+        return float(np.linalg.norm(np.array(pos[u]) - np.array(pos[v])))
 
-    def intersection_penalty(u0, v0, u1, v1):
+    def intersection_penalty(u0: int, v0: int, u1: int, v1: int) -> float:
         p0 = np.array(pos[u0])
         d0 = np.array(pos[v0]) - p0
         p1 = np.array(pos[u1])
@@ -53,8 +59,8 @@ def _tweak_children(
             dot0p = np.dot(d0, dp)
             return intersection_weights[1] if 0 < dot0p < dot00 or 0 < dot0p + dot01 < dot00 else 0
 
-    def edge_penalty(node):
-        penalty = 0
+    def edge_penalty(node: int) -> float:
+        penalty = 0.0
         for child in children[node]:
             for skip_node, skip_child in skip_edges:
                 skip_cost = edge_length(skip_node, skip_child) * intersection_penalty(
@@ -64,7 +70,7 @@ def _tweak_children(
                 penalty += skip_cost
         return penalty
 
-    def move_subtree(node, shift):
+    def move_subtree(node: int, shift: float) -> None:
         # update position
         x, y = pos[node]
         y += shift
@@ -72,12 +78,12 @@ def _tweak_children(
         for child in children[node]:
             move_subtree(child, shift)
 
-    def count(node):
+    def count(node: int) -> int:
         counts[node] = len(children[node])
         sizes[node] = size = 1 + sum([count(child) for child in children[node]])
         return size
 
-    def evaluate(node):
+    def evaluate(node: int) -> float:
         # vertical deviation from mid-line (at zero) + edge penalty + costs for children
         cost = (
             abs(pos[node][1])
@@ -87,12 +93,12 @@ def _tweak_children(
         costs[node] = cost
         return cost
 
-    def incorporate_skips(node):
+    def incorporate_skips(node: int) -> float:
         skip_cost = skips[node] + sum([incorporate_skips(child) for child in children[node]])
         costs[node] += skip_cost
         return skip_cost
 
-    def calculate_cost():
+    def calculate_cost() -> float:
         nonlocal skips
 
         skips = defaultdict(float)
@@ -103,7 +109,7 @@ def _tweak_children(
             weights[node] = 0 if counts[node] < 2 else costs[node] / sizes[node]
         return cost
 
-    def try_random_swap(node, best):
+    def try_random_swap(node: int, best: float) -> float:
         nonlocal pos
 
         # short-hand
@@ -149,12 +155,12 @@ def _tweak_children(
 
         return best
 
-    def normalize(values):
+    def normalize(values: list) -> np.ndarray:
         return np.array(values) / np.sum(values)
 
     count(root)
     previous_best = calculate_cost()
-    while generations and np.any(weights.values()):
+    while generations and any(weights.values()):
         excludes = {node: {node} for node in children}
         success = 0
         for i in range(attempts_per_generation):

@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.rllib.env import BaseEnv
@@ -18,7 +18,7 @@ class AttackSimCallback(DefaultCallbacks):
         base_env: BaseEnv,
         policies: Optional[Dict[PolicyID, Policy]] = None,
         episode: Episode,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
 
         info = episode.last_info_for()

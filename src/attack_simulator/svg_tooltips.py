@@ -1,8 +1,10 @@
 import re
-from xml.dom.minidom import Element
 import xml.etree.ElementTree as ET
+from typing import List
+from xml.dom.minidom import Element
 
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
 
 ET.register_namespace("", "http://www.w3.org/2000/svg")
 
@@ -31,7 +33,7 @@ FALLBACK = "If you do NOT see an image here,<br/> Open This Frame in a New Tab/W
 BBOX = dict(boxstyle="round,pad=.5", color="white", alpha=0.75, zorder=100)
 
 
-def add_tooltips(pos, tooltips, radius=0.3, ax=None):
+def add_tooltips(pos: dict, tooltips: List[str], radius: float = 0.3, ax: Axes = None) -> None:
     """Add trigger areas and tooltip text."""
     if ax is None:
         ax = plt.gca()
@@ -61,7 +63,7 @@ def add_tooltips(pos, tooltips, radius=0.3, ax=None):
         )
 
 
-def postprocess_frame(filename, keys):
+def postprocess_frame(filename: str, keys: List[str]) -> None:
     """Add script and callbacks to SVG frame, hide tooltips by default."""
     tree = ET.ElementTree(file=filename)
     root = tree.getroot()
@@ -78,7 +80,7 @@ def postprocess_frame(filename, keys):
     tree.write(filename)
 
 
-def postprocess_html(filename):
+def postprocess_html(filename: str) -> None:
     """Change `img` to `object` to allow interactivity.
 
     This hack relies on the contents of `matplotlib._animation_data` for
@@ -93,7 +95,7 @@ def postprocess_html(filename):
     )
 
 
-def make_paths_relative(filename):
+def make_paths_relative(filename: str) -> None:
     # Make frames dir path relative to the episode's base directory
     with open(filename) as saved:
         html = saved.read()

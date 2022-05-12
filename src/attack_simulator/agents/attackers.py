@@ -7,7 +7,7 @@ inclusive.
 """
 import logging
 from operator import itemgetter
-from typing import List, Tuple, Union
+from typing import Any, List, Tuple, Union
 
 import networkx as nx
 import numpy as np
@@ -22,31 +22,31 @@ logger = logging.getLogger("simulator")
 
 
 class RandomAttacker(Agent):
-    def __init__(self, agent_config):
-        super().__init__()
+    def __init__(self, agent_config: dict) -> None:
+        super().__init__(agent_config)
         self.rng, _ = get_rng(agent_config.get("random_seed"))
 
-    def act(self, observation):
+    def act(self, observation: np.ndarray) -> int:
         valid_attack_indices = np.flatnonzero(observation)
         return self.rng.choice(valid_attack_indices) + 1
 
 
 class RandomNoActionAttacker(Agent):
-    def __init__(self, agent_config):
-        super().__init__()
+    def __init__(self, agent_config: dict) -> None:
+        super().__init__(agent_config)
         self.rng, _ = get_rng(agent_config.get("random_seed"))
 
-    def act(self, observation):
+    def act(self, observation: np.ndarray) -> int:
         valid_attacks = np.concatenate([[0], np.flatnonzero(observation) + 1])
         return self.rng.choice(valid_attacks)
 
 
 class RoundRobinAttacker(Agent):
-    def __init__(self, agent_config=None):
-        super().__init__()
+    def __init__(self, agent_config: dict) -> None:
+        super().__init__(agent_config)
         self.last = 0
 
-    def act(self, observation):
+    def act(self, observation: np.ndarray) -> int:
         valid = np.flatnonzero(observation)
         above = valid[self.last < valid]
         self.last = valid[0] if 0 == above.size else above[0]
@@ -54,11 +54,11 @@ class RoundRobinAttacker(Agent):
 
 
 class RoundRobinNoActionAttacker(Agent):
-    def __init__(self, agent_config=None):
-        super().__init__()
+    def __init__(self, agent_config: dict) -> None:
+        super().__init__(agent_config)
         self.last = 0
 
-    def act(self, observation):
+    def act(self, observation: np.ndarray) -> int:
         valid = np.concatenate([[0], np.flatnonzero(observation) + 1])
         above = valid[self.last < valid]
         self.last = valid[0] if 0 == above.size else above[0]
@@ -68,14 +68,14 @@ class RoundRobinNoActionAttacker(Agent):
 class WellInformedAttacker(Agent):
     """An Attacker with complete information on the underlying AttackGraph."""
 
-    def __init__(self, agent_config):
-        super().__init__()
+    def __init__(self, agent_config: dict) -> None:
+        super().__init__(agent_config)
         graph = agent_config["attack_graph"]
         steps = graph.attack_steps
         names = graph.attack_names
         self._ttc = dict(zip(names, agent_config["ttc"]))
         self._rewards = dict(zip(names, agent_config["rewards"]))
-        values = {}
+        values: dict = {}
         """
         self._value = (
         lambda x, y, z: (_ for _ in ()).throw(RuntimeError("called disabled method"))
@@ -88,7 +88,9 @@ class WellInformedAttacker(Agent):
 
         self.attack_values = np.array([values[name] for name in names])
 
-    def _value(self, attack_steps, attack_values, attack_name, discount_rate=0.1):
+    def _value(
+        self, attack_steps: dict, attack_values: dict, attack_name: str, discount_rate: float = 0.1
+    ) -> dict:
         """Recursively compute the value of each attack step.
 
         The discount rate is meant to account for uncertainity in future rewards
@@ -105,16 +107,16 @@ class WellInformedAttacker(Agent):
             attack_values[attack_name] = value
         return attack_values[attack_name]
 
-    def act(self, observation):
+    def act(self, observation: np.ndarray) -> int:
         """Selecting the attack step with the highest net present value."""
-        return np.argmax(self.attack_values * observation) + 1
+        return int(np.argmax(self.attack_values * observation)) + 1
 
 
 class InformedAttacker(WellInformedAttacker):
     """An Attacker with access to the AttackGraph **without sampled TTC and
     rewards**"""
 
-    def __init__(self, agent_config):
+    def __init__(self, agent_config: dict):
         graph = agent_config["attack_graph"]
         steps = graph.attack_steps
         names = graph.attack_names

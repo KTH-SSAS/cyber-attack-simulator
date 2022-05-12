@@ -1,3 +1,5 @@
+from typing import Dict, Type
+
 from .agent import Agent
 from .attackers import (
     InformedAttacker,
@@ -16,10 +18,8 @@ from .baseline_agents import (
     RuleBasedAgent,
     SkipAgent,
 )
-from .policy_agents import ReinforceAgent
-from .tabular_agents import BanditAgent, QLearningAgent
 
-ATTACKERS = {
+ATTACKERS: Dict[str, Type[Agent]] = {
     "well-informed": WellInformedAttacker,
     "informed": InformedAttacker,
     "round-robin-no-action": RoundRobinNoActionAttacker,
@@ -36,9 +36,6 @@ DEFENDERS = {
     "rule-based": RuleBasedAgent,
     "new-rule-based": NewRuleBasedAgent,
     "risk-aware": RiskAwareAgent,
-    "bandit": BanditAgent,
-    "q-learning": QLearningAgent,
-    "reinforce": ReinforceAgent,
 }
 
 __all__ = [

@@ -8,12 +8,12 @@ from .agent import Agent
 class RandomAgent(Agent):
     """Agent that will pick a random action each turn."""
 
-    def __init__(self, agent_config):
-        super().__init__()
+    def __init__(self, agent_config: dict) -> None:
+        super().__init__(agent_config)
         self.rng, _ = get_rng(agent_config.get("random_seed"))
         self.num_actions = agent_config["num_actions"]
 
-    def act(self, observation=None):
+    def act(self, observation: np.ndarray) -> int:
         return self.rng.integers(self.num_actions)
 
 
@@ -21,10 +21,10 @@ class SkipAgent(Agent):
     """Agent that will always select no action, i.e. does nothing (or "skips"),
     on each turn."""
 
-    def __init__(self, agent_config=None):
-        super().__init__()
+    def __init__(self, agent_config: dict) -> None:
+        super().__init__(agent_config)
 
-    def act(self, observation=None):
+    def act(self, observation: np.ndarray) -> int:
         return 0
 
 
@@ -32,13 +32,13 @@ class DisableProbabilityAgent(Agent):
     """An agent that mixes `no action` and `random action` with a given
     `disable_probability`."""
 
-    def __init__(self, agent_config):
-        super().__init__()
+    def __init__(self, agent_config: dict) -> None:
+        super().__init__(agent_config)
         self.rng, _ = get_rng(agent_config.get("random_seed"))
         self.num_services = agent_config["num_actions"] - 1
         self.disable_probability = agent_config.get("disable_probability", 0.1)
 
-    def act(self, observation):
+    def act(self, observation: np.ndarray) -> int:
         enabled_services = np.array(observation[: self.num_services])
         disable = self.rng.uniform(0, 1) < self.disable_probability
         return self.rng.choice(np.flatnonzero(enabled_services)) + 1 if disable else 0
@@ -51,13 +51,13 @@ class RuleBasedAgent(Agent):
     valuable step, THEN disable the corresponding service.
     """
 
-    def __init__(self, agent_config):
-        super().__init__()
+    def __init__(self, agent_config: dict) -> None:
+        super().__init__(agent_config)
         self.g = agent_config["attack_graph"]
         self.rewards = np.array(self.g.reward_params)
         self.attack_state = np.full(self.g.num_attacks, 0)
 
-    def act(self, observation):
+    def act(self, observation: np.ndarray) -> int:
         service_state = np.array(observation[: self.g.num_services])
         attack_state = np.array(observation[self.g.num_services :])
 
@@ -97,10 +97,12 @@ class NewRuleBasedAgent(RuleBasedAgent):
     BUT, these properties need not hold in general (OR do they?!?).
     """
 
-    def _should_disable(self, service_state, attack_index, child_index):
+    def _should_disable(
+        self, service_state: np.ndarray, attack_index: int, child_index: int
+    ) -> bool:
         return 0 < self.rewards[child_index]
 
-    def act(self, observation):
+    def act(self, observation: np.ndarray) -> int:
         attack_state = np.array(observation[self.g.num_services :])
         service_state = np.array(observation[: self.g.num_services])
 
@@ -138,12 +140,14 @@ class RiskAwareAgent(NewRuleBasedAgent):
     NOTE: Q_1 = exp(-2/T), and Q_i = exp(-1/T) for all i > 1, where T is the expected TTC
     """
 
-    def __init__(self, agent_config):
+    def __init__(self, agent_config: dict) -> None:
         super().__init__(agent_config)
         self.seen = np.full(self.g.num_attacks, 0)
         self.q = np.exp(-1 / np.array(self.g.ttc_params))
 
-    def _should_disable(self, service_state, attack_index, child_index):
+    def _should_disable(
+        self, service_state: np.ndarray, attack_index: int, child_index: int
+    ) -> bool:
         # reward for running services
         service_index = self.g.service_index_by_attack_index[child_index]
         S = (
