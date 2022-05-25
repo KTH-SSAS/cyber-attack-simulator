@@ -78,7 +78,9 @@ class AttackSimulationEnv(gym.Env):
         )
 
     @staticmethod
-    def create_renderer(sim: AttackSimulator, episode_count: int, config: EnvConfig) -> AttackSimulationRenderer:
+    def create_renderer(
+        sim: AttackSimulator, episode_count: int, config: EnvConfig
+    ) -> AttackSimulationRenderer:
         return AttackSimulationRenderer(
             sim,
             config.run_id,
@@ -100,11 +102,11 @@ class AttackSimulationEnv(gym.Env):
         self.rewards = self.sim.g.reward_params
 
         # Set up a new attacker
-        self.attacker = self._create_attacker()        
-        
+        self.attacker = self._create_attacker()
+
         if self.render_env:
             self.renderer = self.create_renderer(self.sim, self.episode_count, self.config)
-            self.render() # Render initial state
+            self.render()  # Render initial state
 
         return self.sim.observe()
 
@@ -193,7 +195,7 @@ class AttackSimulationEnv(gym.Env):
         if done:
             logger.debug("Compromised steps: %s", compromised_steps)
             logger.debug("Compromised flags: %s", compromised_flags)
-        
+
         self.done = done
         return self.sim.observe(), self.defender_reward, done, info
 

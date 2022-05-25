@@ -1,23 +1,25 @@
 from pathlib import Path
 from typing import Dict, Optional, Set, Tuple
-from matplotlib.figure import Figure
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from matplotlib.animation import HTMLWriter
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from matplotlib.text import Text
 
 from .constant import AND
 from .sim import AttackSimulator
 from .svg_tooltips import add_tooltips, make_paths_relative, postprocess_frame, postprocess_html
 
+
 def create_HTML_writer(fig: Figure, html_path: Path) -> HTMLWriter:
     writer: HTMLWriter = HTMLWriter()
     writer.setup(fig, html_path, dpi=None)
     writer.frame_format = "svg"
     return writer
+
 
 def create_axes(pos: dict, width: int, height: int, dpi: int) -> Tuple[Axes, Text, Figure]:
     # create a figure with two areas: one for the graph and another for the logs
@@ -57,6 +59,7 @@ def create_axes(pos: dict, width: int, height: int, dpi: int) -> Tuple[Axes, Tex
 
     return graph_ax, text_ax, fig
 
+
 def _generate_logs(sim: AttackSimulator, defender_reward: float) -> str:
     logs = f"Step {sim.time}: "
 
@@ -76,6 +79,8 @@ def _generate_logs(sim: AttackSimulator, defender_reward: float) -> str:
     logs += f" Attack surface: {sim.interpret_attacks(sim.attack_surface)}.\n"
 
     return logs
+
+
 class AttackSimulationRenderer:
     """Render a simulation."""
 
@@ -104,9 +109,11 @@ class AttackSimulationRenderer:
             self.out_dir.mkdir(parents=True)
 
         if self.save_graph:
-            self.dag = self.sim.g.to_networkx(indices=True, system_state=np.ones(self.sim.num_defense_steps))
+            self.dag = self.sim.g.to_networkx(
+                indices=True, system_state=np.ones(self.sim.num_defense_steps)
+            )
             self.pos = nx.nx_pydot.graphviz_layout(
-                self.dag, root=self.sim.entry_attack_index, prog="dot"
+                self.dag, root=self.sim.entry_attack_index, prog="sfdp"
             )
             self.and_edges = {
                 (i, j)
@@ -118,8 +125,7 @@ class AttackSimulationRenderer:
             height = 1080
             dpi = 100
             self.ax, self.log, fig = create_axes(self.pos, width, height, dpi)
-            self.graph_writer = create_HTML_writer(fig, self.out_dir / self.HTML) 
-
+            self.graph_writer = create_HTML_writer(fig, self.out_dir / self.HTML)
 
     def _draw_nodes(
         self,
@@ -220,8 +226,6 @@ class AttackSimulationRenderer:
         self._draw_labels(kk_labels, "black", horizontalalignment="right")
         ko_labels = {i: f"{rewards[i]}" for i in np.flatnonzero(self.sim.attack_state)}
         self._draw_labels(ko_labels, "red")
-
-
 
     @property
     def out_dir(self) -> Path:

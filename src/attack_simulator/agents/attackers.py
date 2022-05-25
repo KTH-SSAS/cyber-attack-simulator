@@ -13,8 +13,8 @@ import networkx as nx
 import numpy as np
 from networkx.algorithms.shortest_paths.generic import shortest_path
 
-from attack_simulator.sim import AttackSimulator
 from attack_simulator.graph import AttackGraph
+from attack_simulator.sim import AttackSimulator
 
 from ..constant import AND
 from ..rng import get_rng
