@@ -19,13 +19,15 @@ config = {
     "reward_mode": "simple",
     "run_id": "simple",
     "graph_config": {
-        "ttc": {"easy_ttc": 5, "hard_ttc": 10, "default_ttc": 1},
+        "ttc": {"easy": 5, "hard": 10, "default": 1},
         "rewards": {
-            "high_flag_reward": 10,
-            "medium_flag_reward": 10,
-            "low_flag_reward": 1,
-            "default_reward": 0.0,
+            "high_flag": 10,
+            "medium_flag": 10,
+            "low_flag": 1,
+            "default": 0.0,
         },
+        #"root": "asset:0:0",
+        "root": "a.attack",
         # "root": "internet.connect",
         # "unmalleable_assets": ["internet", "office_network", "hidden_network"],
         # "filename": "graphs/big.yaml",
@@ -52,7 +54,7 @@ config = {
     "num_workers": 0,
     # "model": model_config,
     "render_env": True,
-    "disable_env_checking": True
+    "disable_env_checking": True,
 }
 
 # trainer = ppo.PPOTrainer(config=config)
