@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Dict
 
 import pytest
 import yaml
@@ -12,9 +13,13 @@ from attack_simulator.sim import AttackSimulator
 REWARD_HIGH = 1000
 REWARD_MEDIUM = 100
 REWARD_LOW = 10
+REWARD_DEFAULT = 0
+
 
 TTC_HIGH = 100
 TTC_LOW = 10
+TTC_DEFAULT = TTC_LOW
+
 
 TEST_ENV_CONFIG_YAML = {
     "attacker": "random",
@@ -27,11 +32,18 @@ TEST_ENV_CONFIG_YAML = {
     "reward_mode": "simple",
     "run_id": "test",
     "graph_config": {
-        "easy_ttc": TTC_LOW,
-        "hard_ttc": TTC_HIGH,
-        "high_flag_reward": REWARD_HIGH,
-        "medium_flag_reward": REWARD_MEDIUM,
-        "low_flag_reward": REWARD_LOW,
+        "filename": None,
+        "ttc": {
+            "easy": TTC_LOW,
+            "hard": TTC_HIGH,
+            "default": TTC_DEFAULT
+        },
+        "rewards": {
+            "high_flag": REWARD_HIGH,
+            "medium_flag": REWARD_MEDIUM,
+            "low_flag": REWARD_LOW,
+            "default": REWARD_DEFAULT,
+        },
         "root": "a.attack",
     },
 }
@@ -41,47 +53,54 @@ TEST_GRAPH = {
     "attack_graph": [
         {
             "id": "a.attack",
+            "ttc": "easy",
             "children": ["b.attack", "c.attack"],
             "asset": "a",
             "name": "attack",
-            "ttc": "EASY_TTC",
+            "reward": None,
         },
         {
             "id": "b.attack",
-            "ttc": "EASY_TTC",
+            "ttc": "easy",
             "children": ["b.capture", "d.attack"],
             "asset": "b",
             "name": "attack",
+            "reward": None,
         },
         {
             "id": "b.capture",
+            "ttc": "hard",
             "asset": "b",
             "name": "capture",
-            "ttc": "EASY_TTC",
+            "reward": "low_flag",
         },
         {
             "id": "c.attack",
+            "ttc": "easy",
             "children": ["d.attack"],
             "asset": "c",
             "name": "attack",
-            "ttc": "EASY_TTC",
+            "reward": None,
         },
         {
             "id": "d.attack",
+            "ttc": "easy",
             "children": ["d.capture"],
             "asset": "d",
             "name": "attack",
             "step_type": AND,
-            "ttc": "EASY_TTC",
+            "reward": None,
         },
         {
             "id": "d.capture",
+            "ttc": "hard",
             "asset": "d",
             "name": "capture",
-            "ttc": "HARD_TTC",
+            "reward": "high_flag",
         },
         {
             "id": "c.defend",
+            "ttc": None,
             "step_type": DEFENSE,
             "name": "defend",
             "children": ["c.attack"],
@@ -94,6 +113,7 @@ TEST_GRAPH = {
             "step_type": DEFENSE,
             "children": ["b.attack", "b.capture"],
             "asset": "b",
+            "ttc": None,
             "reward": 1,
         },
     ],
@@ -103,14 +123,18 @@ TEST_GRAPH = {
         {"id": "c", "dependents": ["d"]},
         {"id": "d", "dependents": []},
     ],
-    "flags": {"b.capture": "LOW_FLAG_REWARD", "d.capture": "HIGH_FLAG_REWARD"}
+    "flags": {"b.capture": "low_flag", "d.capture": "high_flag"},
 }
 
 TEST_ASSETS = ["a", "b", "c", "d"]
 
 TEST_ATTACK_STEPS = {
     "a.attack": AttackStep(
-        id="a.attack", children=["b.attack", "c.attack"], asset="a", ttc=TTC_LOW
+        id="a.attack",
+        children=["b.attack", "c.attack"],
+        asset="a",
+        ttc=TTC_LOW,
+        reward=REWARD_DEFAULT,
     ),
     "b.attack": AttackStep(
         id="b.attack",
@@ -119,16 +143,23 @@ TEST_ATTACK_STEPS = {
         children=["b.capture", "d.attack"],
         parents=["a.attack"],
         asset="b",
+        reward=REWARD_DEFAULT,
     ),
     "b.capture": AttackStep(
         id="b.capture",
         parents=["b.attack"],
         name="capture",
         asset="b",
-        ttc=TTC_LOW,
+        ttc=TTC_HIGH,
+        reward=REWARD_LOW,
     ),
     "c.attack": AttackStep(
-        id="c.attack", ttc=TTC_LOW, children=["d.attack"], parents=["a.attack"], asset="c"
+        id="c.attack",
+        ttc=TTC_LOW,
+        children=["d.attack"],
+        parents=["a.attack"],
+        asset="c",
+        reward=REWARD_DEFAULT,
     ),
     "d.attack": AttackStep(
         id="d.attack",
@@ -137,6 +168,7 @@ TEST_ATTACK_STEPS = {
         parents=["b.attack", "c.attack"],
         step_type=AND,
         asset="d",
+        reward=REWARD_DEFAULT,
     ),
     "d.capture": AttackStep(
         id="d.capture",
@@ -144,6 +176,7 @@ TEST_ATTACK_STEPS = {
         parents=["d.attack"],
         asset="d",
         name="capture",
+        reward=REWARD_HIGH,
     ),
 }
 
@@ -159,7 +192,7 @@ def test_defense_steps():
 
 
 @pytest.fixture(scope="session")
-def test_attack_steps():
+def test_attack_steps() -> Dict[str, AttackStep]:
     return TEST_ATTACK_STEPS
 
 

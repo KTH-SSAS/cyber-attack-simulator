@@ -1,9 +1,10 @@
 import dataclasses
+from typing import Dict
 
 import pytest
 
 from attack_simulator.config import GraphConfig
-from attack_simulator.graph import AttackGraph
+from attack_simulator.graph import AttackGraph, AttackStep
 
 
 def _assert_same_steps(a, b):
@@ -20,6 +21,12 @@ def test_graph_as_expected(attack_graph: AttackGraph, test_services, test_attack
     assert attack_graph.attack_names == sorted(test_attack_steps)
     _assert_same_steps(attack_graph.attack_steps, test_attack_steps)
 
+
+def test_graph_rewards(attack_graph: AttackGraph, test_attack_steps: Dict[str, AttackStep]):
+    
+    for step in test_attack_steps:
+        reward = attack_graph.reward_params[attack_graph.attack_indices[step]]
+        assert reward == test_attack_steps[step].reward
 
 def test_graph_same_again(graph_config, attack_graph):
     g = AttackGraph(graph_config)

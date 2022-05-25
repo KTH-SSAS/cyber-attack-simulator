@@ -14,6 +14,8 @@ from .constant import DEFENSE, OR
 
 @dataclass
 class AttackStep:
+    reward: float
+    ttc: float
     id: str
     parents: List[str] = field(default_factory=list)
     children: List[str] = field(default_factory=list)
@@ -21,16 +23,28 @@ class AttackStep:
     asset: str = "asset"
     name: str = "attack"
     step_type: str = OR
-    reward: float = 0.0
-    ttc: float = 0.0
 
 
-def replace_template(node: Dict, config: Dict, key: str) -> dict:
+def replace_all_templates(node: Dict, config: GraphConfig) -> dict:
+    attributes = replace_template(node, config.ttc, "ttc")
+    attributes = replace_template(attributes, config.rewards, "reward")
+    return attributes
+
+
+def replace_template(node: Dict, templates: Dict, key: str) -> dict:
     attributes = node.copy()
     if key in attributes:
         entry = attributes[key]
         if isinstance(entry, str):
-            attributes[key] = config[entry.lower()]
+            try:
+                attributes[key] = templates.get(entry.lower(), templates["default"])
+            except KeyError:
+                print(f"Missing configured value for {entry}, defaulting to 0.0")
+                attributes[key] = 0.0
+        elif entry is None:
+            attributes[key] = templates["default"]
+    else:
+        attributes[key] = templates["default"]
     return attributes
 
 
@@ -49,15 +63,12 @@ class AttackGraph:
 
         services = {x["id"]: x["dependents"] for x in data["instance_model"]}
 
-        flags: dict = data["flags"]
 
         steps = [
-            AttackStep(**replace_template(node, asdict(self.config), "ttc"))
-            for node in data["attack_graph"]
+            AttackStep(**replace_all_templates(node, self.config)) for node in data["attack_graph"]
         ]
 
-
-        flags = {key: asdict(self.config)[value.lower()] for key, value in flags.items()}
+        flags = {key: self.config.rewards.get(value.lower(), self.config.rewards["default"]) for key, value in data["flags"].items()}
 
         self.defense_steps = {step.id: step for step in steps if step.step_type == DEFENSE}
 
@@ -150,7 +161,7 @@ class AttackGraph:
         flag_rewards = np.array([flags[step] for step in self.attack_names if step in flags])
 
         self.reward_params = np.array(
-            [reward if reward is not None else 0.0 for reward in reward_iterator]
+            [reward if reward is not None else 0.0 for reward in reward_iterator], dtype=np.float64
         )
         self.reward_params[self.flags] = flag_rewards
 

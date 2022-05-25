@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 import yaml
 
@@ -20,14 +20,11 @@ class Config:
 class GraphConfig(Config):
     """Config class for attack graph."""
 
-    low_flag_reward: int
-    medium_flag_reward: int
-    high_flag_reward: int
-    easy_ttc: int
-    hard_ttc: int
     filename: str
     root: str
     prune: List[str] = field(default_factory=list)
+    rewards: Dict[str, float] = field(default_factory=dict)
+    ttc: Dict[str, float] = field(default_factory=dict)
 
     @classmethod
     def from_yaml(cls, filename: str) -> GraphConfig:
