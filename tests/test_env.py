@@ -99,14 +99,14 @@ def test_env_render_save_graphs(save_graphs, save_logs, env_config, tmpdir):
     with tmpdir.as_cwd():
         env.reset()
         env.render()
-        if (save_graphs or save_logs):
+        if save_graphs or save_logs:
             assert env.renderer is not None
 
         render_dir = tmpdir.join("render")
         render_dir = render_dir.join("test")
         render_dir = render_dir.join("ep-0")
 
-        if (save_graphs or save_logs):
+        if save_graphs or save_logs:
             files = render_dir.listdir()
             basenames = [f.basename for f in files]
             assert len(files) == int(save_graphs) + int(save_logs)
@@ -123,7 +123,7 @@ def test_env_render_save_graphs(save_graphs, save_logs, env_config, tmpdir):
         assert done
         env.render()
 
-        if (save_graphs or save_logs):
+        if save_graphs or save_logs:
             files = render_dir.listdir()
             basenames = [f.basename for f in files]
             assert len(files) == 2 * int(save_graphs) + int(save_logs)
@@ -137,4 +137,3 @@ def test_env_render_save_graphs(save_graphs, save_logs, env_config, tmpdir):
                 with open(render_dir.join(AttackSimulationRenderer.LOGS), encoding="utf8") as logs:
                     lines = logs.readlines()
                 assert 4 <= len(lines)
-
