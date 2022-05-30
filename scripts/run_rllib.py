@@ -152,6 +152,7 @@ def main() -> None:
     config = {
         "framework": "torch",
         "env": AttackSimulationEnv,
+        # This is the fraction of the GPU(s) this trainer will use.
         "num_gpus": 0.15,
         "num_workers": num_workers,
         "num_envs_per_worker": env_per_worker,
