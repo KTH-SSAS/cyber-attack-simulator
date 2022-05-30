@@ -47,7 +47,7 @@ class EnvConfig(Config):
     save_logs: bool
     attack_start_time: int
     reward_mode: str
-    run_id: str
+    run_id: str = "run"
     seed: Optional[int] = None
 
     @classmethod
