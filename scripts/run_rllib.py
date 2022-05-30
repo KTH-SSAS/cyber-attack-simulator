@@ -36,8 +36,8 @@ def add_dqn_options(config: dict) -> dict:
         "batch_mode": "complete_episodes",
         "noisy": True,
         "num_atoms": 5,
-        "v_min": -6000.0,
-        "v_max": 6000.0,
+        "v_min": -150.0,
+        "v_max": 0.0,
         "train_batch_size": 600,
     }
 
@@ -58,8 +58,6 @@ def parse_args() -> argparse.Namespace:
         description="Reinforcement learning of a computer network defender, using RLlib"
     )
 
-    parser.add_argument("-g", "--graph", action="store_true", help="Generate a GraphViz .dot file.")
-
     parser.add_argument("--config-file", type=str, help="Path to YAML configuration file.")
 
     parser.add_argument("--stop-iters", type=int, help="Number of iterations to train.")
@@ -67,10 +65,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--stop-reward", type=float, help="Reward at which we stop training.")
 
     parser.add_argument("--eval-interval", type=int, default=50)
-
-    parser.add_argument(
-        "--render", action="store_true", help="Render an animation of the evaluation."
-    )
 
     parser.add_argument("-L", "--lr", help="Optimizer learning rate.", default=1e-2)
 
@@ -107,28 +101,26 @@ def main() -> None:
     callbacks = []
 
     os.environ["WANDB_MODE"] = "online" if args.wandb_sync else "offline"
-
+    
+    current_time = datetime.now().strftime(r"%m-%d_%H:%M:%S")
+    id_string = f"{current_time}@{socket.gethostname()}"
     wandb_api_file_exists = os.path.exists("./wandb_api_key")
     if wandb_api_file_exists or os.environ.get("WANDB_API_KEY") is not None:
 
         api_key_file = "./wandb_api_key" if wandb_api_file_exists else None
-
         callbacks.append(
             WandbLoggerCallback(
                 project="rl_attack_sim",
-                group=f"sweep_{strftime('%H:%M')}",
+                group=f"Sweep_{id_string}",
                 api_key_file=api_key_file,
                 log_config=False,
                 entity="sentience",
-                job_type=args.run_type,
+                tags = ["train"]
             )
         )
 
     env_config = EnvConfig.from_yaml(args.config_file)
-
-    current_time = datetime.now().strftime(r"%m-%d_%H:%M:%S")
-    id_string = f"{current_time}@{socket.gethostname()}"
-    env_config = dataclasses.replace(env_config, save_graphs=args.graph, run_id=id_string)
+    env_config = dataclasses.replace(env_config, run_id=id_string)
 
     #model_config = {"use_lstm": True, "lstm_cell_size": 256}
 
@@ -191,20 +183,34 @@ def main() -> None:
     else:
         config = add_dqn_options(config)
 
-    config = add_seed_sweep(config, [1, 2, 3, 4])
+    config = add_seed_sweep(config, [1, 2, 3])
 
-    analysis: tune.ExperimentAnalysis = tune.run(
-        trainer,
-        config=config,
-        stop=stop,
+    ppo_experiment = tune.Experiment(
+            "PPO",
+            run="PPO",
+            config=add_ppo_options(config),
+            stop=stop,
+            checkpoint_at_end=True,
+            keep_checkpoints_num=1,
+            checkpoint_freq=1,
+            checkpoint_score_attr="episode_reward_mean",
+        )
+
+    dqn_experiment = tune.Experiment(
+            "DQN",
+            run="DQN",
+            config=add_dqn_options(config),
+            stop=stop,
+            checkpoint_at_end=True,
+            keep_checkpoints_num=1,
+            checkpoint_freq=1,
+            checkpoint_score_attr="episode_reward_mean",
+        )
+
+    analysis: tune.ExperimentAnalysis = tune.run_experiments(
+        [ppo_experiment, dqn_experiment],
         callbacks=callbacks,
-        checkpoint_at_end=True,
-        metric="episode_reward_mean",
-        mode="max",
-        keep_checkpoints_num=1,
-        checkpoint_freq=1,
-        checkpoint_score_attr="episode_reward_mean",
-        restore=args.checkpoint_path,
+        #restore=args.checkpoint_path, 
         #resume="PROMPT",
     )
 
