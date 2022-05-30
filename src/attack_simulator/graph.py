@@ -1,6 +1,7 @@
 """Process graph description into an Attack Graph."""
 import os
 from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from typing import Dict, List, Union
 
 import networkx as nx
@@ -58,7 +59,11 @@ class AttackGraph:
         filename = self.config.filename
 
         # load the YAML graph spec
-        with open(filename, "r", encoding="utf8") as yaml_file:
+        
+        script_path = Path(__file__)
+        root_dir = script_path.parent.parent.parent
+
+        with open(root_dir / filename, "r", encoding="utf8") as yaml_file:
             data = safe_load(yaml_file.read())
 
         services = {x["id"]: x["dependents"] for x in data["instance_model"]}
