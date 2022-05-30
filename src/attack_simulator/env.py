@@ -40,7 +40,9 @@ class AttackSimulationEnv(gym.Env):
         self.render_env = config.save_graphs or config.save_logs
 
         self.sim = AttackSimulator(self.config, self.rng)
-        self.rewards = np.array(self.sim.g.reward_params)
+
+        # Include reward for wait action (-1)
+        self.attacker_rewards = np.concatenate((np.array(self.sim.g.reward_params), np.zeros(1)))
 
         # An observation informs the defender of
         # a) which services are turned on; and,
@@ -72,7 +74,7 @@ class AttackSimulationEnv(gym.Env):
                 simulator=self.sim,
                 attack_graph=self.sim.g,
                 ttc=self.sim.ttc_remaining,
-                rewards=self.rewards,
+                rewards=self.attacker_rewards,
                 random_seed=self.env_seed + self.episode_count,
             )
         )
@@ -95,18 +97,14 @@ class AttackSimulationEnv(gym.Env):
         self.episode_count += 1
 
         self.attack_start_time = int(self.rng.exponential(self.config.attack_start_time))
-        self.max_reward = sum(self.rewards)
+        self.max_reward = sum(self.attacker_rewards)
 
         # Set up a new simulation environment
         self.sim = AttackSimulator(self.config, self.rng)
-        self.rewards = self.sim.g.reward_params
+        self.attacker_rewards = self.sim.g.reward_params
 
         # Set up a new attacker
         self.attacker = self._create_attacker()
-
-        if self.render_env:
-            self.renderer = self.create_renderer(self.sim, self.episode_count, self.config)
-            self.render()  # Render initial state
 
         return self.sim.observe()
 
@@ -131,7 +129,7 @@ class AttackSimulationEnv(gym.Env):
             reward = max(0, reward / self.max_reward)
         elif mode == "delayed":
             if self.done:
-                reward = upkeep_reward - sum(self.rewards[self.sim.attack_state])
+                reward = upkeep_reward - sum(self.attacker_rewards[self.sim.attack_state])
             else:
                 reward = upkeep_reward
         else:
@@ -145,26 +143,19 @@ class AttackSimulationEnv(gym.Env):
         done = False
         attacker_reward = 0
 
-        # reserve 0 for no action
-        if action:
-            # decrement to obtain index
-            service = action - 1
-            done |= self.sim.defense_action(service)
+        # offset action to take the wait action into account
+        defender_action = action - 1
+        self.sim.defense_action(defender_action)
 
-        if not done:
-            # Check if the attack has started
-            if self.sim.time >= self.attack_start_time:
-                # Obtain attacker action, this _can_ be 0 for no action
-                attack_index = self.attacker.act(self.sim.attack_surface) - 1
-                done |= self.attacker.done
-                assert -1 <= attack_index < self.sim.num_attack_steps
+        # Check if the attack has started
+        if self.sim.time >= self.attack_start_time:
+            # Obtain attacker action, this _can_ be 0 for no action
+            attacker_action = self.attacker.act(self.sim.attack_surface) - 1 
+            done |= self.attacker.done
+            assert -1 <= attacker_action < self.sim.num_attack_steps
 
-                if attack_index != -1:
-                    done |= self.sim.attack_action(attack_index)
-                    attacker_reward = self.rewards[attack_index]
-
-                # TODO: placeholder, none of the current attackers learn...
-                # self.attacker.update(attack_surface, attacker_reward, self.done)
+            done |= self.sim.attack_action(attacker_action)
+            attacker_reward = self.attacker_rewards[attacker_action]
 
         done |= self.sim.step()
 
@@ -201,8 +192,14 @@ class AttackSimulationEnv(gym.Env):
 
     def render(self, mode: str = "human") -> bool:
         """Render a frame of the environment."""
-        if self.render_env and isinstance(self.renderer, AttackSimulationRenderer):
-            self.renderer.render(self.defender_reward, self.done)
+
+        if not self.render_env: return False
+        
+        if not isinstance(self.renderer, AttackSimulationRenderer):
+            self.renderer = self.create_renderer(self.sim, self.episode_count, self.config)
+
+        self.renderer.render(self.defender_reward, self.done)
+
         return True
 
     def interpret_action_probabilities(self, action_probabilities: np.ndarray) -> dict:

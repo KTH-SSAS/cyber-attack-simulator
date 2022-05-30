@@ -9,7 +9,7 @@ from .graph import AttackGraph
 class AttackSimulator:
     """Does the simulation."""
 
-    NO_ACTION = 0
+    NO_ACTION = -1
     NO_ACTION_STR = "nothing"
 
     def __init__(self, config: EnvConfig, rng: np.random.Generator) -> None:
@@ -34,9 +34,8 @@ class AttackSimulator:
         )
         self.ttc_total = sum(self.ttc_remaining)
 
-        self.attack_index: int = self.entry_attack_index
-        self.defender_action = self.NO_ACTION
-        self.done = False
+        self.attacker_action: int = self.entry_attack_index
+        self.defender_action: int = self.NO_ACTION
         self.last_observation = None
 
         self.noise = self.generate_noise()
@@ -53,53 +52,61 @@ class AttackSimulator:
     def num_defense_steps(self) -> int:
         return self.g.num_defenses
 
-    def defense_action(self, defense_index: int) -> bool:
+    @property
+    def attack_surface_empty(self) -> bool:
+        return not any(self.attack_surface)
+
+    def defense_action(self, defender_action: int) -> bool:
         """Enable (disable) a defense step."""
-        self.defender_action = defense_index
+        
+        self.defender_action = defender_action
 
-        done = False
+        if defender_action == self.NO_ACTION: return False
+        
         # Only enable defenses that are disabled
-        if self.defense_state[defense_index]:
-            # Enable (disable) the denfense step
-            self.defense_state[defense_index] = 0
+        if not self.defense_state[defender_action]: return False
+        
+        # Enable (disable) the denfense step
+        self.defense_state[defender_action] = 0
 
-            # Remove all affected attacks from the attack surface
-            affected_steps = self.g.attack_steps_by_defense_step[defense_index]
-            self.attack_surface[affected_steps] = 0
+        # Remove all affected attacks from the attack surface
+        affected_steps = self.g.attack_steps_by_defense_step[defender_action]
+        self.attack_surface[affected_steps] = 0
 
-            # end episode when attack surface becomes empty
-            done = not any(self.attack_surface)
-
-        self.done = done
-        return done
+        return False
 
     @property
     def valid_actions(self) -> np.ndarray:
         return np.flatnonzero(self.attack_surface)
 
-    def attack_action(self, action: int) -> bool:
+    def attack_action(self, attacker_action: int) -> bool:
         """Have the attacker perform an action."""
-        done = False
+
+        # If attack surface is empty, no need to perform an action
+        if self.attack_surface_empty: return True
+
+        self.attacker_action = attacker_action
+        
+        if attacker_action == self.NO_ACTION: return False
 
         assert (
-            action in self.valid_actions
+            attacker_action in self.valid_actions
         ), "Attacker tried to perform an attack not in attack surface"
-        self.attack_index = action
 
-        self.ttc_remaining[action] -= 1
-        if self.ttc_remaining[action] == 0:
-            # successful attack, update reward, attack_state, attack_surface
-            self.attack_state[action] = 1
-            self.attack_surface[action] = 0
+        self.ttc_remaining[attacker_action] -= 1
+        
+        if self.ttc_remaining[attacker_action] != 0: return False
+        
+        # successful attack, update reward, attack_state, attack_surface
+        self.attack_state[attacker_action] = 1
+        self.attack_surface[attacker_action] = 0
 
-            # add reachable steps to the attack surface
-            self.attack_surface[self._get_reachable_steps(action)] = 1
+        # add reachable steps to the attack surface
+        self.attack_surface[self._get_reachable_steps(attacker_action)] = 1
 
-            # end episode when attack surface becomes empty
-            done = not any(self.attack_surface)
-
-        self.done = done
-        return done
+        # end episode when attack surface becomes empty
+        done = self.attack_surface_empty
+        return done 
 
     def _get_reachable_steps(self, attack_index: int) -> List[int]:
         return self.g.get_reachable_steps(attack_index, self.attack_state, self.defense_state)
@@ -111,9 +118,9 @@ class AttackSimulator:
         self.noise = self.generate_noise()
 
         # Nothing here to end the episode yet
-        done = False
+        self.simulator_done = False
 
-        return done
+        return self.simulator_done
 
     def interpret_services(self, services: np.ndarray) -> List[str]:
         return list(np.array(self.g.service_names)[np.flatnonzero(services)])
@@ -159,11 +166,11 @@ class AttackSimulator:
         targeting."""
         current_step = (
             self.NO_ACTION_STR
-            if self.attack_index == self.NO_ACTION
-            else self.g.attack_names[self.attack_index]
+            if self.attacker_action == self.NO_ACTION
+            else self.g.attack_names[self.attacker_action]
         )
         ttc_remaining = (
-            0 if self.attack_index == self.NO_ACTION else self.ttc_remaining[self.attack_index]
+            0 if self.attacker_action == self.NO_ACTION else self.ttc_remaining[self.attacker_action]
         )
         return current_step, ttc_remaining
 

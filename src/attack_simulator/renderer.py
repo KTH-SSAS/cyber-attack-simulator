@@ -67,13 +67,13 @@ def _generate_logs(sim: AttackSimulator, defender_reward: float) -> str:
         logs += "Simulation starting."
     else:
         logs += f"Defender disables {sim.interpret_action(sim.defender_action)}. "
-        if sim.attack_index is None:
+        if sim.attack_surface_empty:
             logs += "Attacker can not attack anything."
-        elif sim.attack_index == -1:
+        elif sim.attacker_action == sim.NO_ACTION:
             logs += "Attacker does nothing."
         else:
-            logs += f"Attacker attacks {sim.g.attack_names[sim.attack_index]}. "
-            logs += f"Remaining TTC: {sim.ttc_remaining[sim.attack_index]}."
+            logs += f"Attacker attacks {sim.g.attack_names[sim.attacker_action]}. "
+            logs += f"Remaining TTC: {sim.ttc_remaining[sim.attacker_action]}."
         logs += f"Defender reward: {defender_reward}."
 
     logs += f" Attack surface: {sim.interpret_attacks(sim.attack_surface)}.\n"
