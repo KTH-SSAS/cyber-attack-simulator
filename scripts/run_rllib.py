@@ -15,7 +15,36 @@ from attack_simulator.config import EnvConfig
 from attack_simulator.custom_callback import AttackSimCallback
 from attack_simulator.env import AttackSimulationEnv
 from attack_simulator.rng import set_seeds
+from attack_simulator.telegram_utils import notify_ending
 
+
+def add_fp_tp_sweep(config: dict, values: list) -> dict:
+    config["env_config"]["false_negative"] = tune.grid_search(values)
+    config["env_config"]["false_positive"] = tune.grid_search(values)
+    return config
+
+def add_graph_sweep(config: dict, values: list) -> dict:
+    config["env_config"]["graph_config"]["filename"] = tune.grid_search(values)
+    return config
+
+def add_seed_sweep(config, values: list) -> dict:
+    config["seed"] = tune.grid_search(values)
+    return config
+
+def add_dqn_options(config: dict) -> dict:
+    return config | {
+        "batch_mode": "complete_episodes",
+        "noisy": True,
+        "num_atoms": 5,
+        "v_min": -6000.0,
+        "v_max": 6000.0,
+        "train_batch_size": 600,
+    }
+
+def add_ppo_options(config: dict) -> dict:
+    return config | {
+        "train_batch_size": 600
+    }
 
 def dict2choices(d: dict) -> Tuple[list, str]:
     choices = list(d.keys())
@@ -73,7 +102,7 @@ def main() -> None:
     else:
         local = False
 
-    ray.init(dashboard_host=dashboard_host, local_mode=local)
+    ray.init(dashboard_host=dashboard_host, local_mode=local, num_cpus=7)
 
     callbacks = []
 
@@ -101,7 +130,7 @@ def main() -> None:
     id_string = f"{current_time}@{socket.gethostname()}"
     env_config = dataclasses.replace(env_config, save_graphs=args.graph, run_id=id_string)
 
-    model_config = {"use_lstm": True, "lstm_cell_size": 256}
+    #model_config = {"use_lstm": True, "lstm_cell_size": 256}
 
     gpu_count = args.gpu_count
     batch_size = args.batch_size
@@ -109,7 +138,7 @@ def main() -> None:
     env_per_worker = args.env_per_worker
 
     # Set global seeds
-    set_seeds(env_config.seed)
+    set_seeds(5)
 
     # Allocate GPU power to workers
     # This is optimized for a single machine with multiple CPU-cores and a single GPU
@@ -121,35 +150,24 @@ def main() -> None:
     # fragment_length = 200
 
     config = {
-        "seed": env_config.seed,
         "framework": "torch",
         "env": AttackSimulationEnv,
-        "num_gpus": num_gpus,
-        "train_batch_size": batch_size,
+        "num_gpus": 0.15,
         "num_workers": num_workers,
         "num_envs_per_worker": env_per_worker,
-        "num_gpus_per_worker": gpus_per_worker,
-        "model": model_config,
+        #"num_gpus_per_worker": gpus_per_worker,
+        #"model": model_config,
         "env_config": asdict(env_config),
         "batch_mode": "complete_episodes",
-        "sgd_minibatch_size": 256,
         # The number of iterations between renderings
-        # "evaluation_interval": args.eval_interval,
-        # "evaluation_num_episodes": 1,
-        # (setting this to 0 will cause
-        # evaluation to run on the local evaluation worker, blocking
-        # training until evaluation is done).
-        # "evaluation_num_workers": 1,
+        "evaluation_interval": args.stop_iters,
+        #"evaluation_num_episodes": 1,
+        #"evaluation_num_workers": 0,
         # Special evaluation config. Keys specified here will override
         # the same keys in the main config, but only for evaluation.
-        # "evaluation_config": {
-        # Render the env while evaluating.
-        # Note that this will always only render the 1st RolloutWorker's
-        # env and only the 1st sub-env in a vectorized env.
-        #    "render_env": args.render,
-        # workaround for a bug in RLLib (https://github.com/ray-project/ray/issues/17921)
-        # "replay_sequence_length": -1,
-        # },
+        "evaluation_config": {
+           "render_env": True,
+        },
         "callbacks": AttackSimCallback,
     }
 
@@ -164,20 +182,32 @@ def main() -> None:
     for k in keys:
         if stop[k] is None:
             del stop[k]
+    
+    trainer = "PPO"
 
-    tune.run(
-        "PPO",
+    if trainer == "PPO":
+        config = add_ppo_options(config)
+    else:
+        config = add_dqn_options(config)
+
+    config = add_seed_sweep(config, [1, 2, 3, 4])
+
+    analysis: tune.ExperimentAnalysis = tune.run(
+        trainer,
         config=config,
         stop=stop,
         callbacks=callbacks,
         checkpoint_at_end=True,
         metric="episode_reward_mean",
         mode="max",
-        keep_checkpoints_num=2,
+        keep_checkpoints_num=1,
         checkpoint_freq=1,
         checkpoint_score_attr="episode_reward_mean",
         restore=args.checkpoint_path,
+        #resume="PROMPT",
     )
+
+    notify_ending(f"Tune has finished running {len(analysis.trials)} trials.")
 
     # wandb.config.update(env_config_dict)
     # wandb.config.update(graph_config_dict)
