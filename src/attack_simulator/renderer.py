@@ -60,25 +60,32 @@ def create_axes(pos: dict, width: int, height: int, dpi: int) -> Tuple[Axes, Tex
     return graph_ax, text_ax, fig
 
 
+def add_to_logline(logline: str, string: str) -> str:
+    return " ".join([logline, string])
+
 def _generate_logs(sim: AttackSimulator, defender_reward: float) -> str:
-    logs = f"Step {sim.time}: "
+    
+    logs = []
+    logs.append(f"Step {sim.time}:")
 
     if sim.time == 0:
-        logs += "Simulation starting."
+        logs.append("Simulation starting.")
     else:
-        logs += f"Defender disables {sim.interpret_action(sim.defender_action)}. "
+        logs.append(f"Defender disables {sim.interpret_defender_action(sim.defender_action)}.")
         if sim.attack_surface_empty:
-            logs += "Attacker can not attack anything."
+            logs.append("Attacker can not attack anything.")
         elif sim.attacker_action == sim.NO_ACTION:
-            logs += "Attacker does nothing."
+            logs.append("Attacker does nothing.")
         else:
-            logs += f"Attacker attacks {sim.g.attack_names[sim.attacker_action]}. "
-            logs += f"Remaining TTC: {sim.ttc_remaining[sim.attacker_action]}."
-        logs += f"Defender reward: {defender_reward}."
+            logs.append(f"Attacker attacks {sim.g.attack_names[sim.attacker_action]}.")
+            logs.append(f"Remaining TTC: {sim.ttc_remaining[sim.attacker_action]}.")
+        logs.append(f"Defender reward: {defender_reward}.")
 
-    logs += f" Attack surface: {sim.interpret_attacks(sim.attack_surface)}.\n"
+    logs.append(f"Attack surface: {sim.interpret_attacks(sim.attack_surface)}.")
+    
+    logline = " ".join(logs) + "\n"
 
-    return logs
+    return logline
 
 
 class AttackSimulationRenderer:
