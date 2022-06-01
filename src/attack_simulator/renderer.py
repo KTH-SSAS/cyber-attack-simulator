@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 from typing import Dict, Optional, Set, Tuple
 
 import matplotlib.pyplot as plt
@@ -112,8 +113,10 @@ class AttackSimulationRenderer:
 
         self.run_dir = render_dir / run_id
 
-        if not self.out_dir.is_dir():
-            self.out_dir.mkdir(parents=True)
+        if self.out_dir.is_dir():
+            shutil.rmtree(self.out_dir)
+        
+        self.out_dir.mkdir(parents=True)
 
         if self.save_graph:
             self.dag = self.sim.g.to_networkx(
