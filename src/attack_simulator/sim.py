@@ -106,7 +106,7 @@ class AttackSimulator:
 
         # end episode when attack surface becomes empty
         done = self.attack_surface_empty
-        return done 
+        return done
 
     def _get_reachable_steps(self, attack_index: int) -> List[int]:
         return self.g.get_reachable_steps(attack_index, self.attack_state, self.defense_state)
@@ -118,9 +118,8 @@ class AttackSimulator:
         self.noise = self.generate_noise()
 
         # Nothing here to end the episode yet
-        self.simulator_done = False
 
-        return self.simulator_done
+        return False
 
     def interpret_services(self, services: np.ndarray) -> List[str]:
         return list(np.array(self.g.service_names)[np.flatnonzero(services)])
@@ -136,13 +135,11 @@ class AttackSimulator:
         attacks = observation[self.g.num_defenses :]
         return self.interpret_defenses(defenses), self.interpret_attacks(attacks)
 
-    def interpret_action(self, action: int) -> str:
+    def interpret_defender_action(self, action: int) -> str:
         return (
             self.NO_ACTION_STR
             if action == self.NO_ACTION
-            else self.g.defense_names[action - 1]
-            if 0 < action <= self.g.num_defenses
-            else "invalid action"
+            else self.g.defense_names[action]
         )
 
     def generate_noise(self) -> np.ndarray:
