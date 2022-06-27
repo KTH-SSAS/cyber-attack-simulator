@@ -124,8 +124,8 @@ class AttackSimulator:
     def interpret_services(self, services: np.ndarray) -> List[str]:
         return list(np.array(self.g.service_names)[np.flatnonzero(services)])
 
-    def interpret_defenses(self, defenses: np.ndarray) -> List[str]:
-        return list(np.array(self.g.defense_names)[np.flatnonzero(defenses)])
+    def interpret_defenses(self, active_defenses: np.ndarray) -> List[str]:
+        return [name for name, state in zip(self.g.defense_names, active_defenses) if not state]
 
     def interpret_attacks(self, attacks: np.ndarray) -> List[str]:
         return list(np.array(self.g.attack_names)[np.flatnonzero(attacks)])
