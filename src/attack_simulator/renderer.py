@@ -15,6 +15,11 @@ from .sim import AttackSimulator
 from .svg_tooltips import add_tooltips, make_paths_relative, postprocess_frame, postprocess_html
 
 
+NODE_SIZE = 1000
+INNER_NODE_SIZE = 800
+ATTACKER_SYMBOL_SIZE = 700
+
+
 def create_HTML_writer(fig: Figure, html_path: Path) -> HTMLWriter:
     writer: HTMLWriter = HTMLWriter()
     writer.setup(fig, html_path, dpi=None)
@@ -30,18 +35,19 @@ def create_axes(pos: dict, width: int, height: int, dpi: int) -> Tuple[Axes, Tex
         nrows=2,
         figsize=(width / dpi, height / dpi),
         dpi=dpi,
-        gridspec_kw=dict(height_ratios=[0.7, 0.3]),
+        # gridspec_kw=dict(height_ratios=[0.7, 0.3]),
         constrained_layout=False,
+        tight_layout=True,
     )
 
     # graph area
 
     # Graph window dimensions
-    xlim, ylim = tuple(map(lambda l: (min(l), max(l)), zip(*pos.values())))
-    xmin, xmax = xlim
-    ymin, ymax = ylim
-    graph_ax.set_xlim(xmin, xmax)
-    graph_ax.set_ylim(ymin, ymax)
+    # xlim, ylim = tuple(map(lambda l: (min(l), max(l)), zip(*pos.values())))
+    # xmin, xmax = xlim
+    # ymin, ymax = ylim
+    # graph_ax.set_xlim(xmin, xmax)
+    # graph_ax.set_ylim(ymin, ymax)
     graph_ax.set_axis_off()
 
     # log area
@@ -64,15 +70,18 @@ def create_axes(pos: dict, width: int, height: int, dpi: int) -> Tuple[Axes, Tex
 def add_to_logline(logline: str, string: str) -> str:
     return " ".join([logline, string])
 
+
 def _generate_logs(sim: AttackSimulator, defender_reward: float) -> str:
-    
+
     logs = []
     logs.append(f"Step {sim.time}:")
 
     if sim.time == 0:
         logs.append("Simulation starting.")
     else:
-        logs.append(f"Defender disables {sim.interpret_defender_action(sim.defender_action)}.")
+        logs.append(
+            f"Defender selects {sim.defender_action}:{sim.interpret_defender_action(sim.defender_action)}."
+        )
         if sim.attack_surface_empty:
             logs.append("Attacker can not attack anything.")
         elif sim.attacker_action == sim.NO_ACTION:
@@ -83,7 +92,8 @@ def _generate_logs(sim: AttackSimulator, defender_reward: float) -> str:
         logs.append(f"Defender reward: {defender_reward}.")
 
     logs.append(f"Attack surface: {sim.interpret_attacks(sim.attack_surface)}.")
-    
+    logs.append(f"Defense steps used: {sim.interpret_defenses(sim.defense_state)}")
+
     logline = " ".join(logs) + "\n"
 
     return logline
@@ -115,7 +125,7 @@ class AttackSimulationRenderer:
 
         if self.out_dir.is_dir():
             shutil.rmtree(self.out_dir)
-        
+
         self.out_dir.mkdir(parents=True)
 
         if self.save_graph:
@@ -131,8 +141,8 @@ class AttackSimulationRenderer:
                 if self.sim.g.attack_steps[self.sim.g.attack_names[j]].step_type == AND
             }
 
-            width = 1920
-            height = 1080
+            height = 1500
+            width = int(height * 1.77777)
             dpi = 100
             self.ax, self.log, fig = create_axes(self.pos, width, height, dpi)
             self.graph_writer = create_HTML_writer(fig, self.out_dir / self.HTML)
@@ -181,8 +191,6 @@ class AttackSimulationRenderer:
     def _render_graph(self) -> None:
         self.ax.clear()
 
-        rewards = self.sim.g.reward_params
-
         # draw "or" edges solid (default), "and" edges dashed
         self._draw_edges(self.dag.edges - self.and_edges)
         self._draw_edges(self.and_edges, style="dashed")
@@ -193,17 +201,17 @@ class AttackSimulationRenderer:
 
         # Draw uncompromised steps as green squares
         observed_ok = set(np.flatnonzero(1 - observed_attacks))
-        self._draw_nodes(observed_ok - flags, 1000, "white", "green")
-        self._draw_nodes(observed_ok & flags, 1000, "white", "green", node_shape="s")
+        self._draw_nodes(observed_ok - flags, NODE_SIZE, "white", "green")
+        self._draw_nodes(observed_ok & flags, NODE_SIZE, "white", "green", node_shape="s")
 
         # Draw compromised steps as red squares
         observed_ko = set(np.flatnonzero(observed_attacks))
-        self._draw_nodes(observed_ko - flags, 1000, "white", "red")
-        self._draw_nodes(observed_ko & flags, 1000, "white", "red", node_shape="s")
+        self._draw_nodes(observed_ko - flags, NODE_SIZE, "white", "red")
+        self._draw_nodes(observed_ko & flags, NODE_SIZE, "white", "red", node_shape="s")
 
         # Draw attacks without defense steps as hexagons
         fixed_attacks = {i for i in all_attacks if not self.sim.g.defense_steps_by_attack_step[i]}
-        self._draw_nodes(fixed_attacks, 800, "white", "black", node_shape="h")
+        self._draw_nodes(fixed_attacks, INNER_NODE_SIZE, "white", "black", node_shape="H")
 
         # Gray out disabled attacks
         disabled_attacks = {
@@ -212,30 +220,59 @@ class AttackSimulationRenderer:
             if not all(self.sim.defense_state[self.sim.g.defense_steps_by_attack_step[i]])
         }
 
-        self._draw_nodes(disabled_attacks - flags, 800, "lightgray", "lightgray")
-        self._draw_nodes(disabled_attacks & flags, 800, "lightgray", "lightgray", node_shape="s")
+        self._draw_nodes(disabled_attacks - flags, INNER_NODE_SIZE, "lightgray", "lightgray")
+        self._draw_nodes(
+            disabled_attacks & flags, INNER_NODE_SIZE, "lightgray", "lightgray", node_shape="s"
+        )
 
         # use "forward" triangles for the attack surface, vary color by TTC
         nodes = np.flatnonzero(self.sim.attack_surface)
         colors = self.sim.ttc_remaining[nodes]
+
         self._draw_nodes(
-            set(nodes), 800, colors, "red", vmin=0, vmax=256, cmap="RdYlGn", node_shape=">"
+            set(nodes),
+            ATTACKER_SYMBOL_SIZE,
+            colors,
+            "red",
+            vmin=0,
+            vmax=256,
+            cmap="RdYlGn",
+            node_shape="H",
         )
+
+        attacked_node = self.sim.attacker_action
+        if attacked_node != self.sim.NO_ACTION:
+            self._draw_nodes({attacked_node}, 700, "yellow", "orange", node_shape="H")
 
         # show attack state by label color
         # safe(ok): GREEN, under attack(kk): BLACK, compromised(ko): RED
         ok_labels: Dict[int, str] = {
-            i: f"{rewards[i]}\n{self.sim.ttc_remaining[i]}"
+            i: self.get_node_label(i)
             for i in np.flatnonzero(1 - (self.sim.attack_state | self.sim.attack_surface))
         }
         self._draw_labels(ok_labels, "green")
-        kk_labels = {
-            i: f"{rewards[i]}\n{self.sim.ttc_remaining[i]}"
-            for i in np.flatnonzero(self.sim.attack_surface)
-        }
-        self._draw_labels(kk_labels, "black", horizontalalignment="right")
-        ko_labels = {i: f"{rewards[i]}" for i in np.flatnonzero(self.sim.attack_state)}
+        kk_labels = {i: self.get_node_label(i) for i in np.flatnonzero(self.sim.attack_surface)}
+        self._draw_labels(kk_labels, "black")
+        ko_labels = {i: self.get_node_label(i) for i in np.flatnonzero(self.sim.attack_state)}
         self._draw_labels(ko_labels, "red")
+
+    def get_node_label(self, step_id: int) -> str:
+        rewards = self.sim.g.reward_params
+
+        step_defense = [str(i) for i in self.sim.g.defense_steps_by_attack_step[step_id]]
+        defense_string = ",".join(step_defense)
+
+        stats = []
+
+        stats += [f"T:{str(self.sim.ttc_remaining[step_id])}"]
+        stats += [f"R{str(rewards[step_id])}"] if rewards[step_id] > 0 else []
+        stats_label = "\n".join(stats)
+
+        full_label = []
+        full_label += [stats_label] if stats_label != "" else []
+        full_label += [defense_string] if defense_string != "" else []
+
+        return "\n".join(full_label)
 
     @property
     def out_dir(self) -> Path:
