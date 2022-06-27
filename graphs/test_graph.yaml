@@ -1,3 +1,4 @@
+# Simple attack graph with 6 attack steps, 2 flags and 2 defense steps. 
 attack_graph:
 - asset: a
   children:
