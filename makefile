@@ -5,6 +5,13 @@ NUM_WORKERS=0
 ENV_PER_WORKER=15
 BATCH_SIZE=12000
 
-train:
-	poetry run python ./scripts/run_rllib.py --config-file $(CONFIG) --wandb-sync --gpu-count $(GPUS) --stop-iter $(STOP_ITER) --num-workers $(NUM_WORKERS)
+BASE_CMD = poetry run python ./scripts/run_rllib.py
 
+train-cuda: 
+	$(BASE_CMD) --config-file $(CONFIG) --wandb-sync --gpu-count $(GPUS) --stop-iter $(STOP_ITER) --num-workers $(NUM_WORKERS)
+
+train:
+	$(BASE_CMD) --config-file $(CONFIG) --wandb-sync --stop-iter $(STOP_ITER) --num-workers $(NUM_WORKERS)
+
+local:
+	$(BASE_CMD) --config-file $(CONFIG) --stop-iter $(STOP_ITER) --local
