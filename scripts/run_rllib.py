@@ -4,8 +4,7 @@ import os
 import socket
 from dataclasses import asdict
 from datetime import datetime
-from time import strftime
-from typing import Tuple
+from typing import Any, Dict, List, Tuple
 
 import ray
 from ray import tune
@@ -15,8 +14,9 @@ from attack_simulator.config import EnvConfig
 from attack_simulator.custom_callback import AttackSimCallback
 from attack_simulator.env import AttackSimulationEnv
 from attack_simulator.rng import set_seeds
+from attack_simulator.ids_model import DefenderModel
 from attack_simulator.telegram_utils import notify_ending
-
+from ray.rllib.models import ModelCatalog
 
 def add_fp_tp_sweep(config: dict, values: list) -> dict:
     config["env_config"]["false_negative"] = tune.grid_search(values)
@@ -27,13 +27,12 @@ def add_graph_sweep(config: dict, values: list) -> dict:
     config["env_config"]["graph_config"]["filename"] = tune.grid_search(values)
     return config
 
-def add_seed_sweep(config, values: list) -> dict:
+def add_seed_sweep(config: dict, values: list) -> dict:
     config["seed"] = tune.grid_search(values)
     return config
 
 def add_dqn_options(config: dict) -> dict:
     return config | {
-        "batch_mode": "complete_episodes",
         "noisy": True,
         "num_atoms": 5,
         "v_min": -150.0,
@@ -52,7 +51,7 @@ def dict2choices(d: dict) -> Tuple[list, str]:
     return choices, choices_help
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args() -> Dict[str, Any]:
 
     parser = argparse.ArgumentParser(
         description="Reinforcement learning of a computer network defender, using RLlib"
@@ -60,8 +59,7 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("--config-file", type=str, help="Path to YAML configuration file.")
 
-    parser.add_argument("--stop-iters", type=int, help="Number of iterations to train.")
-    parser.add_argument("--stop-timesteps", type=int, help="Number of timesteps to train.")
+    parser.add_argument("--stop-iters", type=int, help="Number of iterations to train.", dest="stop_iterations")
     parser.add_argument("--stop-reward", type=float, help="Reward at which we stop training.")
 
     parser.add_argument("--eval-interval", type=int, default=50)
@@ -76,31 +74,28 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("--gpu-count", type=int, default=0)
     parser.add_argument("--batch-size", type=int, default=12000)
-    parser.add_argument("--local", action="store_true", help="Enable ray local mode for debugger.")
+    parser.add_argument("--local", action="store_true", help="Enable ray local mode for debugger.", dest="local_mode")
 
-    parser.add_argument("--num-workers", type=int)
-    parser.add_argument("--env-per-worker", type=int)
+    parser.add_argument("--num-workers", type=int, default=0)
+    parser.add_argument("--env-per-worker", type=int, default=1)
 
     parser.add_argument("--run-type", type=str, default=None)
 
-    return parser.parse_args()
+    return vars(parser.parse_args())
 
 
-def main() -> None:
-    args = parse_args()
+def main(config_file: str, stop_iterations: int, local_mode: bool = False, wandb_sync: bool = False, **kwargs) -> None:
+    """
+    Main function for running the RLlib experiment.
+    """
 
     dashboard_host = "0.0.0.0" if os.path.exists("/.dockerenv") else "127.0.0.1"
 
-    if args.local:
-        local = True
-    else:
-        local = False
-
-    ray.init(dashboard_host=dashboard_host, local_mode=local, num_cpus=7)
+    ray.init(dashboard_host=dashboard_host, local_mode=local_mode, num_cpus=7)
 
     callbacks = []
 
-    os.environ["WANDB_MODE"] = "online" if args.wandb_sync else "offline"
+    os.environ["WANDB_MODE"] = "online" if wandb_sync else "offline"
     
     current_time = datetime.now().strftime(r"%m-%d_%H:%M:%S")
     id_string = f"{current_time}@{socket.gethostname()}"
@@ -119,41 +114,51 @@ def main() -> None:
             )
         )
 
-    env_config = EnvConfig.from_yaml(args.config_file)
+    env_config = EnvConfig.from_yaml(config_file)
     env_config = dataclasses.replace(env_config, run_id=id_string)
 
-    #model_config = {"use_lstm": True, "lstm_cell_size": 256}
+    # To get the number of defenses
+    test_env = AttackSimulationEnv(env_config)
 
-    gpu_count = args.gpu_count
-    batch_size = args.batch_size
-    num_workers = args.num_workers
-    env_per_worker = args.env_per_worker
+    # Register the model with the registry.
+    ModelCatalog.register_custom_model("DefenderModel", DefenderModel)
+
+    #model_config = {"use_lstm": True, "lstm_cell_size": 256}
+    model_config = {
+        "custom_model": "DefenderModel",
+        "custom_model_config": {
+            "num_defense_steps": test_env.sim.num_defense_steps,
+        },
+    }
+
+    gpu_count = kwargs["gpu_count"]
+    num_workers = kwargs["num_workers"]
+    env_per_worker = kwargs["env_per_worker"]
 
     # Set global seeds
     set_seeds(5)
 
     # Allocate GPU power to workers
     # This is optimized for a single machine with multiple CPU-cores and a single GPU
-    num_gpus = 0.0001 if gpu_count > 0 else 0
-    gpus_per_worker = (
-        (gpu_count - num_gpus) / num_workers if num_workers > 0 and num_gpus > 0 else 0
-    )
+    gpu_use_percentage = 0.15 if gpu_count > 0 else 0
 
     # fragment_length = 200
 
+    
     config = {
+        "horizon": 5000,
         "framework": "torch",
         "env": AttackSimulationEnv,
         # This is the fraction of the GPU(s) this trainer will use.
-        "num_gpus": 0.15,
-        "num_workers": num_workers,
-        "num_envs_per_worker": env_per_worker,
+        "num_gpus": 0 if local_mode else gpu_use_percentage,
+        "num_workers": 0 if local_mode else num_workers,
+        "num_envs_per_worker": 1 if local_mode else env_per_worker,
         #"num_gpus_per_worker": gpus_per_worker,
-        #"model": model_config,
+        "model": model_config,
         "env_config": asdict(env_config),
         "batch_mode": "complete_episodes",
         # The number of iterations between renderings
-        "evaluation_interval": args.stop_iters,
+        "evaluation_interval": stop_iterations,
         #"evaluation_num_episodes": 1,
         #"evaluation_num_workers": 0,
         # Special evaluation config. Keys specified here will override
@@ -165,9 +170,8 @@ def main() -> None:
     }
 
     stop = {
-        "training_iteration": args.stop_iters,
-        "timesteps_total": args.stop_timesteps,
-        "episode_reward_mean": args.stop_reward,
+        "training_iteration": stop_iterations,
+        "episode_reward_mean": kwargs["stop-reward"]
     }
 
     # Remove stop conditions that were not set
@@ -175,46 +179,49 @@ def main() -> None:
     for k in keys:
         if stop[k] is None:
             del stop[k]
-    
-    trainer = "PPO"
-
-    if trainer == "PPO":
-        config = add_ppo_options(config)
-    else:
-        config = add_dqn_options(config)
 
     config = add_seed_sweep(config, [1, 2, 3])
 
-    ppo_experiment = tune.Experiment(
-            "PPO",
-            run="PPO",
-            config=add_ppo_options(config),
-            stop=stop,
-            checkpoint_at_end=True,
-            keep_checkpoints_num=1,
-            checkpoint_freq=1,
-            checkpoint_score_attr="episode_reward_mean",
+    run_ppo = True
+    run_dqn = False
+
+    experiments = []
+
+    if run_ppo:
+        experiments.append(tune.Experiment(
+                "PPO",
+                run="PPO",
+                config=add_ppo_options(config),
+                stop=stop,
+                checkpoint_at_end=True,
+                keep_checkpoints_num=1,
+                checkpoint_freq=1,
+                checkpoint_score_attr="episode_reward_mean",
+            )
         )
 
-    dqn_experiment = tune.Experiment(
-            "DQN",
-            run="DQN",
-            config=add_dqn_options(config),
-            stop=stop,
-            checkpoint_at_end=True,
-            keep_checkpoints_num=1,
-            checkpoint_freq=1,
-            checkpoint_score_attr="episode_reward_mean",
+    if run_dqn:
+        experiments.append(tune.Experiment(
+                "DQN",
+                run="DQN",
+                config=add_dqn_options(config),
+                stop=stop,
+                checkpoint_at_end=True,
+                keep_checkpoints_num=1,
+                checkpoint_freq=1,
+                checkpoint_score_attr="episode_reward_mean",
+            )
         )
 
     analysis: tune.ExperimentAnalysis = tune.run_experiments(
-        [ppo_experiment, dqn_experiment],
+        experiments,
         callbacks=callbacks,
         #restore=args.checkpoint_path, 
         #resume="PROMPT",
     )
 
-    notify_ending(f"Tune has finished running {len(analysis.trials)} trials.")
+    if (isinstance(analysis.trials, List)):
+        notify_ending(f"Tune has finished running {len(analysis.trials)} trials.")
 
     # wandb.config.update(env_config_dict)
     # wandb.config.update(graph_config_dict)
@@ -224,4 +231,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(**parse_args())
