@@ -28,8 +28,12 @@ class DefenderModel(TorchModelV2, nn.Module):
 
         obs = input_dict["obs"]
 
-        sim_state = obs["sim_state"].type(torch.FloatTensor)
-        action_mask = obs["action_mask"].type(torch.FloatTensor)
+        sim_state: Tensor = obs["sim_state"].type(torch.FloatTensor)
+        action_mask: Tensor = obs["action_mask"].type(torch.FloatTensor)
+
+        if torch.cuda.is_available():
+            sim_state = sim_state.cuda()
+            action_mask = action_mask.cuda()
 
         policy_out = self.policy_fn(sim_state)
         value_out = self.value_fn(sim_state)
