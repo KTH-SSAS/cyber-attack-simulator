@@ -187,12 +187,12 @@ class AttackSimulationEnv(gym.Env):
             "attack_surface": self.sim.attack_surface,
             "current_step": current_step,
             "ttc_remaining_on_current_step": ttc_remaining,
-            "compromised_steps": compromised_steps,
-            "compromised_flags": compromised_flags,
             "attacker_reward": attacker_reward,
-            "defense_steps_used": sum(self.sim.defense_state),
-            "services_online": sum(self.sim.service_state),
             "attacker_start_time": self.attack_start_time,
+            "num_compromised_steps": len(compromised_steps),
+            "num_compromised_flags": len(compromised_flags),
+            "num_defenses_activated": sum(self.sim.defense_state),
+            "num_services_online": sum(self.sim.service_state),
         }
 
         if done:

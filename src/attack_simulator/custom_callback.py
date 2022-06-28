@@ -14,6 +14,23 @@ class AttackSimCallback(DefaultCallbacks):
     def on_episode_step(
         self,
         *,
+        worker: "RolloutWorker",
+        base_env: BaseEnv,
+        policies: Optional[Dict[PolicyID, Policy]] = None,
+        episode: Episode,
+        **kwargs,
+    ) -> None:
+
+        info = episode.last_info_for()
+
+        for key in [
+            "attacker_reward",
+        ]:
+            episode.custom_metrics[key] = info[key]
+
+    def on_episode_end(
+        self,
+        *,
         worker: RolloutWorker,
         base_env: BaseEnv,
         policies: Optional[Dict[PolicyID, Policy]] = None,
@@ -23,8 +40,11 @@ class AttackSimCallback(DefaultCallbacks):
 
         info = episode.last_info_for()
 
-        episode.custom_metrics["compromised_steps"] = len(info["compromised_steps"])
-        episode.custom_metrics["compromised_flags"] = len(info["compromised_flags"])
-        episode.custom_metrics["attacker_reward"] = info["attacker_reward"]
-        episode.custom_metrics["services_online"] = info["services_online"]
-        episode.custom_metrics["attacker_start_time"] = info["attacker_start_time"]
+        for key in [
+            "attacker_start_time",
+            "num_defenses_activated",
+            "num_services_online",
+            "num_compromised_steps",
+            "num_compromised_flags",
+        ]:
+            episode.custom_metrics[key] = info[key]
