@@ -54,10 +54,12 @@ class AttackSimulationEnv(gym.Env):
         # (cf. https://github.com/ray-project/ray/issues/8600)
         
         self.num_actions = self.sim.num_defense_steps + 1
-        self.observation_space = spaces.Dict({
-            "action_mask": spaces.Box(0, 1, shape=(self.num_actions, ), dtype=np.int8),
+        self.observation_space = spaces.Dict(
+            {
+                "action_mask": spaces.Box(0, 1, shape=(self.num_actions,), dtype=np.int8),
             "sim_state": spaces.Box(0, 1, shape=(self.dim_observations,), dtype=np.int8),
-        })
+            }
+        )
 
         # The defender action space allows to disable any one service or leave all unchanged
         self.action_space = spaces.Discrete(self.num_actions)
@@ -214,7 +216,8 @@ class AttackSimulationEnv(gym.Env):
     def render(self, mode: str = "human") -> bool:
         """Render a frame of the environment."""
 
-        if not self.render_env: return False
+        if not self.render_env:
+            return False
         
         if not isinstance(self.renderer, AttackSimulationRenderer):
             self.renderer = self.create_renderer(self.sim, self.episode_count, self.config)
