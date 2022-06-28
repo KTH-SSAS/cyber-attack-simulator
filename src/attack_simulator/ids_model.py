@@ -1,4 +1,5 @@
 from re import A
+import numpy as np
 import torch
 import torch.nn as nn
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
@@ -14,34 +15,29 @@ class DefenderModel(TorchModelV2, nn.Module):
         nn.Module.__init__(self)
 
         self.obs_space = obs_space
+        sim_space = obs_space.original_space.spaces["sim_state"]
         self.action_space = action_space
         self.num_outputs = num_outputs
 
         self.num_defense_steps = kwargs["num_defense_steps"]
 
-        self.policy_fn = nn.Linear(self.obs_space.shape[0], self.action_space.n)
-        self.value_fn = nn.Linear(self.obs_space.shape[0], 1)
-
-        action_mask = torch.ones(num_outputs) * -1e6
-        action_mask[0] = 0 # 0 is the do nothing action, and we don't want to mask it
-        self.action_mask = action_mask
+        self.policy_fn = nn.Linear(sim_space.shape[0], self.action_space.n)
+        self.value_fn = nn.Linear(sim_space.shape[0], 1)
 
     def forward(self, input_dict, state, seq_lens):
 
-        obs = input_dict["obs"].type(torch.float32)
+        obs = input_dict["obs"]
 
-        defense_state = obs[:, :self.num_defense_steps]
+        sim_state = obs["sim_state"].type(torch.FloatTensor)
+        action_mask = obs["action_mask"].type(torch.FloatTensor)
 
-        policy_out = self.policy_fn(obs)
-        value_out = self.value_fn(obs)
+        policy_out = self.policy_fn(sim_state)
+        value_out = self.value_fn(sim_state)
         self._value_out = value_out
 
-        # Mask out defenses that have alredy been used
-        action_mask = self.action_mask.repeat(defense_state.shape[0], 1)
-        defense_mask = (torch.logical_not(defense_state)) * 1e-6
-        action_mask[:, 1:] = defense_mask
+        inf_mask = torch.max(torch.log(action_mask), torch.ones_like(action_mask) * -1e10)
         
-        return policy_out + action_mask, state
+        return policy_out + inf_mask, state
 
     def value_function(self):
         return self._value_out.flatten()

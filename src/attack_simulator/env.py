@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Tuple, Type, Union
+from typing import Dict, List, Optional, Tuple, Type, Union
 
 import gym
 import gym.spaces as spaces
@@ -12,6 +12,7 @@ from attack_simulator.rng import get_rng
 from attack_simulator.sim import AttackSimulator
 
 from .renderer import AttackSimulationRenderer
+
 
 logger = logging.getLogger("simulator")
 
@@ -51,10 +52,14 @@ class AttackSimulationEnv(gym.Env):
         # Using a Box instead of Tuple((Discrete(2),) * self.dim_observations)
         # avoids potential preprocessor issues with Ray
         # (cf. https://github.com/ray-project/ray/issues/8600)
-        self.observation_space = spaces.Box(0, 1, shape=(self.dim_observations,), dtype="int8")
+        
+        self.num_actions = self.sim.num_defense_steps + 1
+        self.observation_space = spaces.Dict({
+            "action_mask": spaces.Box(0, 1, shape=(self.num_actions, ), dtype=np.int8),
+            "sim_state": spaces.Box(0, 1, shape=(self.dim_observations,), dtype=np.int8),
+        })
 
         # The defender action space allows to disable any one service or leave all unchanged
-        self.num_actions = self.sim.num_defense_steps + 1
         self.action_space = spaces.Discrete(self.num_actions)
 
         # Start this at -1 since it will be incremented by reset.
@@ -91,7 +96,7 @@ class AttackSimulationEnv(gym.Env):
             save_logs=config.save_logs,
         )
 
-    def reset(self) -> np.ndarray:
+    def reset(self) -> Dict:
         self.done = False
 
         self.episode_count += 1
@@ -106,7 +111,12 @@ class AttackSimulationEnv(gym.Env):
         # Set up a new attacker
         self.attacker = self._create_attacker()
 
-        return self.sim.observe()
+        obs = {
+            "sim_state": self.sim.observe(),
+            "action_mask": self.get_action_mask(),
+        }
+
+        return obs
 
     def reward_function(self, attacker_reward: float, mode: str = "simple") -> float:
         """Calculates the defender reward.
@@ -137,7 +147,7 @@ class AttackSimulationEnv(gym.Env):
 
         return reward
 
-    def step(self, action: int) -> Tuple[np.ndarray, float, bool, dict]:
+    def step(self, action: int) -> Tuple[Dict, float, bool, dict]:
         assert 0 <= action < self.num_actions
 
         done = False
@@ -188,7 +198,18 @@ class AttackSimulationEnv(gym.Env):
             logger.debug("Compromised flags: %s", compromised_flags)
 
         self.done = done
-        return self.sim.observe(), self.defender_reward, done, info
+
+        obs = {
+            "sim_state": self.sim.observe(),
+            "action_mask": self.get_action_mask(),
+        }
+
+        return obs, self.defender_reward, done, info
+
+    def get_action_mask(self) -> np.ndarray:
+        action_mask = np.ones(self.num_actions, dtype=np.int8)
+        action_mask[1:] = self.sim.defense_state
+        return action_mask
 
     def render(self, mode: str = "human") -> bool:
         """Render a frame of the environment."""
