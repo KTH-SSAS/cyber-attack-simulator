@@ -171,7 +171,7 @@ def main(config_file: str, stop_iterations: int, local_mode: bool = False, wandb
 
     stop = {
         "training_iteration": stop_iterations,
-        "episode_reward_mean": kwargs["stop-reward"]
+        "episode_reward_mean": kwargs["stop_reward"]
     }
 
     # Remove stop conditions that were not set
