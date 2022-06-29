@@ -1,5 +1,5 @@
-from pathlib import Path
 import shutil
+from pathlib import Path
 from typing import Dict, Optional, Set, Tuple
 
 import matplotlib.pyplot as plt
@@ -13,7 +13,6 @@ from matplotlib.text import Text
 from .constant import AND
 from .sim import AttackSimulator
 from .svg_tooltips import add_tooltips, make_paths_relative, postprocess_frame, postprocess_html
-
 
 NODE_SIZE = 1000
 INNER_NODE_SIZE = 800
@@ -71,7 +70,7 @@ def add_to_logline(logline: str, string: str) -> str:
     return " ".join([logline, string])
 
 
-def _generate_logs(sim: AttackSimulator, defender_reward: float) -> str:
+def _generate_logs(sim: AttackSimulator, defender_reward: float, done: bool) -> str:
 
     logs = []
     logs.append(f"Step {sim.time}:")
@@ -93,6 +92,9 @@ def _generate_logs(sim: AttackSimulator, defender_reward: float) -> str:
 
     logs.append(f"Attack surface: {sim.interpret_attacks(sim.attack_surface)}.")
     logs.append(f"Defense steps used: {sim.interpret_defenses(sim.defense_state)}")
+
+    if done:
+        logs.append("Simulation finished.")
 
     logline = " ".join(logs) + "\n"
 
@@ -303,7 +305,7 @@ class AttackSimulationRenderer:
     def render(self, defender_reward: float, done: bool) -> None:
         """Render a frame."""
 
-        logs = _generate_logs(self.sim, defender_reward)
+        logs = _generate_logs(self.sim, defender_reward, done)
 
         if self.save_logs:
             with open(self.out_dir / self.LOGS, "a", encoding="utf8") as f:

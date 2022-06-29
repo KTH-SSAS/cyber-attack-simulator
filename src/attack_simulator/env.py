@@ -71,6 +71,7 @@ class AttackSimulationEnv(gym.Env):
         self.defender_reward = 0.0
 
         self.renderer: Optional[AttackSimulationRenderer] = None
+        self.reset_render = True
 
         self.max_reward = 0.0
         self.attack_start_time = 0
@@ -101,6 +102,8 @@ class AttackSimulationEnv(gym.Env):
     def reset(self) -> Dict:
         self.done = False
 
+        self.reset_render = True
+
         self.episode_count += 1
 
         self.attack_start_time = int(self.rng.exponential(self.config.attack_start_time))
@@ -117,6 +120,9 @@ class AttackSimulationEnv(gym.Env):
             "sim_state": self.sim.observe(),
             "action_mask": self.get_action_mask(),
         }
+
+        if self.render_env:
+            self.render()
 
         return obs
 
@@ -217,11 +223,13 @@ class AttackSimulationEnv(gym.Env):
         """Render a frame of the environment."""
 
         if not self.render_env:
-            return False
+            return True
         
-        if not isinstance(self.renderer, AttackSimulationRenderer):
+        if self.reset_render:
             self.renderer = self.create_renderer(self.sim, self.episode_count, self.config)
+            self.reset_render = False
 
+        if isinstance(self.renderer, AttackSimulationRenderer):
         self.renderer.render(self.defender_reward, self.done)
 
         return True

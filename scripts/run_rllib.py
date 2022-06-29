@@ -165,6 +165,8 @@ def main(config_file: str, stop_iterations: int, local_mode: bool = False, wandb
         # the same keys in the main config, but only for evaluation.
         "evaluation_config": {
            "render_env": True,
+            "num_envs_per_worker": 1,
+            "env_config": asdict(dataclasses.replace(env_config, save_graphs=True, save_logs=True)),
         },
         "callbacks": AttackSimCallback,
     }
