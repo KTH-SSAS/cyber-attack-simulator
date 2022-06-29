@@ -2,7 +2,7 @@
 import os
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List
 
 import networkx as nx
 import numpy as np
@@ -52,14 +52,14 @@ def replace_template(node: Dict, templates: Dict, key: str) -> dict:
 class AttackGraph:
     """Attack Graph."""
 
-    def __init__(self, config: Union[GraphConfig, dict]):
+    def __init__(self, config: GraphConfig):
 
-        self.config = GraphConfig(**config) if isinstance(config, dict) else config
+        self.config = config
 
         filename = self.config.filename
 
         # load the YAML graph spec
-        
+
         script_path = Path(__file__)
         root_dir = script_path.parent.parent.parent
 
@@ -68,12 +68,14 @@ class AttackGraph:
 
         services = {x["id"]: x["dependents"] for x in data["instance_model"]}
 
-
         steps = [
             AttackStep(**replace_all_templates(node, self.config)) for node in data["attack_graph"]
         ]
 
-        flags = {key: self.config.rewards.get(value.lower(), self.config.rewards["default"]) for key, value in data["flags"].items()}
+        flags = {
+            key: self.config.rewards.get(value.lower(), self.config.rewards["default"])
+            for key, value in data["flags"].items()
+        }
 
         self.defense_steps = {step.id: step for step in steps if step.step_type == DEFENSE}
 

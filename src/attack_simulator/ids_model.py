@@ -1,15 +1,21 @@
-from re import A
-import numpy as np
 import torch
 import torch.nn as nn
+from ray.rllib.models import ModelCatalog
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 from torch import Tensor, nn
+
+
+def register_rllib_model():
+    name = "DefenderModel"
+    ModelCatalog.register_custom_model(name, DefenderModel)
+    return name
 
 
 class DefenderModel(TorchModelV2, nn.Module):
     """Policy for the agent agent."""
 
     _value_out: Tensor
+
     def __init__(self, obs_space, action_space, num_outputs, model_config, name, **kwargs) -> None:
         TorchModelV2.__init__(self, obs_space, action_space, num_outputs, model_config, name)
         nn.Module.__init__(self)
@@ -40,7 +46,7 @@ class DefenderModel(TorchModelV2, nn.Module):
         self._value_out = value_out
 
         inf_mask = torch.max(torch.log(action_mask), torch.ones_like(action_mask) * -1e10)
-        
+
         return policy_out + inf_mask, state
 
     def value_function(self):

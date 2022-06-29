@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import numpy as np
 
-from .config import EnvConfig
+from .config import EnvConfig, GraphConfig
 from .graph import AttackGraph
 
 
@@ -16,7 +16,7 @@ class AttackSimulator:
 
         self.config = config
         self.rng = rng
-        self.g: AttackGraph = AttackGraph(config.graph_config)
+        self.g: AttackGraph = AttackGraph(GraphConfig(**config.graph_config))
         self.time = 0
         self.service_state = np.ones(self.g.num_services, dtype="int8")
         self.defense_state = np.ones(self.g.num_defenses, dtype="int8")
@@ -58,14 +58,16 @@ class AttackSimulator:
 
     def defense_action(self, defender_action: int) -> bool:
         """Enable (disable) a defense step."""
-        
+
         self.defender_action = defender_action
 
-        if defender_action == self.NO_ACTION: return False
-        
+        if defender_action == self.NO_ACTION:
+            return False
+
         # Only enable defenses that are disabled
-        if not self.defense_state[defender_action]: return False
-        
+        if not self.defense_state[defender_action]:
+            return False
+
         # Enable (disable) the denfense step
         self.defense_state[defender_action] = 0
 
@@ -83,20 +85,23 @@ class AttackSimulator:
         """Have the attacker perform an action."""
 
         # If attack surface is empty, no need to perform an action
-        if self.attack_surface_empty: return True
+        if self.attack_surface_empty:
+            return True
 
         self.attacker_action = attacker_action
-        
-        if attacker_action == self.NO_ACTION: return False
+
+        if attacker_action == self.NO_ACTION:
+            return False
 
         assert (
             attacker_action in self.valid_actions
         ), "Attacker tried to perform an attack not in attack surface"
 
         self.ttc_remaining[attacker_action] -= 1
-        
-        if self.ttc_remaining[attacker_action] != 0: return False
-        
+
+        if self.ttc_remaining[attacker_action] != 0:
+            return False
+
         # successful attack, update reward, attack_state, attack_surface
         self.attack_state[attacker_action] = 1
         self.attack_surface[attacker_action] = 0
@@ -136,11 +141,7 @@ class AttackSimulator:
         return self.interpret_defenses(defenses), self.interpret_attacks(attacks)
 
     def interpret_defender_action(self, action: int) -> str:
-        return (
-            self.NO_ACTION_STR
-            if action == self.NO_ACTION
-            else self.g.defense_names[action]
-        )
+        return self.NO_ACTION_STR if action == self.NO_ACTION else self.g.defense_names[action]
 
     def generate_noise(self) -> np.ndarray:
         """Generates a "noise" mask to use for false positives and
@@ -167,7 +168,9 @@ class AttackSimulator:
             else self.g.attack_names[self.attacker_action]
         )
         ttc_remaining = (
-            0 if self.attacker_action == self.NO_ACTION else self.ttc_remaining[self.attacker_action]
+            0
+            if self.attacker_action == self.NO_ACTION
+            else self.ttc_remaining[self.attacker_action]
         )
         return current_step, ttc_remaining
 

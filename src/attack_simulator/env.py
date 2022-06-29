@@ -1,9 +1,10 @@
 import logging
-from typing import Dict, List, Optional, Tuple, Type, Union
+from typing import Dict, List, Optional, Tuple, Type
 
 import gym
 import gym.spaces as spaces
 import numpy as np
+from ray.tune.registry import register_env
 
 from attack_simulator.agents import ATTACKERS
 from attack_simulator.agents.agent import Agent
@@ -13,8 +14,19 @@ from attack_simulator.sim import AttackSimulator
 
 from .renderer import AttackSimulationRenderer
 
-
 logger = logging.getLogger("simulator")
+
+
+def register_rllib_env() -> str:
+    name = "AttackSimulationEnv"
+    # Register the environment in the registry
+    def env_creator(env_config: Dict) -> AttackSimulationEnv:
+
+        config_data: EnvConfig = EnvConfig(**env_config)
+        return AttackSimulationEnv(config_data)
+
+    register_env(name, env_creator)
+    return name
 
 
 class AttackSimulationEnv(gym.Env):
@@ -25,12 +37,9 @@ class AttackSimulationEnv(gym.Env):
     sim: AttackSimulator
     attacker: Agent
 
-    def __init__(self, config: Union[EnvConfig, dict]):
+    def __init__(self, config: EnvConfig):
 
-        super(AttackSimulationEnv, self).__init__()
-
-        if isinstance(config, dict):
-            config = EnvConfig(**config)
+        super().__init__()
 
         self.rng, self.env_seed = get_rng(config.seed)
 
