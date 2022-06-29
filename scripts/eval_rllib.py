@@ -1,40 +1,53 @@
 import json
 import re
-from dataclasses import asdict
-from pathlib import Path
-from typing import Optional
 from argparse import ArgumentParser
+from dataclasses import asdict, replace
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import ray
 import torch
+from numpy.typing import NDArray
 from ray.rllib.agents import ppo
+from ray.rllib.models import ModelCatalog
 
 from attack_simulator.config import EnvConfig
-from attack_simulator.env import AttackSimulationEnv
+from attack_simulator.env import AttackSimulationEnv, register_rllib_env
+from attack_simulator.ids_model import DefenderModel, register_rllib_model
 from attack_simulator.rng import set_seeds
-from numpy.typing import NDArray
+
 
 class RLLibEvaluator:
     """Run RLLib in evaluation."""
 
-    def __init__(self, checkpoint_path: Path, parameter_dict: Optional[dict] = None) -> None:
+    def __init__(
+        self, checkpoint_path: Path, parameter_dict: Optional[Dict[str, Any]] = None
+    ) -> None:
 
         ray.init(local_mode=True)
-        self.config = {}
-        if parameter_dict is None:
+
+        if isinstance(parameter_dict, Dict):
+            model_config = parameter_dict.get("model")
+            del parameter_dict["callbacks"]  # remove callbacks
+            config = parameter_dict
+        else:
             env_config: EnvConfig = EnvConfig.from_yaml("config/generated_env_config.yaml")
-            env_config = env_config.replace(
-                save_graphs=True, save_logs=True, seed=2, false_positive=0.0, false_negative=0.0
+            env_config = replace(
+                env_config,
+                save_graphs=True,
+                save_logs=True,
+                seed=2,
+                false_positive=0.0,
+                false_negative=0.0,
             )
-            self.model_config = {"use_lstm": False, "lstm_cell_size": 256}
-            self.config = {
+            model_config = {"use_lstm": False, "lstm_cell_size": 256}
+            config = {
                 "seed": env_config.seed,
                 "framework": "torch",
-                "env": AttackSimulationEnv,
                 "env_config": asdict(env_config),
                 "num_workers": 0,
-                "model": self.model_config,
+                "model": model_config,
                 "in_evaluation": True,
                 "evaluation_num_workers": 0,
                 "evaluation_interval": 1,
@@ -42,13 +55,10 @@ class RLLibEvaluator:
                 "evaluation_num_episodes": 1,
                 "evaluation_config": {"explore": False},
             }
-        else:
-            self.model_config = parameter_dict.get("model")
-            parameter_dict["env"] = AttackSimulationEnv
-            del parameter_dict["callbacks"]
-            self.config = parameter_dict
 
-        self.env = AttackSimulationEnv(self.config["env_config"])
+        self.model_config = model_config if model_config else {}
+        self.config = config
+        self.env = AttackSimulationEnv(EnvConfig(**self.config["env_config"]))
 
         set_seeds(self.config["seed"])
 
@@ -70,10 +80,17 @@ class RLLibEvaluator:
         done = False
         obs = self.env.reset()
 
-        lstm_state = [
-                torch.zeros(self.config["model"]["lstm_cell_size"]),
-                torch.zeros(self.config["model"]["lstm_cell_size"]),
-            ] if self.model_config else None
+        def get_initial_lstm_state() -> Union[List[torch.Tensor], None]:
+            return (
+                [
+                    torch.zeros(self.config["model"]["lstm_cell_size"]),
+                    torch.zeros(self.config["model"]["lstm_cell_size"]),
+                ]
+                if "lstm_cell_size" in self.config["model"]
+                else None
+            )
+
+        lstm_state = get_initial_lstm_state()
 
         if render:
             self.env.render()
@@ -91,26 +108,26 @@ class RLLibEvaluator:
 
             episode_rewards[e] = episode_reward
             obs = self.env.reset()
-            lstm_state = [
-                torch.zeros(self.config["model"]["lstm_cell_size"]),
-                torch.zeros(self.config["model"]["lstm_cell_size"]),
-            ] if self.model_config else None
+            lstm_state = get_initial_lstm_state()
 
         return episode_rewards
 
 
 def main() -> None:
     """Main function."""
+
+    register_rllib_env()
+    register_rllib_model()
     parser = ArgumentParser()
     parser.add_argument("checkpoint", type=str, help="Path to RLLib run to load model from.")
-    
-    results_dir = Path("/home/jakob/sentience/data/ray_results_from_vm/PPO")
-    run_id = "PPO_AttackSimulationEnv_629f8_00000_0_seed=1_2022-05-30_13-35-35"
+
+    results_dir = Path("/home/jakob/sentience/ray_results/PPO")
+    run_id = "PPO_AttackSimulationEnv_27e60_00000_0_seed=1_2022-06-28_13-28-11/"
 
     run_dir = results_dir / run_id
 
-    assert run_dir.is_dir()
-    
+    assert run_dir.is_dir(), "Run directory does not exist."
+
     # args = parser.parse_args()
 
     checkpoint_folder = reversed(sorted((run_dir.glob("checkpoint_*")))).__next__()
@@ -118,7 +135,7 @@ def main() -> None:
         if re.match(r"checkpoint-\d\d?\d?$", f.name):
             checkpoint = Path(f)
             break
-    
+
     params_file = run_dir / "params.json"
     with open(str(params_file), encoding="utf8") as p:
         params_dict = json.load(p)

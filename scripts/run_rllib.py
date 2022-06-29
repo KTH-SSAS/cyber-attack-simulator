@@ -8,28 +8,32 @@ from typing import Any, Dict, List, Tuple
 
 import ray
 from ray import tune
+from ray.rllib.models import ModelCatalog
 from ray.tune.integration.wandb import WandbLoggerCallback
 
 from attack_simulator.config import EnvConfig
 from attack_simulator.custom_callback import AttackSimCallback
-from attack_simulator.env import AttackSimulationEnv
+from attack_simulator.env import AttackSimulationEnv, register_rllib_env
+from attack_simulator.ids_model import DefenderModel, register_rllib_model
 from attack_simulator.rng import set_seeds
-from attack_simulator.ids_model import DefenderModel
 from attack_simulator.telegram_utils import notify_ending
-from ray.rllib.models import ModelCatalog
+
 
 def add_fp_tp_sweep(config: dict, values: list) -> dict:
     config["env_config"]["false_negative"] = tune.grid_search(values)
     config["env_config"]["false_positive"] = tune.grid_search(values)
     return config
 
+
 def add_graph_sweep(config: dict, values: list) -> dict:
     config["env_config"]["graph_config"]["filename"] = tune.grid_search(values)
     return config
 
+
 def add_seed_sweep(config: dict, values: list) -> dict:
     config["seed"] = tune.grid_search(values)
     return config
+
 
 def add_dqn_options(config: dict) -> dict:
     return config | {
@@ -40,10 +44,10 @@ def add_dqn_options(config: dict) -> dict:
         "train_batch_size": 600,
     }
 
+
 def add_ppo_options(config: dict) -> dict:
-    return config | {
-        "train_batch_size": 600
-    }
+    return config | {"train_batch_size": 600}
+
 
 def dict2choices(d: dict) -> Tuple[list, str]:
     choices = list(d.keys())
@@ -59,7 +63,9 @@ def parse_args() -> Dict[str, Any]:
 
     parser.add_argument("--config-file", type=str, help="Path to YAML configuration file.")
 
-    parser.add_argument("--stop-iters", type=int, help="Number of iterations to train.", dest="stop_iterations")
+    parser.add_argument(
+        "--stop-iters", type=int, help="Number of iterations to train.", dest="stop_iterations"
+    )
     parser.add_argument("--stop-reward", type=float, help="Reward at which we stop training.")
 
     parser.add_argument("--eval-interval", type=int, default=50)
@@ -74,7 +80,12 @@ def parse_args() -> Dict[str, Any]:
 
     parser.add_argument("--gpu-count", type=int, default=0)
     parser.add_argument("--batch-size", type=int, default=12000)
-    parser.add_argument("--local", action="store_true", help="Enable ray local mode for debugger.", dest="local_mode")
+    parser.add_argument(
+        "--local",
+        action="store_true",
+        help="Enable ray local mode for debugger.",
+        dest="local_mode",
+    )
 
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--env-per-worker", type=int, default=1)
@@ -84,10 +95,14 @@ def parse_args() -> Dict[str, Any]:
     return vars(parser.parse_args())
 
 
-def main(config_file: str, stop_iterations: int, local_mode: bool = False, wandb_sync: bool = False, **kwargs) -> None:
-    """
-    Main function for running the RLlib experiment.
-    """
+def main(
+    config_file: str,
+    stop_iterations: int,
+    local_mode: bool = False,
+    wandb_sync: bool = False,
+    **kwargs,
+) -> None:
+    """Main function for running the RLlib experiment."""
 
     dashboard_host = "0.0.0.0" if os.path.exists("/.dockerenv") else "127.0.0.1"
 
@@ -96,7 +111,10 @@ def main(config_file: str, stop_iterations: int, local_mode: bool = False, wandb
     callbacks = []
 
     os.environ["WANDB_MODE"] = "online" if wandb_sync else "offline"
-    
+
+    register_rllib_env()
+    register_rllib_model()
+
     current_time = datetime.now().strftime(r"%m-%d_%H:%M:%S")
     id_string = f"{current_time}@{socket.gethostname()}"
     wandb_api_file_exists = os.path.exists("./wandb_api_key")
@@ -110,7 +128,7 @@ def main(config_file: str, stop_iterations: int, local_mode: bool = False, wandb
                 api_key_file=api_key_file,
                 log_config=False,
                 entity="sentience",
-                tags = ["train"]
+                tags=["train"],
             )
         )
 
@@ -120,10 +138,6 @@ def main(config_file: str, stop_iterations: int, local_mode: bool = False, wandb
     # To get the number of defenses
     test_env = AttackSimulationEnv(env_config)
 
-    # Register the model with the registry.
-    ModelCatalog.register_custom_model("DefenderModel", DefenderModel)
-
-    #model_config = {"use_lstm": True, "lstm_cell_size": 256}
     model_config = {
         "custom_model": "DefenderModel",
         "custom_model_config": {
@@ -144,37 +158,32 @@ def main(config_file: str, stop_iterations: int, local_mode: bool = False, wandb
 
     # fragment_length = 200
 
-    
     config = {
         "horizon": 5000,
         "framework": "torch",
-        "env": AttackSimulationEnv,
+        "env": "AttackSimulationEnv",
         # This is the fraction of the GPU(s) this trainer will use.
         "num_gpus": 0 if local_mode else gpu_use_percentage,
         "num_workers": 0 if local_mode else num_workers,
         "num_envs_per_worker": 1 if local_mode else env_per_worker,
-        #"num_gpus_per_worker": gpus_per_worker,
+        # "num_gpus_per_worker": gpus_per_worker,
         "model": model_config,
         "env_config": asdict(env_config),
         "batch_mode": "complete_episodes",
         # The number of iterations between renderings
         "evaluation_interval": stop_iterations,
-        #"evaluation_num_episodes": 1,
-        #"evaluation_num_workers": 0,
+        "evaluation_num_episodes": 5,
         # Special evaluation config. Keys specified here will override
         # the same keys in the main config, but only for evaluation.
         "evaluation_config": {
-           "render_env": True,
+            "render_env": True,
             "num_envs_per_worker": 1,
             "env_config": asdict(dataclasses.replace(env_config, save_graphs=True, save_logs=True)),
         },
         "callbacks": AttackSimCallback,
     }
 
-    stop = {
-        "training_iteration": stop_iterations,
-        "episode_reward_mean": kwargs["stop_reward"]
-    }
+    stop = {"training_iteration": stop_iterations, "episode_reward_mean": kwargs["stop_reward"]}
 
     # Remove stop conditions that were not set
     keys = list(stop.keys())
@@ -190,7 +199,8 @@ def main(config_file: str, stop_iterations: int, local_mode: bool = False, wandb
     experiments = []
 
     if run_ppo:
-        experiments.append(tune.Experiment(
+        experiments.append(
+            tune.Experiment(
                 "PPO",
                 run="PPO",
                 config=add_ppo_options(config),
@@ -203,7 +213,8 @@ def main(config_file: str, stop_iterations: int, local_mode: bool = False, wandb
         )
 
     if run_dqn:
-        experiments.append(tune.Experiment(
+        experiments.append(
+            tune.Experiment(
                 "DQN",
                 run="DQN",
                 config=add_dqn_options(config),
@@ -218,11 +229,11 @@ def main(config_file: str, stop_iterations: int, local_mode: bool = False, wandb
     analysis: tune.ExperimentAnalysis = tune.run_experiments(
         experiments,
         callbacks=callbacks,
-        #restore=args.checkpoint_path, 
-        #resume="PROMPT",
+        # restore=args.checkpoint_path,
+        # resume="PROMPT",
     )
 
-    if (isinstance(analysis.trials, List)):
+    if isinstance(analysis.trials, List):
         notify_ending(f"Tune has finished running {len(analysis.trials)} trials.")
 
     # wandb.config.update(env_config_dict)
