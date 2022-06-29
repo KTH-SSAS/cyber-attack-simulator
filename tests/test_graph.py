@@ -23,10 +23,11 @@ def test_graph_as_expected(attack_graph: AttackGraph, test_services, test_attack
 
 
 def test_graph_rewards(attack_graph: AttackGraph, test_attack_steps: Dict[str, AttackStep]):
-    
+
     for step in test_attack_steps:
         reward = attack_graph.reward_params[attack_graph.attack_indices[step]]
         assert reward == test_attack_steps[step].reward
+
 
 def test_graph_same_again(graph_config, attack_graph):
     g = AttackGraph(graph_config)

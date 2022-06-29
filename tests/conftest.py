@@ -33,11 +33,7 @@ TEST_ENV_CONFIG_YAML = {
     "run_id": "test",
     "graph_config": {
         "filename": None,
-        "ttc": {
-            "easy": TTC_LOW,
-            "hard": TTC_HIGH,
-            "default": TTC_DEFAULT
-        },
+        "ttc": {"easy": TTC_LOW, "hard": TTC_HIGH, "default": TTC_DEFAULT},
         "rewards": {
             "high_flag": REWARD_HIGH,
             "medium_flag": REWARD_MEDIUM,
