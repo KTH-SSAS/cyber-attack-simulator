@@ -1,4 +1,7 @@
 # Simple attack graph with 6 attack steps, 2 flags and 2 defense steps. 
+# Using defense step c.defend will disable c, making d inaccessible.
+# Using defense step b.defend will disable b, making b inaccessible and d by extension.
+
 attack_graph:
 - asset: a
   children:
