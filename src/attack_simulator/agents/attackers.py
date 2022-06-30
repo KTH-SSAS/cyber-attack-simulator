@@ -203,8 +203,8 @@ class PathFinderAttacker(Agent):
     def find_path_to(self, target: int) -> Tuple[bool, List[int]]:
         """Find a path to an attack step, with respect to AND-steps."""
         total_path: list = []
-        # Don't bother pathfinding if the target's conditions are unavailable
-        if not self.sim.g.step_is_reachable(target, self.defense_state):
+        # Don't bother pathfinding if the target is defended
+        if self.sim.g.step_is_defended(target, self.defense_state):
             return False, []
 
         try:
@@ -312,7 +312,7 @@ class PathFinderAttacker(Agent):
                     return 0
 
             # Select the next attack step to work on
-                attack_target = self.skip_steps()
+            attack_target = self.skip_steps()
 
         # Check that the action we chose can be done. Otherwise, select a new path
         attack_step_not_available = not observation[attack_target]

@@ -27,7 +27,9 @@ class AttackSimulator:
 
         # Initial state
         self.entry_attack_index = self.g.attack_indices[self.g.root]
-        self.attack_surface[self.entry_attack_index] = 1
+        self.attack_state[self.entry_attack_index] = 1
+        # add reachable steps to the attack surface
+        self.attack_surface[self._get_reachable_steps(self.entry_attack_index)] = 1
 
         self.ttc_remaining = np.array(
             [max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)]
