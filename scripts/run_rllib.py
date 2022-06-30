@@ -8,13 +8,12 @@ from typing import Any, Dict, List, Tuple
 
 import ray
 from ray import tune
-from ray.rllib.models import ModelCatalog
 from ray.tune.integration.wandb import WandbLoggerCallback
 
 from attack_simulator.config import EnvConfig
 from attack_simulator.custom_callback import AttackSimCallback
 from attack_simulator.env import AttackSimulationEnv, register_rllib_env
-from attack_simulator.ids_model import DefenderModel, register_rllib_model
+from attack_simulator.ids_model import register_rllib_model
 from attack_simulator.rng import set_seeds
 from attack_simulator.telegram_utils import notify_ending
 

@@ -10,11 +10,10 @@ import ray
 import torch
 from numpy.typing import NDArray
 from ray.rllib.agents import ppo
-from ray.rllib.models import ModelCatalog
 
 from attack_simulator.config import EnvConfig
 from attack_simulator.env import AttackSimulationEnv, register_rllib_env
-from attack_simulator.ids_model import DefenderModel, register_rllib_model
+from attack_simulator.ids_model import register_rllib_model
 from attack_simulator.rng import set_seeds
 
 
