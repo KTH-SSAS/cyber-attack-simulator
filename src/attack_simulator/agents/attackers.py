@@ -151,7 +151,7 @@ class PathFinderAttacker(Agent):
         self.done = False
 
         # Decide on a target
-        self.current_flag_index = 0
+        self.current_flag_index = -1
         self.done, planned_path = self.decide_next_target()
 
         # Path to use as a stack
@@ -312,15 +312,7 @@ class PathFinderAttacker(Agent):
                     return 0
 
             # Select the next attack step to work on
-            try:
                 attack_target = self.skip_steps()
-            except IndexError:
-                # On rare occasions the planned path turns out empty
-                # For now, just mark the attacker as done if this happens
-                # TODO actually fix the error that causes this
-                print(f"The odd error happened with flag_taken={flag_taken}")
-                self.done = True
-                return 0
 
         # Check that the action we chose can be done. Otherwise, select a new path
         attack_step_not_available = not observation[attack_target]
