@@ -6,6 +6,7 @@ from typing import Dict, List
 
 import networkx as nx
 import numpy as np
+from numpy.typing import NDArray
 from yaml import safe_load
 
 from attack_simulator.config import GraphConfig
@@ -229,6 +230,43 @@ class AttackGraph:
 
         return reachable_steps
 
+    def is_traversible(
+        self, node: int, defense_state: NDArray[np.int8], calculated_steps: Dict[int, bool]
+    ) -> bool:
+        """Check if a node is traversible given the current state of the
+        defense."""
+        if node in calculated_steps:
+            return calculated_steps[node]
+
+        logic, prequisites = self.attack_prerequisites[node]
+
+        for p in filter(lambda p: p not in calculated_steps, prequisites):
+            calculated_steps[p] = self.is_traversible(p, defense_state, calculated_steps)
+
+        conditions_met = logic(calculated_steps[p] for p in prequisites) if prequisites else True
+        not_defended = all(defense_state[self.defense_steps_by_attack_step[node]])
+
+        return conditions_met and not_defended
+
+    def get_traversable_steps(self, start_node: int, defense_state: NDArray[np.int8]) -> List[int]:
+        """Get all reachable attack steps in the graph, given supplied current
+        state vectors."""
+
+        traversible_steps: Dict[int, bool] = {}
+        traversible_steps[start_node] = self.is_traversible(
+            start_node, defense_state, traversible_steps
+        )
+
+        if not traversible_steps[start_node]:
+            return []
+
+        return list(
+            filter(
+                lambda n: self.is_traversible(n, defense_state, traversible_steps),
+                self.attack_indices.values(),
+            )
+        )
+
     def save_graphviz(
         self,
         filename: str = "graph.dot",
@@ -267,47 +305,39 @@ class AttackGraph:
         """Convert the AttackGraph to an NetworkX DiGraph."""
         dig = nx.DiGraph()
 
-        for name, a_s in self.attack_steps.items():
-            dict_t = asdict(a_s)
+        steps_to_graph = self.get_traversable_steps(self.attack_indices[self.root], system_state)
 
-            as_idx = self.attack_indices[name]
+        for step_idx in steps_to_graph:
+
+            step_name = self.attack_names[step_idx]
+            a_s = self.attack_steps[step_name]
+            dict_t = asdict(a_s)
 
             # No need to add child information to node
             del dict_t["children"]
             del dict_t["id"]
             del dict_t["name"]
-            # del dict_t["parents"]
-
-            if not self.step_is_reachable(as_idx, system_state):
-                # If any of the attack steps conditions are not fulfilled,
-                # do not add it to the graph
-                continue
-
-            # Add the attack step to the graph
-
-            node_name = as_idx if indices else name
 
             if indices:
-                dig.add_edges_from(
-                    (
-                        (as_idx, child_index)
-                        for child_index in self.child_indices[as_idx]
-                        if self.step_is_reachable(child_index, system_state)
-                    )
-                )
-            else:
-                dig.add_edges_from(
-                    (
-                        (name, child)
-                        for child in a_s.children
-                        if self.step_is_reachable(self.attack_indices[child], system_state)
-                    )
-                )
+                dict_t["parents"] = list(map(lambda x: self.attack_indices[x], a_s.parents))
 
-            dig.add_node(node_name, **dict_t)
+            # Add the attack step to the graph
+            dig.add_node(step_idx if indices else step_name, **dict_t)
+
+            # Add edges to children
+            to_add = (
+                (step_idx, child_index)
+                for child_index in self.child_indices[step_idx]
+                if child_index in steps_to_graph
+            )
+
+            if not indices:
+                to_add = map(lambda x: (self.attack_names[x[0]], self.attack_names[x[1]]), to_add)
+
+            dig.add_edges_from(to_add)
 
         return dig
 
-    def step_is_reachable(self, step: int, defense_state: np.ndarray) -> bool:
-        defense_enabled = all(defense_state[self.defense_steps_by_attack_step[step]])
-        return defense_enabled
+    def step_is_defended(self, step: int, defense_state: np.ndarray) -> bool:
+        defended = not all(defense_state[self.defense_steps_by_attack_step[step]])
+        return defended
