@@ -17,18 +17,6 @@ from .renderer import AttackSimulationRenderer
 logger = logging.getLogger("simulator")
 
 
-def register_rllib_env() -> str:
-    name = "AttackSimulationEnv"
-    # Register the environment in the registry
-    def env_creator(env_config: Dict) -> AttackSimulationEnv:
-
-        config_data: EnvConfig = EnvConfig(**env_config)
-        return AttackSimulationEnv(config_data)
-
-    register_env(name, env_creator)
-    return name
-
-
 class AttackSimulationEnv(gym.Env):
     """Handles reinforcement learning matters."""
 
@@ -254,3 +242,14 @@ class AttackSimulationEnv(gym.Env):
         self.rng, self.env_seed = get_rng(seed)
 
         return [seed]
+
+def register_rllib_env() -> str:
+    name = "AttackSimulationEnv"
+    # Register the environment in the registry
+    def env_creator(env_config: Dict) -> AttackSimulationEnv:
+
+        config_data: EnvConfig = EnvConfig(**env_config)
+        return AttackSimulationEnv(config_data)
+
+    register_env(name, env_creator)
+    return name
