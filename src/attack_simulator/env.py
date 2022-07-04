@@ -227,7 +227,7 @@ class AttackSimulationEnv(gym.Env):
             self.reset_render = False
 
         if isinstance(self.renderer, AttackSimulationRenderer):
-        self.renderer.render(self.defender_reward, self.done)
+            self.renderer.render(self.defender_reward, self.done)
 
         return True
 
