@@ -16,7 +16,10 @@ class AttackSimulator:
 
         self.config = config
         self.rng = rng
-        self.g: AttackGraph = AttackGraph(GraphConfig(**config.graph_config))
+
+        graph_config = config.graph_config if isinstance(config.graph_config, GraphConfig) else GraphConfig(**config.graph_config)
+
+        self.g: AttackGraph = AttackGraph(graph_config)
         self.time = 0
         self.service_state = np.ones(self.g.num_services, dtype="int8")
         self.defense_state = np.ones(self.g.num_defenses, dtype="int8")
