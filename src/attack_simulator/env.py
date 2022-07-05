@@ -56,11 +56,11 @@ class AttackSimulationEnv(gym.Env):
         self.wait_idx = 0
         self.shut_down_idx = 1
 
-        self.num_actions = self.num_responses + self.num_defense_steps
+        self.num_outputs = self.num_responses * self.num_defense_steps
 
         self.observation_space = spaces.Dict(
             {
-                "action_mask": spaces.Box(0, 1, shape=(self.num_actions,), dtype=np.int8),
+                "action_mask": spaces.Box(0, 1, shape=(self.num_outputs,), dtype=np.int8),
                 "sim_state": spaces.Box(0, 1, shape=(self.dim_observations,), dtype=np.int8),
             }
         )
@@ -212,7 +212,7 @@ class AttackSimulationEnv(gym.Env):
         return obs, self.defender_reward, done, info
 
     def get_action_mask(self) -> np.ndarray:
-        action_mask = np.zeros(self.num_actions, dtype=np.int8)
+        action_mask = np.zeros(self.num_outputs, dtype=np.int8)
         action_mask[:self.num_responses] = 1
         action_mask[-self.num_defense_steps:] = self.sim.defense_state
 
