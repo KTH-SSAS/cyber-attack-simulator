@@ -30,14 +30,23 @@ class AttackSimulator:
 
         # Initial state
         self.entry_attack_index = self.g.attack_indices[self.g.root]
-        self.attack_state[self.entry_attack_index] = 1
-        # add reachable steps to the attack surface
-        self.attack_surface[self._get_reachable_steps(self.entry_attack_index)] = 1
 
         self.ttc_remaining = np.array(
             [max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)]
         )
         self.ttc_total = sum(self.ttc_remaining)
+
+        # Set the TTC for the entry attack to be the attack start time
+        self.attack_start_time = int(self.rng.exponential(self.config.attack_start_time))
+        self.ttc_remaining[self.entry_attack_index] = self.attack_start_time
+
+        if self.attack_start_time == 0:
+            self.attack_surface[self.entry_attack_index] = 0
+            self.attack_state[self.entry_attack_index] = 1
+            # add reachable steps to the attack surface
+            self.attack_surface[self._get_reachable_steps(self.entry_attack_index)] = 1
+        else:
+            self.attack_surface[self.entry_attack_index] = 1
 
         self.attacker_action: int = self.entry_attack_index
         self.defender_action: int = self.NO_ACTION

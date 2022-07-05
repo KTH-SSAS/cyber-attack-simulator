@@ -66,12 +66,9 @@ class AttackSimulationEnv(gym.Env):
 
         self.done = False
         self.defender_reward = 0.0
-
         self.renderer: Optional[AttackSimulationRenderer] = None
         self.reset_render = True
-
         self.max_reward = 0.0
-        self.attack_start_time = 0
 
     def _create_attacker(self) -> Agent:
         return self.attacker_class(
@@ -103,7 +100,6 @@ class AttackSimulationEnv(gym.Env):
 
         self.episode_count += 1
 
-        self.attack_start_time = int(self.rng.exponential(self.config.attack_start_time))
         self.max_reward = sum(self.attacker_rewards)
 
         # Set up a new simulation environment
@@ -164,8 +160,6 @@ class AttackSimulationEnv(gym.Env):
         defender_action = action - 1
         self.sim.defense_action(defender_action)
 
-        # Check if the attack has started
-        if self.sim.time >= self.attack_start_time:
             # Obtain attacker action, this _can_ be 0 for no action
             attacker_action = self.attacker.act(self.sim.attack_surface) - 1 
             done |= self.attacker.done
@@ -188,7 +182,7 @@ class AttackSimulationEnv(gym.Env):
             "current_step": current_step,
             "ttc_remaining_on_current_step": ttc_remaining,
             "attacker_reward": attacker_reward,
-            "attacker_start_time": self.attack_start_time,
+            "attacker_start_time": self.sim.attack_start_time,
             "num_compromised_steps": len(compromised_steps),
             "num_compromised_flags": len(compromised_flags),
             "num_defenses_activated": sum(self.sim.defense_state),
