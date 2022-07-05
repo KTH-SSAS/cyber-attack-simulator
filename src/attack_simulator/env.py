@@ -123,7 +123,7 @@ class AttackSimulationEnv(gym.Env):
 
         return obs
 
-    def reward_function(self, attacker_reward: float, mode: str = "simple") -> float:
+    def reward_function(self, defender_action: int, attacker_reward: float, mode: str = "simple") -> float:
         """Calculates the defender reward.
 
         Only 'simple' works at the moment.
@@ -135,6 +135,8 @@ class AttackSimulationEnv(gym.Env):
 
         if mode == "simple":
             reward = upkeep_reward - attacker_reward
+        elif mode == "static":
+            reward = -(self.sim.g.defense_costs[defender_action] + attacker_reward) if defender_action != -1 else -attacker_reward
         elif mode == "capped":
             reward = self.max_reward
             # Penalty for attacker gains
@@ -174,12 +176,7 @@ class AttackSimulationEnv(gym.Env):
 
         done |= self.sim.step()
 
-        # compute defender reward
-        # positive reward for maintaining services online (1 unit per service)
-        # negative reward for the attacker's gains (as measured by `attacker_reward`)
-        # FIXME: the reward for maintaining services is _very_ low
-
-        self.defender_reward = self.reward_function(attacker_reward, mode=self.config.reward_mode)
+        self.defender_reward = self.reward_function(defender_action, attacker_reward, mode=self.config.reward_mode)
 
         compromised_steps = self.sim.compromised_steps
         compromised_flags = self.sim.compromised_flags
