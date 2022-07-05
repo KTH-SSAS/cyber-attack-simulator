@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Tuple, Type
 import gym
 import gym.spaces as spaces
 import numpy as np
+from numpy.typing import NDArray
 from ray.tune.registry import register_env
 
 from attack_simulator.agents import ATTACKERS
@@ -50,16 +51,22 @@ class AttackSimulationEnv(gym.Env):
         # avoids potential preprocessor issues with Ray
         # (cf. https://github.com/ray-project/ray/issues/8600)
         
-        self.num_actions = self.sim.num_defense_steps + 1
+        self.num_responses = 2 # wait + shut down
+        self.num_defense_steps = self.sim.num_defense_steps
+        self.wait_idx = 0
+        self.shut_down_idx = 1
+
+        self.num_actions = self.num_responses + self.num_defense_steps
+
         self.observation_space = spaces.Dict(
             {
                 "action_mask": spaces.Box(0, 1, shape=(self.num_actions,), dtype=np.int8),
-            "sim_state": spaces.Box(0, 1, shape=(self.dim_observations,), dtype=np.int8),
+                "sim_state": spaces.Box(0, 1, shape=(self.dim_observations,), dtype=np.int8),
             }
         )
 
         # The defender action space allows to disable any one service or leave all unchanged
-        self.action_space = spaces.Discrete(self.num_actions)
+        self.action_space = spaces.Box(low=np.array([0, 0]), high=np.array([self.num_responses-1, self.num_defense_steps-1]), dtype=np.int64) #spaces.Discrete(self.num_actions)
 
         # Start this at -1 since it will be incremented by reset.
         self.episode_count = -1
@@ -119,7 +126,7 @@ class AttackSimulationEnv(gym.Env):
 
         return obs
 
-    def reward_function(self, defender_action: int, attacker_reward: float, mode: str = "simple") -> float:
+    def reward_function(self, action_type: int, target: int, attacker_reward: float, mode: str = "simple") -> float:
         """Calculates the defender reward.
 
         Only 'simple' works at the moment.
@@ -132,7 +139,7 @@ class AttackSimulationEnv(gym.Env):
         if mode == "simple":
             reward = upkeep_reward - attacker_reward
         elif mode == "static":
-            reward = -(self.sim.g.defense_costs[defender_action] + attacker_reward) if defender_action != -1 else -attacker_reward
+            reward = -(self.sim.g.defense_costs[target] + attacker_reward) if action_type != 0 else -attacker_reward
         elif mode == "capped":
             reward = self.max_reward
             # Penalty for attacker gains
@@ -150,27 +157,29 @@ class AttackSimulationEnv(gym.Env):
 
         return reward
 
-    def step(self, action: int) -> Tuple[Dict, float, bool, dict]:
-        assert 0 <= action < self.num_actions
+    def step(self, action: NDArray[np.int32]) -> Tuple[Dict, float, bool, dict]:
+        #assert 0 <= action < self.num_actions
 
         done = False
         attacker_reward = 0
 
+        response_type = action[0]
+        target = action[1]
+
         # offset action to take the wait action into account
-        defender_action = action - 1
-        self.sim.defense_action(defender_action)
+        self.sim.defense_action(response_type, target)
 
-            # Obtain attacker action, this _can_ be 0 for no action
-            attacker_action = self.attacker.act(self.sim.attack_surface) - 1 
-            done |= self.attacker.done
-            assert -1 <= attacker_action < self.sim.num_attack_steps
+        # Obtain attacker action, this _can_ be 0 for no action
+        attacker_action = self.attacker.act(self.sim.attack_surface) - 1
+        done |= self.attacker.done
+        assert -1 <= attacker_action < self.sim.num_attack_steps
 
-            done |= self.sim.attack_action(attacker_action)
-            attacker_reward = self.attacker_rewards[attacker_action]
+        done |= self.sim.attack_action(attacker_action)
+        attacker_reward = self.attacker_rewards[attacker_action]
 
         done |= self.sim.step()
 
-        self.defender_reward = self.reward_function(defender_action, attacker_reward, mode=self.config.reward_mode)
+        self.defender_reward = self.reward_function(response_type, target, attacker_reward, mode=self.config.reward_mode)
 
         compromised_steps = self.sim.compromised_steps
         compromised_flags = self.sim.compromised_flags
@@ -203,8 +212,10 @@ class AttackSimulationEnv(gym.Env):
         return obs, self.defender_reward, done, info
 
     def get_action_mask(self) -> np.ndarray:
-        action_mask = np.ones(self.num_actions, dtype=np.int8)
-        action_mask[1:] = self.sim.defense_state
+        action_mask = np.zeros(self.num_actions, dtype=np.int8)
+        action_mask[:self.num_responses] = 1
+        action_mask[-self.num_defense_steps:] = self.sim.defense_state
+
         return action_mask
 
     def render(self, mode: str = "human") -> bool:

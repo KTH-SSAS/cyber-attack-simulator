@@ -78,12 +78,17 @@ def _generate_logs(sim: AttackSimulator, defender_reward: float, done: bool) -> 
     if sim.time == 0:
         logs.append("Simulation starting.")
     else:
+        line = f"Defender {sim.interpret_defender_action(sim.defender_action)}s"
+        if sim.defender_action != sim.NO_ACTION:
+            line += f" ({sim.interpret_defender_target(sim.defender_target)})."
+        else:
+            line += "."
         logs.append(
-            f"Defender selects {sim.defender_action}:{sim.interpret_defender_action(sim.defender_action)}."
+            line
         )
         if sim.attack_surface_empty:
             logs.append("Attacker can not attack anything.")
-        elif sim.attacker_action == sim.NO_ACTION:
+        elif sim.attacker_action == sim.ATTACKER_WAIT:
             logs.append("Attacker does nothing.")
         else:
             logs.append(f"Attacker attacks {sim.g.attack_names[sim.attacker_action]}.")
@@ -92,6 +97,8 @@ def _generate_logs(sim: AttackSimulator, defender_reward: float, done: bool) -> 
 
     logs.append(f"Attack surface: {sim.interpret_attacks(sim.attack_surface)}.")
     logs.append(f"Defense steps used: {sim.interpret_defenses(sim.defense_state)}")
+
+
 
     if done:
         logs.append("Simulation finished.")
@@ -243,7 +250,7 @@ class AttackSimulationRenderer:
         )
 
         attacked_node = self.sim.attacker_action
-        if attacked_node != self.sim.NO_ACTION:
+        if attacked_node != -1:
             self._draw_nodes({attacked_node}, 700, "yellow", "orange", node_shape="H")
 
         # show attack state by label color

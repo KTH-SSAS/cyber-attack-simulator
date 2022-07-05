@@ -27,7 +27,7 @@ class DefenderModel(TorchModelV2, nn.Module):
         self.num_outputs = num_outputs
 
 
-        self.policy_fn = nn.Linear(sim_space.shape[0], self.action_space.n)
+        self.policy_fn = nn.Linear(sim_space.shape[0], num_outputs)
         self.value_fn = nn.Linear(sim_space.shape[0], 1)
 
     def forward(self, input_dict, state, seq_lens):

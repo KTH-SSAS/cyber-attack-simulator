@@ -6,10 +6,12 @@ from .config import EnvConfig, GraphConfig
 from .graph import AttackGraph
 
 
+ACTION_NAMES = ["wait", "use"]
 class AttackSimulator:
     """Does the simulation."""
 
-    NO_ACTION = -1
+    NO_ACTION = 0
+    ATTACKER_WAIT = -1
     NO_ACTION_STR = "nothing"
 
     def __init__(self, config: EnvConfig, rng: np.random.Generator) -> None:
@@ -49,7 +51,8 @@ class AttackSimulator:
             self.attack_surface[self.entry_attack_index] = 1
 
         self.attacker_action: int = self.entry_attack_index
-        self.defender_action: int = self.NO_ACTION
+        self.defender_action: int = -1
+        self.defender_target: int = -1
         self.last_observation = None
 
         self.noise = self.generate_noise()
@@ -70,23 +73,28 @@ class AttackSimulator:
     def attack_surface_empty(self) -> bool:
         return not any(self.attack_surface)
 
-    def defense_action(self, defender_action: int) -> bool:
+    @property
+    def attack_started(self) -> bool:
+        return self.time >= self.attack_start_time
+
+    def defense_action(self, action_type: int, target: int) -> bool:
         """Enable (disable) a defense step."""
 
-        self.defender_action = defender_action
+        self.defender_action = action_type
+        self.defender_target = target
 
-        if defender_action == self.NO_ACTION:
+        if action_type == self.NO_ACTION:
             return False
 
         # Only enable defenses that are disabled
-        if not self.defense_state[defender_action]:
+        if not self.defense_state[target]:
             return False
 
         # Enable (disable) the denfense step
-        self.defense_state[defender_action] = 0
+        self.defense_state[target] = 0
 
         # Remove all affected attacks from the attack surface
-        affected_steps = self.g.attack_steps_by_defense_step[defender_action]
+        affected_steps = self.g.attack_steps_by_defense_step[target]
         self.attack_surface[affected_steps] = 0
 
         return False
@@ -99,13 +107,10 @@ class AttackSimulator:
         """Have the attacker perform an action."""
 
         # If attack surface is empty, no need to perform an action
-        if self.attack_surface_empty:
-            return True
-
+        # Currently, if the attacker waits then the attack surface is empty.
         self.attacker_action = attacker_action
-
-        if attacker_action == self.NO_ACTION:
-            return False
+        if self.attack_surface_empty or attacker_action == self.ATTACKER_WAIT:
+            return True
 
         assert (
             attacker_action in self.valid_actions
@@ -154,8 +159,11 @@ class AttackSimulator:
         attacks = observation[self.g.num_defenses :]
         return self.interpret_defenses(defenses), self.interpret_attacks(attacks)
 
+    def interpret_defender_target(self, target: int) -> str:
+        return self.g.defense_names[target]
+
     def interpret_defender_action(self, action: int) -> str:
-        return self.NO_ACTION_STR if action == self.NO_ACTION else self.g.defense_names[action]
+        return ACTION_NAMES[action]
 
     def generate_noise(self) -> np.ndarray:
         """Generates a "noise" mask to use for false positives and
@@ -178,12 +186,12 @@ class AttackSimulator:
         targeting."""
         current_step = (
             self.NO_ACTION_STR
-            if self.attacker_action == self.NO_ACTION
+            if self.attacker_action == self.ATTACKER_WAIT
             else self.g.attack_names[self.attacker_action]
         )
         ttc_remaining = (
             0
-            if self.attacker_action == self.NO_ACTION
+            if self.attacker_action == self.ATTACKER_WAIT
             else self.ttc_remaining[self.attacker_action]
         )
         return current_step, ttc_remaining
