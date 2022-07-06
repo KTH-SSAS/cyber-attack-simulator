@@ -49,12 +49,12 @@ class AttackSimulationEnv(gym.Env):
         # Using a Box instead of Tuple((Discrete(2),) * self.dim_observations)
         # avoids potential preprocessor issues with Ray
         # (cf. https://github.com/ray-project/ray/issues/8600)
-        
+
         self.num_actions = self.sim.num_defense_steps + 1
         self.observation_space = spaces.Dict(
             {
                 "action_mask": spaces.Box(0, 1, shape=(self.num_actions,), dtype=np.int8),
-            "sim_state": spaces.Box(0, 1, shape=(self.dim_observations,), dtype=np.int8),
+                "sim_state": spaces.Box(0, 1, shape=(self.dim_observations,), dtype=np.int8),
             }
         )
 
@@ -119,7 +119,9 @@ class AttackSimulationEnv(gym.Env):
 
         return obs
 
-    def reward_function(self, defender_action: int, attacker_reward: float, mode: str = "simple") -> float:
+    def reward_function(
+        self, defender_action: int, attacker_reward: float, mode: str = "simple"
+    ) -> float:
         """Calculates the defender reward.
 
         Only 'simple' works at the moment.
@@ -132,7 +134,11 @@ class AttackSimulationEnv(gym.Env):
         if mode == "simple":
             reward = upkeep_reward - attacker_reward
         elif mode == "static":
-            reward = -(self.sim.g.defense_costs[defender_action] + attacker_reward) if defender_action != -1 else -attacker_reward
+            reward = (
+                -(self.sim.g.defense_costs[defender_action] + attacker_reward)
+                if defender_action != -1
+                else -attacker_reward
+            )
         elif mode == "capped":
             reward = self.max_reward
             # Penalty for attacker gains
@@ -160,17 +166,19 @@ class AttackSimulationEnv(gym.Env):
         defender_action = action - 1
         self.sim.defense_action(defender_action)
 
-            # Obtain attacker action, this _can_ be 0 for no action
-            attacker_action = self.attacker.act(self.sim.attack_surface) - 1 
-            done |= self.attacker.done
-            assert -1 <= attacker_action < self.sim.num_attack_steps
+        # Obtain attacker action, this _can_ be 0 for no action
+        attacker_action = self.attacker.act(self.sim.attack_surface) - 1
+        done |= self.attacker.done
+        assert -1 <= attacker_action < self.sim.num_attack_steps
 
-            done |= self.sim.attack_action(attacker_action)
-            attacker_reward = self.attacker_rewards[attacker_action]
+        done |= self.sim.attack_action(attacker_action)
+        attacker_reward = self.attacker_rewards[attacker_action]
 
         done |= self.sim.step()
 
-        self.defender_reward = self.reward_function(defender_action, attacker_reward, mode=self.config.reward_mode)
+        self.defender_reward = self.reward_function(
+            defender_action, attacker_reward, mode=self.config.reward_mode
+        )
 
         compromised_steps = self.sim.compromised_steps
         compromised_flags = self.sim.compromised_flags
@@ -212,7 +220,7 @@ class AttackSimulationEnv(gym.Env):
 
         if not self.render_env:
             return True
-        
+
         if self.reset_render:
             self.renderer = self.create_renderer(self.sim, self.episode_count, self.config)
             self.reset_render = False
@@ -233,6 +241,7 @@ class AttackSimulationEnv(gym.Env):
         self.rng, self.env_seed = get_rng(seed)
 
         return [seed]
+
 
 def register_rllib_env() -> str:
     name = "AttackSimulationEnv"

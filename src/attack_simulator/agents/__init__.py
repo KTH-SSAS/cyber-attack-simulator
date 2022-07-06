@@ -3,7 +3,6 @@ from typing import Dict, Type
 from .agent import Agent
 from .attackers import (
     InformedAttacker,
-    PathFinderAttacker,
     RandomAttacker,
     RandomNoActionAttacker,
     RoundRobinAttacker,
@@ -18,6 +17,7 @@ from .baseline_agents import (
     RuleBasedAgent,
     SkipAgent,
 )
+from .pathfinder import PathFinderAttacker
 
 ATTACKERS: Dict[str, Type[Agent]] = {
     "well-informed": WellInformedAttacker,

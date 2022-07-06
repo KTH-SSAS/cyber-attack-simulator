@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 from ray.rllib.models import ModelCatalog
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
+from ray.rllib.utils.torch_utils import FLOAT_MAX, FLOAT_MIN
 from torch import Tensor, nn
-from ray.rllib.utils.torch_utils import FLOAT_MIN, FLOAT_MAX
 
 
 def register_rllib_model():
@@ -25,7 +25,6 @@ class DefenderModel(TorchModelV2, nn.Module):
         sim_space = obs_space.original_space.spaces["sim_state"]
         self.action_space = action_space
         self.num_outputs = num_outputs
-
 
         self.policy_fn = nn.Linear(sim_space.shape[0], self.action_space.n)
         self.value_fn = nn.Linear(sim_space.shape[0], 1)
