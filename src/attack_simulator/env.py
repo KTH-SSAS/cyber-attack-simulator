@@ -126,30 +126,24 @@ class AttackSimulationEnv(gym.Env):
         Only 'simple' works at the moment.
         """
 
-        active_defense_costs = self.sim.g.defense_costs * self.sim.defense_state
-        upkeep_reward = sum(active_defense_costs)
+        # The costs of used defense steps
+        
         reward = 0.0
-
-        if mode == "simple":
-            reward = upkeep_reward - attacker_reward
-        elif mode == "static":
+        if mode == "uptime-reward":
+            # Defender is rewarded each timestep for each defense that has been not used
+            defense_reward = sum(self.sim.g.defense_costs * self.sim.defense_state)
+            reward = defense_reward - attacker_reward
+        elif mode == "downtime-penalty":
+            # Defender is penalized each timestep for each defense that has been used
+            defense_penalty = sum(self.sim.g.defense_costs * (np.logical_not(self.sim.defense_state)))
+            reward = -defense_penalty - attacker_reward
+        elif mode == "defense-penalty":
+            # Defender is penalized once when a defense is used
             reward = (
                 -(self.sim.g.defense_costs[defender_action] + attacker_reward)
                 if defender_action != -1
                 else -attacker_reward
             )
-        elif mode == "capped":
-            reward = self.max_reward
-            # Penalty for attacker gains
-            reward -= attacker_reward
-            # Penalty for defenses activated
-            reward -= np.sum(self.sim.g.defense_costs * (not self.sim.defense_state))
-            reward = max(0, reward / self.max_reward)
-        elif mode == "delayed":
-            if self.done:
-                reward = upkeep_reward - sum(self.attacker_rewards[self.sim.attack_state])
-            else:
-                reward = upkeep_reward
         else:
             raise Exception("Invalid Reward Method.")
 
