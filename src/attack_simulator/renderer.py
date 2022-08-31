@@ -20,7 +20,7 @@ ATTACKER_SYMBOL_SIZE = 700
 
 
 def create_HTML_writer(fig: Figure, html_path: Path) -> HTMLWriter:
-    writer: HTMLWriter = HTMLWriter()
+    writer: HTMLWriter = HTMLWriter(fps=2)
     writer.setup(fig, html_path, dpi=None)
     writer.frame_format = "svg"
     return writer
@@ -134,7 +134,7 @@ class AttackSimulationRenderer:
             self.dag = self.sim.g.to_networkx(
                 indices=True, system_state=np.ones(self.sim.num_defense_steps)
             )
-            self.pos = nx.nx_pydot.graphviz_layout(
+            self.pos: Dict[int, Tuple[float, float]] = nx.nx_pydot.graphviz_layout(
                 self.dag, root=self.sim.entry_attack_index, prog="sfdp"
             )
             self.and_edges = {
@@ -257,6 +257,15 @@ class AttackSimulationRenderer:
         self._draw_labels(kk_labels, "black")
         ko_labels = {i: self.get_node_label(i) for i in np.flatnonzero(self.sim.attack_state)}
         self._draw_labels(ko_labels, "red")
+
+        nx.draw_networkx_labels(
+            self.dag,
+            {k: (x + 10, y + 10) for k, (x, y) in self.pos.items()},
+            ax=self.ax,
+            font_size=8,
+            font_weight="bold",
+            font_color="gray",
+        )
 
     def get_node_label(self, step_id: int) -> str:
         rewards = self.sim.g.reward_params
