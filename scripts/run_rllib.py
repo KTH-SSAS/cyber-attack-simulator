@@ -134,14 +134,9 @@ def main(
     env_config = EnvConfig.from_yaml(config_file)
     env_config = dataclasses.replace(env_config, run_id=id_string)
 
-    # To get the number of defenses
-    test_env = AttackSimulationEnv(env_config)
-
     model_config = {
         "custom_model": "DefenderModel",
-        "custom_model_config": {
-            "num_defense_steps": test_env.sim.num_defense_steps,
-        },
+        "custom_model_config": {}
     }
 
     gpu_count = kwargs["gpu_count"]
