@@ -7,6 +7,7 @@ from .agent import Agent
 
 DO_NOTHING = -1
 
+
 def get_new_targets(attack_surface: Set[int], discovered_targets: Set[int]) -> Set[int]:
     new_targets = attack_surface.difference(discovered_targets)
     return new_targets

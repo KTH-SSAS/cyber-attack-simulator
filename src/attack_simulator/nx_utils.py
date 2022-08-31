@@ -82,7 +82,7 @@ def nx_dag_layout(
             if isinstance(tweak, (int, float)):
                 tweak = (tweak,)
             if not isinstance(tweak, tuple) or len(tweak) == 0:
-                tweak = (depth**2,)
+                tweak = (depth ** 2,)
             if len(tweak) == 1:
                 tweak += (tweak[0] ** 2,)
 

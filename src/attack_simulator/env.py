@@ -127,7 +127,7 @@ class AttackSimulationEnv(gym.Env):
         """
 
         # The costs of used defense steps
-        
+
         reward = 0.0
         if mode == "uptime-reward":
             # Defender is rewarded each timestep for each defense that has been not used
@@ -135,7 +135,9 @@ class AttackSimulationEnv(gym.Env):
             reward = defense_reward - attacker_reward
         elif mode == "downtime-penalty":
             # Defender is penalized each timestep for each defense that has been used
-            defense_penalty = sum(self.sim.g.defense_costs * (np.logical_not(self.sim.defense_state)))
+            defense_penalty = sum(
+                self.sim.g.defense_costs * (np.logical_not(self.sim.defense_state))
+            )
             reward = -defense_penalty - attacker_reward
         elif mode == "defense-penalty":
             # Defender is penalized once when a defense is used
