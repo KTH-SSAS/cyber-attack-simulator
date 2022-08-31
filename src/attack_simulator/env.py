@@ -22,7 +22,6 @@ class AttackSimulationEnv(gym.Env):
 
     NO_ACTION = "no action"
 
-    sim: AttackSimulator
     attacker: Agent
 
     def __init__(self, config: EnvConfig):
@@ -167,7 +166,7 @@ class AttackSimulationEnv(gym.Env):
         self.sim.defense_action(defender_action)
 
         # Obtain attacker action, this _can_ be 0 for no action
-        attacker_action = self.attacker.act(self.sim.attack_surface) - 1
+        attacker_action = self.attacker.act(self.sim.attacker_observation)
         done |= self.attacker.done
         assert -1 <= attacker_action < self.sim.num_attack_steps
 

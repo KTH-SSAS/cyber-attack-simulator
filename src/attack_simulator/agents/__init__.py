@@ -1,5 +1,7 @@
 from typing import Dict, Type
 
+from attack_simulator.agents.searchers import BreadthFirstAttacker, DepthFirstAttacker
+
 from .agent import Agent
 from .attackers import (
     InformedAttacker,
@@ -27,6 +29,8 @@ ATTACKERS: Dict[str, Type[Agent]] = {
     "random-no-action": RandomNoActionAttacker,
     "random": RandomAttacker,
     "pathplanner": PathFinderAttacker,
+    "depth-first": DepthFirstAttacker,
+    "breadth-first": BreadthFirstAttacker,
 }
 
 DEFENDERS = {
@@ -50,7 +54,4 @@ __all__ = [
     "RuleBasedAgent",
     "NewRuleBasedAgent",
     "RiskAwareAgent",
-    "BanditAgent",
-    "QLearningAgent",
-    "ReinforceAgent",
 ]

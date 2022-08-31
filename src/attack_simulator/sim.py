@@ -1,6 +1,7 @@
 from typing import List, Tuple
 
 import numpy as np
+from numpy.typing import NDArray
 
 from .config import EnvConfig, GraphConfig
 from .graph import AttackGraph
@@ -57,6 +58,10 @@ class AttackSimulator:
         self.last_observation = None
 
         self.noise = self.generate_noise()
+
+    @property
+    def attacker_observation(self) -> NDArray:
+        return np.stack([self.attack_surface, self.attack_state])
 
     @property
     def num_attack_steps(self) -> int:
