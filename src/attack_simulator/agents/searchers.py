@@ -8,9 +8,9 @@ from .agent import Agent
 DO_NOTHING = -1
 
 
-def get_new_targets(attack_surface: Set[int], discovered_targets: Set[int]) -> Set[int]:
+def get_new_targets(attack_surface: Set[int], discovered_targets: Set[int]) -> List[int]:
     new_targets = attack_surface.difference(discovered_targets)
-    return new_targets
+    return list(sorted(new_targets))
 
 
 def select_next(targets: Union[List[int], Deque[int]]) -> int:
@@ -43,6 +43,7 @@ class BreadthFirstAttacker(Agent):
         self.current_target = DO_NOTHING
         self.targets: Deque[int] = deque([])
         self.discovered_targets: Set[int] = set()
+        self.rng = np.random.default_rng(agent_config["random_seed"])
 
     def act(self, observation: NDArray) -> int:
         attack_surface = observation[0]
@@ -50,6 +51,7 @@ class BreadthFirstAttacker(Agent):
         new_targets = get_new_targets(surface_indexes, self.discovered_targets)
 
         # Add new targets to the back of the queue
+        self.rng.shuffle(new_targets)
         for c in new_targets:
             self.targets.appendleft(c)
 
@@ -66,6 +68,7 @@ class DepthFirstAttacker(Agent):
         self.current_target = DO_NOTHING
         self.targets: List[int] = []
         self.discovered_targets: Set[int] = set()
+        self.rng = np.random.default_rng(agent_config["random_seed"])
 
     def act(self, observation: NDArray[np.int8]) -> int:
 
@@ -75,6 +78,7 @@ class DepthFirstAttacker(Agent):
         self.discovered_targets.update(new_targets)
 
         # Add new targets to the top of the stack
+        self.rng.shuffle(new_targets)
         for c in new_targets:
             self.targets.append(c)
 
