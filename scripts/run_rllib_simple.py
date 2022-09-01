@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 
-from ray.rllib.agents import dqn
+from ray.rllib.agents import ppo
 
 from attack_simulator.env import register_rllib_env
 from attack_simulator.ids_model import register_rllib_model
@@ -22,9 +22,9 @@ if __name__ == "__main__":
         "save_graphs": False,
         "save_logs": False,
         "false_negative": 0.0,
-        "attack_start_time": 0,
+        "attack_start_time": 5,
         "seed": seed,
-        "reward_mode": "simple",
+        "reward_mode": "downtime-penalty",
         "run_id": "simple",
         "graph_config": {
             "ttc": {"easy": 5, "hard": 10, "default": 1},
@@ -33,20 +33,24 @@ if __name__ == "__main__":
                 "medium_flag": 10,
                 "low_flag": 1,
                 "default": 0.0,
+                "defense_default": 10,
             },
             # "root": "asset:0:0",
-            "root": "a.attack",
+            "root": "attacker:13:enter:13",
             # "root": "internet.connect",
             # "filename": "graphs/big.yaml",
-            "filename": "graphs/test_graph.yaml",
+            "filename": "graphs/maze_attack_graph.yaml",
         },
+    }
+
+    model_config = {
+        "custom_model": "DefenderModel",
+        "custom_model_config": {},
     }
 
     render_path = Path("render/simple")
     if render_path.is_dir():
         shutil.rmtree(render_path)
-
-    model_config = {"use_lstm": False, "lstm_cell_size": 256}
 
     config = {
         "seed": env_config["seed"],
@@ -54,7 +58,7 @@ if __name__ == "__main__":
         "env": env_name,
         "env_config": env_config,
         "num_workers": 0,
-        # "model": model_config,
+        "model": model_config,
         "render_env": False,
         "disable_env_checking": True,
         "evaluation_interval": 1,
@@ -66,8 +70,8 @@ if __name__ == "__main__":
         },
     }
 
-    # trainer = ppo.PPOTrainer(config=config)
-    trainer = dqn.DQNTrainer(config=config)
+    trainer = ppo.PPOTrainer(config=config)
+    # trainer = dqn.DQNTrainer(config=config)
 
     for i in range(1):
         result = trainer.train()
