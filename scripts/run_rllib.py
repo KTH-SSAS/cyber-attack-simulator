@@ -45,7 +45,12 @@ def add_dqn_options(config: dict) -> dict:
 
 
 def add_ppo_options(config: dict) -> dict:
-    return config | {"train_batch_size": 600}
+    return config | {
+        "train_batch_size": 600,
+        "vf_clip_param" : 500.0,
+        "clip_param" : 0.1,
+        "vf_loss_coeff": 0.001,
+    }
 
 
 def dict2choices(d: dict) -> Tuple[list, str]:
