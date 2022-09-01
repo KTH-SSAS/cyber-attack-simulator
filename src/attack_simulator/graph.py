@@ -11,7 +11,9 @@ from yaml import safe_load
 
 from attack_simulator.config import GraphConfig
 
-from .constant import DEFENSE, OR
+import matplotlib.pyplot as plt
+
+from .constant import AND, DEFENSE, OR
 
 
 @dataclass
@@ -341,3 +343,42 @@ class AttackGraph:
     def step_is_defended(self, step: int, defense_state: np.ndarray) -> bool:
         defended = not all(defense_state[self.defense_steps_by_attack_step[step]])
         return defended
+
+
+    def draw(self):
+
+        # Get the graph
+        graph = self.to_networkx(True, np.ones(len(self.defense_names)))
+
+        # Get the positions of the nodes
+        pos = nx.nx_pydot.graphviz_layout(graph, prog="dot", root=self.attack_indices[self.root])
+
+        dpi = 100
+        fig = plt.figure(dpi=dpi)
+
+        pos = {int(key): value for key, value in pos.items()}
+
+        and_edges = {
+                (i, j)
+                for i, j in graph.edges
+                if self.attack_steps[self.attack_names[j]].step_type == AND
+        }
+
+        nx.draw_networkx_nodes(
+            graph, pos=pos, edgecolors="black", node_size=100
+        )
+        nx.draw_networkx_edges(graph, edgelist=graph.edges-and_edges, pos=pos, edge_color="black")
+        nx.draw_networkx_edges(
+            graph, edgelist=and_edges, pos=pos, edge_color="black", style="dashed"
+        )
+
+        labels = nx.get_node_attributes(graph, "ttc")
+
+        nx.draw_networkx_labels(graph, pos=pos, font_size=8)
+
+
+        plt.axis("off")
+        plt.tight_layout()
+
+        # Show the plot
+        plt.show()
