@@ -147,7 +147,7 @@ class AttackSimulationEnv(gym.Env):
                 else -attacker_reward
             )
         else:
-            raise Exception("Invalid Reward Method.")
+            raise Exception(f"Invalid reward method: {mode}.")
 
         return reward
 
@@ -186,15 +186,20 @@ class AttackSimulationEnv(gym.Env):
             "ttc_remaining_on_current_step": ttc_remaining,
             "attacker_reward": attacker_reward,
             "attacker_start_time": self.sim.attack_start_time,
-            "num_compromised_steps": len(compromised_steps),
-            "num_compromised_flags": len(compromised_flags),
-            "num_defenses_activated": sum(self.sim.defense_state),
-            "num_services_online": sum(self.sim.service_state),
+            "perc_compromised_steps": len(compromised_steps)/self.sim.num_attack_steps,
+            "perc_compromised_flags": len(compromised_flags)/self.sim.num_flags,
+            "perc_defenses_activated": sum(np.logical_not(self.sim.defense_state))/self.sim.num_defense_steps,
+            "perc_assets_online": sum(self.sim.service_state)/self.sim.num_assets,
         }
 
         if done:
             logger.debug("Compromised steps: %s", compromised_steps)
             logger.debug("Compromised flags: %s", compromised_flags)
+            info["num_defenses"] = self.sim.num_defense_steps
+            info["max_defense_cost"] = sum(self.sim.g.defense_costs)
+            info["max_attack_cost"] = sum(self.sim.g.reward_params)
+            info["num_attack_steps"] = self.sim.num_attack_steps
+            info["reward_mode"] = self.config.reward_mode
 
         self.done = done
 

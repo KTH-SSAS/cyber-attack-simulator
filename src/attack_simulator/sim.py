@@ -60,6 +60,10 @@ class AttackSimulator:
         self.noise = self.generate_noise()
 
     @property
+    def num_flags(self) -> int:
+        return len(self.g.flags)
+
+    @property
     def attacker_observation(self) -> NDArray:
         return np.stack([self.attack_surface, self.attack_state])
 

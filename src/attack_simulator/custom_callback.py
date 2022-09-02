@@ -42,9 +42,24 @@ class AttackSimCallback(DefaultCallbacks):
 
         for key in [
             "attacker_start_time",
-            "num_defenses_activated",
-            "num_services_online",
-            "num_compromised_steps",
-            "num_compromised_flags",
+            "perc_defenses_activated",
+            "perc_assets_online",
+            "perc_compromised_steps",
+            "perc_compromised_flags",
         ]:
             episode.custom_metrics[key] = info[key]
+
+        reward_mode = info["reward_mode"]
+
+        if reward_mode == "downtime-penalty":
+            r_min = -((episode.length*info["max_defense_cost"]) + info["max_attack_cost"])
+            r_max = 0
+        elif reward_mode == "uptime-reward":
+            r_min = -info["max_attack_cost"]
+            r_max = episode.length*info["max_defense_cost"]
+        elif reward_mode == "defense-penalty":
+            r_min = -(info["max_defense_cost"] + info["max_attack_cost"])
+            r_max = 0
+
+        episode.custom_metrics["normalized_reward"] = (episode.total_reward - r_min) / (r_max - r_min)
+        pass
