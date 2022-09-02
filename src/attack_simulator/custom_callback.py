@@ -24,7 +24,6 @@ class AttackSimCallback(DefaultCallbacks):
         info = episode.last_info_for()
 
         for key in [
-            "attacker_reward",
         ]:
             episode.custom_metrics[key] = info[key]
 
@@ -46,6 +45,7 @@ class AttackSimCallback(DefaultCallbacks):
             "perc_assets_online",
             "perc_compromised_steps",
             "perc_compromised_flags",
+            "attacker_reward",
         ]:
             episode.custom_metrics[key] = info[key]
 
