@@ -25,10 +25,24 @@ class DefenderModel(TorchModelV2, nn.Module):
         sim_space = obs_space.original_space.spaces["sim_state"]
         self.action_space = action_space
         self.num_outputs = num_outputs
+        hidden_dim = 256
+        num_hidden_layers = 2
+        activation_func = nn.Tanh
 
-        self.policy_fn = nn.Linear(sim_space.shape[0], self.action_space.n)
-        self.value_fn = nn.Linear(sim_space.shape[0], 1)
+        hidden_layers = []
+        prev_layer_size = sim_space.shape[0]
+        for _ in range(num_hidden_layers):
+            hidden_layers.append(nn.Linear(prev_layer_size, hidden_dim))
+            hidden_layers.append(activation_func())
+            prev_layer_size = hidden_dim
 
+        self.embedding_func = nn.Sequential(
+            *hidden_layers,
+        )
+
+        self.policy_fn = nn.Linear(hidden_dim, num_outputs)
+        self.value_fn = nn.Linear(hidden_dim, 1)
+        
     def forward(self, input_dict, state, seq_lens):
 
         obs = input_dict["obs"]
@@ -40,8 +54,11 @@ class DefenderModel(TorchModelV2, nn.Module):
             sim_state = sim_state.cuda()
             action_mask = action_mask.cuda()
 
-        policy_out = self.policy_fn(sim_state)
-        value_out = self.value_fn(sim_state)
+
+        embedding = self.embedding_func(sim_state)
+
+        policy_out = self.policy_fn(embedding)
+        value_out = self.value_fn(embedding)
         self._value_out = value_out
 
         inf_mask = torch.clamp(torch.log(action_mask), FLOAT_MIN, FLOAT_MAX)
