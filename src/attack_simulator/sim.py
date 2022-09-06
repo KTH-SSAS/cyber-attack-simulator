@@ -33,6 +33,11 @@ class AttackSimulator:
         self.false_negative = config.false_negative
         self.false_positive = config.false_positive
 
+        self.last_observation = np.zeros(self.g.num_attacks, dtype="int8")
+        
+        self.num_observed_alerts = 0
+        self.num_alerts = 0
+
         # Initial state
         self.entry_attack_index = self.g.attack_indices[self.g.root]
 
@@ -55,7 +60,7 @@ class AttackSimulator:
 
         self.attacker_action: int = self.entry_attack_index
         self.defender_action: int = self.NO_ACTION
-        self.last_observation = None
+
 
         self.noise = self.generate_noise()
 
@@ -149,6 +154,10 @@ class AttackSimulator:
         # Generate new noise so that FP and FN alerts change
         self.noise = self.generate_noise()
 
+        # Log alerts
+        self.num_observed_alerts += self.last_observation.sum()
+        self.num_alerts += self.attack_state.sum()
+
         # Nothing here to end the episode yet
 
         return False
@@ -184,6 +193,7 @@ class AttackSimulator:
         false_negatives = self.attack_state & (probabilities >= self.false_negative)
         false_positives = (1 - self.attack_state) & (probabilities <= self.false_positive)
         detected = false_negatives | false_positives
+        self.last_observation = detected
         return np.append(self.defense_state, detected)
 
     def current_attack_step(self) -> Tuple[str, int]:
