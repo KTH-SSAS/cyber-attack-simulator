@@ -212,7 +212,7 @@ class AttackSimulationRenderer:
         self._draw_nodes(observed_ko & flags, NODE_SIZE, "white", "red", node_shape="s")
 
         # Draw attacks without defense steps as hexagons
-        fixed_attacks = {i for i in all_attacks if not self.sim.g.defense_steps_by_attack_step[i]}
+        fixed_attacks = self.sim.g.get_undefendable_steps()
         self._draw_nodes(fixed_attacks, INNER_NODE_SIZE, "white", "black", node_shape="H")
 
         # Gray out disabled attacks

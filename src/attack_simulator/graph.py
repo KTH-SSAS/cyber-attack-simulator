@@ -2,7 +2,7 @@
 import os
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Set
 
 import networkx as nx
 import numpy as np
@@ -205,6 +205,16 @@ class AttackGraph:
             f"{self.__class__.__name__}({label}, {self.num_services} services,"
             f" {self.num_attacks} attack steps)"
         )
+
+    def is_defendable(self, step: int) -> bool:
+        """Return True if the given step is defendable."""
+        return len(self.defense_steps_by_attack_step[step]) > 0
+
+    def get_defendable_steps(self) -> List[int]:
+        return [i for i in self.attack_indices.values() if self.is_defendable(i)]
+
+    def get_undefendable_steps(self) -> List[int]:
+        return [i for i in self.attack_indices.values() if not self.is_defendable(i)]
 
     def get_reachable_steps(
         self, attack_index: int, attack_state: np.ndarray, defense_state: np.ndarray
