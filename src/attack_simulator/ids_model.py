@@ -47,7 +47,7 @@ class DefenderModel(TorchModelV2, nn.Module):
 
         obs = input_dict["obs"]
 
-        sim_state: Tensor = obs["sim_state"].type(torch.FloatTensor)
+        sim_state: Tensor = obs["sim_obs"].type(torch.FloatTensor)
         action_mask: Tensor = obs["action_mask"].type(torch.FloatTensor)
 
         if torch.cuda.is_available():
