@@ -22,7 +22,7 @@ class DefenderModel(TorchModelV2, nn.Module):
         nn.Module.__init__(self)
 
         self.obs_space = obs_space
-        sim_space = obs_space.original_space.spaces["sim_state"]
+        sim_space = obs_space.original_space.spaces["sim_obs"]
         self.action_space = action_space
         self.num_outputs = num_outputs
         hidden_dim = 256

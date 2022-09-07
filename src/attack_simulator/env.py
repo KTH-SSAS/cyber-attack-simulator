@@ -53,7 +53,8 @@ class AttackSimulationEnv(gym.Env):
         self.observation_space = spaces.Dict(
             {
                 "action_mask": spaces.Box(0, 1, shape=(self.num_actions,), dtype=np.int8),
-                "sim_state": spaces.Box(0, 1, shape=(self.dim_observations,), dtype=np.int8),
+                "sim_obs": spaces.Box(0, 1, shape=(self.dim_observations,), dtype=np.int8),
+                "sim_state": spaces.Box(0, 1, shape=(self.sim.num_attack_steps,), dtype=np.int8),
             }
         )
 
@@ -109,8 +110,9 @@ class AttackSimulationEnv(gym.Env):
         self.attacker = self._create_attacker()
 
         obs = {
-            "sim_state": self.sim.observe(),
+            "sim_obs": self.sim.observe(),
             "action_mask": self.get_action_mask(),
+            "sim_state": self.sim.attack_state,
         }
 
         if self.render_env:
@@ -196,16 +198,19 @@ class AttackSimulationEnv(gym.Env):
             logger.debug("Compromised steps: %s", compromised_steps)
             logger.debug("Compromised flags: %s", compromised_flags)
             info["num_defenses"] = self.sim.num_defense_steps
+            info["num_attack_steps"] = self.sim.num_attack_steps
             info["max_defense_cost"] = sum(self.sim.g.defense_costs)
             info["max_attack_cost"] = sum(self.sim.g.reward_params)
             info["num_attack_steps"] = self.sim.num_attack_steps
-            info["reward_mode"] = self.config.reward_mode
+            info["num_observed_alerts"] = self.sim.num_observed_alerts
+            info["num_alerts"] = self.sim.num_alerts
 
         self.done = done
 
         obs = {
-            "sim_state": self.sim.observe(),
+            "sim_obs": self.sim.observe(),
             "action_mask": self.get_action_mask(),
+            "sim_state": self.sim.attack_state,
         }
 
         return obs, self.defender_reward, done, info

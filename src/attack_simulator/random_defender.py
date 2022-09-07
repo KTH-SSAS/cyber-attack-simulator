@@ -1,3 +1,4 @@
+from typing import Union, Optional, List, Tuple, Dict
 import torch
 from ray.rllib.models import ModelCatalog
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
@@ -5,39 +6,80 @@ from ray.rllib.utils.torch_utils import FLOAT_MAX, FLOAT_MIN
 from torch import Tensor
 import numpy as np
 from torch import nn
+from ray.rllib.utils.typing import TensorType, TensorStructType
 
-def register_rllib_model():
-    name = "RandomDefenderModel"
-    ModelCatalog.register_custom_model(name, RandomDefenderModel)
-    return name
+from ray.rllib.policy.policy import Policy
+from ray.rllib.algorithms.algorithm import Algorithm
+from ray.rllib.policy.sample_batch import SampleBatch
+import tree
 
 
-class RandomDefenderModel(TorchModelV2, nn.Module):
-    """Policy for the agent agent."""
+class RandomDefender(Algorithm):
+    def get_default_policy_class(self, config):
+        return RandomPolicy
 
-    def __init__(self, obs_space, action_space, num_outputs, model_config, name, **kwargs) -> None:
-        TorchModelV2.__init__(self, obs_space, action_space, num_outputs, model_config, name)
-        nn.Module.__init__(self)
-        self.num_outputs = num_outputs
-        self.value_fn = nn.Linear(obs_space.original_space.spaces["sim_state"].shape[0], 1)
-        self.value_out = torch.ones(1, 1)
 
-    def forward(self, input_dict, state, seq_lens):
+class RandomPolicy(Policy):
+    def __init__(self, obs_space, action_space, config):
+        super().__init__(obs_space, action_space, config)
 
-        obs = input_dict["obs"]
-        
-        action_mask: Tensor = obs["action_mask"].type(torch.FloatTensor)
+    def compute_actions(
+        self,
+        obs_batch: Union[List[TensorStructType], TensorStructType],
+        state_batches: Optional[List[TensorType]] = None,
+        prev_action_batch: Union[List[TensorStructType], TensorStructType] = None,
+        prev_reward_batch: Union[List[TensorStructType], TensorStructType] = None,
+        info_batch: Optional[Dict[str, list]] = None,
+        episodes: Optional[List["Episode"]] = None,
+        explore: Optional[bool] = None,
+        timestep: Optional[int] = None,
+        **kwargs,
+    ) -> Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
+        return [self.action_space.sample() for _ in obs_batch], [], {}
 
-        inf_mask = torch.clamp(torch.log(action_mask), FLOAT_MIN, FLOAT_MAX)
+    def compute_actions_from_input_dict(
+        self,
+        input_dict: Union[SampleBatch, Dict[str, TensorStructType]],
+        explore: bool = None,
+        timestep: Optional[int] = None,
+        episodes: Optional[List["Episode"]] = None,
+        **kwargs,
+    ) -> Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
 
-        policy_out = torch.rand(self.num_outputs) + inf_mask
+        return [self.action_space.sample() for _ in input_dict["obs"]], [], {}
 
-        self.value_out = self.value_fn(obs["sim_state"].type(torch.FloatTensor))
+    def learn_on_batch(self, samples):
+        pass
 
-        return policy_out, state
+    def compute_gradients(self, postprocessed_batch: SampleBatch):
+        pass
 
-    def value_function(self):
-        return self.value_out.flatten()
+    def get_weights(self):
+        pass
 
-    def import_from_h5(self, h5_file: str) -> None:
-        return super().import_from_h5(h5_file)
+    def set_weights(self, weights) -> None:
+        pass
+
+
+    def init_view_requirements(self):
+        super().init_view_requirements()
+        # Disable for_training and action attributes for SampleBatch.INFOS column
+        # since it can not be properly batched.
+        vr = self.view_requirements[SampleBatch.INFOS]
+        vr.used_for_training = False
+        vr.used_for_compute_actions = False
+
+    def _get_dummy_batch_from_view_requirements(self, batch_size: int = 1):
+        return SampleBatch(
+            {
+                SampleBatch.OBS: tree.map_structure(
+                    lambda s: s[None], self.observation_space.sample()
+                ),
+            }
+        )
+
+    def load_batch_into_buffer(self, batch: SampleBatch, buffer_index: int = 0) -> int:
+        return 0
+
+    def learn_on_loaded_batch(self, offset: int = 0, buffer_index: int = 0):
+        pass

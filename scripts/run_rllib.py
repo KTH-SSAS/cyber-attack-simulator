@@ -4,16 +4,21 @@ import os
 import socket
 from dataclasses import asdict
 from datetime import datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Tuple
 
 import ray
 from ray import tune
-from ray.tune.integration.wandb import WandbLoggerCallback
+from ray.air.callbacks.wandb import WandbLoggerCallback
+from ray.tune.utils.log import Verbosity
+from ray.rllib.agents.ppo import PPOTrainer
+from ray.rllib.agents.dqn import DQNTrainer
 
 from attack_simulator.config import EnvConfig
 from attack_simulator.custom_callback import AttackSimCallback
 from attack_simulator.env import AttackSimulationEnv, register_rllib_env
-from attack_simulator.ids_model import register_rllib_model
+import attack_simulator.ids_model as ids_model
+import attack_simulator.optimal_defender as optimal_defender
+import attack_simulator.random_defender as random_defender
 from attack_simulator.rng import set_seeds
 from attack_simulator.telegram_utils import notify_ending
 
@@ -46,10 +51,10 @@ def add_dqn_options(config: dict) -> dict:
 
 def add_ppo_options(config: dict) -> dict:
     return config | {
-        "train_batch_size": 600,
+        "train_batch_size": 256,
         "vf_clip_param" : 500.0,
         "clip_param" : 0.1,
-        "vf_loss_coeff": 0.001,
+        "vf_loss_coeff": 0.0001,
     }
 
 
@@ -117,7 +122,7 @@ def main(
     os.environ["WANDB_MODE"] = "online" if wandb_sync else "offline"
 
     register_rllib_env()
-    register_rllib_model()
+    ids_model.register_rllib_model()
 
     current_time = datetime.now().strftime(r"%m-%d_%H:%M:%S")
     id_string = f"{current_time}@{socket.gethostname()}"
@@ -171,7 +176,7 @@ def main(
         "batch_mode": "complete_episodes",
         # The number of iterations between renderings
         "evaluation_interval": stop_iterations,
-        "evaluation_num_episodes": 5,
+        "evaluation_duration": 10,
         # Special evaluation config. Keys specified here will override
         # the same keys in the main config, but only for evaluation.
         "evaluation_config": {
@@ -189,11 +194,13 @@ def main(
     for k in keys:
         if stop[k] is None:
             del stop[k]
-
+    
     config = add_seed_sweep(config, [1, 2, 3])
 
     run_ppo = True
     run_dqn = False
+    run_random = True
+    run_tripwire = True
 
     experiments = []
 
@@ -201,7 +208,7 @@ def main(
         experiments.append(
             tune.Experiment(
                 "PPO",
-                run="PPO",
+                PPOTrainer,
                 config=add_ppo_options(config),
                 stop=stop,
                 checkpoint_at_end=True,
@@ -215,7 +222,7 @@ def main(
         experiments.append(
             tune.Experiment(
                 "DQN",
-                run="DQN",
+                DQNTrainer,
                 config=add_dqn_options(config),
                 stop=stop,
                 checkpoint_at_end=True,
@@ -225,15 +232,39 @@ def main(
             )
         )
 
+    if run_random:
+        experiments.append(
+                tune.Experiment(
+                    "Random",
+                    random_defender.RandomDefender,
+                    config=config | {"simple_optimizer": True},
+                    stop=stop,
+                    checkpoint_score_attr="episode_reward_mean",
+                )
+            )
+
+    if run_tripwire:
+        dummy_env = AttackSimulationEnv(env_config)
+        experiments.append(
+        tune.Experiment(
+            "Tripwire",
+            optimal_defender.TripwireDefender,
+            config=config | {"simple_optimizer": True, "defense_steps": dummy_env.sim.g.attack_steps_by_defense_step},
+            stop=stop,
+            checkpoint_score_attr="episode_reward_mean",
+        )
+    )
+
     analysis: tune.ExperimentAnalysis = tune.run_experiments(
         experiments,
         callbacks=callbacks,
+        progress_reporter=tune.CLIReporter(max_report_frequency=60),
+        verbose=Verbosity.V1_EXPERIMENT,
         # restore=args.checkpoint_path,
         # resume="PROMPT",
     )
 
-    if isinstance(analysis.trials, List):
-        notify_ending(f"Tune has finished running {len(analysis.trials)} trials.")
+    notify_ending(f"Run {id_string} finished.")
 
     # wandb.config.update(env_config_dict)
     # wandb.config.update(graph_config_dict)
