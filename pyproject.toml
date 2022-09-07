@@ -16,13 +16,13 @@ repository = "https://gitr.sys.kth.se/pontusj/openai_attack_simulation"
 
 
 [tool.poetry.dependencies]
-python = "~3.9"
+python = "~3.10"
 gym = "^0.21.0"
 numpy = "^1.21.4"
 matplotlib = "^3.4.2"
 pyyaml = "^6.0"
 aiohttp = "^3.8"
-ray = {version = "^1.12.1", extras = ["default", "rllib", "k8s"]}
+ray = {version = "^2.0.0", extras = ["default", "rllib", "k8s"]}
 networkx = "^2.6.3"
 seaborn = "^0.11.2"
 wandb = "^0.12.7"
