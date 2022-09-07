@@ -1,4 +1,4 @@
-CONFIG=config/small_env_config.yaml
+CONFIG=config/maze_env_config.yaml
 GPUS=1
 STOP_ITER=300
 NUM_WORKERS=0

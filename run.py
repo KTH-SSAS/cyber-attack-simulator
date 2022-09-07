@@ -1,7 +1,7 @@
 from scripts.run_rllib import main
 
 config_file = "config/maze_env_config.yaml"
-stop_iterations = 1000
+stop_iterations = 500
 local_mode = False
 wandb_sync = True
 
