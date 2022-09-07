@@ -197,6 +197,8 @@ def main(
     
     config = add_seed_sweep(config, [1, 2, 3])
 
+    config = add_fp_tp_sweep(config, [0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
+
     run_ppo = True
     run_dqn = False
     run_random = True
