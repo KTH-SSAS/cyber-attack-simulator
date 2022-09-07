@@ -2,22 +2,28 @@ import shutil
 from pathlib import Path
 
 from ray.rllib.agents import ppo
+from attack_simulator.config import EnvConfig
+from attack_simulator.custom_callback import AttackSimCallback
 
-from attack_simulator.env import register_rllib_env
-from attack_simulator.ids_model import register_rllib_model
+from attack_simulator.env import AttackSimulationEnv, register_rllib_env
+import attack_simulator.ids_model as ids_model
+import attack_simulator.optimal_defender as optimal_defender
+import attack_simulator.random_defender as random_defender
 from attack_simulator.rng import set_seeds
 
 if __name__ == "__main__":
 
     env_name = register_rllib_env()
     # Register the model with the registry.
-    model_name = register_rllib_model()
+    ids_model.register_rllib_model()
+    optimal_defender.register_rllib_model()
+    random_defender.register_rllib_model()
 
     seed = 22
     set_seeds(seed)
 
     env_config = {
-        "attacker": "pathplanner",
+        "attacker": "depth-first",
         "false_positive": 0.0,
         "save_graphs": False,
         "save_logs": False,
@@ -39,13 +45,15 @@ if __name__ == "__main__":
             "root": "attacker:13:enter:13",
             # "root": "internet.connect",
             # "filename": "graphs/big.yaml",
-            "filename": "graphs/maze_attack_graph.yaml",
+            "filename": "graphs/four_ways.yaml",
         },
     }
 
+    dummy_env = AttackSimulationEnv(EnvConfig(**env_config))
+
     model_config = {
         "custom_model": "DefenderModel",
-        "custom_model_config": {},
+        "custom_model_config": {"defense_steps": dummy_env.sim.g.attack_steps_by_defense_step, "seed": seed},
     }
 
     render_path = Path("render/simple")
@@ -53,6 +61,7 @@ if __name__ == "__main__":
         shutil.rmtree(render_path)
 
     config = {
+        "callbacks": AttackSimCallback,
         "seed": env_config["seed"],
         "framework": "torch",
         "env": env_name,
@@ -60,6 +69,7 @@ if __name__ == "__main__":
         "num_workers": 0,
         "model": model_config,
         "render_env": False,
+        "explore": False,
         "disable_env_checking": True,
         "evaluation_interval": 1,
         "evaluation_num_workers": 0,
@@ -72,6 +82,8 @@ if __name__ == "__main__":
 
     trainer = ppo.PPOTrainer(config=config)
     # trainer = dqn.DQNTrainer(config=config)
+    # trainer = RandomDefender(config=config)
+    trainer = optimal_defender.TripwireDefender(config=config | {"simple_optimizer": True, "defense_steps": dummy_env.sim.g.attack_steps_by_defense_step})
 
     for i in range(1):
         result = trainer.train()
