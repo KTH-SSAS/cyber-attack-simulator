@@ -52,8 +52,8 @@ def add_dqn_options(config: dict) -> dict:
 def add_ppo_options(config: dict) -> dict:
     return config | {
         "train_batch_size": 256,
-        "vf_clip_param" : 500.0,
-        "clip_param" : 0.1,
+        "vf_clip_param": 500.0,
+        "clip_param": 0.1,
         "vf_loss_coeff": 0.0001,
     }
 
@@ -144,10 +144,7 @@ def main(
     env_config = EnvConfig.from_yaml(config_file)
     env_config = dataclasses.replace(env_config, run_id=id_string)
 
-    model_config = {
-        "custom_model": "DefenderModel",
-        "custom_model_config": {}
-    }
+    model_config = {"custom_model": "DefenderModel", "custom_model_config": {}}
 
     gpu_count = kwargs["gpu_count"]
     num_workers = kwargs["num_workers"]
@@ -160,8 +157,8 @@ def main(
     # This is optimized for a single machine with multiple CPU-cores and a single GPU
     gpu_use_percentage = 0.15 if gpu_count > 0 else 0
     num_parallell_tasks = 3
-    num_gpus = 0.001 # Driver GPU
-    num_gpus_per_worker = (gpu_count/num_parallell_tasks - num_gpus) / num_workers
+    num_gpus = 0.001  # Driver GPU
+    num_gpus_per_worker = (gpu_count / num_parallell_tasks - num_gpus) / num_workers
     # fragment_length = 200
 
     config = {
@@ -196,7 +193,7 @@ def main(
     for k in keys:
         if stop[k] is None:
             del stop[k]
-    
+
     config = add_seed_sweep(config, [1, 2, 3])
 
     config = add_fp_tp_sweep(config, [0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
@@ -238,26 +235,31 @@ def main(
 
     if run_random:
         experiments.append(
-                tune.Experiment(
-                    "Random",
-                    random_defender.RandomDefender,
-                    config=config | {"simple_optimizer": True},
-                    stop=stop,
-                    checkpoint_score_attr="episode_reward_mean",
-                )
+            tune.Experiment(
+                "Random",
+                random_defender.RandomDefender,
+                config=config | {"simple_optimizer": True, "evaluation_interval": 100},
+                stop=100,
+                checkpoint_score_attr="episode_reward_mean",
             )
+        )
 
     if run_tripwire:
         dummy_env = AttackSimulationEnv(env_config)
         experiments.append(
-        tune.Experiment(
-            "Tripwire",
-            optimal_defender.TripwireDefender,
-            config=config | {"simple_optimizer": True, "defense_steps": dummy_env.sim.g.attack_steps_by_defense_step},
-            stop=stop,
-            checkpoint_score_attr="episode_reward_mean",
+            tune.Experiment(
+                "Tripwire",
+                optimal_defender.TripwireDefender,
+                config=config
+                | {
+                    "simple_optimizer": True,
+                    "defense_steps": dummy_env.sim.g.attack_steps_by_defense_step,
+                    "evaluation_interval": 100,
+                },
+                stop=100,
+                checkpoint_score_attr="episode_reward_mean",
+            )
         )
-    )
 
     analysis: tune.ExperimentAnalysis = tune.run_experiments(
         experiments,
