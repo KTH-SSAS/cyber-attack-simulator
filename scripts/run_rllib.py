@@ -239,7 +239,7 @@ def main(
                 "Random",
                 random_defender.RandomDefender,
                 config=config | {"simple_optimizer": True, "evaluation_interval": 100},
-                stop=100,
+                stop={"training_iteration": 100},
                 checkpoint_score_attr="episode_reward_mean",
             )
         )
@@ -256,7 +256,7 @@ def main(
                     "defense_steps": dummy_env.sim.g.attack_steps_by_defense_step,
                     "evaluation_interval": 100,
                 },
-                stop=100,
+                stop={"training_iteration": 100},
                 checkpoint_score_attr="episode_reward_mean",
             )
         )
