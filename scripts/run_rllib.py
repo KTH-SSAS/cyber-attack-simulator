@@ -238,7 +238,13 @@ def main(
             tune.Experiment(
                 "Random",
                 random_defender.RandomDefender,
-                config=config | {"simple_optimizer": True, "evaluation_interval": 100},
+                config=config
+                | {
+                    "train_batch_size": 15,
+                    "num_gpus": 0,
+                    "simple_optimizer": True,
+                    "evaluation_interval": 100
+                },
                 stop={"training_iteration": 100},
                 checkpoint_score_attr="episode_reward_mean",
             )
@@ -252,6 +258,8 @@ def main(
                 optimal_defender.TripwireDefender,
                 config=config
                 | {
+                    "train_batch_size": 15,
+                    "num_gpus": 0,
                     "simple_optimizer": True,
                     "defense_steps": dummy_env.sim.g.attack_steps_by_defense_step,
                     "evaluation_interval": 100,
