@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import shelve
+import re
 
 import ray
 import ray.cloudpickle as cloudpickle
@@ -289,6 +290,9 @@ def run(args, parser):
         if not os.path.exists(config_path):
             config_path = os.path.join(config_dir, "../params.pkl")
 
+    run_id = "_".join(os.path.basename(config_dir).split('_')[2:4])
+    run_id = "_".join([args.run, run_id]) 
+
     # Load the config from pickled.
     if os.path.exists(config_path):
         with open(config_path, "rb") as f:
@@ -326,8 +330,8 @@ def run(args, parser):
     # Make sure we have evaluation workers.
     if not config.get("evaluation_num_workers"):
         config["evaluation_num_workers"] = config.get("num_workers", 0)
-    if not config.get("evaluation_duration"):
-        config["evaluation_duration"] = 1
+    
+    config["evaluation_duration"] = int(args.episodes)
     # Hard-override this as it raises a warning by Trainer otherwise.
     # Makes no sense anyways, to have it set to None as we don't call
     # `Trainer.train()` here.
@@ -337,9 +341,14 @@ def run(args, parser):
     if args.no_render:
         deprecation_warning(old="--no-render", new="--render", error=False)
         args.render = False
+    
+    
+    config["evaluation_config"]["render_env"] = args.render
+    config["evaluation_config"]["env_config"]["save_graphs"] = args.render
+    config["evaluation_config"]["env_config"]["save_logs"] = args.render
     config["render_env"] = args.render
-
-    ray.init(local_mode=args.local_mode)
+    config["env_config"]["save_graphs"] = args.render
+    config["env_config"]["save_logs"] = args.render
 
     # Create the Trainer from config.
     cls = get_trainable_cls(args.run)
@@ -361,7 +370,7 @@ def run(args, parser):
         target_episodes=num_episodes,
         save_info=args.save_info,
     ) as saver:
-        rollout(agent, args.env, num_steps, num_episodes, saver, not args.render)
+        rollout(agent, args.env, num_steps, num_episodes, saver, not args.render, run_id)
     agent.stop()
 
 
@@ -396,6 +405,7 @@ def rollout(
     num_episodes=0,
     saver=None,
     no_render=True,
+    run_id: str = "trial",
 ):
     policy_agent_mapping = default_policy_agent_mapping
 
@@ -414,6 +424,7 @@ def rollout(
             eval_result = agent.evaluate()["evaluation"]
             # Increase timestep and episode counters.
             eps = agent.config["evaluation_duration"]
+            saver._shelf[run_id] = eval_result
             episodes += eps
             steps += eps * eval_result["episode_len_mean"]
             # Print out results and continue.

@@ -1,8 +1,12 @@
+#!/usr/bin/env python
+
 from pathlib import Path
-from ray.rllib import evaluate
+from attack_simulator import evaluate
 from attack_simulator.env import register_rllib_env
-from attack_simulator.ids_model import register_rllib_model
+import attack_simulator.ids_model as ids_model
+from tqdm import tqdm
 import re
+import ray
 
 
 def get_checkpoint_path(run_dir: Path) -> Path:
@@ -14,36 +18,38 @@ def get_checkpoint_path(run_dir: Path) -> Path:
 	return checkpoint_folder
 
 env_name = register_rllib_env()
-model_name = register_rllib_model()
+ids_model.register_rllib_model()
 
 parser = evaluate.create_parser()
 
-ray_results = Path("/home/jakob/sentience/data/ray_results/")
+ray_results = Path("/home/jakob/ray_results/")
 
-algorithm = "PPO"
+sweeps = ["56ca0", "f74f5"]
+local_mode = False
+num_episodes = 500
 
-run_folder = ray_results / algorithm
+ray.init(local_mode=local_mode)
+for run_id in sweeps:
+	for algorithm in ray_results.iterdir():
+		run_folder = ray_results / algorithm
+		result_folders = filter(lambda x: re.search(run_id, x.name), run_folder.iterdir())
+		checkpoints = map(get_checkpoint_path, result_folders)
+		for checkpoint in map(str, checkpoints):
+			args = parser.parse_args([
+				checkpoint,
+				"--out",
+				"eval_data",
+				"--env",
+				env_name,
+				"--run",
+				algorithm.name,
+				"--episodes",
+				str(num_episodes),
+				"--steps",
+				"0", # No limit on amount of steps
+				"--use-shelve",
+				#"--local-mode"
+			])
 
-run_id = "6ca42"
-
-result_folders = filter(lambda x: re.search(run_id, x.name), run_folder.iterdir())
-
-checkpoints = map(get_checkpoint_path, result_folders)
-
-checkpoints = list(map(str, checkpoints))
-
-args = parser.parse_args(checkpoints + [
-	"--out",
-	"eval_data.db",
-	"--env",
-	env_name,
-	"--run",
-	"PPO",
-	"--episodes",
-	"300",
-	 "--steps",
-	 "0", # No limit
-	"--use-shelve",
-])
-
-evaluate.run(args, parser)
+			evaluate.run(args, parser)
+			#ray.shutdown()	
