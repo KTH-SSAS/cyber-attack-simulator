@@ -54,7 +54,6 @@ class AttackSimulationEnv(gym.Env):
             {
                 "action_mask": spaces.Box(0, 1, shape=(self.num_actions,), dtype=np.int8),
                 "sim_obs": spaces.Box(0, 1, shape=(self.dim_observations,), dtype=np.int8),
-                "sim_state": spaces.Box(0, 1, shape=(self.sim.num_attack_steps,), dtype=np.int8),
             }
         )
 
@@ -112,7 +111,6 @@ class AttackSimulationEnv(gym.Env):
         obs = {
             "sim_obs": self.sim.observe(),
             "action_mask": self.get_action_mask(),
-            "sim_state": self.sim.attack_state,
         }
 
         if self.render_env:
@@ -210,7 +208,6 @@ class AttackSimulationEnv(gym.Env):
         obs = {
             "sim_obs": self.sim.observe(),
             "action_mask": self.get_action_mask(),
-            "sim_state": self.sim.attack_state,
         }
 
         return obs, self.defender_reward, done, info
