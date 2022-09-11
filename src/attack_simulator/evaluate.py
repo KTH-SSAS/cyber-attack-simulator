@@ -228,7 +228,7 @@ class RolloutSaver:
     def __exit__(self, type, value, traceback):
         if self._shelf:
             # Close the shelf file, and store the number of episodes for ease
-            self._shelf["num_episodes"] = self._num_episodes
+            # self._shelf["num_episodes"] = self._num_episodes
             self._shelf.close()
         elif self._outfile and not self._use_shelve:
             # Dump everything as one big pickle:
@@ -258,7 +258,8 @@ class RolloutSaver:
             if self._use_shelve:
                 # Save this episode as a new entry in the shelf database,
                 # using the episode number as the key.
-                self._shelf[str(self._num_episodes)] = self._current_rollout
+                # self._shelf[str(self._num_episodes)] = self._current_rollout
+                pass
             else:
                 # Append this rollout to our list, to save laer.
                 self._rollouts.append(self._current_rollout)
