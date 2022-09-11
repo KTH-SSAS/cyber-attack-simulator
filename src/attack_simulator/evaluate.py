@@ -63,6 +63,13 @@ def create_parser(parser_creator=None):
     )
 
     required_named = parser.add_argument_group("required named arguments")
+
+    required_named.add_argument(
+        "--id",
+        type=str,
+        default=None,
+    )
+
     required_named.add_argument(
         "--run",
         type=str,
@@ -125,6 +132,12 @@ def create_parser(parser_creator=None):
         help="Algorithm-specific configuration (e.g. env, hyperparams). "
         "Gets merged with loaded configuration from checkpoint file and "
         "`evaluation_config` settings therein.",
+    )
+    parser.add_argument(
+        "--config_path",
+        default="",
+        type=str,
+        help="Path to a pkl configuration file",
     )
     parser.add_argument(
         "--save-info",
@@ -290,9 +303,8 @@ def run(args, parser):
         # Try parent directory.
         if not os.path.exists(config_path):
             config_path = os.path.join(config_dir, "../params.pkl")
-
-    run_id = "_".join(os.path.basename(config_dir).split('_')[2:4])
-    run_id = "_".join([args.run, run_id]) 
+    else:
+        config_path = args.config_path
 
     # Load the config from pickled.
     if os.path.exists(config_path):
@@ -319,6 +331,10 @@ def run(args, parser):
     evaluation_config = copy.deepcopy(
         args.config.get("evaluation_config", config.get("evaluation_config", {}))
     )
+
+    if config.get("env_config"):
+        evaluation_config["env_config"] = config["env_config"]
+
     config = merge_dicts(config, evaluation_config)
     # Merge with command line `--config` settings (if not already the same
     # anyways).
@@ -331,7 +347,7 @@ def run(args, parser):
     # Make sure we have evaluation workers.
     if not config.get("evaluation_num_workers"):
         config["evaluation_num_workers"] = config.get("num_workers", 0)
-    
+
     config["evaluation_duration"] = int(args.episodes)
     # Hard-override this as it raises a warning by Trainer otherwise.
     # Makes no sense anyways, to have it set to None as we don't call
@@ -350,6 +366,8 @@ def run(args, parser):
     config["render_env"] = args.render
     config["env_config"]["save_graphs"] = args.render
     config["env_config"]["save_logs"] = args.render
+
+    config["log_level"] = "ERROR"
 
     # Create the Trainer from config.
     cls = get_trainable_cls(args.run)
@@ -371,7 +389,7 @@ def run(args, parser):
         target_episodes=num_episodes,
         save_info=args.save_info,
     ) as saver:
-        rollout(agent, args.env, num_steps, num_episodes, saver, not args.render, run_id)
+        rollout(agent, args.env, num_steps, num_episodes, saver, not args.render, args.id)
     agent.stop()
 
 
