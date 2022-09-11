@@ -71,10 +71,10 @@ def main():
 
     parser = evaluate.create_parser()
 
-    ray_results = Path("/home/jakob/sentience/data/ray_results/")
+    ray_results = Path("/home/jakob/ray_results/")
 
-    sweeps = ["0a2b5"]
-    local_mode = True
+    sweeps = []
+    local_mode = False
     num_episodes = 500
 
     ray.init(local_mode=local_mode)
@@ -90,7 +90,7 @@ def main():
                 else:
                     checkpoint = get_checkpoint_path(folder)
                     if checkpoint:
-                        run_evaluation(run_id, parser, algorithm.name, env_name, num_episodes, checkpoint=checkpoint)
+                        run_evaluation(run_id, parser, algorithm.name, env_name, num_episodes, checkpoint=str(checkpoint))
 
 
 if __name__ == "__main__":
