@@ -177,7 +177,7 @@ def main(
         "batch_mode": "complete_episodes",
         # The number of iterations between renderings
         "evaluation_interval": stop_iterations,
-        "evaluation_duration": 10,
+        "evaluation_duration": 500,
         # Special evaluation config. Keys specified here will override
         # the same keys in the main config, but only for evaluation.
         "evaluation_config": {
