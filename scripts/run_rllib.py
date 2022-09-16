@@ -243,7 +243,7 @@ def main(
         "train_batch_size": 15,
         "num_gpus": 0,
         "simple_optimizer": True,
-        "evaluation_interval": 100,
+        "evaluation_interval": 1,
     }
 
     if run_random:
@@ -252,7 +252,7 @@ def main(
                 "Random",
                 random_defender.RandomDefender,
                 config=config | heuristic_config,
-                stop={"training_iteration": 100},
+                stop={"training_iteration": 1},
                 checkpoint_score_attr="episode_reward_mean",
             )
         )
@@ -268,7 +268,7 @@ def main(
                 | {
                     "defense_steps": dummy_env.sim.g.attack_steps_by_defense_step,
                 },
-                stop={"training_iteration": 100},
+                stop={"training_iteration": 1},
                 checkpoint_score_attr="episode_reward_mean",
             )
         )
