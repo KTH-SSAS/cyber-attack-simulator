@@ -111,6 +111,7 @@ def main(
     stop_iterations: int,
     local_mode: bool = False,
     wandb_sync: bool = False,
+    render: bool = False,
     **kwargs,
 ) -> None:
     """Main function for running the RLlib experiment."""
@@ -181,9 +182,12 @@ def main(
         # Special evaluation config. Keys specified here will override
         # the same keys in the main config, but only for evaluation.
         "evaluation_config": {
-            "render_env": True,
+            "render_env": render,
             "num_envs_per_worker": 1,
-            "env_config": asdict(dataclasses.replace(env_config, save_graphs=True, save_logs=True)),
+            "env_config": {
+                "save_graphs": render,
+                "save_logs": render,
+            },
         },
         "callbacks": AttackSimCallback,
     }
@@ -235,18 +239,19 @@ def main(
             )
         )
 
+    heuristic_config = {
+        "train_batch_size": 15,
+        "num_gpus": 0,
+        "simple_optimizer": True,
+        "evaluation_interval": 100,
+    }
+
     if run_random:
         experiments.append(
             tune.Experiment(
                 "Random",
                 random_defender.RandomDefender,
-                config=config
-                | {
-                    "train_batch_size": 15,
-                    "num_gpus": 0,
-                    "simple_optimizer": True,
-                    "evaluation_interval": 100
-                },
+                config=config | heuristic_config,
                 stop={"training_iteration": 100},
                 checkpoint_score_attr="episode_reward_mean",
             )
@@ -259,12 +264,9 @@ def main(
                 "Tripwire",
                 optimal_defender.TripwireDefender,
                 config=config
+                | heuristic_config
                 | {
-                    "train_batch_size": 15,
-                    "num_gpus": 0,
-                    "simple_optimizer": True,
                     "defense_steps": dummy_env.sim.g.attack_steps_by_defense_step,
-                    "evaluation_interval": 100,
                 },
                 stop={"training_iteration": 100},
                 checkpoint_score_attr="episode_reward_mean",
