@@ -147,14 +147,16 @@ def main(
     env_config = EnvConfig.from_yaml(config_file)
     env_config = dataclasses.replace(env_config, run_id=id_string)
 
-    model_config = {"custom_model": "DefenderModel", "custom_model_config": {}}
+    model_config = {'fcnet_hiddens': [32, 32], "custom_model": "DefenderModel", "custom_model_config": {}}
 
     gpu_count = kwargs["gpu_count"]
     num_workers = kwargs["num_workers"]
     env_per_worker = kwargs["env_per_worker"]
 
+
+    global_seed = 22
     # Set global seeds
-    set_seeds(5)
+    set_seeds(global_seed)
 
     # Allocate GPU power to workers
     # This is optimized for a single machine with multiple CPU-cores and a single GPU
@@ -165,6 +167,7 @@ def main(
     # fragment_length = 200
 
     config = {
+        "seed": global_seed,
         "horizon": 5000,
         "framework": "torch",
         "env": "AttackSimulationEnv",
