@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Set, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -42,7 +42,7 @@ class AttackSimulator:
         self.entry_attack_index = self.g.attack_indices[self.g.root]
 
         self.ttc_remaining = np.array(
-            [max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)]
+            [v if v == 0 else max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)]
         )
         self.ttc_total = sum(self.ttc_remaining)
 
@@ -113,17 +113,20 @@ class AttackSimulator:
     def valid_actions(self) -> np.ndarray:
         return np.flatnonzero(self.attack_surface)
 
-    def attack_action(self, attacker_action: int) -> bool:
+    def attack_action(self, attacker_action: int) -> Tuple[bool, Set[int]]:
         """Have the attacker perform an action."""
+
+        # steps that the attacker compromised by performing this action
+        compromised_steps: Set[int] = set()
 
         # If attack surface is empty, no need to perform an action
         if self.attack_surface_empty:
-            return True
+            return True, compromised_steps
 
         self.attacker_action = attacker_action
 
         if attacker_action == self.NO_ACTION:
-            return False
+            return False, compromised_steps
 
         assert (
             attacker_action in self.valid_actions
@@ -132,18 +135,38 @@ class AttackSimulator:
         self.ttc_remaining[attacker_action] -= 1
 
         if self.ttc_remaining[attacker_action] != 0:
-            return False
+            return False, compromised_steps
 
         # successful attack, update reward, attack_state, attack_surface
-        self.attack_state[attacker_action] = 1
-        self.attack_surface[attacker_action] = 0
+        compromised_step = attacker_action
+        compromised_steps.add(compromised_step)
+        self.attack_state[compromised_step] = 1
+        self.attack_surface[compromised_step] = 0
 
         # add reachable steps to the attack surface
-        self.attack_surface[self._get_reachable_steps(attacker_action)] = 1
+        self.attack_surface[self._get_reachable_steps(compromised_step)] = 1
+
+        compromised_ass = self.compromise_steps()
+
+        # recursively add reachable steps to the attack surface
+        while len(compromised_ass) > 0:
+            for step in compromised_ass:
+                self.attack_surface[self._get_reachable_steps(step)] = 1
+                compromised_steps.add(step)
+            compromised_ass = self.compromise_steps()
 
         # end episode when attack surface becomes empty
         done = self.attack_surface_empty
-        return done
+        return done, compromised_steps
+
+    def compromise_steps(self) -> NDArray[np.int8]:
+        """Set all steps with ttc=0 to compromised."""
+        no_ttc = np.flatnonzero(self.ttc_remaining == 0)
+        in_attack_surface = np.flatnonzero(self.attack_surface)
+        compromised_ass = np.intersect1d(no_ttc, in_attack_surface)
+        self.attack_state[compromised_ass] = 1
+        self.attack_surface[compromised_ass] = 0
+        return compromised_ass
 
     def _get_reachable_steps(self, attack_index: int) -> List[int]:
         return self.g.get_reachable_steps(attack_index, self.attack_state, self.defense_state)

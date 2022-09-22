@@ -166,8 +166,9 @@ class AttackSimulationEnv(gym.Env):
         done |= self.attacker.done
         assert -1 <= attacker_action < self.sim.num_attack_steps
 
-        done |= self.sim.attack_action(attacker_action)
-        attacker_reward = self.attacker_rewards[attacker_action]
+        atacker_done, compromised_steps = self.sim.attack_action(attacker_action)
+        done |= atacker_done
+        attacker_reward = sum([self.attacker_rewards[step] for step in compromised_steps])
 
         done |= self.sim.step()
 
