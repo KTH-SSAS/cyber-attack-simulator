@@ -15,6 +15,7 @@ import tree
 
 
 class RandomDefender(Algorithm):
+    _allow_unknown_configs = True
     def get_default_policy_class(self, config):
         return RandomPolicy
 

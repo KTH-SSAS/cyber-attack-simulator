@@ -238,6 +238,11 @@ class AttackSimulationEnv(gym.Env):
         return {key: value for key, value in zip(keys, action_probabilities)}
 
     def seed(self, seed: Optional[int] = None) -> List[int]:
+        """
+        Sets the seed for this env's random number generator(s).
+        RLLib will set the seed to its own configured value.
+        """
+
         if seed is None:
             return [self.env_seed]
 
