@@ -1,0 +1,194 @@
+attack_graph:
+- asset: flag
+  children: []
+  id: flag:0:take:0
+  name: gather
+  reward: high_flag
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - flag:0:take:0
+  id: host:1:connect:1
+  name: connect
+  reward: default
+  step_type: or
+  ttc: 1
+- asset: firewall
+  children:
+  - host:1:connect:1
+  id: firewall:2:connect:2
+  name: connect
+  reward: default
+  step_type: or
+  ttc: 1
+- asset: flag
+  children: []
+  id: flag:3:take:3
+  name: gather
+  reward: high_flag
+  step_type: or
+  ttc: 1
+- asset: firewall
+  children:
+  - flag:3:take:3
+  id: firewall:4:connect:4
+  name: connect
+  reward: default
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - firewall:2:connect:2
+  id: host:5:connect:5
+  name: connect
+  reward: default
+  step_type: or
+  ttc: 1
+- asset: attacker
+  children:
+  - host:5:connect:5
+  - host:27:connect:27
+  - host:26:connect:26
+  - host:25:connect:25
+  id: attacker:7:enter:7
+  name: enter
+  reward: default
+  step_type: or
+  ttc: 1
+- asset: firewall
+  children:
+  - host:15:connect:15
+  id: firewall:14:connect:14
+  name: connect
+  reward: default
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - flag:16:take:16
+  id: host:15:connect:15
+  name: connect
+  reward: default
+  step_type: or
+  ttc: 1
+- asset: flag
+  children: []
+  id: flag:16:take:16
+  name: gather
+  reward: high_flag
+  step_type: or
+  ttc: 1
+- asset: firewall
+  children:
+  - flag:20:take:20
+  id: firewall:19:connect:19
+  name: connect
+  reward: default
+  step_type: or
+  ttc: 1
+- asset: flag
+  children: []
+  id: flag:20:take:20
+  name: gather
+  reward: high_flag
+  step_type: or
+  ttc: 1
+- asset: firewall
+  children:
+  - firewall:2:connect:2
+  - flag:0:take:0
+  - host:1:connect:1
+  id: firewall:2:defend:21
+  name: enable
+  reward: defense_default
+  step_type: defense
+  ttc: 0
+- asset: firewall
+  children:
+  - firewall:4:connect:4
+  - flag:3:take:3
+  id: firewall:4:defend:22
+  name: enable
+  reward: defense_default
+  step_type: defense
+  ttc: 0
+- asset: firewall
+  children:
+  - firewall:14:connect:14
+  - flag:16:take:16
+  - host:15:connect:15
+  id: firewall:14:defend:23
+  name: enable
+  reward: defense_default
+  step_type: defense
+  ttc: 0
+- asset: firewall
+  children:
+  - firewall:19:connect:19
+  - flag:20:take:20
+  id: firewall:19:defend:24
+  name: enable
+  reward: defense_default
+  step_type: defense
+  ttc: 0
+- asset: host
+  children:
+  - firewall:14:connect:14
+  id: host:27:connect:27
+  name: connect
+  reward: default
+  step_type: or
+  ttc: 2
+- asset: host
+  children:
+  - firewall:19:connect:19
+  id: host:26:connect:26
+  name: connect
+  reward: default
+  step_type: or
+  ttc: 3
+- asset: host
+  children:
+  - firewall:4:connect:4
+  id: host:25:connect:25
+  name: connect
+  reward: default
+  step_type: or
+  ttc: 4
+flags:
+  flag:0:take:0: high_flag
+  flag:16:take:16: high_flag
+  flag:20:take:20: high_flag
+  flag:3:take:3: high_flag
+instance_model:
+- dependents: []
+  id: 0
+- dependents: []
+  id: 1
+- dependents: []
+  id: 2
+- dependents: []
+  id: 3
+- dependents: []
+  id: 4
+- dependents: []
+  id: 5
+- dependents: []
+  id: 7
+- dependents: []
+  id: 14
+- dependents: []
+  id: 15
+- dependents: []
+  id: 16
+- dependents: []
+  id: 19
+- dependents: []
+  id: 20
+- dependents: []
+  id: 27
+- dependents: []
+  id: 26
+- dependents: []
+  id: 25
