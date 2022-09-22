@@ -71,7 +71,7 @@ class PathFinderAttacker(Agent):
     def skip_steps(self) -> int:
         """Skip over steps in path that are already taken."""
         attack_target = self.planned_path.pop()
-        while self.atk_step_compromised(attack_target):
+        while self.atk_step_compromised(attack_target) and self.planned_path:
             attack_target = self.planned_path.pop()
 
         return attack_target
