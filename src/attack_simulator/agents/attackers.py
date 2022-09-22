@@ -23,8 +23,9 @@ class RandomAttacker(Agent):
         self.rng, _ = get_rng(agent_config.get("random_seed"))
 
     def act(self, observation: np.ndarray) -> int:
-        valid_attack_indices = np.flatnonzero(observation)
-        return self.rng.choice(valid_attack_indices) + 1
+        attack_surface = observation[0]
+        valid_attack_indices = np.flatnonzero(attack_surface)
+        return self.rng.choice(valid_attack_indices) if len(valid_attack_indices) > 0 else 0
 
 
 class RandomNoActionAttacker(Agent):
@@ -33,7 +34,8 @@ class RandomNoActionAttacker(Agent):
         self.rng, _ = get_rng(agent_config.get("random_seed"))
 
     def act(self, observation: np.ndarray) -> int:
-        valid_attacks = np.concatenate([[0], np.flatnonzero(observation) + 1])
+        attack_surface = observation[0]
+        valid_attacks = np.concatenate([[0], np.flatnonzero(attack_surface)])
         return self.rng.choice(valid_attacks)
 
 
