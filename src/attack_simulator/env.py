@@ -16,6 +16,8 @@ from .renderer import AttackSimulationRenderer
 
 logger = logging.getLogger("simulator")
 
+def select_random_attacker(rng: np.random.Generator):
+    return list(ATTACKERS.values())[rng.integers(0, len(ATTACKERS))]
 
 class AttackSimulationEnv(gym.Env):
     """Handles reinforcement learning matters."""
@@ -32,7 +34,7 @@ class AttackSimulationEnv(gym.Env):
 
         # process configuration, leave the graph last, as it may destroy env_config
         self.config = config
-        self.attacker_class: Type[Agent] = ATTACKERS[config.attacker]
+        self.attacker_class: Type[Agent] = ATTACKERS[config.attacker] if config.attacker != "mixed" else select_random_attacker(self.rng)
 
         self.render_env = config.save_graphs or config.save_logs
 
@@ -104,6 +106,9 @@ class AttackSimulationEnv(gym.Env):
         # Set up a new simulation environment
         self.sim = AttackSimulator(self.config, self.rng)
         self.attacker_rewards = self.sim.g.reward_params
+
+        if self.config.attacker == "mixed":
+            self.attacker_class = select_random_attacker(self.rng)
 
         # Set up a new attacker
         self.attacker = self._create_attacker()

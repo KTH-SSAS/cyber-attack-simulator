@@ -22,11 +22,11 @@ from .baseline_agents import (
 from .pathfinder import PathFinderAttacker
 
 ATTACKERS: Dict[str, Type[Agent]] = {
-    "well-informed": WellInformedAttacker,
-    "informed": InformedAttacker,
-    "round-robin-no-action": RoundRobinNoActionAttacker,
-    "round-robin": RoundRobinAttacker,
-    "random-no-action": RandomNoActionAttacker,
+    #"well-informed": WellInformedAttacker,
+    #"informed": InformedAttacker,
+    #"round-robin-no-action": RoundRobinNoActionAttacker,
+    #"round-robin": RoundRobinAttacker,
+    #"random-no-action": RandomNoActionAttacker,
     "random": RandomAttacker,
     "pathplanner": PathFinderAttacker,
     "depth-first": DepthFirstAttacker,
