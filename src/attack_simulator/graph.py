@@ -18,7 +18,6 @@ from .constant import AND, DEFENSE, OR
 
 @dataclass
 class AttackStep:
-    reward: float
     ttc: float
     id: str
     parents: List[str] = field(default_factory=list)
@@ -31,7 +30,6 @@ class AttackStep:
 
 def replace_all_templates(node: Dict, config: GraphConfig) -> dict:
     attributes = replace_template(node, config.ttc, "ttc")
-    attributes = replace_template(attributes, config.rewards, "reward")
     return attributes
 
 
@@ -82,7 +80,7 @@ class AttackGraph:
 
         self.defense_steps = {step.id: step for step in steps if step.step_type == DEFENSE}
 
-        self.defense_costs = np.array([step.reward for step in self.defense_steps.values()])
+        self.defense_costs = np.array([self.config.rewards["defense_default"] for _ in self.defense_steps.values()])
 
         self.attack_steps = {step.id: step for step in steps if step.step_type != DEFENSE}
 
@@ -159,20 +157,14 @@ class AttackGraph:
             [self.attack_steps[attack_name].ttc for attack_name in self.attack_names]
         )
 
-        reward_iterator = (
-            self.attack_steps[attack_name].reward for attack_name in self.attack_names
-        )
-
         # Don't iterate over flags to ensure determinism
 
         self.flags = np.array(
             [self.attack_indices[step] for step in self.attack_names if step in flags]
-        )
+        )      
         flag_rewards = np.array([flags[step] for step in self.attack_names if step in flags])
 
-        self.reward_params = np.array(
-            [reward if reward is not None else 0.0 for reward in reward_iterator], dtype=np.float64
-        )
+        self.reward_params = np.zeros(len(self.attack_names))
         self.reward_params[self.flags] = flag_rewards
 
         self.child_indices = [
