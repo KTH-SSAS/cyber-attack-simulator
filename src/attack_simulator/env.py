@@ -212,7 +212,7 @@ class AttackSimulationEnv(gym.Env):
             info["num_defenses"] = self.sim.num_defense_steps
             info["num_attack_steps"] = self.sim.num_attack_steps
             info["defense_costs"] = self.sim.g.defense_costs
-            info["max_attack_cost"] = sum(self.sim.g.reward_params)
+            info["flag_costs"] = self.sim.g.flags
             info["num_attack_steps"] = self.sim.num_attack_steps
             info["num_observed_alerts"] = self.sim.num_observed_alerts
             info["num_alerts"] = self.sim.num_alerts
