@@ -51,12 +51,12 @@ def add_dqn_options(config: dict) -> dict:
 
 def add_ppo_options(config: dict) -> dict:
     return config | {
-        "train_batch_size": 4096,
+        "train_batch_size": 2046,
         "sgd_minibatch_size": 256,
         "vf_clip_param": 500.0,
-        "clip_param": 0.05,
+        "clip_param": 0.02,
         "vf_loss_coeff": 0.001,
-        "lr": 0.00001,
+        "lr": 0.0001,
     }
 
 
