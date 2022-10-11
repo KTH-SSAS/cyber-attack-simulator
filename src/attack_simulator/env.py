@@ -66,10 +66,12 @@ class AttackSimulationEnv(gym.Env):
         self.episode_count = -1
 
         self.done = False
-        self.defender_reward = 0.0
         self.renderer: Optional[AttackSimulationRenderer] = None
         self.reset_render = True
         self.max_reward = 0.0
+        self.defender_reward = 0.0
+        self.sum_attacker_reward = 0
+        self.sum_defender_penalty = 0
 
     def _create_attacker(self) -> Agent:
         return self.attacker_class(
@@ -103,6 +105,10 @@ class AttackSimulationEnv(gym.Env):
 
         self.max_reward = sum(self.attacker_rewards)
 
+        self.sum_attacker_reward = 0
+        self.sum_defender_penalty = 0
+        self.defender_reward = 0
+
         # Set up a new simulation environment
         self.sim = AttackSimulator(self.config, self.rng)
         self.attacker_rewards = self.sim.g.reward_params
@@ -124,7 +130,7 @@ class AttackSimulationEnv(gym.Env):
         return obs
 
     def reward_function(
-        self, defender_action: int, attacker_reward: float, mode: str = "simple"
+        self, defender_action: int, mode: str = "simple"
     ) -> float:
         """Calculates the defender reward.
 
@@ -137,19 +143,19 @@ class AttackSimulationEnv(gym.Env):
         if mode == "uptime-reward":
             # Defender is rewarded each timestep for each defense that has been not used
             defense_reward = sum(self.sim.g.defense_costs * self.sim.defense_state)
-            reward = defense_reward - attacker_reward
+            reward = defense_reward
         elif mode == "downtime-penalty":
             # Defender is penalized each timestep for each defense that has been used
             defense_penalty = sum(
                 self.sim.g.defense_costs * (np.logical_not(self.sim.defense_state))
             )
-            reward = -defense_penalty - attacker_reward
+            reward = -defense_penalty
         elif mode == "defense-penalty":
             # Defender is penalized once when a defense is used
             reward = (
-                -(self.sim.g.defense_costs[defender_action] + attacker_reward)
+                -(self.sim.g.defense_costs[defender_action])
                 if defender_action != -1
-                else -attacker_reward
+                else 0
             )
         else:
             raise Exception(f"Invalid reward method: {mode}.")
@@ -175,11 +181,14 @@ class AttackSimulationEnv(gym.Env):
         done |= atacker_done
         attacker_reward = sum([self.attacker_rewards[step] for step in compromised_steps])
 
+        self.sum_attacker_reward += attacker_reward
+
         done |= self.sim.step()
 
-        self.defender_reward = self.reward_function(
-            defender_action, attacker_reward, mode=self.config.reward_mode
-        )
+        defender_penalty = self.reward_function(defender_action, mode=self.config.reward_mode)
+        self.sum_defender_penalty += defender_penalty
+
+        self.defender_reward = defender_penalty - attacker_reward
 
         compromised_steps = self.sim.compromised_steps
         compromised_flags = self.sim.compromised_flags
@@ -190,7 +199,6 @@ class AttackSimulationEnv(gym.Env):
             "attack_surface": self.sim.attack_surface,
             "current_step": current_step,
             "ttc_remaining_on_current_step": ttc_remaining,
-            "attacker_reward": attacker_reward,
             "attacker_start_time": self.sim.attack_start_time,
             "perc_compromised_steps": len(compromised_steps)/self.sim.num_attack_steps,
             "perc_compromised_flags": len(compromised_flags)/self.sim.num_flags,
@@ -198,16 +206,18 @@ class AttackSimulationEnv(gym.Env):
             "perc_assets_online": sum(self.sim.service_state)/self.sim.num_assets,
         }
 
-        if done:
+        if done:         
             logger.debug("Compromised steps: %s", compromised_steps)
             logger.debug("Compromised flags: %s", compromised_flags)
             info["num_defenses"] = self.sim.num_defense_steps
             info["num_attack_steps"] = self.sim.num_attack_steps
-            info["max_defense_cost"] = sum(self.sim.g.defense_costs)
+            info["defense_costs"] = self.sim.g.defense_costs
             info["max_attack_cost"] = sum(self.sim.g.reward_params)
             info["num_attack_steps"] = self.sim.num_attack_steps
             info["num_observed_alerts"] = self.sim.num_observed_alerts
             info["num_alerts"] = self.sim.num_alerts
+            info["sum_attacker_reward"] = self.sum_attacker_reward
+            info["sum_defender_penalty"] = self.sum_defender_penalty
 
         self.done = done
 
