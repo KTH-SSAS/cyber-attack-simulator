@@ -13,10 +13,10 @@ class AttackSimulator:
     NO_ACTION = -1
     NO_ACTION_STR = "nothing"
 
-    def __init__(self, config: EnvConfig, rng: np.random.Generator) -> None:
+    def __init__(self, config: EnvConfig, seed: int) -> None:
 
         self.config = config
-        self.rng = rng
+        self.rng = np.random.default_rng(seed)
 
         graph_config = (
             config.graph_config
@@ -47,7 +47,7 @@ class AttackSimulator:
                     )
         else:
             self.ttc_remaining = self.g.ttc_params
-                
+
         self.ttc_total = sum(self.ttc_remaining)
 
         # Set the TTC for the entry attack to be the attack start time

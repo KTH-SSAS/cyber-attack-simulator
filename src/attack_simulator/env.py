@@ -38,7 +38,7 @@ class AttackSimulationEnv(gym.Env):
 
         self.render_env = config.save_graphs or config.save_logs
 
-        self.sim = AttackSimulator(self.config, self.rng)
+        self.sim = AttackSimulator(self.config, self.env_seed + self.episode_count)
 
         # Include reward for wait action (-1)
         self.attacker_rewards = np.concatenate((np.array(self.sim.g.reward_params), np.zeros(1)))
@@ -62,7 +62,7 @@ class AttackSimulationEnv(gym.Env):
         # The defender action space allows to disable any one service or leave all unchanged
         self.action_space = spaces.Discrete(self.num_actions)
 
-        # Start this at -1 since it will be incremented by reset.
+        # Start episode count at -1 since it will be incremented the first time reset is called.
         self.episode_count = -1
 
         self.done = False
@@ -110,7 +110,7 @@ class AttackSimulationEnv(gym.Env):
         self.defender_reward = 0
 
         # Set up a new simulation environment
-        self.sim = AttackSimulator(self.config, self.rng)
+        self.sim = AttackSimulator(self.config, self.env_seed + self.episode_count)
         self.attacker_rewards = self.sim.g.reward_params
 
         if self.config.attacker == "mixed":
