@@ -41,9 +41,13 @@ class AttackSimulator:
         # Initial state
         self.entry_attack_index = self.g.attack_indices[self.g.root]
 
-        self.ttc_remaining = np.array(
-            [v if v == 0 else max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)]
-        )
+        if config.randomize_ttc:
+            self.ttc_remaining = np.array(
+                        [v if v == 0 else max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)]
+                    )
+        else:
+            self.ttc_remaining = self.g.ttc_params
+                
         self.ttc_total = sum(self.ttc_remaining)
 
         # Set the TTC for the entry attack to be the attack start time
