@@ -8,30 +8,7 @@ from ray.rllib.policy import Policy
 from ray.rllib.utils.typing import PolicyID, AgentID
 from ray.rllib.policy.sample_batch import SampleBatch
 import numpy as np
-
-def defender_min(avg_defense_cost, num_defenses, episode_length):
-    return -avg_defense_cost * (sum(range(1, num_defenses)) + num_defenses * episode_length)
-
-def normalize(value, min_val, max_val, low_bound=0, upper_bound=1):
-    return low_bound + (value - min_val)*(upper_bound-low_bound)/(max_val - min_val)
-
-def harmonic_mean(values):
-    return len(values) / sum([1 / value for value in values if value > 0])
-
-def defense_cost_for_timestep(timestep, defense_cost, num_defenses):
-    if timestep < num_defenses:
-        return timestep*defense_cost
-    else:
-        return num_defenses*defense_cost
-
-def attack_cost_for_timestep(timestep, attack_cost, num_attack_steps):
-    if timestep < num_attack_steps:
-        return timestep*attack_cost
-    else:
-        return num_attack_steps*attack_cost
-
-def cumulative_defense_cost_for_timestep(timestep, defense_cost, num_defenses):
-    return sum((defense_cost_for_timestep(t+1, defense_cost, num_defenses) for t in range(timestep)))
+from .reward_utils import defender_min, get_normalized_defense_reward, get_normalized_downtime_reward, normalize, harmonic_mean
 
 
 class AttackSimCallback(DefaultCallbacks):
@@ -75,12 +52,14 @@ class AttackSimCallback(DefaultCallbacks):
 
         # min_defense_rewards = [-defense_cost_for_timestep(t+1, avg_defense_cost, num_defenses) for t in range(episode.length)]
         # min_flag_rewards = [-attack_cost_for_timestep(t+1, avg_flag_cost, num_flags) for t in range(episode.length)]
-        
+
         # rewards = postprocessed_batch["rewards"]
 
         # postprocessed_rewards = [normalize(reward, min_d+min_a, 0, 0, 1) for reward, min_d, min_a in zip(rewards, min_defense_rewards, min_flag_rewards)]
-
-        postprocessed_batch["rewards"] =  postprocessed_batch["rewards"] /  sum(postprocessed_batch["rewards"])
+        # rewards = postprocessed_batch["rewards"]
+        # value_targets = postprocessed_batch["value_targets"]
+        # postprocessed_batch["rewards"] =  rewards / sum(rewards)
+        # postprocessed_batch["value_targets"] = (value_targets - sum(rewards))/(0 - sum(rewards))
 
         return None
 
@@ -113,17 +92,25 @@ class AttackSimCallback(DefaultCallbacks):
         avg_defense_cost = np.mean(defense_costs)
         num_defenses = len(defense_costs)
 
-        d_max = 0
         d_min = defender_min(avg_defense_cost, num_defenses, episode.length)
-        defender_penalty = normalize(info["sum_defender_penalty"], d_min, d_max)
+
+        defender_penalty = get_normalized_downtime_reward(
+            info["sum_defender_penalty"], avg_defense_cost, num_defenses, episode.length
+        )
         episode.custom_metrics["normalized_downtime_penalty"] = defender_penalty
 
-        a_min = -sum(info["flag_costs"])
-        a_max = 0
-        attacker_reward = normalize(info["sum_attacker_reward"], a_min, a_max)
+        a_min = sum(info["flag_costs"])
+
+        attacker_reward = get_normalized_defense_reward(
+            info["flag_costs"],
+            info["sum_attacker_reward"]
+        )
+
         episode.custom_metrics["normalized_attacker_reward"] = attacker_reward
 
-        episode.custom_metrics["harmonic_mean_reward"] = harmonic_mean([defender_penalty, attacker_reward])
+        episode.custom_metrics["harmonic_mean_reward"] = harmonic_mean(
+            [defender_penalty, attacker_reward]
+        )
 
         if reward_mode == "downtime-penalty":
             r_min = d_min - a_min
@@ -132,7 +119,7 @@ class AttackSimCallback(DefaultCallbacks):
             r_min = -a_min
             r_max = episode.length * sum(defense_costs)
         elif reward_mode == "defense-penalty":
-            r_min = -(sum(defense_costs) + a_min)
+            r_min = -sum(defense_costs) - sum(info["flag_costs"])
             r_max = 0
 
         episode.custom_metrics["normalized_reward"] = normalize(episode.total_reward, r_min, r_max)
