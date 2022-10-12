@@ -366,6 +366,7 @@ def run(args, parser):
     config["render_env"] = args.render
     config["env_config"]["save_graphs"] = args.render
     config["env_config"]["save_logs"] = args.render
+    config["env_config"]["run_id"] = args.id
 
     config["log_level"] = "ERROR"
 
