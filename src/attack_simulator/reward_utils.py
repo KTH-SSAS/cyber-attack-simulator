@@ -55,11 +55,11 @@ def get_normalized_downtime_reward(
     return defender_penalty
 
 
-def get_normalized_defense_reward(
+def get_normalized_attacker_reward(
     flag_costs: NDArray[FLOAT_TYPE], sum_attacker_reward: FLOAT_TYPE
 ) -> FLOAT_TYPE:
-    a_min = -np.sum(flag_costs)
-    a_max = FLOAT_TYPE(0.0)
+    a_max = np.sum(flag_costs)
+    a_min = FLOAT_TYPE(0.0)
     attacker_reward = normalize(sum_attacker_reward, a_min, a_max)
     return attacker_reward
 
@@ -68,5 +68,5 @@ def get_minimum_rewards(
     action_cost: FLOAT_TYPE, num_actions: INT_TYPE, length: INT_TYPE
 ) -> NDArray[FLOAT_TYPE]:
     return np.array(
-        [-action_cost_for_timestep(t + 1, action_cost, num_actions) for t in np.arange(length)]
+        [action_cost_for_timestep(t + 1, action_cost, num_actions) for t in np.arange(length)]
     )

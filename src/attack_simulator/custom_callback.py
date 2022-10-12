@@ -10,7 +10,7 @@ from ray.rllib.policy.sample_batch import SampleBatch
 import numpy as np
 from .reward_utils import (
     defender_min,
-    get_normalized_defense_reward,
+    get_normalized_attacker_reward,
     get_normalized_downtime_reward,
     normalize,
     harmonic_mean,
@@ -92,17 +92,20 @@ class AttackSimCallback(DefaultCallbacks):
         ]:
             episode.custom_metrics[key] = info[key]
 
-        reward_mode = worker.env_context["reward_mode"]
 
         defense_costs = info["defense_costs"]
         avg_defense_cost = np.mean(defense_costs)
         num_defenses = defense_costs.shape[0]
+        
         a_min = -np.sum(info["flag_costs"])
 
-        attacker_reward = get_normalized_defense_reward(
+        attacker_reward = get_normalized_attacker_reward(
             info["flag_costs"], info["sum_attacker_reward"]
         )
+        
+        flag_defense_reward = 1-attacker_reward
 
+        reward_mode = worker.env_context["reward_mode"]
         if reward_mode == "downtime-penalty":
             d_min = defender_min(avg_defense_cost, num_defenses, episode.length)
             r_min = d_min + a_min
@@ -112,18 +115,18 @@ class AttackSimCallback(DefaultCallbacks):
             )
             episode.custom_metrics["normalized_downtime_penalty"] = defender_penalty
             episode.custom_metrics["harmonic_mean_reward"] = harmonic_mean(
-                [defender_penalty, attacker_reward]
+                [defender_penalty, flag_defense_reward]
             )
 
         elif reward_mode == "uptime-reward":
-            r_min = -a_min
+            r_min = a_min
             r_max = episode.length * sum(defense_costs)
         elif reward_mode == "defense-penalty":
             r_min = -np.sum(defense_costs) + a_min
             r_max = 0
 
         episode.custom_metrics["normalized_reward"] = normalize(episode.total_reward, r_min, r_max)
-        episode.custom_metrics["normalized_attacker_reward"] = attacker_reward
+        episode.custom_metrics["normalized_flag_defense_reward"] = flag_defense_reward
 
         # num_alerts = info["num_alerts"]
 
