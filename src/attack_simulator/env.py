@@ -179,7 +179,7 @@ class AttackSimulationEnv(gym.Env):
 
         atacker_done, compromised_steps = self.sim.attack_action(attacker_action)
         done |= atacker_done
-        attacker_reward = sum([self.attacker_rewards[step] for step in compromised_steps])
+        attacker_reward = np.sum(self.attacker_rewards[compromised_steps])
 
         self.sum_attacker_reward += attacker_reward
 

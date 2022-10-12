@@ -117,7 +117,7 @@ class AttackSimulator:
     def valid_actions(self) -> np.ndarray:
         return np.flatnonzero(self.attack_surface)
 
-    def attack_action(self, attacker_action: int) -> Tuple[bool, Set[int]]:
+    def attack_action(self, attacker_action: int) -> Tuple[bool, NDArray[np.int8]]:
         """Have the attacker perform an action."""
 
         # steps that the attacker compromised by performing this action
@@ -161,7 +161,7 @@ class AttackSimulator:
 
         # end episode when attack surface becomes empty
         done = self.attack_surface_empty
-        return done, compromised_steps
+        return done, np.array(list(compromised_steps))
 
     def compromise_steps(self) -> NDArray[np.int8]:
         """Set all steps with ttc=0 to compromised."""
