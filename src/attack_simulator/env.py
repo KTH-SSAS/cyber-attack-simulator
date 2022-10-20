@@ -11,6 +11,7 @@ from attack_simulator.agents.agent import Agent
 from attack_simulator.config import EnvConfig
 from attack_simulator.rng import get_rng
 from attack_simulator.sim import AttackSimulator
+from numpy.typing import NDArray
 
 from .renderer import AttackSimulationRenderer
 
@@ -25,6 +26,8 @@ class AttackSimulationEnv(gym.Env):
     NO_ACTION = "no action"
 
     attacker: Agent
+    sim: AttackSimulator
+    attacker_rewards: NDArray[np.float32]
 
     def __init__(self, config: EnvConfig):
 
@@ -32,16 +35,17 @@ class AttackSimulationEnv(gym.Env):
 
         self.rng, self.env_seed = get_rng(config.seed)
 
+        # Start episode count at -1 since it will be incremented the first time reset is called.
+        self.episode_count = -1
+
         # process configuration, leave the graph last, as it may destroy env_config
         self.config = config
         self.attacker_class: Type[Agent] = ATTACKERS[config.attacker] if config.attacker != "mixed" else select_random_attacker(self.rng)
 
         self.render_env = config.save_graphs or config.save_logs
 
-        self.sim = AttackSimulator(self.config, self.rng)
-
-        # Include reward for wait action (-1)
-        self.attacker_rewards = np.concatenate((np.array(self.sim.g.reward_params), np.zeros(1)))
+        # Dummy sim object
+        self.sim = AttackSimulator(self.config, self.env_seed)
 
         # An observation informs the defender of
         # a) which services are turned on; and,
@@ -62,13 +66,9 @@ class AttackSimulationEnv(gym.Env):
         # The defender action space allows to disable any one service or leave all unchanged
         self.action_space = spaces.Discrete(self.num_actions)
 
-        # Start this at -1 since it will be incremented by reset.
-        self.episode_count = -1
-
         self.done = False
         self.renderer: Optional[AttackSimulationRenderer] = None
         self.reset_render = True
-        self.max_reward = 0.0
         self.defender_reward = 0.0
         self.sum_attacker_reward = 0
         self.sum_defender_penalty = 0
@@ -103,16 +103,16 @@ class AttackSimulationEnv(gym.Env):
 
         self.episode_count += 1
 
-        self.max_reward = sum(self.attacker_rewards)
 
         self.sum_attacker_reward = 0
         self.sum_defender_penalty = 0
         self.defender_reward = 0
 
         # Set up a new simulation environment
-        self.sim = AttackSimulator(self.config, self.rng)
-        self.attacker_rewards = self.sim.g.reward_params
-
+        self.sim = AttackSimulator(self.config, self.env_seed + self.episode_count)
+        # Include reward for wait action (-1)
+        self.attacker_rewards = np.concatenate((np.array(self.sim.g.reward_params), np.zeros(1)))
+        
         if self.config.attacker == "mixed":
             self.attacker_class = select_random_attacker(self.rng)
 
@@ -179,7 +179,7 @@ class AttackSimulationEnv(gym.Env):
 
         atacker_done, compromised_steps = self.sim.attack_action(attacker_action)
         done |= atacker_done
-        attacker_reward = sum([self.attacker_rewards[step] for step in compromised_steps])
+        attacker_reward = np.sum(self.attacker_rewards[compromised_steps])
 
         self.sum_attacker_reward += attacker_reward
 

@@ -49,6 +49,7 @@ class EnvConfig(Config):
     reward_mode: str
     run_id: str = "run"
     seed: Optional[int] = None
+    randomize_ttc: bool = True
 
     @classmethod
     def from_yaml(cls, filename: str) -> EnvConfig:

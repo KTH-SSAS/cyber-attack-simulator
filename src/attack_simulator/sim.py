@@ -13,10 +13,10 @@ class AttackSimulator:
     NO_ACTION = -1
     NO_ACTION_STR = "nothing"
 
-    def __init__(self, config: EnvConfig, rng: np.random.Generator) -> None:
+    def __init__(self, config: EnvConfig, seed: int) -> None:
 
         self.config = config
-        self.rng = rng
+        self.rng = np.random.default_rng(seed)
 
         graph_config = (
             config.graph_config
@@ -41,9 +41,13 @@ class AttackSimulator:
         # Initial state
         self.entry_attack_index = self.g.attack_indices[self.g.root]
 
-        self.ttc_remaining = np.array(
-            [v if v == 0 else max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)]
-        )
+        if config.randomize_ttc:
+            self.ttc_remaining = np.array(
+                        [v if v == 0 else max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)]
+                    )
+        else:
+            self.ttc_remaining = self.g.ttc_params
+
         self.ttc_total = sum(self.ttc_remaining)
 
         # Set the TTC for the entry attack to be the attack start time
@@ -113,7 +117,7 @@ class AttackSimulator:
     def valid_actions(self) -> np.ndarray:
         return np.flatnonzero(self.attack_surface)
 
-    def attack_action(self, attacker_action: int) -> Tuple[bool, Set[int]]:
+    def attack_action(self, attacker_action: int) -> Tuple[bool, NDArray[np.int8]]:
         """Have the attacker perform an action."""
 
         # steps that the attacker compromised by performing this action
@@ -157,7 +161,7 @@ class AttackSimulator:
 
         # end episode when attack surface becomes empty
         done = self.attack_surface_empty
-        return done, compromised_steps
+        return done, np.array(list(compromised_steps))
 
     def compromise_steps(self) -> NDArray[np.int8]:
         """Set all steps with ttc=0 to compromised."""
