@@ -125,12 +125,12 @@ class AttackSimulator:
 
         # If attack surface is empty, no need to perform an action
         if self.attack_surface_empty:
-            return True, compromised_steps
+            return True, np.array(list(compromised_steps))
 
         self.attacker_action = attacker_action
 
         if attacker_action == self.NO_ACTION:
-            return False, compromised_steps
+            return False, np.array(list(compromised_steps))
 
         assert (
             attacker_action in self.valid_actions
@@ -139,7 +139,7 @@ class AttackSimulator:
         self.ttc_remaining[attacker_action] -= 1
 
         if self.ttc_remaining[attacker_action] != 0:
-            return False, compromised_steps
+            return False, np.array(list(compromised_steps))
 
         # successful attack, update reward, attack_state, attack_surface
         compromised_step = attacker_action
