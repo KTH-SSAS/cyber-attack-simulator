@@ -163,6 +163,8 @@ class AttackGraph:
             [self.attack_indices[step] for step in self.attack_names if step in flags]
         )      
         flag_rewards = np.array([flags[step] for step in self.attack_names if step in flags])
+        self.flag_rewards = flag_rewards
+
 
         self.reward_params = np.zeros(len(self.attack_names))
         self.reward_params[self.flags] = flag_rewards
