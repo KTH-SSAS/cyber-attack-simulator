@@ -33,6 +33,9 @@ def add_graph_sweep(config: dict, values: list) -> dict:
     config["env_config"]["graph_config"]["filename"] = tune.grid_search(values)
     return config
 
+def add_attacker_sweep(config: dict, values: list) -> dict:
+    config["env_config"]["attacker"] = tune.grid_search(values)
+    return config
 
 def add_seed_sweep(config: dict, values: list) -> dict:
     config["seed"] = tune.grid_search(values)
