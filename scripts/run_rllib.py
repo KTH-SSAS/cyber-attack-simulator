@@ -218,7 +218,7 @@ def main(
         experiments.append(
             tune.Experiment(
                 "PPO",
-                PPOTrainer,
+                ids_model.Defender,
                 config=add_ppo_options(config),
                 stop=stop,
                 checkpoint_at_end=True,
