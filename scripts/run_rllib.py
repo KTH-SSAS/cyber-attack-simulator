@@ -285,6 +285,7 @@ def main(
         # resume="PROMPT",
     )
 
+    if wandb_sync:
     notify_ending(f"Run {id_string} finished.")
 
     # wandb.config.update(env_config_dict)
