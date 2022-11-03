@@ -160,10 +160,14 @@ def main(
 
     # Allocate GPU power to workers
     # This is optimized for a single machine with multiple CPU-cores and a single GPU
-    gpu_use_percentage = 0.15 if gpu_count > 0 else 0
-    num_parallell_tasks = 3
-    num_gpus = 0.001  # Driver GPU
-    num_gpus_per_worker = (gpu_count / num_parallell_tasks - num_gpus) / num_workers
+    #gpu_use_percentage = 0.15 if gpu_count > 0 else 0
+    #num_parallell_tasks = 3
+    #num_gpus = 0.001  # Driver GPU
+    #num_gpus_per_worker = (gpu_count / num_parallell_tasks - num_gpus) / num_workers
+
+    num_gpus = 0.0001 # Driver GPU
+    num_gpus_per_worker = (gpu_count - num_gpus) / num_workers if num_workers > 0 else 0
+
     # fragment_length = 200
 
     config = {
@@ -172,9 +176,9 @@ def main(
         "framework": "torch",
         "env": "AttackSimulationEnv",
         # This is the fraction of the GPU(s) this trainer will use.
-        "num_gpus": 0 if local_mode else num_gpus,
-        "num_workers": 0 if local_mode else 1,
-        "num_envs_per_worker": 1 if local_mode else env_per_worker,
+        "num_gpus": num_gpus,
+        "num_workers": num_workers,
+        "num_envs_per_worker": env_per_worker,
         "num_gpus_per_worker": num_gpus_per_worker,
         "model": model_config,
         "env_config": asdict(env_config),
