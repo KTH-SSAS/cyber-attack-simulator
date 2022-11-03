@@ -13,6 +13,15 @@ def register_rllib_model():
     ModelCatalog.register_custom_model(name, DQNDefenderModel)
     return name
 
+class HiddenLayer(nn.Module):
+
+    def __init__(self, in_features, out_features, activation_func) -> None:
+        super().__init__()
+        self.layer = nn.Linear(in_features, out_features)
+        self.activation_func = activation_func
+
+    def forward(self, x):
+        return self.activation_func(self.layer(x))
 
 class DefenderModel(TorchModelV2, nn.Module):
     """Policy for the agent agent."""
@@ -28,17 +37,27 @@ class DefenderModel(TorchModelV2, nn.Module):
         self.action_space = action_space
         self.num_outputs = num_outputs
         activation_func = nn.Tanh
+        self.vf_share_layers = model_config["vf_share_layers"]
 
         hidden_layers = []
         prev_layer_size = sim_space.shape[0]
         for dim in model_config['fcnet_hiddens']:
-            hidden_layers.append(nn.Linear(prev_layer_size, dim))
-            hidden_layers.append(activation_func())
+            hidden_layers.append(HiddenLayer(prev_layer_size, dim, activation_func()))
             prev_layer_size = dim
 
         self.embedding_func = nn.Sequential(
             *hidden_layers,
         )
+
+        if not self.vf_share_layers:
+            prev_layer_size = sim_space.shape[0]
+            hidden_layers = []
+            for dim in model_config['fcnet_hiddens']:
+                hidden_layers.append(HiddenLayer(prev_layer_size, dim, activation_func()))
+                prev_layer_size = dim
+            self.vf_embedding_func = nn.Sequential(
+                *hidden_layers,
+            )
 
         self.policy_fn = nn.Linear(prev_layer_size, num_outputs)
         self.value_fn = nn.Linear(prev_layer_size, 1)
@@ -64,7 +83,10 @@ class DefenderModel(TorchModelV2, nn.Module):
             embedding = self.embedding_func(sim_state)
 
         policy_out = self.policy_fn(embedding)
+        if self.vf_share_layers:
         value_out = self.value_fn(embedding)
+        else:
+            value_out = self.value_fn(self.vf_embedding_func(sim_state))
         self._value_out = value_out
 
         inf_mask = torch.clamp(torch.log(action_mask), FLOAT_MIN, FLOAT_MAX)
