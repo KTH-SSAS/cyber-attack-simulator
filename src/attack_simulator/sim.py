@@ -1,4 +1,4 @@
-from typing import List, Set, Tuple
+from typing import Callable, List, Set, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -34,7 +34,7 @@ class AttackSimulator:
         self.false_positive = config.false_positive
 
         self.last_observation = np.zeros(self.g.num_attacks, dtype="int8")
-        
+
         self.num_observed_alerts = 0
         self.num_alerts = 0
 
@@ -43,8 +43,8 @@ class AttackSimulator:
 
         if config.randomize_ttc:
             self.ttc_remaining = np.array(
-                        [v if v == 0 else max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)]
-                    )
+                [v if v == 0 else max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)]
+            )
         else:
             self.ttc_remaining = self.g.ttc_params
 
@@ -64,7 +64,6 @@ class AttackSimulator:
 
         self.attacker_action: int = self.entry_attack_index
         self.defender_action: int = self.NO_ACTION
-
 
         self.noise = self.generate_noise()
 
@@ -117,20 +116,25 @@ class AttackSimulator:
     def valid_actions(self) -> np.ndarray:
         return np.flatnonzero(self.attack_surface)
 
-    def attack_action(self, attacker_action: int) -> Tuple[bool, NDArray[np.int8]]:
+    def attack_action(self, attacker_action: int) -> Tuple[bool, NDArray[np.int64]]:
         """Have the attacker perform an action."""
 
         # steps that the attacker compromised by performing this action
+
+        set2array: Callable[[Set[int]], NDArray[np.int64]] = lambda x: np.array(
+            list(x), dtype=np.int64
+        )
+
         compromised_steps: Set[int] = set()
 
         # If attack surface is empty, no need to perform an action
         if self.attack_surface_empty:
-            return True, np.array(list(compromised_steps))
+            return True, set2array(compromised_steps)
 
         self.attacker_action = attacker_action
 
         if attacker_action == self.NO_ACTION:
-            return False, np.array(list(compromised_steps))
+            return False, set2array(compromised_steps)
 
         assert (
             attacker_action in self.valid_actions
@@ -139,7 +143,7 @@ class AttackSimulator:
         self.ttc_remaining[attacker_action] -= 1
 
         if self.ttc_remaining[attacker_action] != 0:
-            return False, np.array(list(compromised_steps))
+            return False, set2array(compromised_steps)
 
         # successful attack, update reward, attack_state, attack_surface
         compromised_step = attacker_action
@@ -161,9 +165,9 @@ class AttackSimulator:
 
         # end episode when attack surface becomes empty
         done = self.attack_surface_empty
-        return done, np.array(list(compromised_steps))
+        return done, set2array(compromised_steps)
 
-    def compromise_steps(self) -> NDArray[np.int8]:
+    def compromise_steps(self) -> NDArray[np.int64]:
         """Set all steps with ttc=0 to compromised."""
         no_ttc = np.flatnonzero(self.ttc_remaining == 0)
         in_attack_surface = np.flatnonzero(self.attack_surface)
