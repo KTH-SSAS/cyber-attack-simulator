@@ -1,3 +1,3 @@
 from run import run
 
-run(debug=True)
+run(num_workers=0, debug=True)
