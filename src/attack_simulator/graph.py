@@ -72,15 +72,15 @@ class AttackGraph:
         steps = [
             AttackStep(**replace_all_templates(node, self.config)) for node in data["attack_graph"]
         ]
-
         flags = {
-            key: self.config.rewards.get(value.lower(), self.config.rewards["default"])
-            for key, value in data["flags"].items()
+            key: self.total_ttc #* len(self.defense_steps)
+            for key in data["flags"]
         }
 
         self.defense_steps = {step.id: step for step in steps if step.step_type == DEFENSE}
+        self.defense_costs = np.array([1 for _ in self.defense_steps.values()])
 
-        self.defense_costs = np.array([self.config.rewards["defense_default"] for _ in self.defense_steps.values()])
+        # self.defense_costs = np.array([self.config.rewards["defense_default"] for _ in self.defense_steps.values()])
 
         self.attack_steps = {step.id: step for step in steps if step.step_type != DEFENSE}
 
@@ -176,6 +176,11 @@ class AttackGraph:
             ]
             for attack_name in self.attack_names
         ]
+        pass
+
+    @property
+    def total_ttc(self) -> float:
+        return sum(step.ttc for step in self.attack_steps.values())
 
     @property
     def root(self) -> str:
@@ -349,7 +354,7 @@ class AttackGraph:
         return defended
 
 
-    def draw(self):
+    def draw(self) -> None:
 
         # Get the graph
         graph = self.to_networkx(True, np.ones(len(self.defense_names)))
