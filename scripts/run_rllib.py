@@ -5,6 +5,7 @@ import socket
 from dataclasses import asdict
 from datetime import datetime
 from typing import Any, Dict, Tuple
+import re
 
 import ray
 from ray import tune
@@ -50,6 +51,9 @@ def add_dqn_options(config: dict) -> dict:
         "v_max": 0.0,
         "train_batch_size": 600,
     }
+
+def get_graph_size(config):
+    return int(re.search("_(\d+)\.yaml", config["env_config"]["graph_config"]["filename"])[1])
 
 
 def add_ppo_options(config: dict) -> dict:
