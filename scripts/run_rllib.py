@@ -297,7 +297,7 @@ def main(
     )
 
     if wandb_sync:
-    notify_ending(f"Run {id_string} finished.")
+        notify_ending(f"Run {id_string} finished.")
 
     # wandb.config.update(env_config_dict)
     # wandb.config.update(graph_config_dict)
