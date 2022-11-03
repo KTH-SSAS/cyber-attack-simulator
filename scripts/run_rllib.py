@@ -209,8 +209,8 @@ def main(
 
     run_ppo = True
     run_dqn = False
-    run_random = True
-    run_tripwire = True
+    run_random = False
+    run_tripwire = False
 
     experiments = []
 
