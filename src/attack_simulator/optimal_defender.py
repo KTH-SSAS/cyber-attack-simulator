@@ -71,6 +71,7 @@ class TripwirePolicy(Policy):
         attack_state = sim_state[:, self.num_defense_steps:]
 
         if attack_state.shape != self.compromised_steps.shape:
+            # in case batch size changes
             self.compromised_steps = torch.zeros_like(attack_state)
 
         new_compromised_steps = attack_state - self.compromised_steps
