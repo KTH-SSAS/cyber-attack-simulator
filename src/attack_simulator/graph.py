@@ -72,10 +72,7 @@ class AttackGraph:
         steps = [
             AttackStep(**replace_all_templates(node, self.config)) for node in data["attack_graph"]
         ]
-        flags = {
-            key: self.total_ttc #* len(self.defense_steps)
-            for key in data["flags"]
-        }
+
 
         self.defense_steps = {step.id: step for step in steps if step.step_type == DEFENSE}
         self.defense_costs = np.array([1 for _ in self.defense_steps.values()])
@@ -83,6 +80,11 @@ class AttackGraph:
         # self.defense_costs = np.array([self.config.rewards["defense_default"] for _ in self.defense_steps.values()])
 
         self.attack_steps = {step.id: step for step in steps if step.step_type != DEFENSE}
+
+        flags = {
+            key: self.total_ttc * 1.5 #* len(self.defense_steps)
+            for key in data["flags"]
+        }
 
         # Add parents for attack steps.
         # Defense steps are not included as parents
