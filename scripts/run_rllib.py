@@ -1,11 +1,14 @@
 import argparse
+import copy
 import dataclasses
+import itertools
 import os
 import socket
 from dataclasses import asdict
 from datetime import datetime
 from typing import Any, Dict, Tuple
 import re
+import numpy as np
 
 import ray
 from ray import tune
@@ -25,26 +28,36 @@ from attack_simulator.telegram_utils import notify_ending
 
 
 def add_fp_tp_sweep(config: dict, values: list) -> dict:
-    config["env_config"]["false_negative"] = tune.grid_search(values)
-    config["env_config"]["false_positive"] = tune.grid_search(values)
-    return config
+    new_config = copy.deepcopy(config)
+    new_config["env_config"]["false_negative"] = tune.grid_search(values)
+    new_config["env_config"]["false_positive"] = tune.grid_search(values)
+    return new_config
 
+def set_fp_fn_vals(config: dict, fp, fn):
+    new_config = copy.deepcopy(config)
+    new_config["env_config"]["false_negative"] = fn
+    new_config["env_config"]["false_positive"] = fp
+    return new_config
 
 def add_graph_sweep(config: dict, values: list) -> dict:
-    config["env_config"]["graph_config"]["filename"] = tune.grid_search(values)
-    return config
+    new_config = copy.deepcopy(config)
+    new_config["env_config"]["graph_config"]["filename"] = tune.grid_search(values)
+    return new_config
 
 def add_attacker_sweep(config: dict, values: list) -> dict:
-    config["env_config"]["attacker"] = tune.grid_search(values)
-    return config
+    new_config = copy.deepcopy(config)
+    new_config["env_config"]["attacker"] = tune.grid_search(values)
+    return new_config
 
 def add_seed_sweep(config: dict, values: list) -> dict:
-    config["seed"] = tune.grid_search(values)
-    return config
+    new_config = copy.deepcopy(config)
+    new_config["seed"] = tune.grid_search(values)
+    return new_config
 
 
 def add_dqn_options(config: dict) -> dict:
-    return config | {
+    new_config = copy.deepcopy(config)
+    return new_config | {
         "noisy": True,
         "num_atoms": 5,
         "v_min": -150.0,
@@ -57,13 +70,19 @@ def get_graph_size(config):
 
 
 def add_ppo_options(config: dict) -> dict:
-    return config | {
-        "train_batch_size": 2046,
-        "sgd_minibatch_size": 256,
-        "vf_clip_param": 500.0,
+    new_config = copy.deepcopy(config)
+    return new_config | {
+        "train_batch_size": 2048,
+        "sgd_minibatch_size": 2048,
+        "vf_clip_param": 500,
         "clip_param": 0.02,
         "vf_loss_coeff": 0.001,
         "lr": 0.0001,
+        "gamma": 1,
+        "use_critic": True,
+        "use_gae": True,
+        "kl_coeff": 0.0,
+        "entropy_coeff" : 0.0,
         "scale_rewards": False
     }
 
@@ -126,7 +145,7 @@ def main(
 
     dashboard_host = "0.0.0.0" if os.path.exists("/.dockerenv") else "127.0.0.1"
 
-    ray.init(dashboard_host=dashboard_host, local_mode=local_mode, num_cpus=7)
+    ray.init(dashboard_host=dashboard_host, local_mode=local_mode)
 
     callbacks = []
 
