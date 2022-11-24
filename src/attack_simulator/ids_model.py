@@ -31,33 +31,33 @@ class DefenderPolicy(PPOTorchPolicy):
     def postprocess_trajectory(
         self, sample_batch, other_agent_batches=None, episode=None
     ):
-
-
         with torch.no_grad():
-            #sample_batch["rewards"] = rewards / len(rewards)
+            if self.config["scale_rewards"]:
+                
+                    #sample_batch["rewards"] = rewards / len(rewards)
 
-            try:
-                rewards = sample_batch["rewards"]
-                info = sample_batch["infos"][-1]
-                avg_defense_cost = np.mean(info["defense_costs"])
-                num_defenses = len(info["defense_costs"])
-                avg_flag_cost = np.mean(info["flag_costs"])
-                episode_length = len(rewards)
-                min_defense_rewards = get_minimum_rewards(avg_defense_cost, num_defenses, episode_length)
-                min_flag_rewards = repeat(avg_flag_cost, episode_length)
-                total_max_reward_per_timestep = map(sum, zip(min_defense_rewards, min_flag_rewards))
-                scaled_rewards = map(lambda x: normalize(x[0], -x[1], 0, -1, 1), zip(rewards, total_max_reward_per_timestep))
-                sample_batch["rewards"] = np.array(list(scaled_rewards)) / episode_length
+                    try:
+                        rewards = sample_batch["rewards"]
+                        info = sample_batch["infos"][-1]
+                        avg_defense_cost = np.mean(info["defense_costs"])
+                        num_defenses = len(info["defense_costs"])
+                        avg_flag_cost = np.mean(info["flag_costs"])
+                        episode_length = len(rewards)
+                        min_defense_rewards = get_minimum_rewards(avg_defense_cost, num_defenses, episode_length)
+                        min_flag_rewards = repeat(avg_flag_cost, episode_length)
+                        total_max_reward_per_timestep = map(sum, zip(min_defense_rewards, min_flag_rewards))
+                        scaled_rewards = map(lambda x: normalize(x[0], -x[1], 0, -1, 1), zip(rewards, total_max_reward_per_timestep))
+                        sample_batch["rewards"] = np.array(list(scaled_rewards)) / episode_length
 
-            except IndexError:
-                pass
-            
-            # rewards = sample_batch["rewards"]
+                    except IndexError:
+                        pass
+                
+                # rewards = sample_batch["rewards"]
 
 
-            # postprocessed_rewards = [normalize(reward, min_d+min_a, 0, 0, 1) for reward, min_d, min_a in zip(rewards, min_defense_rewards, min_flag_rewards)]
+                # postprocessed_rewards = [normalize(reward, min_d+min_a, 0, 0, 1) for reward, min_d, min_a in zip(rewards, min_defense_rewards, min_flag_rewards)]
 
-            # sample_batch["rewards"] = postprocessed_rewards
+                # sample_batch["rewards"] = postprocessed_rewards
 
 
             return compute_gae_for_sample_batch(

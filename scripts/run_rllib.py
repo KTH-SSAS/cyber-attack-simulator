@@ -64,6 +64,7 @@ def add_ppo_options(config: dict) -> dict:
         "clip_param": 0.02,
         "vf_loss_coeff": 0.001,
         "lr": 0.0001,
+        "scale_rewards": False
     }
 
 
