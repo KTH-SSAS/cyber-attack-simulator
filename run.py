@@ -1,9 +1,10 @@
 #!/home/jakob/miniconda3/envs/sim/bin/python
 
 from scripts.run_rllib import main
+import sys
+from pathlib import Path
 
-def run(num_workers: int, debug: bool = False) -> None:
-    config_file = "config/graph_sweep.yaml"
+def run(config_file: Path, num_workers: int, debug: bool = False) -> None:
     stop_iterations = 500
     local_mode = debug
     wandb_sync = not debug
@@ -20,4 +21,7 @@ def run(num_workers: int, debug: bool = False) -> None:
     )
 
 if __name__ == "__main__":
-    run(num_workers=10)
+    if len(sys.argv) < 2:
+        exit()
+    config_file = Path(sys.argv[1])
+    run(config_file, num_workers=10)
