@@ -20,3 +20,4 @@ dist
 wandb
 render
 wandb_api_key
+graph_sweep
