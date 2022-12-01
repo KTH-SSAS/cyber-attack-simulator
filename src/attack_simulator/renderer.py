@@ -167,7 +167,7 @@ class AttackSimulationRenderer:
             node_size=size,
             node_color=color,
             edgecolors=border,
-            linewidths=3,
+            linewidths=2,
             vmin=vmin,
             vmax=vmax,
             **kwargs,
@@ -199,17 +199,31 @@ class AttackSimulationRenderer:
 
         all_attacks = set(range(self.sim.g.num_attacks))
         flags = set(self.sim.g.flags)
-        observed_attacks = np.array(self.sim.observe()[self.sim.g.num_defenses :])
+        #observed_attacks = np.array(self.sim.observe()[self.sim.g.num_defenses :])
+
+        attack_state = self.sim.attack_state
+        false_alerts = self.sim.false_positives
+        missed_alerts = self.sim.false_negatives
 
         # Draw uncompromised steps as green squares
-        observed_ok = set(np.flatnonzero(1 - observed_attacks))
+        observed_ok = set(np.flatnonzero(1 - attack_state))
         self._draw_nodes(observed_ok - flags, NODE_SIZE, "white", "green")
         self._draw_nodes(observed_ok & flags, NODE_SIZE, "white", "green", node_shape="s")
 
         # Draw compromised steps as red squares
-        observed_ko = set(np.flatnonzero(observed_attacks))
+        observed_ko = set(np.flatnonzero(attack_state))
         self._draw_nodes(observed_ko - flags, NODE_SIZE, "white", "red")
         self._draw_nodes(observed_ko & flags, NODE_SIZE, "white", "red", node_shape="s")
+
+        # Draw false positives as yellow squares
+        false_alerts = set(np.flatnonzero(false_alerts))
+        self._draw_nodes(false_alerts - flags, INNER_NODE_SIZE-100, "white", "purple")
+        self._draw_nodes(false_alerts & flags, INNER_NODE_SIZE-100, "white", "purple", node_shape="s")
+
+        # Draw false negatives as blue squares
+        missed_alerts = set(np.flatnonzero(missed_alerts))
+        self._draw_nodes(missed_alerts - flags, INNER_NODE_SIZE-100, "white", "blue")
+        self._draw_nodes(missed_alerts & flags, INNER_NODE_SIZE-100, "white", "blue", node_shape="s")
 
         # Draw attacks without defense steps as hexagons
         fixed_attacks = self.sim.g.get_undefendable_steps()

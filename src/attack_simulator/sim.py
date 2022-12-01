@@ -30,8 +30,11 @@ class AttackSimulator:
         self.defense_state = np.ones(self.g.num_defenses, dtype="int8")
         self.attack_state = np.zeros(self.g.num_attacks, dtype="int8")
         self.attack_surface = np.zeros(self.g.num_attacks, dtype="int8")
-        self.false_negative = config.false_negative
-        self.false_positive = config.false_positive
+        self.fnr = config.false_negative
+        self.fpr = config.false_positive
+
+        self.false_positives = np.zeros(self.g.num_attacks, dtype="int8")
+        self.false_negatives = np.zeros(self.g.num_attacks, dtype="int8")
 
         self.last_observation = np.zeros(self.g.num_attacks, dtype="int8")
 
@@ -221,8 +224,12 @@ class AttackSimulator:
         the true and false positive rates for each step, ongoing attacks may
         not be reported, or non-existing attacks may be spuriously reported."""
         probabilities = self.noise
-        false_negatives = self.attack_state & (probabilities >= self.false_negative)
-        false_positives = (1 - self.attack_state) & (probabilities <= self.false_positive)
+
+        self.false_positives = probabilities >= self.fpr
+        self.false_negatives = probabilities >= self.fnr
+
+        false_negatives = self.attack_state & (probabilities >= self.fnr)
+        false_positives = (1 - self.attack_state) & (probabilities <= self.fpr)
         detected = false_negatives | false_positives
         self.last_observation = detected
         return np.append(self.defense_state, detected)
