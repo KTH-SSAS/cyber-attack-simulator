@@ -69,40 +69,24 @@ class TripwirePolicy(Policy):
         sim_state: Tensor = obs["sim_obs"].type(torch.FloatTensor)
 
         attack_state = sim_state[:, self.num_defense_steps:]
+        defense_state = sim_state[:, :self.num_defense_steps]
 
-        if attack_state.shape != self.compromised_steps.shape:
-            # in case batch size changes
-            self.compromised_steps = torch.zeros_like(attack_state)
+        defenses_to_activate = torch.zeros(attack_state.shape[0], self.num_defense_steps)
 
-        new_compromised_steps = attack_state - self.compromised_steps
-        indeces = torch.nonzero(new_compromised_steps, as_tuple=False)
-        self.compromised_steps += new_compromised_steps
-
-        defenses_to_activate = torch.zeros(attack_state.shape[0], self.num_outputs)
-
-        # Nothing has been attacked yet
-        if torch.sum(attack_state).item() == 0:
-            return [0], [], {}
-    
-        # Check if a defense is triggered
-        for b, a_s in indeces:
+        for b in range(attack_state.shape[0]):
             for d_s, defendable_steps in enumerate(self.attack_steps_by_defense_steps):
-                if a_s.item() in defendable_steps:
-                    defenses_to_activate[b, d_s+1] = 1
-
+                if defense_state[b, d_s] == 1: # if the defense is available
+                    for a_s in defendable_steps:
+                        if attack_state[b, a_s] == 1:
+                            defenses_to_activate[b, d_s] = 1
                 
-        # If there is no defense to acivate, wait.
-        for b, x in enumerate(defenses_to_activate):
-            if torch.sum(x).item() == 0:
-                defenses_to_activate[b][0] = 1
+        policy_out = torch.zeros(attack_state.shape[0], self.num_outputs)
+        for b, defense in enumerate(defenses_to_activate):
+            if sum(defense) == 0:
+                policy_out[b, 0] = 1
+            else:
+                policy_out[b, 1:] = defense
 
-        action_mask: Tensor = obs["action_mask"].type(torch.FloatTensor)
-
-        inf_mask = torch.clamp(torch.log(action_mask), FLOAT_MIN, FLOAT_MAX)
-
-        policy_out = defenses_to_activate + inf_mask
-
-        policy_out = torch.clamp(policy_out, FLOAT_MIN, FLOAT_MAX)
 
         return torch.argmax(policy_out, dim=1), [], {}
 
