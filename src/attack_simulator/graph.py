@@ -314,13 +314,15 @@ class AttackGraph:
                 "or viewed online at, e.g., https://dreampuf.github.io/GraphvizOnline."
             )
 
-    def to_networkx(self, indices: bool, system_state: np.ndarray) -> nx.DiGraph:
+    def to_networkx(self, indices: bool, system_state: np.ndarray, add_defenses: bool = False) -> nx.DiGraph:
         """Convert the AttackGraph to an NetworkX DiGraph."""
         dig = nx.DiGraph()
 
         steps_to_graph = self.get_traversable_steps(self.attack_indices[self.root], system_state)
 
+        current_index = 0
         for step_idx in steps_to_graph:
+            current_index += 1
 
             step_name = self.attack_names[step_idx]
             a_s = self.attack_steps[step_name]
@@ -349,6 +351,14 @@ class AttackGraph:
 
             dig.add_edges_from(to_add)
 
+        if add_defenses:
+            for defense, affected_step in zip(self.defense_names, self.attack_steps_by_defense_step):
+                defense_index = self.defense_indices[defense]+current_index
+                dig.add_node(defense_index if indices else defense, type="defense")
+                for attack in affected_step:
+                    dig.add_edge(defense_index if indices else defense, attack if indices else self.attack_names[attack])
+
+
         return dig
 
     def step_is_defended(self, step: int, defense_state: np.ndarray) -> bool:
@@ -359,7 +369,7 @@ class AttackGraph:
     def draw(self) -> None:
 
         # Get the graph
-        graph = self.to_networkx(True, np.ones(len(self.defense_names)))
+        graph = self.to_networkx(True, np.ones(len(self.defense_names)), True)
 
         # Get the positions of the nodes
         pos = nx.nx_pydot.graphviz_layout(graph, prog="dot", root=self.attack_indices[self.root])
@@ -372,7 +382,7 @@ class AttackGraph:
         and_edges = {
                 (i, j)
                 for i, j in graph.edges
-                if self.attack_steps[self.attack_names[j]].step_type == AND
+                if self.attack_steps[self.attack_names[j]].step_type == STEP.AND
         }
 
         nx.draw_networkx_nodes(
@@ -385,7 +395,7 @@ class AttackGraph:
 
         labels = nx.get_node_attributes(graph, "ttc")
 
-        nx.draw_networkx_labels(graph, pos=pos, font_size=8)
+        nx.draw_networkx_labels(graph, labels=labels, pos=pos, font_size=8)
 
 
         plt.axis("off")
