@@ -10,7 +10,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.text import Text
 
-from .constant import AND
+from agraphlib import STEP
 from .sim import AttackSimulator
 from .svg_tooltips import add_tooltips, make_paths_relative, postprocess_frame, postprocess_html
 
@@ -140,7 +140,7 @@ class AttackSimulationRenderer:
             self.and_edges = {
                 (i, j)
                 for i, j in self.dag.edges
-                if self.sim.g.attack_steps[self.sim.g.attack_names[j]].step_type == AND
+                if self.sim.g.attack_steps[self.sim.g.attack_names[j]].step_type == STEP.AND
             }
 
             height = 1500

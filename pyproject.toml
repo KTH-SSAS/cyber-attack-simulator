@@ -32,6 +32,7 @@ python-telegram-bot = {version = "^13.9", optional = true}
 pydot = "^1.4.2"
 docformatter = "^1.4"
 poetry = "^1.1.13"
+agraphlib = { path = "../agraphlib/", develop = true }
 
 [tool.poetry.dev-dependencies]
 tox = "^3.24.4"

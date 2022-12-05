@@ -13,8 +13,7 @@ from attack_simulator.config import GraphConfig
 
 import matplotlib.pyplot as plt
 
-from .constant import AND, DEFENSE, OR
-
+from agraphlib import STEP
 
 @dataclass
 class AttackStep:
@@ -25,7 +24,7 @@ class AttackStep:
     conditions: List[str] = field(default_factory=list)
     asset: str = "asset"
     name: str = "attack"
-    step_type: str = OR
+    step_type: STEP = STEP.OR
 
 
 def replace_all_templates(node: Dict, config: GraphConfig) -> dict:
@@ -145,7 +144,7 @@ class AttackGraph:
         self.attack_prerequisites = [
             (
                 # logic function to combine prerequisites
-                any if self.attack_steps[attack_name].step_type == OR else all,
+                any if self.attack_steps[attack_name].step_type == STEP.OR else all,
                 # prerequisite attack steps
                 [
                     self.attack_indices[prerequisite_name]

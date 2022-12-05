@@ -6,8 +6,7 @@ import numpy as np
 from networkx.algorithms.shortest_paths.generic import shortest_path
 
 from attack_simulator.sim import AttackSimulator
-
-from ..constant import AND
+from agraphlib import STEP
 from .agent import Agent
 
 DO_NOTHING = -1
@@ -127,7 +126,7 @@ class PathFinderAttacker(Agent):
         for node_id in path:
             step = self.attack_graph.nodes[node_id]
             # If node is AND step, go to parents first.
-            if step["step_type"] == AND and node_id not in total_path:
+            if step["step_type"] == STEP.AND and node_id not in total_path:
                 parents = self.attack_graph.nodes[node_id]["parents"]
                 paths_to_parents = []
                 for parent in parents:
