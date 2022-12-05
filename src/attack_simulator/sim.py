@@ -180,7 +180,7 @@ class AttackSimulator:
         return compromised_ass
 
     def _get_vulnerable_children(self, attack_index: int) -> List[int]:
-        return self.g.get_vulnerable_children(attack_index, self.attack_state)
+        return self.g.get_vulnerable_children(attack_index, self.attack_state, self.defense_state)
 
     def step(self) -> bool:
         self.time += 1

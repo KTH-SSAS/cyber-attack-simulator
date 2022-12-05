@@ -220,34 +220,27 @@ class AttackGraph:
         logic, prerequisites = self.attack_prerequisites[step]
         return logic(attack_state[prerequisites]) if prerequisites else False
 
-    def is_vulnerable(self, step: int, attack_state: NDArray[np.int8]) -> bool:
+    def is_vulnerable(self, step: int, attack_state: NDArray[np.int8], defense_state: NDArray[np.int8]) -> bool:
         """Return True if the given step is vulnerable, i.e. can be attacked."""
         traversable = self.is_traversable(step, attack_state)
         compromised = attack_state[step]
-        return (not compromised   # Attack step isn't already compromised
-                and traversable)  # Prerequisite(s) are compromised
+        defenses = self.defense_steps_by_attack_step[step]
+        return (
+            not compromised # Attack step isn't already compromised
+                and traversable # Prerequisite(s) are compromised
+                and all(defense_state[defenses]) # A connected defense step isn't activated (0 if activated)
+        )
 
     def get_vulnerable_children(
-        self, attack_index: int, attack_state: np.ndarray
+        self, attack_index: int, attack_state: NDArray[np.int8], defense_state: NDArray[np.int8]
     ) -> List[int]:
         """Get all child steps of a step that can be attacked, given the state
         of compromised steps."""
 
         children = self.child_indices[attack_index]
-        prerequisite_iterator = (self.attack_prerequisites[child] for child in children)
+        vulnerable_children = list(filter(lambda child: self.is_vulnerable(child, attack_state, defense_state), children))
 
-        reachable_steps = [
-            child_index
-            for (child_index, (logic, prerequisites)) in zip(
-                children, prerequisite_iterator
-            )
-            if (  # Add step to attack surface if:
-                not attack_state[child_index]  # Attack step isn't already compromised
-                and logic(attack_state[prerequisites])  # Prerequisite(s) are compromised
-            )
-        ]
-
-        return reachable_steps
+        return vulnerable_children
 
     def is_traversible(
         self, node: int, defense_state: NDArray[np.int8], calculated_steps: Dict[int, bool]
