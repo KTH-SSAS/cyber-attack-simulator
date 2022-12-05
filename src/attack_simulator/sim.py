@@ -6,6 +6,8 @@ from numpy.typing import NDArray
 from .config import EnvConfig, GraphConfig
 from .graph import AttackGraph
 
+from .ids import ProbabilityIDS
+
 
 class AttackSimulator:
     """Does the simulation."""
@@ -17,6 +19,8 @@ class AttackSimulator:
 
         self.config = config
         self.rng = np.random.default_rng(seed)
+
+        self.ids = ProbabilityIDS(seed, config.false_negative, config.false_positive)
 
         graph_config = (
             config.graph_config
@@ -68,7 +72,7 @@ class AttackSimulator:
         self.attacker_action: int = self.entry_attack_index
         self.defender_action: int = self.NO_ACTION
 
-        self.noise = self.generate_noise()
+        self.noise = self.rng.random(self.attack_state.shape)
 
     @property
     def num_flags(self) -> int:
@@ -186,7 +190,7 @@ class AttackSimulator:
         self.time += 1
 
         # Generate new noise so that FP and FN alerts change
-        self.noise = self.generate_noise()
+        self.noise = self.rng.random(self.attack_state.shape)
 
         # Log alerts
         self.num_observed_alerts += self.last_observation.sum()
@@ -213,26 +217,17 @@ class AttackSimulator:
     def interpret_defender_action(self, action: int) -> str:
         return self.NO_ACTION_STR if action == self.NO_ACTION else self.g.defense_names[action]
 
-    def generate_noise(self) -> np.ndarray:
-        """Generates a "noise" mask to use for false positives and
-        negatives."""
-        return self.rng.uniform(0, 1, self.num_attack_steps)
-
     def observe(self) -> np.ndarray:
         """Observation of attack steps is subject to the true/false positive
         rates of an assumed underlying intrusion detection system Depending on
         the true and false positive rates for each step, ongoing attacks may
         not be reported, or non-existing attacks may be spuriously reported."""
-        probabilities = self.noise
 
-        self.false_positives = probabilities >= self.fpr
-        self.false_negatives = probabilities >= self.fnr
+        noisy_observation, self.false_positives, self.false_negatives = self.ids(
+            self.attack_state, self.noise
+        )
 
-        false_negatives = self.attack_state & (probabilities >= self.fnr)
-        false_positives = (1 - self.attack_state) & (probabilities <= self.fpr)
-        detected = false_negatives | false_positives
-        self.last_observation = detected
-        return np.append(self.defense_state, detected)
+        return np.append(self.defense_state, noisy_observation)
 
     def current_attack_step(self) -> Tuple[str, int]:
         """Returns name of the attack step the attacker is currently
