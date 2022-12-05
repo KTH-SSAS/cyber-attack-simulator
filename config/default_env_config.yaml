@@ -10,5 +10,4 @@ graph_config: {
   ttc: {easy: 1.0, hard: 10.0, default: 0.0},
   rewards: {high_flag: 100.0, low_flag: 1.0, default: 0.0},
   filename: graphs/test_graph.yaml,
-  root: "a.attack",
 }
