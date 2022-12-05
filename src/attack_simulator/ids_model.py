@@ -14,12 +14,6 @@ import numpy as np
 
 from attack_simulator.reward_utils import action_cost_for_timestep, get_minimum_rewards, normalize
 
-def register_rllib_model():
-    name = "DefenderModel"
-    ModelCatalog.register_custom_model(name, DefenderModel)
-    name = "DQNDefenderModel"
-    ModelCatalog.register_custom_model(name, DQNDefenderModel)
-    return name
 
 class Defender(PPO):
     _allow_unknown_configs = True
@@ -226,3 +220,12 @@ class DQNDefenderModel(DQNTorchModel):
 
     def value_function(self):
         return self.action_embed_model.value_function()
+
+def register_rllib_model():
+    name = "DefenderModel"
+    ModelCatalog.register_custom_model(name, DefenderModel)
+    name = "DQNDefenderModel"
+    ModelCatalog.register_custom_model(name, DQNDefenderModel)
+    return name
+
+register_rllib_model()
