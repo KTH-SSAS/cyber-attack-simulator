@@ -61,7 +61,7 @@ class AttackSimulator:
             self.attack_surface[self.entry_attack_index] = 0
             self.attack_state[self.entry_attack_index] = 1
             # add reachable steps to the attack surface
-            self.attack_surface[self._get_reachable_steps(self.entry_attack_index)] = 1
+            self.attack_surface[self._get_vulnerable_children(self.entry_attack_index)] = 1
         else:
             self.attack_surface[self.entry_attack_index] = 1
 
@@ -155,14 +155,14 @@ class AttackSimulator:
         self.attack_surface[compromised_step] = 0
 
         # add reachable steps to the attack surface
-        self.attack_surface[self._get_reachable_steps(compromised_step)] = 1
+        self.attack_surface[self._get_vulnerable_children(compromised_step)] = 1
 
         compromised_ass = self.compromise_steps()
 
         # recursively add reachable steps to the attack surface
         while len(compromised_ass) > 0:
             for step in compromised_ass:
-                self.attack_surface[self._get_reachable_steps(step)] = 1
+                self.attack_surface[self._get_vulnerable_children(step)] = 1
                 compromised_steps.add(step)
             compromised_ass = self.compromise_steps()
 
@@ -179,8 +179,8 @@ class AttackSimulator:
         self.attack_surface[compromised_ass] = 0
         return compromised_ass
 
-    def _get_reachable_steps(self, attack_index: int) -> List[int]:
-        return self.g.get_reachable_steps(attack_index, self.attack_state, self.defense_state)
+    def _get_vulnerable_children(self, attack_index: int) -> List[int]:
+        return self.g.get_vulnerable_children(attack_index, self.attack_state)
 
     def step(self) -> bool:
         self.time += 1

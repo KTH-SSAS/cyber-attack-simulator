@@ -68,17 +68,19 @@ class AttackGraph:
 
         services = {x["id"]: x["dependents"] for x in data["instance_model"]}
 
-        steps = [
-            AttackStep(**replace_all_templates(node, self.config)) for node in data["attack_graph"]
-        ]
+        self.root = data["entry_points"][0]
+
+        nodes = (node | {'step_type': STEP(node['step_type'])} for node in data["attack_graph"])
+        nodes = (replace_all_templates(node, config) for node in nodes)
+        steps = [AttackStep(**node) for node in nodes]
 
 
-        self.defense_steps = {step.id: step for step in steps if step.step_type == DEFENSE}
-        self.defense_costs = np.array([1 for _ in self.defense_steps.values()])
+        self.defense_steps = {step.id : step for step in steps if step.id in data["defenses"]}
+        self.defense_costs = np.array([1 for _ in self.defense_steps])
 
         # self.defense_costs = np.array([self.config.rewards["defense_default"] for _ in self.defense_steps.values()])
 
-        self.attack_steps = {step.id: step for step in steps if step.step_type != DEFENSE}
+        self.attack_steps = {step.id: step for step in steps if step.id not in self.defense_steps}
 
         flags = {
             key: self.total_ttc * 1.5 #* len(self.defense_steps)
@@ -184,10 +186,6 @@ class AttackGraph:
         return sum(step.ttc for step in self.attack_steps.values())
 
     @property
-    def root(self) -> str:
-        return self.config.root
-
-    @property
     def num_attacks(self) -> int:
         return len(self.attack_names)
 
@@ -216,27 +214,36 @@ class AttackGraph:
     def get_undefendable_steps(self) -> List[int]:
         return [i for i in self.attack_indices.values() if not self.is_defendable(i)]
 
-    def get_reachable_steps(
-        self, attack_index: int, attack_state: np.ndarray, defense_state: np.ndarray
+    def is_traversable(self, step: int, attack_state: NDArray[np.int8]) -> bool:
+        """Return True if the given step is traversable, i.e. all conditions are
+        met."""
+        logic, prerequisites = self.attack_prerequisites[step]
+        return logic(attack_state[prerequisites]) if prerequisites else False
+
+    def is_vulnerable(self, step: int, attack_state: NDArray[np.int8]) -> bool:
+        """Return True if the given step is vulnerable, i.e. can be attacked."""
+        traversable = self.is_traversable(step, attack_state)
+        compromised = attack_state[step]
+        return (not compromised   # Attack step isn't already compromised
+                and traversable)  # Prerequisite(s) are compromised
+
+    def get_vulnerable_children(
+        self, attack_index: int, attack_state: np.ndarray
     ) -> List[int]:
-        """Get all reachable attack steps in the graph, given supplied current
-        state vectors."""
+        """Get all child steps of a step that can be attacked, given the state
+        of compromised steps."""
 
         children = self.child_indices[attack_index]
         prerequisite_iterator = (self.attack_prerequisites[child] for child in children)
-        defense_iterator = (
-            defense_state[self.defense_steps_by_attack_step[child]] for child in children
-        )
 
         reachable_steps = [
             child_index
-            for (child_index, (logic, prerequisites), defenses) in zip(
-                children, prerequisite_iterator, defense_iterator
+            for (child_index, (logic, prerequisites)) in zip(
+                children, prerequisite_iterator
             )
             if (  # Add step to attack surface if:
                 not attack_state[child_index]  # Attack step isn't already compromised
                 and logic(attack_state[prerequisites])  # Prerequisite(s) are compromised
-                and all(defenses)  # A connected defense step isn't activated (0 if activated)
             )
         ]
 
