@@ -12,7 +12,7 @@ from yaml import safe_load
 from attack_simulator.config import GraphConfig
 
 import matplotlib.pyplot as plt
-
+from collections import deque
 from agraphlib import STEP
 
 @dataclass
@@ -249,42 +249,27 @@ class AttackGraph:
 
         return reachable_steps
 
-    def is_traversible(
-        self, node: int, defense_state: NDArray[np.int8], calculated_steps: Dict[int, bool]
-    ) -> bool:
-        """Check if a node is traversible given the current state of the
-        defense."""
-        if node in calculated_steps:
-            return calculated_steps[node]
+    def get_traversable_steps(self, start_node: int, graph_state: NDArray[np.int8]) -> List[int]:
+        """Get all traversable attack steps in the graph, from a given step, given supplied current
+        state vectors. This includes attack steps that are already compromised,
+        as well as those that can be attacked given the state."""
 
-        logic, prequisites = self.attack_prerequisites[node]
+        targets = deque([start_node])
+        discovered = set()
 
-        for p in filter(lambda p: p not in calculated_steps, prequisites):
-            calculated_steps[p] = self.is_traversible(p, defense_state, calculated_steps)
+        while targets:
+            
+            node = targets.popleft()
+            
+            if node in discovered:
+                continue
 
-        conditions_met = logic(calculated_steps[p] for p in prequisites) if prequisites else True
-        not_defended = all(defense_state[self.defense_steps_by_attack_step[node]])
+            discovered.add(node)
+            if self.is_traversable(node, graph_state):
+                targets.extend(self.child_indices[node])
+    
 
-        return conditions_met and not_defended
-
-    def get_traversable_steps(self, start_node: int, defense_state: NDArray[np.int8]) -> List[int]:
-        """Get all reachable attack steps in the graph, given supplied current
-        state vectors."""
-
-        traversible_steps: Dict[int, bool] = {}
-        traversible_steps[start_node] = self.is_traversible(
-            start_node, defense_state, traversible_steps
-        )
-
-        if not traversible_steps[start_node]:
-            return []
-
-        return list(
-            filter(
-                lambda n: self.is_traversible(n, defense_state, traversible_steps),
-                self.attack_indices.values(),
-            )
-        )
+        return list(discovered)
 
     def save_graphviz(
         self,
