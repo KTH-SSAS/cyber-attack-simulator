@@ -21,6 +21,7 @@ class GraphConfig(Config):
     """Config class for attack graph."""
 
     filename: str
+    root: str = "notused"
     prune: List[str] = field(default_factory=list)
     rewards: Dict[str, float] = field(default_factory=dict)
     ttc: Dict[str, float] = field(default_factory=dict)
