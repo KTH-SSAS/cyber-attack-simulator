@@ -230,7 +230,7 @@ class AttackGraph:
                 and traversable # Prerequisite(s) are compromised
                 and all(defense_state[defenses]) # A connected defense step isn't activated (0 if activated)
         )
-
+                 
     def get_vulnerable_children(
         self, attack_index: int, attack_state: NDArray[np.int8], defense_state: NDArray[np.int8]
     ) -> List[int]:
@@ -365,10 +365,10 @@ class AttackGraph:
         return defended
 
 
-    def draw(self) -> None:
+    def draw(self, add_defense=True) -> None:
 
         # Get the graph
-        graph = self.to_networkx(True, np.ones(len(self.defense_names)), True)
+        graph = self.to_networkx(True, np.ones(len(self.defense_names)), add_defense)
 
         # Get the positions of the nodes
         pos = nx.nx_pydot.graphviz_layout(graph, prog="dot", root=self.attack_indices[self.root])
