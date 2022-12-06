@@ -11,21 +11,6 @@ import ray
 
 from ray.rllib.algorithms.registry import ALGORITHMS
 
-def _import_tripwire():
-    import attack_simulator.optimal_defender as optimal_defender
-    return optimal_defender.TripwireDefender, {}
-
-def _import_random():
-    import attack_simulator.random_defender as random_defender
-    return random_defender.RandomDefender, {}
-
-ALGORITHMS["Tripwire"] = _import_tripwire
-ALGORITHMS["Random"] = _import_random
-
-def has_checkpoint(algorithm: str):
-    return algorithm in ["PPO", "DQN"]
-
-
 def get_checkpoint_path(run_dir: Path) -> Path:
     checkpoint_folder = reversed(sorted((run_dir.glob("checkpoint_*")))).__next__()
     # for f in checkpoint_folder.glob("checkpoint-*"):
@@ -84,13 +69,9 @@ def main():
             for folder in result_folders:
                 run_id = "_".join(folder.name.split('_')[2:4])
                 run_id = "_".join([algorithm.name, run_id])
-                if not has_checkpoint(algorithm.name):
-                    config_file = folder / "params.pkl"
-                    run_evaluation(run_id, parser, algorithm.name, env_name, num_episodes, config=str(config_file))
-                else:
-                    checkpoint = get_checkpoint_path(folder)
-                    if checkpoint:
-                        run_evaluation(run_id, parser, algorithm.name, env_name, num_episodes, checkpoint=str(checkpoint))
+                checkpoint = get_checkpoint_path(folder)
+                if checkpoint:
+                    run_evaluation(run_id, parser, algorithm.name, env_name, num_episodes, checkpoint=str(checkpoint))
 
 
 if __name__ == "__main__":
