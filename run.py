@@ -1,8 +1,9 @@
-#!/home/jakob/miniconda3/envs/sim/bin/python
+#!/usr/bin/env python3
 
-from scripts.run_rllib import main
-import sys
 from pathlib import Path
+import sys
+from scripts.run_rllib import main
+
 
 def run(config_file: Path, num_workers: int, debug: bool = False) -> None:
     stop_iterations = 500
@@ -20,8 +21,8 @@ def run(config_file: Path, num_workers: int, debug: bool = False) -> None:
         stop_reward=None,
     )
 
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        exit()
-    config_file = Path(sys.argv[1])
-    run(config_file, num_workers=10)
+        sys.exit()
+    run(Path(sys.argv[1]), num_workers=10)
