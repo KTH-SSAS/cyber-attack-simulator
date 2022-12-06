@@ -7,7 +7,7 @@ from .config import EnvConfig, GraphConfig
 from .graph import AttackGraph
 
 from .ids import ProbabilityIDS
-
+import pickle
 
 class AttackSimulator:
     """Does the simulation."""
@@ -251,3 +251,10 @@ class AttackSimulator:
     @property
     def compromised_flags(self) -> List[int]:
         return [flag for flag in self.g.flags if self.attack_state[flag]]
+
+
+    def dump_to_pickle(self, filename: str) -> None:
+        if not filename:
+            filename = f"sim_t={self.time}_dump.pkl"
+        with open(filename, 'wb') as f:
+            pickle.dump(self, f) 
