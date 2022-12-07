@@ -1,120 +1,122 @@
 attack_graph:
 - asset: flag
   children: []
-  id: flag:0:take:0
+  id: flag-0-take-0
   name: gather
-  reward: high_flag
-  step_type: or
+  
+  step_type: and
   ttc: 0
 - asset: firewall
   children:
-  - flag:0:take:0
-  id: firewall:1:connect:1
+  - flag-0-take-0
+  id: firewall-1-connect-1
   name: connect
-  reward: default
-  step_type: or
+  
+  step_type: and
   ttc: 0
 - asset: authenticator
   children:
-  - firewall:1:connect:1
-  id: authenticator:2:unlock:2
+  - firewall-1-connect-1
+  id: authenticator-2-unlock-2
   name: unlock
-  reward: default
+  
   step_type: and
   ttc: 0
 - asset: host
   children:
-  - authenticator:2:discover:11
-  id: host:3:connect:3
+  - authenticator-2-discover-11
+  id: host-3-connect-3
   name: connect
-  reward: default
+  
   step_type: or
   ttc: 1
 - asset: credentials
   children:
-  - authenticator:2:credentials_gathered:12
-  id: credentials:4:gather:4
+  - authenticator-2-credentials_gathered-12
+  id: credentials-4-gather-4
   name: gather
-  reward: default
+  
   step_type: or
   ttc: 1
 - asset: host
   children:
-  - credentials:4:gather:4
-  id: host:5:connect:5
+  - credentials-4-gather-4
+  id: host-5-connect-5
   name: connect
-  reward: default
+  
   step_type: or
   ttc: 1
 - asset: host
   children:
-  - host:3:connect:3
-  - host:5:connect:5
-  id: host:6:connect:6
+  - host-3-connect-3
+  - host-5-connect-5
+  id: host-6-connect-6
   name: connect
-  reward: default
+  
   step_type: or
   ttc: 1
 - asset: host
   children:
-  - host:6:connect:6
-  id: host:7:connect:7
+  - host-6-connect-6
+  id: host-7-connect-7
   name: connect
-  reward: default
+  
   step_type: or
   ttc: 1
 - asset: attacker
   children:
-  - host:7:connect:7
-  - credentials:9:gather:9
-  - host:10:connect:10
-  id: attacker:8:enter:8
+  - host-7-connect-7
+  - credentials-9-gather-9
+  - host-10-connect-10
+  id: attacker-8-enter-8
   name: enter
-  reward: default
+  
   step_type: or
   ttc: 1
 - asset: credentials
   children:
-  - authenticator:2:credentials_gathered:12
-  id: credentials:9:gather:9
+  - authenticator-2-credentials_gathered-12
+  id: credentials-9-gather-9
   name: gather
-  reward: default
+  
   step_type: or
   ttc: 1
 - asset: host
   children: []
-  id: host:10:connect:10
+  id: host-10-connect-10
   name: connect
-  reward: default
+  
   step_type: or
   ttc: 1
 - asset: authenticator
   children:
-  - authenticator:2:unlock:2
-  id: authenticator:2:discover:11
+  - authenticator-2-unlock-2
+  id: authenticator-2-discover-11
   name: discover
-  reward: default
+  
   step_type: or
   ttc: 1
 - asset: authenticator
   children:
-  - authenticator:2:unlock:2
-  id: authenticator:2:credentials_gathered:12
+  - authenticator-2-unlock-2
+  id: authenticator-2-credentials_gathered-12
   name: credentials_gathered
-  reward: default
+  
   step_type: or
   ttc: 0
 - asset: firewall
   children:
-  - firewall:1:connect:1
-  - flag:0:take:0
-  id: firewall:1:defend:13
+  - firewall-1-connect-1
+  - flag-0-take-0
+  id: firewall-1-defend-13
   name: enable
-  reward: defense_default
-  step_type: defense
+  
+  step_type: or
   ttc: 0
 flags:
-  flag:0:take:0: high_flag
+  flag-0-take-0: high_flag
+entry_points: [attacker-8-enter-8]
+defenses: [firewall-1-defend-13]
 instance_model:
 - dependents: []
   id: 0

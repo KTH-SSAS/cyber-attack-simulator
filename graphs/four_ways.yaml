@@ -1,169 +1,169 @@
 attack_graph:
 - asset: firewall
   children:
-  - flag:11:take:11
-  id: firewall:7:connect:7
+  - flag-11-take-11
+  id: firewall-7-connect-7
   name: connect
   
   step_type: and
   ttc: 1
 - asset: flag
   children: []
-  id: flag:8:take:8
+  id: flag-8-take-8
   name: gather
   
   step_type: and
   ttc: 1
 - asset: host
   children:
-  - flag:8:take:8
-  id: host:9:connect:9
+  - flag-8-take-8
+  id: host-9-connect-9
   name: connect
   
   step_type: and
   ttc: 1
 - asset: flag
   children: []
-  id: flag:11:take:11
+  id: flag-11-take-11
   name: gather
   
   step_type: and
   ttc: 1
 - asset: firewall
   children:
-  - host:9:connect:9
-  id: firewall:12:connect:12
+  - host-9-connect-9
+  id: firewall-12-connect-12
   name: connect
   
   step_type: and
   ttc: 1
 - asset: attacker
   children:
-  - host:16:connect:16
-  - host:17:connect:17
-  - host:32:connect:32
-  - host:34:connect:34
-  id: attacker:13:enter:13
+  - host-16-connect-16
+  - host-17-connect-17
+  - host-32-connect-32
+  - host-34-connect-34
+  id: attacker-13-enter-13
   name: enter
   
   step_type: or
   ttc: 1
 - asset: host
   children:
-  - firewall:20:connect:20
-  id: host:16:connect:16
+  - firewall-20-connect-20
+  id: host-16-connect-16
   name: connect
   
   step_type: or
   ttc: 1
 - asset: host
   children:
-  - firewall:18:connect:18
-  id: host:17:connect:17
+  - firewall-18-connect-18
+  id: host-17-connect-17
   name: connect
   
   step_type: or
   ttc: 1
 - asset: firewall
   children:
-  - flag:19:take:19
-  id: firewall:18:connect:18
-  name: connect
-  
-  step_type: and
-  ttc: 1
-- asset: flag
-  children: []
-  id: flag:19:take:19
-  name: gather
-  
-  step_type: and
-  ttc: 1
-- asset: firewall
-  children:
-  - host:33:connect:33
-  id: firewall:20:connect:20
+  - flag-19-take-19
+  id: firewall-18-connect-18
   name: connect
   
   step_type: and
   ttc: 1
 - asset: flag
   children: []
-  id: flag:23:take:23
+  id: flag-19-take-19
   name: gather
   
   step_type: and
   ttc: 1
 - asset: firewall
   children:
-  - firewall:7:connect:7
-  - flag:11:take:11
-  id: firewall:7:defend:28
+  - host-33-connect-33
+  id: firewall-20-connect-20
+  name: connect
+  
+  step_type: and
+  ttc: 1
+- asset: flag
+  children: []
+  id: flag-23-take-23
+  name: gather
+  
+  step_type: and
+  ttc: 1
+- asset: firewall
+  children:
+  - firewall-7-connect-7
+  - flag-11-take-11
+  id: firewall-7-defend-28
   name: enable
   
   step_type: or
   ttc: 0
 - asset: firewall
   children:
-  - firewall:12:connect:12
-  - flag:8:take:8
-  - host:9:connect:9
-  id: firewall:12:defend:29
+  - firewall-12-connect-12
+  - flag-8-take-8
+  - host-9-connect-9
+  id: firewall-12-defend-29
   name: enable
   
   step_type: or
   ttc: 0
 - asset: firewall
   children:
-  - firewall:18:connect:18
-  - flag:19:take:19
-  id: firewall:18:defend:30
+  - firewall-18-connect-18
+  - flag-19-take-19
+  id: firewall-18-defend-30
   name: enable
   
   step_type: or
   ttc: 0
 - asset: firewall
   children:
-  - firewall:20:connect:20
-  - host:33:connect:33
-  - flag:23:take:23
-  id: firewall:20:defend:31
+  - firewall-20-connect-20
+  - host-33-connect-33
+  - flag-23-take-23
+  id: firewall-20-defend-31
   name: enable
   
   step_type: or
   ttc: 0
 - asset: host
   children:
-  - flag:23:take:23
-  id: host:33:connect:33
+  - flag-23-take-23
+  id: host-33-connect-33
   name: connect
   
   step_type: and
   ttc: 6
 - asset: host
   children:
-  - firewall:12:connect:12
-  id: host:34:connect:34
+  - firewall-12-connect-12
+  id: host-34-connect-34
   name: connect
   
   step_type: or
   ttc: 2
 - asset: host
   children:
-  - firewall:7:connect:7
-  id: host:32:connect:32
+  - firewall-7-connect-7
+  id: host-32-connect-32
   name: connect
   
   step_type: or
   ttc: 8
 flags:
-  flag:11:take:11: high_flag
-  flag:19:take:19: high_flag
-  flag:23:take:23: high_flag
-  flag:8:take:8: high_flag
+  flag-11-take-11: high_flag
+  flag-19-take-19: high_flag
+  flag-23-take-23: high_flag
+  flag-8-take-8: high_flag
 
-defenses: [firewall:7:defend:28 ,firewall:20:defend:31, firewall:18:defend:30, firewall:12:defend:29]
-entry_points: [attacker:13:enter:13]
+defenses: [firewall-7-defend-28 ,firewall-20-defend-31, firewall-18-defend-30, firewall-12-defend-29]
+entry_points: [attacker-13-enter-13]
 
 instance_model:
 - dependents: []
