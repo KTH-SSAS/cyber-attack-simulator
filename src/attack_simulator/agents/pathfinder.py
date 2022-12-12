@@ -34,7 +34,7 @@ class PathFinderAttacker(Agent):
 
         self.start_node = self.sim.entry_attack_index
 
-        self.flags = list(self.sim.g.flags)
+        self.flags = list(self.sim.g.flag_indices)
 
         flag_costs = [(flag, self.find_path_to(flag)[2]) for flag in self.flags]
 

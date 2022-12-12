@@ -76,7 +76,7 @@ class AttackSimulator:
 
     @property
     def num_flags(self) -> int:
-        return len(self.g.flags)
+        return len(self.g.flag_indices)
 
     @property
     def attacker_observation(self) -> NDArray:
@@ -250,7 +250,7 @@ class AttackSimulator:
 
     @property
     def compromised_flags(self) -> List[int]:
-        return [flag for flag in self.g.flags if self.attack_state[flag]]
+        return [flag for flag in self.g.flag_indices if self.attack_state[flag]]
 
 
     def dump_to_pickle(self, filename: str) -> None:

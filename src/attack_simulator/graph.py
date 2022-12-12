@@ -13,7 +13,7 @@ from attack_simulator.config import GraphConfig
 
 import matplotlib.pyplot as plt
 
-from agraphlib import STEP
+from agraphlib import STEP, GraphColors
 
 @dataclass
 class AttackStep:
@@ -68,24 +68,25 @@ class AttackGraph:
 
         services = {x["id"]: x["dependents"] for x in data["instance_model"]}
 
-        self.root = data["entry_points"][0]
+        self.root: str = data["entry_points"][0]
 
         nodes = (node | {'step_type': STEP(node['step_type'])} for node in data["attack_graph"])
         nodes = (replace_all_templates(node, config) for node in nodes)
-        steps = [AttackStep(**node) for node in nodes]
+        
+        self.steps = [AttackStep(**node) for node in nodes]
 
-
-        self.defense_steps = {step.id : step for step in steps if step.id in data["defenses"]}
+        self.defense_steps = {step.id : step for step in self.steps if step.id in data["defenses"]}
         self.defense_costs = np.array([1 for _ in self.defense_steps])
 
         # self.defense_costs = np.array([self.config.rewards["defense_default"] for _ in self.defense_steps.values()])
 
-        self.attack_steps = {step.id: step for step in steps if step.id not in self.defense_steps}
+        self.attack_steps = {step.id: step for step in self.steps if step.id not in self.defense_steps}
 
         flags = {
             key: self.total_ttc * 1.5 #* len(self.defense_steps)
             for key in data["flags"]
         }
+        self.flags = flags
 
         # Add parents for attack steps.
         # Defense steps are not included as parents
@@ -162,7 +163,7 @@ class AttackGraph:
 
         # Don't iterate over flags to ensure determinism
 
-        self.flags = np.array(
+        self.flag_indices = np.array(
             [self.attack_indices[step] for step in self.attack_names if step in flags]
         )      
         flag_rewards = np.array([flags[step] for step in self.attack_names if step in flags])
@@ -170,7 +171,7 @@ class AttackGraph:
 
 
         self.reward_params = np.zeros(len(self.attack_names))
-        self.reward_params[self.flags] = flag_rewards
+        self.reward_params[self.flag_indices] = flag_rewards
 
         self.child_indices = [
             [
@@ -353,7 +354,7 @@ class AttackGraph:
         if add_defenses:
             for defense, affected_step in zip(self.defense_names, self.attack_steps_by_defense_step):
                 defense_index = self.defense_indices[defense]+current_index
-                dig.add_node(defense_index if indices else defense, type="defense")
+                dig.add_node(defense_index if indices else defense)
                 for attack in affected_step:
                     dig.add_edge(defense_index if indices else defense, attack if indices else self.attack_names[attack])
 
@@ -365,27 +366,39 @@ class AttackGraph:
         return defended
 
 
-    def draw(self, add_defense=True) -> None:
+    def draw(self, width=500, height=500, add_defense=True) -> None:
 
         # Get the graph
-        graph = self.to_networkx(True, np.ones(len(self.defense_names)), add_defense)
+        graph = self.to_networkx(False, np.ones(len(self.defense_names)), add_defense)
 
-        # Get the positions of the nodes
-        pos = nx.nx_pydot.graphviz_layout(graph, prog="dot", root=self.attack_indices[self.root])
+        attack_node_colors_dict = {step.id: GraphColors.NODE.value for step in self.steps if step.id not in self.flags}
+        attack_node_colors_dict[self.root] = GraphColors.ENTRY.value
+
+        for flag in self.flags:
+            attack_node_colors_dict[flag] = GraphColors.FLAG.value
+
+        for defense in self.defense_steps:
+            attack_node_colors_dict[defense] = GraphColors.DEFENSE.value
+
+
 
         dpi = 100
-        fig = plt.figure(dpi=dpi)
+        fig = plt.figure(figsize=(width // dpi, height // dpi), dpi=dpi)
 
-        pos = {int(key): value for key, value in pos.items()}
+        # Get the positions of the nodes
+        pos = nx.nx_pydot.graphviz_layout(graph, prog="dot")
 
+        #pos = {key): value for key, value in pos.items()}
+
+        and_steps = set(map(lambda x: x.id, filter(lambda x: x.step_type == STEP.AND, self.steps)))
         and_edges = {
                 (i, j)
                 for i, j in graph.edges
-                if self.attack_steps[self.attack_names[j]].step_type == STEP.AND
+                if j in and_steps        
         }
 
         nx.draw_networkx_nodes(
-            graph, pos=pos, edgecolors="black", node_size=100
+            graph, pos=pos, node_color=[attack_node_colors_dict[step] for step in graph.nodes()], edgecolors="black", node_size=100
         )
         nx.draw_networkx_edges(graph, edgelist=graph.edges-and_edges, pos=pos, edge_color="black")
         nx.draw_networkx_edges(
@@ -401,4 +414,7 @@ class AttackGraph:
         plt.tight_layout()
 
         # Show the plot
+
+        fig.canvas.draw()
+
         plt.show()

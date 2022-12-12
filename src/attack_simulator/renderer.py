@@ -198,7 +198,7 @@ class AttackSimulationRenderer:
         self._draw_edges(self.and_edges, style="dashed")
 
         all_attacks = set(range(self.sim.g.num_attacks))
-        flags = set(self.sim.g.flags)
+        flags = set(self.sim.g.flag_indices)
         #observed_attacks = np.array(self.sim.observe()[self.sim.g.num_defenses :])
 
         attack_state = self.sim.attack_state
