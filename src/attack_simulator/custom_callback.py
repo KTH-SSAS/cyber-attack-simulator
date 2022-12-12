@@ -84,7 +84,6 @@ class AttackSimCallback(DefaultCallbacks):
         for key in [
             "attacker_start_time",
             "perc_defenses_activated",
-            "perc_assets_online",
             "perc_compromised_steps",
             "perc_compromised_flags",
             "sum_attacker_reward",

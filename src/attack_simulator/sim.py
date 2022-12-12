@@ -1,13 +1,14 @@
-from typing import Callable, List, Set, Tuple
+from typing import Callable, List, Set, Tuple, Dict, Any
 
 import numpy as np
 from numpy.typing import NDArray
 
-from .config import EnvConfig, GraphConfig
+from .config import EnvConfig
 from .graph import AttackGraph
 
 from .ids import ProbabilityIDS
 import pickle
+
 
 class AttackSimulator:
     """Does the simulation."""
@@ -15,64 +16,66 @@ class AttackSimulator:
     NO_ACTION = -1
     NO_ACTION_STR = "nothing"
 
-    def __init__(self, config: EnvConfig, seed: int) -> None:
+    ATTACKER_INDEX = 0
+    DEFENDER_INDEX = 1
 
+    def __init__(self, config: EnvConfig, attack_graph: AttackGraph, seed: int) -> None:
+
+        ## Constants
         self.config = config
-        self.rng = np.random.default_rng(seed)
 
         self.ids = ProbabilityIDS(seed, config.false_negative, config.false_positive)
-
-        graph_config = (
-            config.graph_config
-            if isinstance(config.graph_config, GraphConfig)
-            else GraphConfig(**config.graph_config)
-        )
-
-        self.g: AttackGraph = AttackGraph(graph_config)
-        self.time = 0
-        self.service_state = np.ones(self.g.num_services, dtype="int8")
-        self.defense_state = np.ones(self.g.num_defenses, dtype="int8")
-        self.attack_state = np.zeros(self.g.num_attacks, dtype="int8")
-        self.attack_surface = np.zeros(self.g.num_attacks, dtype="int8")
         self.fnr = config.false_negative
         self.fpr = config.false_positive
-
-        self.false_positives = np.zeros(self.g.num_attacks, dtype="int8")
-        self.false_negatives = np.zeros(self.g.num_attacks, dtype="int8")
-
-        self.last_observation = np.zeros(self.g.num_attacks, dtype="int8")
-
-        self.num_observed_alerts = 0
-        self.num_alerts = 0
-
-        # Initial state
+        self.g: AttackGraph = attack_graph
         self.entry_attack_index = self.g.attack_indices[self.g.root]
 
-        if config.randomize_ttc:
-            self.ttc_remaining = np.array(
-                [v if v == 0 else max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)]
-            )
-        else:
-            self.ttc_remaining = self.g.ttc_params
-
-        self.ttc_total = sum(self.ttc_remaining)
+        ## State
+        (
+            self.time,
+            self.service_state,
+            self.defense_state,
+            self.attack_state,
+            self.false_positives,
+            self.false_negatives,
+            self.last_observation,
+            self.rng,
+            self.noise,
+            self.attack_start_time,
+            self.num_observed_alerts,
+            self.num_alerts,
+            self.attacker_action,
+            self.defender_action,
+        ) = self.get_initial_state(seed)
 
         # Set the TTC for the entry attack to be the attack start time
-        self.attack_start_time = int(self.rng.exponential(self.config.attack_start_time))
-        self.ttc_remaining[self.entry_attack_index] = self.attack_start_time
+        self.ttc_remaining, self.ttc_total = self.get_initial_ttc_vals(self.attack_start_time)
+        self.attack_surface = self.get_initial_attack_surface(self.attack_start_time)
 
-        if self.attack_start_time == 0:
-            self.attack_surface[self.entry_attack_index] = 0
+    def get_initial_attack_surface(self, attack_start_time: int) -> NDArray:
+        attack_surface = np.zeros(self.g.num_attacks, dtype="int8")
+        if attack_start_time == 0:
+            attack_surface[self.entry_attack_index] = 0
             self.attack_state[self.entry_attack_index] = 1
             # add reachable steps to the attack surface
-            self.attack_surface[self._get_vulnerable_children(self.entry_attack_index)] = 1
+            attack_surface[self._get_vulnerable_children(self.entry_attack_index)] = 1
         else:
-            self.attack_surface[self.entry_attack_index] = 1
+            attack_surface[self.entry_attack_index] = 1
 
-        self.attacker_action: int = self.entry_attack_index
-        self.defender_action: int = self.NO_ACTION
+        return attack_surface
 
-        self.noise = self.rng.random(self.attack_state.shape)
+    def get_initial_ttc_vals(self, attack_start_time: int) -> Tuple[NDArray[np.int64], int]:
+        if self.config.randomize_ttc:
+            ttc_remaining = np.array(
+                [v if v == 0 else max(1, int(v)) for v in self.rng.exponential(self.g.ttc_params)],
+                dtype=np.int64,
+            )
+        else:
+            ttc_remaining = np.array(self.g.ttc_params, dtype=np.int64)
+
+        ttc_remaining[self.entry_attack_index] = attack_start_time
+
+        return ttc_remaining, sum(ttc_remaining)
 
     @property
     def num_flags(self) -> int:
@@ -98,17 +101,75 @@ class AttackSimulator:
     def attack_surface_empty(self) -> bool:
         return not any(self.attack_surface)
 
-    def defense_action(self, defender_action: int) -> bool:
+    def reset(self, seed: int) -> Tuple[NDArray, Dict[str, Any]]:
+        (
+            self.time,
+            self.service_state,
+            self.defense_state,
+            self.attack_state,
+            self.false_positives,
+            self.false_negatives,
+            self.last_observation,
+            self.rng,
+            self.noise,
+            self.attack_start_time,
+            self.num_observed_alerts,
+            self.num_alerts,
+            self.attacker_action,
+            self.defender_action,
+        ) = self.get_initial_state(seed)
+
+        self.ttc_remaining, self.ttc_total = self.get_initial_ttc_vals(self.attack_start_time)
+        self.attack_surface = self.get_initial_attack_surface(self.attack_start_time)
+        return self.observe(), self.info()
+
+
+    def get_initial_state(
+        self, seed: int
+    ) -> Tuple[
+        int,
+        NDArray[np.int8],
+        NDArray[np.int8],
+        NDArray[np.int8],
+        NDArray[np.int8],
+        NDArray[np.int8],
+        NDArray[np.int8],
+        np.random.Generator,
+        NDArray[np.float64],
+        int,
+        int,
+        int,
+        int,
+        int,
+    ]:
+        return (
+            0,
+            np.ones(self.g.num_services, dtype="int8"),
+            np.ones(self.g.num_defenses, dtype="int8"),
+            np.zeros(self.g.num_attacks, dtype="int8"),
+            np.zeros(self.g.num_attacks, dtype="int8"),
+            np.zeros(self.g.num_attacks, dtype="int8"),
+            np.zeros(self.g.num_attacks, dtype="int8"),
+            np.random.default_rng(seed),
+            np.random.default_rng(seed).random(self.g.num_attacks, dtype=np.float64),
+            int(np.random.default_rng(seed).exponential(self.config.attack_start_time)),
+            0,
+            0,
+            self.entry_attack_index,
+            self.NO_ACTION,
+        )
+
+    def defense_action(self, defender_action: int) -> Tuple[bool, NDArray[np.int64]]:
         """Enable (disable) a defense step."""
 
         self.defender_action = defender_action
 
         if defender_action == self.NO_ACTION:
-            return False
+            return False, self.observe()
 
         # Only enable defenses that are disabled
         if not self.defense_state[defender_action]:
-            return False
+            return False, self.observe()
 
         # Enable (disable) the denfense step
         self.defense_state[defender_action] = 0
@@ -117,7 +178,7 @@ class AttackSimulator:
         affected_steps = self.g.attack_steps_by_defense_step[defender_action]
         self.attack_surface[affected_steps] = 0
 
-        return False
+        return False, self.observe()
 
     @property
     def valid_actions(self) -> np.ndarray:
@@ -186,19 +247,49 @@ class AttackSimulator:
     def _get_vulnerable_children(self, attack_index: int) -> List[int]:
         return self.g.get_vulnerable_children(attack_index, self.attack_state, self.defense_state)
 
-    def step(self) -> bool:
+    def step(self) -> Tuple[bool, Dict[str, Any]]:
         self.time += 1
 
         # Generate new noise so that FP and FN alerts change
-        self.noise = self.rng.random(self.attack_state.shape)
+        self.noise = self.rng.random(self.attack_state.shape, dtype=np.float64)
 
         # Log alerts
         self.num_observed_alerts += self.last_observation.sum()
         self.num_alerts += self.attack_state.sum()
 
-        # Nothing here to end the episode yet
+        info = self.info()
 
-        return False
+        # Nothing here to end the episode yet
+        return False, info
+
+    def info(self) -> Dict[str, Any]:
+        current_step, ttc_remaining = self.current_attack_step()
+        return {
+            "time": self.time,
+            "current_step": current_step,
+            "ttc_remaining_on_current_step": ttc_remaining,
+            "attack_surface": self.attack_surface,
+            "attack_state": self.attack_state,
+            "defense_state": self.defense_state,
+            "num_compromised_steps": len(self.compromised_steps),
+            "num_compromised_flags": len(self.compromised_flags),
+            "perc_compromised_steps": len(self.compromised_steps) / self.num_attack_steps,
+            "perc_compromised_flags": len(self.compromised_flags) / self.num_flags,
+            "perc_defenses_activated": sum(np.logical_not(self.defense_state))
+            / self.num_defense_steps,
+        }
+
+    def summary(self) -> Dict[str, Any]:
+        """Return a summary of the episode."""
+        return {
+            "attacker_start_time": self.attack_start_time,
+            "num_defenses": self.num_defense_steps,
+            "num_attack_steps": self.num_attack_steps,
+            "defense_costs": self.g.defense_costs,
+            "flag_costs": self.g.flag_rewards,
+            "num_observed_alerts": self.num_observed_alerts,
+            "num_alerts": self.num_alerts,
+        }
 
     def interpret_services(self, services: np.ndarray) -> List[str]:
         return list(np.array(self.g.service_names)[np.flatnonzero(services)])
@@ -252,9 +343,8 @@ class AttackSimulator:
     def compromised_flags(self) -> List[int]:
         return [flag for flag in self.g.flag_indices if self.attack_state[flag]]
 
-
     def dump_to_pickle(self, filename: str) -> None:
         if not filename:
             filename = f"sim_t={self.time}_dump.pkl"
-        with open(filename, 'wb') as f:
-            pickle.dump(self, f) 
+        with open(filename, "wb") as f:
+            pickle.dump(self, f)

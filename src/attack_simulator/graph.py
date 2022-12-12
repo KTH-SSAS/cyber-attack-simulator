@@ -158,7 +158,7 @@ class AttackGraph:
         ]
 
         self.ttc_params = np.array(
-            [self.attack_steps[attack_name].ttc for attack_name in self.attack_names]
+            [self.attack_steps[attack_name].ttc for attack_name in self.attack_names], dtype=np.int64
         )
 
         # Don't iterate over flags to ensure determinism
