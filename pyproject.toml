@@ -17,7 +17,7 @@ repository = "https://gitr.sys.kth.se/pontusj/openai_attack_simulation"
 
 [tool.poetry.dependencies]
 python = "~3.10"
-gym = "^0.21.0"
+#gym = "<0.24.0"
 numpy = "^1.21.4"
 matplotlib = "^3.4.2"
 pyyaml = "^6.0"
@@ -33,6 +33,7 @@ pydot = "^1.4.2"
 docformatter = "^1.4"
 poetry = "^1.1.13"
 agraphlib = { path = "../agraphlib/", develop = true }
+gymnasium = "^0.27.1"
 
 [tool.poetry.dev-dependencies]
 tox = "^3.24.4"
