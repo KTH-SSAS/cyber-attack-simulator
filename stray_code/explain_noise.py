@@ -131,10 +131,7 @@ def run_episode(seed, verbose=False):
 if __name__ == "__main__":
     num_runs = 100
     print("Running over", num_runs, "runs")
-    results = [
-        run_episode(seed)
-        for seed in range(10)
-    ]
+    results = [run_episode(seed) for seed in range(10)]
     print("Average results:")
     print(f"{'FNR':<10}{'FPR':<10}")
     print(
