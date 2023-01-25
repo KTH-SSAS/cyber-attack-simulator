@@ -45,7 +45,6 @@ def get_rng(seed: Optional[int] = None) -> Tuple[np.random.Generator, int]:
 
 
 def set_seeds_from_bytes(seed: Optional[int] = None) -> Tuple[int, int]:
-
     rng, new_seed = get_rng(seed)
     random_bytes = rng.bytes(8)
 

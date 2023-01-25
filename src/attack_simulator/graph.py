@@ -2,18 +2,17 @@
 import os
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List, Tuple
 
+import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+from agraphlib import STEP, GraphColors
 from numpy.typing import NDArray
 from yaml import safe_load
 
 from attack_simulator.config import GraphConfig
 
-import matplotlib.pyplot as plt
-
-from agraphlib import STEP, GraphColors
 
 @dataclass
 class AttackStep:
@@ -53,7 +52,6 @@ class AttackGraph:
     """Attack Graph."""
 
     def __init__(self, config: GraphConfig):
-
         self.config = config
 
         filename = self.config.filename
@@ -70,22 +68,21 @@ class AttackGraph:
 
         self.root: str = data["entry_points"][0]
 
-        nodes = (node | {'step_type': STEP(node['step_type'])} for node in data["attack_graph"])
+        nodes = (node | {"step_type": STEP(node["step_type"])} for node in data["attack_graph"])
         nodes = (replace_all_templates(node, config) for node in nodes)
-        
+
         self.steps = [AttackStep(**node) for node in nodes]
 
-        self.defense_steps = {step.id : step for step in self.steps if step.id in data["defenses"]}
+        self.defense_steps = {step.id: step for step in self.steps if step.id in data["defenses"]}
         self.defense_costs = np.array([1 for _ in self.defense_steps])
 
         # self.defense_costs = np.array([self.config.rewards["defense_default"] for _ in self.defense_steps.values()])
 
-        self.attack_steps = {step.id: step for step in self.steps if step.id not in self.defense_steps}
-
-        flags = {
-            key: self.total_ttc * 1.5 #* len(self.defense_steps)
-            for key in data["flags"]
+        self.attack_steps = {
+            step.id: step for step in self.steps if step.id not in self.defense_steps
         }
+
+        flags = {key: self.total_ttc * 1.5 for key in data["flags"]}  # * len(self.defense_steps)
         self.flags = flags
 
         # Add parents for attack steps.
@@ -112,6 +109,8 @@ class AttackGraph:
         self.service_indices = {name: index for (index, name) in enumerate(self.service_names)}
         self.attack_indices = {name: index for (index, name) in enumerate(self.attack_names)}
         self.defense_indices = {name: index for (index, name) in enumerate(self.defense_names)}
+
+        self.entry_points: List[str] = data["entry_points"]
 
         self.service_index_by_attack_index = [
             [
@@ -158,17 +157,17 @@ class AttackGraph:
         ]
 
         self.ttc_params = np.array(
-            [self.attack_steps[attack_name].ttc for attack_name in self.attack_names], dtype=np.int64
+            [self.attack_steps[attack_name].ttc for attack_name in self.attack_names],
+            dtype=np.int64,
         )
 
         # Don't iterate over flags to ensure determinism
 
         self.flag_indices = np.array(
             [self.attack_indices[step] for step in self.attack_names if step in flags]
-        )      
+        )
         flag_rewards = np.array([flags[step] for step in self.attack_names if step in flags])
         self.flag_rewards = flag_rewards
-
 
         self.reward_params = np.zeros(len(self.attack_names))
         self.reward_params[self.flag_indices] = flag_rewards
@@ -180,7 +179,6 @@ class AttackGraph:
             ]
             for attack_name in self.attack_names
         ]
-        pass
 
     @property
     def total_ttc(self) -> float:
@@ -216,22 +214,27 @@ class AttackGraph:
         return [i for i in self.attack_indices.values() if not self.is_defendable(i)]
 
     def is_traversable(self, step: int, attack_state: NDArray[np.int8]) -> bool:
-        """Return True if the given step is traversable, i.e. all conditions are
-        met."""
+        """Return True if the given step is traversable, i.e. all conditions
+        are met."""
         logic, prerequisites = self.attack_prerequisites[step]
         return logic(attack_state[prerequisites]) if prerequisites else False
 
-    def is_vulnerable(self, step: int, attack_state: NDArray[np.int8], defense_state: NDArray[np.int8]) -> bool:
-        """Return True if the given step is vulnerable, i.e. can be attacked."""
+    def is_vulnerable(
+        self, step: int, attack_state: NDArray[np.int8], defense_state: NDArray[np.int8]
+    ) -> bool:
+        """Return True if the given step is vulnerable, i.e. can be
+        attacked."""
         traversable = self.is_traversable(step, attack_state)
         compromised = attack_state[step]
         defenses = self.defense_steps_by_attack_step[step]
         return (
-            not compromised # Attack step isn't already compromised
-                and traversable # Prerequisite(s) are compromised
-                and all(defense_state[defenses]) # A connected defense step isn't activated (0 if activated)
+            not compromised  # Attack step isn't already compromised
+            and traversable  # Prerequisite(s) are compromised
+            and all(
+                defense_state[defenses]
+            )  # A connected defense step isn't activated (0 if activated)
         )
-                 
+
     def get_vulnerable_children(
         self, attack_index: int, attack_state: NDArray[np.int8], defense_state: NDArray[np.int8]
     ) -> List[int]:
@@ -239,7 +242,9 @@ class AttackGraph:
         of compromised steps."""
 
         children = self.child_indices[attack_index]
-        vulnerable_children = list(filter(lambda child: self.is_vulnerable(child, attack_state, defense_state), children))
+        vulnerable_children = list(
+            filter(lambda child: self.is_vulnerable(child, attack_state, defense_state), children)
+        )
 
         return vulnerable_children
 
@@ -282,10 +287,10 @@ class AttackGraph:
 
     def save_graphviz(
         self,
+        ttc: dict,
         filename: str = "graph.dot",
         verbose: bool = False,
         indexed: bool = False,
-        ttc: dict = {},
     ) -> None:
         if indexed:
             index = {name: i + 1 for i, name in enumerate(self.attack_names)}
@@ -314,7 +319,9 @@ class AttackGraph:
                 "or viewed online at, e.g., https://dreampuf.github.io/GraphvizOnline."
             )
 
-    def to_networkx(self, indices: bool, system_state: np.ndarray, add_defenses: bool = False) -> nx.DiGraph:
+    def to_networkx(
+        self, indices: bool, system_state: np.ndarray, add_defenses: bool = False
+    ) -> nx.DiGraph:
         """Convert the AttackGraph to an NetworkX DiGraph."""
         dig = nx.DiGraph()
 
@@ -352,12 +359,16 @@ class AttackGraph:
             dig.add_edges_from(to_add)
 
         if add_defenses:
-            for defense, affected_step in zip(self.defense_names, self.attack_steps_by_defense_step):
-                defense_index = self.defense_indices[defense]+current_index
+            for defense, affected_step in zip(
+                self.defense_names, self.attack_steps_by_defense_step
+            ):
+                defense_index = self.defense_indices[defense] + current_index
                 dig.add_node(defense_index if indices else defense)
                 for attack in affected_step:
-                    dig.add_edge(defense_index if indices else defense, attack if indices else self.attack_names[attack])
-
+                    dig.add_edge(
+                        defense_index if indices else defense,
+                        attack if indices else self.attack_names[attack],
+                    )
 
         return dig
 
@@ -365,13 +376,27 @@ class AttackGraph:
         defended = not all(defense_state[self.defense_steps_by_attack_step[step]])
         return defended
 
+    def interpret_services(self, services: np.ndarray) -> List[str]:
+        return list(np.array(self.service_names)[np.flatnonzero(services)])
+
+    def interpret_defenses(self, active_defenses: np.ndarray) -> List[str]:
+        return [name for name, state in zip(self.defense_names, active_defenses) if not state]
+
+    def interpret_attacks(self, attacks: np.ndarray) -> List[str]:
+        return list(np.array(self.attack_names)[np.flatnonzero(attacks)])
+
+    def interpret_observation(self, observation: np.ndarray) -> Tuple[List[str], List[str]]:
+        defenses = observation[: self.num_defenses]
+        attacks = observation[self.num_defenses :]
+        return self.interpret_defenses(defenses), self.interpret_attacks(attacks)
 
     def draw(self, width=500, height=500, add_defense=True) -> None:
-
         # Get the graph
         graph = self.to_networkx(False, np.ones(len(self.defense_names)), add_defense)
 
-        attack_node_colors_dict = {step.id: GraphColors.NODE.value for step in self.steps if step.id not in self.flags}
+        attack_node_colors_dict = {
+            step.id: GraphColors.NODE.value for step in self.steps if step.id not in self.flags
+        }
         attack_node_colors_dict[self.root] = GraphColors.ENTRY.value
 
         for flag in self.flags:
@@ -380,27 +405,25 @@ class AttackGraph:
         for defense in self.defense_steps:
             attack_node_colors_dict[defense] = GraphColors.DEFENSE.value
 
-
-
         dpi = 100
         fig = plt.figure(figsize=(width // dpi, height // dpi), dpi=dpi)
 
         # Get the positions of the nodes
         pos = nx.nx_pydot.graphviz_layout(graph, prog="dot")
 
-        #pos = {key): value for key, value in pos.items()}
+        # pos = {key): value for key, value in pos.items()}
 
         and_steps = set(map(lambda x: x.id, filter(lambda x: x.step_type == STEP.AND, self.steps)))
-        and_edges = {
-                (i, j)
-                for i, j in graph.edges
-                if j in and_steps        
-        }
+        and_edges = {(i, j) for i, j in graph.edges if j in and_steps}
 
         nx.draw_networkx_nodes(
-            graph, pos=pos, node_color=[attack_node_colors_dict[step] for step in graph.nodes()], edgecolors="black", node_size=100
+            graph,
+            pos=pos,
+            node_color=[attack_node_colors_dict[step] for step in graph.nodes()],
+            edgecolors="black",
+            node_size=100,
         )
-        nx.draw_networkx_edges(graph, edgelist=graph.edges-and_edges, pos=pos, edge_color="black")
+        nx.draw_networkx_edges(graph, edgelist=graph.edges - and_edges, pos=pos, edge_color="black")
         nx.draw_networkx_edges(
             graph, edgelist=and_edges, pos=pos, edge_color="black", style="dashed"
         )
@@ -408,7 +431,6 @@ class AttackGraph:
         labels = nx.get_node_attributes(graph, "ttc")
 
         nx.draw_networkx_labels(graph, labels=labels, pos=pos, font_size=8)
-
 
         plt.axis("off")
         plt.tight_layout()

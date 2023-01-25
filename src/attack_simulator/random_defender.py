@@ -1,21 +1,15 @@
-from typing import Union, Optional, List, Tuple, Dict
-import torch
-from ray.rllib.models import ModelCatalog
-from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
-from ray.rllib.utils.torch_utils import FLOAT_MAX, FLOAT_MIN
-from torch import Tensor
-import numpy as np
-from torch import nn
-from ray.rllib.utils.typing import TensorType, TensorStructType
+from typing import Dict, List, Optional, Tuple, Union
 
-from ray.rllib.policy.policy import Policy
-from ray.rllib.algorithms.algorithm import Algorithm
-from ray.rllib.policy.sample_batch import SampleBatch
 import tree
+from ray.rllib.algorithms.algorithm import Algorithm
+from ray.rllib.policy.policy import Policy
+from ray.rllib.policy.sample_batch import SampleBatch
+from ray.rllib.utils.typing import TensorStructType, TensorType
 
 
 class RandomDefender(Algorithm):
-    _allow_unknown_configs = True
+    # _allow_unknown_configs = True
+
     def get_default_policy_class(self, config):
         return RandomPolicy
 
@@ -60,7 +54,6 @@ class RandomPolicy(Policy):
 
     def set_weights(self, weights) -> None:
         pass
-
 
     def init_view_requirements(self):
         super().init_view_requirements()

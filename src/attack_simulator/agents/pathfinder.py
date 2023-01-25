@@ -3,10 +3,11 @@ from typing import Any, List, Tuple, Union
 
 import networkx as nx
 import numpy as np
+from agraphlib import STEP
 from networkx.algorithms.shortest_paths.generic import shortest_path
 
 from attack_simulator.sim import AttackSimulator
-from agraphlib import STEP
+
 from .agent import Agent
 
 DO_NOTHING = -1
@@ -56,7 +57,6 @@ class PathFinderAttacker(Agent):
             self.current_attack_target = self.planned_path.pop()
 
     def atk_step_idx(self, step_name: Union[str, int]) -> int:
-
         if isinstance(step_name, int):
             return step_name
 

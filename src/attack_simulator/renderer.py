@@ -1,17 +1,20 @@
 import shutil
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple
+from typing import Any, Dict, Optional, Set, Tuple
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+from agraphlib import STEP
 from matplotlib.animation import HTMLWriter
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.text import Text
+from numpy.typing import NDArray
 
-from agraphlib import STEP
-from .sim import AttackSimulator
+from attack_simulator.constants import ACTION_WAIT
+from attack_simulator.graph import AttackGraph
+
 from .svg_tooltips import add_tooltips, make_paths_relative, postprocess_frame, postprocess_html
 
 NODE_SIZE = 1000
@@ -70,28 +73,35 @@ def add_to_logline(logline: str, string: str) -> str:
     return " ".join([logline, string])
 
 
-def _generate_logs(sim: AttackSimulator, defender_reward: float, done: bool) -> str:
+def _generate_logs(
+    state: Dict[str, Any], graph: AttackGraph, defender_reward: float, done: bool
+) -> str:
+    time = state["time"]
+    attacker_action = state["attacker_action"]
+    defender_action = state["defender_action"]
+    attack_surface = state["attack_surface"]
+    defense_state = state["defense_state"]
+    ttc_remaining = state["ttc_remaining"]
+    attack_surface_empty = np.all(attack_surface == 0)
 
     logs = []
-    logs.append(f"Step {sim.time}:")
+    logs.append(f"Step {time}:")
 
-    if sim.time == 0:
+    if time == 0:
         logs.append("Simulation starting.")
     else:
-        logs.append(
-            f"Defender selects {sim.defender_action}:{sim.interpret_defender_action(sim.defender_action)}."
-        )
-        if sim.attack_surface_empty:
+        logs.append(f"Defender selects {defender_action}:{defender_action}.")
+        if attack_surface_empty:
             logs.append("Attacker can not attack anything.")
-        elif sim.attacker_action == sim.NO_ACTION:
+        elif attacker_action == ACTION_WAIT:
             logs.append("Attacker does nothing.")
         else:
-            logs.append(f"Attacker attacks {sim.g.attack_names[sim.attacker_action]}.")
-            logs.append(f"Remaining TTC: {sim.ttc_remaining[sim.attacker_action]}.")
+            logs.append(f"Attacker attacks {graph.attack_names[attacker_action]}.")
+            logs.append(f"Remaining TTC: {ttc_remaining[attacker_action]}.")
         logs.append(f"Defender reward: {defender_reward}.")
 
-    logs.append(f"Attack surface: {sim.interpret_attacks(sim.attack_surface)}.")
-    logs.append(f"Defense steps used: {sim.interpret_defenses(sim.defense_state)}")
+    logs.append(f"Attack surface: {graph.interpret_attacks(attack_surface)}.")
+    logs.append(f"Defense steps used: {graph.interpret_defenses(defense_state)}")
 
     if done:
         logs.append("Simulation finished.")
@@ -109,13 +119,13 @@ class AttackSimulationRenderer:
 
     def __init__(
         self,
-        sim: AttackSimulator,
+        graph: AttackGraph,
         run_id: str,
         episode: int,
         save_graph: bool = False,
         save_logs: bool = False,
     ):
-        self.sim: AttackSimulator = sim
+        self.graph = graph
         self.save_graph = save_graph
         self.save_logs = save_logs
         self.add_tooltips = False
@@ -131,16 +141,14 @@ class AttackSimulationRenderer:
         self.out_dir.mkdir(parents=True)
 
         if self.save_graph:
-            self.dag = self.sim.g.to_networkx(
-                indices=True, system_state=np.ones(self.sim.num_defense_steps)
-            )
+            self.dag = graph.to_networkx(indices=True, system_state=np.ones(graph.num_defenses))
             self.pos: Dict[int, Tuple[float, float]] = nx.nx_pydot.graphviz_layout(
-                self.dag, root=self.sim.entry_attack_index, prog="sfdp"
+                self.dag, root=graph.root, prog="sfdp"
             )
             self.and_edges = {
                 (i, j)
                 for i, j in self.dag.edges
-                if self.sim.g.attack_steps[self.sim.g.attack_names[j]].step_type == STEP.AND
+                if graph.attack_steps[graph.attack_names[j]].step_type == STEP.AND
             }
 
             height = 1500
@@ -190,20 +198,24 @@ class AttackSimulationRenderer:
             **kwargs,
         )
 
-    def _render_graph(self) -> None:
+    def _render_graph(self, state: Dict[str, Any]) -> None:
         self.ax.clear()
 
         # draw "or" edges solid (default), "and" edges dashed
         self._draw_edges(self.dag.edges - self.and_edges)
         self._draw_edges(self.and_edges, style="dashed")
 
-        all_attacks = set(range(self.sim.g.num_attacks))
-        flags = set(self.sim.g.flag_indices)
-        #observed_attacks = np.array(self.sim.observe()[self.sim.g.num_defenses :])
+        all_attacks = set(range(self.graph.num_attacks))
+        flags = set(self.graph.flag_indices)
+        # observed_attacks = np.array(self.observe()[self.g.num_defenses :])
 
-        attack_state = self.sim.attack_state
-        false_alerts = self.sim.false_positives
-        missed_alerts = self.sim.false_negatives
+        attack_state = state["attack_state"]
+        false_alerts = state["false_positives"]
+        missed_alerts = state["false_negatives"]
+        defense_state = state["defense_state"]
+        attack_surface = state["attack_surface"]
+        ttc_remaining = state["ttc_remaining"]
+        attacker_action = state["attacker_action"]
 
         # Draw uncompromised steps as green squares
         observed_ok = set(np.flatnonzero(1 - attack_state))
@@ -217,23 +229,27 @@ class AttackSimulationRenderer:
 
         # Draw false positives as yellow squares
         false_alerts = set(np.flatnonzero(false_alerts))
-        self._draw_nodes(false_alerts - flags, INNER_NODE_SIZE-100, "white", "purple")
-        self._draw_nodes(false_alerts & flags, INNER_NODE_SIZE-100, "white", "purple", node_shape="s")
+        self._draw_nodes(false_alerts - flags, INNER_NODE_SIZE - 100, "white", "purple")
+        self._draw_nodes(
+            false_alerts & flags, INNER_NODE_SIZE - 100, "white", "purple", node_shape="s"
+        )
 
         # Draw false negatives as blue squares
         missed_alerts = set(np.flatnonzero(missed_alerts))
-        self._draw_nodes(missed_alerts - flags, INNER_NODE_SIZE-100, "white", "blue")
-        self._draw_nodes(missed_alerts & flags, INNER_NODE_SIZE-100, "white", "blue", node_shape="s")
+        self._draw_nodes(missed_alerts - flags, INNER_NODE_SIZE - 100, "white", "blue")
+        self._draw_nodes(
+            missed_alerts & flags, INNER_NODE_SIZE - 100, "white", "blue", node_shape="s"
+        )
 
         # Draw attacks without defense steps as hexagons
-        fixed_attacks = self.sim.g.get_undefendable_steps()
-        self._draw_nodes(fixed_attacks, INNER_NODE_SIZE, "white", "black", node_shape="H")
+        fixed_attacks = self.graph.get_undefendable_steps()
+        self._draw_nodes(set(fixed_attacks), INNER_NODE_SIZE, "white", "black", node_shape="H")
 
         # Gray out disabled attacks
         disabled_attacks = {
             i
             for i in all_attacks
-            if not all(self.sim.defense_state[self.sim.g.defense_steps_by_attack_step[i]])
+            if not all(defense_state[self.graph.defense_steps_by_attack_step[i]])
         }
 
         self._draw_nodes(disabled_attacks - flags, INNER_NODE_SIZE, "lightgray", "lightgray")
@@ -242,8 +258,8 @@ class AttackSimulationRenderer:
         )
 
         # use "forward" triangles for the attack surface, vary color by TTC
-        nodes = np.flatnonzero(self.sim.attack_surface)
-        colors = self.sim.ttc_remaining[nodes]
+        nodes = np.flatnonzero(attack_surface)
+        colors = ttc_remaining[nodes]
 
         self._draw_nodes(
             set(nodes),
@@ -256,20 +272,19 @@ class AttackSimulationRenderer:
             node_shape="H",
         )
 
-        attacked_node = self.sim.attacker_action
-        if attacked_node != self.sim.NO_ACTION:
+        attacked_node = attacker_action
+        if attacked_node != ACTION_WAIT:
             self._draw_nodes({attacked_node}, 700, "yellow", "orange", node_shape="H")
 
         # show attack state by label color
         # safe(ok): GREEN, under attack(kk): BLACK, compromised(ko): RED
         ok_labels: Dict[int, str] = {
-            i: self.get_node_label(i)
-            for i in np.flatnonzero(1 - (self.sim.attack_state | self.sim.attack_surface))
+            i: self.get_node_label(i) for i in np.flatnonzero(1 - (attack_state | attack_surface))
         }
         self._draw_labels(ok_labels, "green")
-        kk_labels = {i: self.get_node_label(i) for i in np.flatnonzero(self.sim.attack_surface)}
+        kk_labels = {i: self.get_node_label(i) for i in np.flatnonzero(attack_surface)}
         self._draw_labels(kk_labels, "black")
-        ko_labels = {i: self.get_node_label(i) for i in np.flatnonzero(self.sim.attack_state)}
+        ko_labels = {i: self.get_node_label(i) for i in np.flatnonzero(attack_state)}
         self._draw_labels(ko_labels, "red")
 
         nx.draw_networkx_labels(
@@ -281,15 +296,19 @@ class AttackSimulationRenderer:
             font_color="gray",
         )
 
-    def get_node_label(self, step_id: int) -> str:
-        rewards = self.sim.g.reward_params
+    def get_node_label(
+        self, step_id: int, ttc_remaining: Optional[NDArray[np.int64]] = None
+    ) -> str:
+        rewards = self.graph.reward_params
 
-        step_defense = [str(i) for i in self.sim.g.defense_steps_by_attack_step[step_id]]
+        step_defense = [str(i) for i in self.graph.defense_steps_by_attack_step[step_id]]
         defense_string = ",".join(step_defense)
 
         stats = []
 
-        stats += [f"T:{str(self.sim.ttc_remaining[step_id])}"]
+        if ttc_remaining:
+            stats += [f"T:{str(ttc_remaining[step_id])}"]
+
         stats += [f"R{str(rewards[step_id])}"] if rewards[step_id] > 0 else []
         stats_label = "\n".join(stats)
 
@@ -303,7 +322,10 @@ class AttackSimulationRenderer:
     def out_dir(self) -> Path:
         return self.run_dir / f"ep-{self.episode}"
 
-    def finish(self) -> None:
+    def finish(self, state: Dict[str, Any]) -> None:
+        compromised_steps = state["attack_state"]
+        compromised_flags = state["attack_state"][self.graph.flag_indices["flags"]]
+
         if self.save_graph:
             plt.close()
             self.graph_writer.finish()
@@ -314,8 +336,8 @@ class AttackSimulationRenderer:
         if self.save_logs:
             with open(self.out_dir / self.LOGS, "a", encoding="utf8") as f:
                 logs = "Attack is complete.\n"
-                logs += f"Compromised steps: {self.sim.compromised_steps}\n"
-                logs += f"Compromised flags: {self.sim.compromised_flags}\n"
+                logs += f"Compromised steps: {compromised_steps}\n"
+                logs += f"Compromised flags: {compromised_flags}\n"
                 f.write(logs)
 
         try:
@@ -325,10 +347,10 @@ class AttackSimulationRenderer:
             # Will fail if dir is not empty
             pass
 
-    def render(self, defender_reward: float, done: bool) -> None:
+    def render(self, state: Dict[str, Any], defender_reward: float, done: bool) -> None:
         """Render a frame."""
 
-        logs = _generate_logs(self.sim, defender_reward, done)
+        logs = _generate_logs(state, self.graph, defender_reward, done)
 
         if self.save_logs:
             with open(self.out_dir / self.LOGS, "a", encoding="utf8") as f:
@@ -336,15 +358,15 @@ class AttackSimulationRenderer:
 
         if self.save_graph:
             self.log.set_text(logs)
-            self._render_graph()
+            self._render_graph(state)
             if self.add_tooltips:
-                add_tooltips(self.pos, self.sim.g.attack_names, ax=self.ax)
+                add_tooltips(self.pos, self.graph.attack_names, ax=self.ax)
             writer: HTMLWriter = self.graph_writer
             writer.grab_frame()
             if self.add_tooltips:
                 postprocess_frame(
-                    writer._temp_paths[-1], self.pos.keys()
+                    writer._temp_paths[-1], list(self.pos.keys())
                 )  # pylint: disable=protected-access
 
         if done:
-            self.finish()
+            self.finish(state)

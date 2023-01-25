@@ -1,19 +1,22 @@
 from typing import Any, Dict, Optional, Tuple
 
+import numpy as np
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
 from ray.rllib.env import BaseEnv
 from ray.rllib.evaluation import RolloutWorker
-from ray.rllib.evaluation.episode import Episode
+from ray.rllib.evaluation.episode_v2 import EpisodeV2
 from ray.rllib.policy import Policy
-from ray.rllib.utils.typing import PolicyID, AgentID
 from ray.rllib.policy.sample_batch import SampleBatch
-import numpy as np
+from ray.rllib.utils.typing import AgentID, PolicyID
+
+from attack_simulator.constants import AGENT_DEFENDER
+
 from .reward_utils import (
     defender_min,
     get_normalized_attacker_reward,
     get_normalized_downtime_reward,
-    normalize,
     harmonic_mean,
+    normalize,
 )
 
 
@@ -26,11 +29,11 @@ class AttackSimCallback(DefaultCallbacks):
         worker: "RolloutWorker",
         base_env: BaseEnv,
         policies: Optional[Dict[PolicyID, Policy]] = None,
-        episode: Episode,
+        episode: EpisodeV2,
         **kwargs,
     ) -> None:
 
-        info = episode.last_info_for()
+        info = episode._last_infos[AGENT_DEFENDER]
 
         for key in []:
             episode.custom_metrics[key] = info[key]
@@ -39,7 +42,7 @@ class AttackSimCallback(DefaultCallbacks):
         self,
         *,
         worker: "RolloutWorker",
-        episode: Episode,
+        episode: EpisodeV2,
         agent_id: AgentID,
         policy_id: PolicyID,
         policies: Dict[PolicyID, Policy],
@@ -75,11 +78,11 @@ class AttackSimCallback(DefaultCallbacks):
         worker: RolloutWorker,
         base_env: BaseEnv,
         policies: Optional[Dict[PolicyID, Policy]] = None,
-        episode: Episode,
+        episode: EpisodeV2,
         **kwargs: Any,
     ) -> None:
 
-        info = episode.last_info_for()
+        info = episode._last_infos[AGENT_DEFENDER]
 
         for key in [
             "attacker_start_time",
@@ -91,18 +94,17 @@ class AttackSimCallback(DefaultCallbacks):
         ]:
             episode.custom_metrics[key] = info[key]
 
-
         defense_costs = info["defense_costs"]
         avg_defense_cost = np.mean(defense_costs)
         num_defenses = defense_costs.shape[0]
-        
+
         a_min = -np.sum(info["flag_costs"])
 
         attacker_reward = get_normalized_attacker_reward(
             info["flag_costs"], info["sum_attacker_reward"]
         )
-        
-        flag_defense_reward = 1-attacker_reward
+
+        flag_defense_reward = 1 - attacker_reward
 
         reward_mode = worker.env_context["reward_mode"]
         if reward_mode == "downtime-penalty":
@@ -134,4 +136,3 @@ class AttackSimCallback(DefaultCallbacks):
         # entropy = -(p_alert * np.log(p_alert) + (1 - p_alert) * np.log(1 - p_alert))
 
         # episode.custom_metrics["uncertainty"] = (1 - p_alert) * worker.env_context["false_positive"] + p_alert * worker.env_context["false_negative"]
-        pass

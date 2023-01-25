@@ -1,65 +1,100 @@
 from itertools import repeat
+from logging import Logger
+from typing import Callable, Dict, Optional
+
+import numpy as np
 import torch
 import torch.nn as nn
+from ray.rllib.algorithms.algorithm_config import AlgorithmConfig, NotProvided
+from ray.rllib.algorithms.dqn.dqn_torch_model import DQNTorchModel
+from ray.rllib.algorithms.ppo import PPO
+from ray.rllib.algorithms.ppo.ppo import PPOConfig
+from ray.rllib.algorithms.ppo.ppo_torch_policy import PPOTorchPolicy
+from ray.rllib.evaluation.postprocessing import compute_gae_for_sample_batch
 from ray.rllib.models import ModelCatalog
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 from ray.rllib.utils.torch_utils import FLOAT_MAX, FLOAT_MIN
-from torch import Tensor, nn
-from ray.rllib.algorithms.dqn.dqn_torch_model import DQNTorchModel
-from ray.rllib.algorithms.ppo.ppo_torch_policy import PPOTorchPolicy
-from ray.rllib.algorithms.ppo import PPO
-from ray.rllib.evaluation.postprocessing import compute_gae_for_sample_batch
-from ray.rllib.algorithms.algorithm import Algorithm
-import numpy as np
+from torch import Tensor
 
-from attack_simulator.reward_utils import action_cost_for_timestep, get_minimum_rewards, normalize
+from attack_simulator.reward_utils import get_minimum_rewards, normalize
+
+
+class DefenderConfig(PPOConfig):
+    # _allow_unknown_configs = True
+    # _allow_unknown_subkeys = True
+
+    def __init__(self, algo_class=None):
+        super().__init__(algo_class=algo_class or PPO)
+        # self._allow_unknown_configs = True
+        # self._allow_unknown_subkeys = True
+
+        self.scale_rewards = True
+
+    def training(self, *, scale_rewards: Optional[bool] = NotProvided, **kwargs):
+        super().training(**kwargs)
+        self.scale_rewards = scale_rewards
+        return self
 
 
 class Defender(PPO):
-    _allow_unknown_configs = True
+    def __init__(
+        self,
+        config: Optional[AlgorithmConfig] = None,
+        env=None,
+        logger_creator: Optional[Callable[[], Logger]] = None,
+        **kwargs,
+    ):
+        # ray.train.torch.enable_reproducibility(config['seed'])
+        super().__init__(config, env, logger_creator, **kwargs)
+
     def get_default_policy_class(self, config):
         return DefenderPolicy
 
+    def reset_config(self, new_config: Dict):
+        self.config = new_config
+        return True
+
+
 class DefenderPolicy(PPOTorchPolicy):
-
-    def postprocess_trajectory(
-        self, sample_batch, other_agent_batches=None, episode=None
-    ):
+    def postprocess_trajectory(self, sample_batch, other_agent_batches=None, episode=None):
         with torch.no_grad():
-            if self.config["scale_rewards"]:
-                
-                    #sample_batch["rewards"] = rewards / len(rewards)
+            if self.config["scale_rewards"] is True:
 
-                    try:
-                        rewards = sample_batch["rewards"]
-                        info = sample_batch["infos"][-1]
-                        avg_defense_cost = np.mean(info["defense_costs"])
-                        num_defenses = len(info["defense_costs"])
-                        avg_flag_cost = np.mean(info["flag_costs"])
-                        episode_length = len(rewards)
-                        min_defense_rewards = get_minimum_rewards(avg_defense_cost, num_defenses, episode_length)
-                        min_flag_rewards = repeat(avg_flag_cost, episode_length)
-                        total_max_reward_per_timestep = map(sum, zip(min_defense_rewards, min_flag_rewards))
-                        scaled_rewards = map(lambda x: normalize(x[0], -x[1], 0, -1, 1), zip(rewards, total_max_reward_per_timestep))
-                        sample_batch["rewards"] = np.array(list(scaled_rewards)) / episode_length
+                # sample_batch["rewards"] = rewards / len(rewards)
 
-                    except IndexError:
-                        pass
-                
-                # rewards = sample_batch["rewards"]
+                try:
+                    rewards = sample_batch["rewards"]
+                    info = sample_batch["infos"][-1]
+                    avg_defense_cost = np.mean(info["defense_costs"])
+                    num_defenses = len(info["defense_costs"])
+                    avg_flag_cost = np.mean(info["flag_costs"])
+                    episode_length = len(rewards)
+                    min_defense_rewards = get_minimum_rewards(
+                        avg_defense_cost, num_defenses, episode_length
+                    )
+                    min_flag_rewards = repeat(avg_flag_cost, episode_length)
+                    total_max_reward_per_timestep = map(
+                        sum, zip(min_defense_rewards, min_flag_rewards)
+                    )
+                    scaled_rewards = map(
+                        lambda x: normalize(x[0], -x[1], 0, -1, 1),
+                        zip(rewards, total_max_reward_per_timestep),
+                    )
+                    sample_batch["rewards"] = np.array(list(scaled_rewards)) / episode_length
 
+                except IndexError:
+                    pass
 
-                # postprocessed_rewards = [normalize(reward, min_d+min_a, 0, 0, 1) for reward, min_d, min_a in zip(rewards, min_defense_rewards, min_flag_rewards)]
+            # rewards = sample_batch["rewards"]
 
-                # sample_batch["rewards"] = postprocessed_rewards
+            # postprocessed_rewards = [normalize(reward, min_d+min_a, 0, 0, 1) for reward, min_d, min_a in zip(rewards, min_defense_rewards, min_flag_rewards)]
 
+            # sample_batch["rewards"] = postprocessed_rewards
 
-            return compute_gae_for_sample_batch(
-                self, sample_batch, other_agent_batches, episode
-            )
+            return compute_gae_for_sample_batch(self, sample_batch, other_agent_batches, episode)
+
 
 class HiddenLayer(nn.Module):
-
     def __init__(self, in_features, out_features, activation_func) -> None:
         super().__init__()
         self.layer = nn.Linear(in_features, out_features)
@@ -67,6 +102,7 @@ class HiddenLayer(nn.Module):
 
     def forward(self, x):
         return self.activation_func(self.layer(x))
+
 
 class DefenderModel(TorchModelV2, nn.Module):
     """Policy for the agent agent."""
@@ -86,7 +122,7 @@ class DefenderModel(TorchModelV2, nn.Module):
 
         hidden_layers = []
         prev_layer_size = sim_space.shape[0]
-        for dim in model_config['fcnet_hiddens']:
+        for dim in model_config["fcnet_hiddens"]:
             hidden_layers.append(HiddenLayer(prev_layer_size, dim, activation_func()))
             prev_layer_size = dim
 
@@ -97,7 +133,7 @@ class DefenderModel(TorchModelV2, nn.Module):
         if not self.vf_share_layers:
             prev_layer_size = sim_space.shape[0]
             hidden_layers = []
-            for dim in model_config['fcnet_hiddens']:
+            for dim in model_config["fcnet_hiddens"]:
                 hidden_layers.append(HiddenLayer(prev_layer_size, dim, activation_func()))
                 prev_layer_size = dim
             self.vf_embedding_func = nn.Sequential(
@@ -107,9 +143,8 @@ class DefenderModel(TorchModelV2, nn.Module):
         self.policy_fn = nn.Linear(prev_layer_size, num_outputs)
         self.value_fn = nn.Linear(prev_layer_size, 1)
         self.use_cuda = torch.cuda.is_available()
-        
-    def forward(self, input_dict, state, seq_lens):
 
+    def forward(self, input_dict, state, seq_lens):
         obs = input_dict["obs"]
 
         sim_state: Tensor = obs["sim_obs"].type(torch.FloatTensor)
@@ -141,9 +176,6 @@ class DefenderModel(TorchModelV2, nn.Module):
     def value_function(self):
         return self._value_out.flatten()
 
-    def import_from_h5(self, h5_file: str) -> None:
-        return super().import_from_h5(h5_file)
-
 
 class DQNDefenderModel(DQNTorchModel):
     """PyTorch version of above ParametricActionsModel."""
@@ -157,11 +189,9 @@ class DQNDefenderModel(DQNTorchModel):
         name,
         true_obs_shape=(4,),
         action_embed_size=2,
-        **kw
+        **kw,
     ):
-        DQNTorchModel.__init__(
-            self, obs_space, action_space, num_outputs, model_config, name, **kw
-        )
+        DQNTorchModel.__init__(self, obs_space, action_space, num_outputs, model_config, name, **kw)
 
         self.obs_space = obs_space
         sim_space = obs_space.original_space.spaces["sim_obs"]
@@ -186,7 +216,6 @@ class DQNDefenderModel(DQNTorchModel):
         self.use_cuda = torch.cuda.is_available()
 
     def forward(self, input_dict, state, seq_lens):
-        
         obs = input_dict["obs"]
 
         sim_state: Tensor = obs["sim_obs"].type(torch.FloatTensor)
@@ -194,7 +223,6 @@ class DQNDefenderModel(DQNTorchModel):
 
         if action_mask.sum().item() == 0:
             action_mask = torch.ones_like(action_mask)
-
 
         if self.use_cuda:
             sim_state = sim_state.cuda()
@@ -221,11 +249,13 @@ class DQNDefenderModel(DQNTorchModel):
     def value_function(self):
         return self.action_embed_model.value_function()
 
+
 def register_rllib_model():
     name = "DefenderModel"
     ModelCatalog.register_custom_model(name, DefenderModel)
     name = "DQNDefenderModel"
     ModelCatalog.register_custom_model(name, DQNDefenderModel)
     return name
+
 
 register_rllib_model()

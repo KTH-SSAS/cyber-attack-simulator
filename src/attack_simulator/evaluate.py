@@ -3,14 +3,12 @@
 import argparse
 import collections
 import copy
-import gym
 import json
 import os
-from pathlib import Path
 import shelve
-import re
+from pathlib import Path
 
-import ray
+import gym
 import ray.cloudpickle as cloudpickle
 from ray.rllib.algorithms.registry import get_algorithm_class
 from ray.rllib.env import MultiAgentEnv
@@ -20,8 +18,8 @@ from ray.rllib.evaluation.worker_set import WorkerSet
 from ray.rllib.policy.sample_batch import DEFAULT_POLICY_ID
 from ray.rllib.utils.deprecation import deprecation_warning
 from ray.rllib.utils.spaces.space_utils import flatten_to_single_ndarray
+from ray.tune.registry import ENV_CREATOR, _global_registry, get_trainable_cls
 from ray.tune.utils import merge_dicts
-from ray.tune.registry import get_trainable_cls, _global_registry, ENV_CREATOR
 
 EXAMPLE_USAGE = """
 Example usage via RLlib CLI:
@@ -100,15 +98,13 @@ def create_parser(parser_creator=None):
         default=False,
         action="store_const",
         const=True,
-        help="Deprecated! Rendering is off by default now. "
-        "Use `--render` to enable.",
+        help="Deprecated! Rendering is off by default now. " "Use `--render` to enable.",
     )
     parser.add_argument(
         "--video-dir",
         type=str,
         default=None,
-        help="Specifies the directory into which videos of all episode "
-        "rollouts will be stored.",
+        help="Specifies the directory into which videos of all episode " "rollouts will be stored.",
     )
     parser.add_argument(
         "--steps",
@@ -228,9 +224,7 @@ class RolloutSaver:
                         pass
                 except IOError as x:
                     print(
-                        "Can not open {} for writing - cancelling rollouts.".format(
-                            self._outfile
-                        )
+                        "Can not open {} for writing - cancelling rollouts.".format(self._outfile)
                     )
                     raise x
             if self._write_update_file:
@@ -253,13 +247,9 @@ class RolloutSaver:
 
     def _get_progress(self):
         if self._target_episodes:
-            return "{} / {} episodes completed".format(
-                self._num_episodes, self._target_episodes
-            )
+            return "{} / {} episodes completed".format(self._num_episodes, self._target_episodes)
         elif self._target_steps:
-            return "{} / {} steps completed".format(
-                self._total_steps, self._target_steps
-            )
+            return "{} / {} steps completed".format(self._total_steps, self._target_steps)
         else:
             return "{} episodes completed".format(self._num_episodes)
 
@@ -283,12 +273,10 @@ class RolloutSaver:
             self._update_file.flush()
 
     def append_step(self, obs, action, next_obs, reward, done, info):
-        """Add a step to the current rollout, if we are saving them"""
+        """Add a step to the current rollout, if we are saving them."""
         if self._outfile:
             if self._save_info:
-                self._current_rollout.append(
-                    [obs, action, next_obs, reward, done, info]
-                )
+                self._current_rollout.append([obs, action, next_obs, reward, done, info])
             else:
                 self._current_rollout.append([obs, action, next_obs, reward, done])
         self._total_steps += 1
@@ -358,8 +346,7 @@ def run(args, parser):
     if args.no_render:
         deprecation_warning(old="--no-render", new="--render", error=False)
         args.render = False
-    
-    
+
     config["evaluation_config"]["render_env"] = args.render
     config["evaluation_config"]["env_config"]["save_graphs"] = args.render
     config["evaluation_config"]["env_config"]["save_logs"] = args.render
@@ -407,7 +394,7 @@ def default_policy_agent_mapping(unused_agent_id):
 
 
 def keep_going(steps, num_steps, episodes, num_episodes):
-    """Determine whether we've collected enough data"""
+    """Determine whether we've collected enough data."""
     # If num_episodes is set, stop if limit reached.
     if num_episodes and episodes >= num_episodes:
         return False
@@ -434,9 +421,7 @@ def rollout(
 
     # Normal case: Agent was setup correctly with an evaluation WorkerSet,
     # which we will now use to rollout.
-    if hasattr(agent, "evaluation_workers") and isinstance(
-        agent.evaluation_workers, WorkerSet
-    ):
+    if hasattr(agent, "evaluation_workers") and isinstance(agent.evaluation_workers, WorkerSet):
         steps = 0
         episodes = 0
         while keep_going(steps, num_steps, episodes, num_episodes):
@@ -448,11 +433,7 @@ def rollout(
             episodes += eps
             steps += eps * eval_result["episode_len_mean"]
             # Print out results and continue.
-            print(
-                "Episode #{}: reward: {}".format(
-                    episodes, eval_result["episode_reward_mean"]
-                )
-            )
+            print("Episode #{}: reward: {}".format(episodes, eval_result["episode_reward_mean"]))
             saver.end_rollout()
         return
 
@@ -489,8 +470,7 @@ def rollout(
         use_lstm = {DEFAULT_POLICY_ID: False}
 
     action_init = {
-        p: flatten_to_single_ndarray(m.action_space.sample())
-        for p, m in policy_map.items()
+        p: flatten_to_single_ndarray(m.action_space.sample()) for p, m in policy_map.items()
     }
 
     steps = 0
@@ -499,12 +479,8 @@ def rollout(
         mapping_cache = {}  # in case policy_agent_mapping is stochastic
         saver.begin_rollout()
         obs = env.reset()
-        agent_states = DefaultMapping(
-            lambda agent_id: state_init[mapping_cache[agent_id]]
-        )
-        prev_actions = DefaultMapping(
-            lambda agent_id: action_init[mapping_cache[agent_id]]
-        )
+        agent_states = DefaultMapping(lambda agent_id: state_init[mapping_cache[agent_id]])
+        prev_actions = DefaultMapping(lambda agent_id: action_init[mapping_cache[agent_id]])
         prev_rewards = collections.defaultdict(lambda: 0.0)
         done = False
         reward_total = 0.0
@@ -513,9 +489,7 @@ def rollout(
             action_dict = {}
             for agent_id, a_obs in multi_obs.items():
                 if a_obs is not None:
-                    policy_id = mapping_cache.setdefault(
-                        agent_id, policy_agent_mapping(agent_id)
-                    )
+                    policy_id = mapping_cache.setdefault(agent_id, policy_agent_mapping(agent_id))
                     p_use_lstm = use_lstm[policy_id]
                     if p_use_lstm:
                         a_action, p_state, _ = agent.compute_single_action(
@@ -569,14 +543,12 @@ def main():
     # --use_shelve w/o --out option.
     if args.use_shelve and not args.out:
         raise ValueError(
-            "If you set --use-shelve, you must provide an output file via "
-            "--out as well!"
+            "If you set --use-shelve, you must provide an output file via " "--out as well!"
         )
     # --track-progress w/o --out option.
     if args.track_progress and not args.out:
         raise ValueError(
-            "If you set --track-progress, you must provide an output file via "
-            "--out as well!"
+            "If you set --track-progress, you must provide an output file via " "--out as well!"
         )
 
     run(args, parser)

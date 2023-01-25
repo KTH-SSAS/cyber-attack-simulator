@@ -3,14 +3,7 @@ from typing import Dict, Type
 from attack_simulator.agents.searchers import BreadthFirstAttacker, DepthFirstAttacker
 
 from .agent import Agent
-from .attackers import (
-    InformedAttacker,
-    RandomAttacker,
-    RandomNoActionAttacker,
-    RoundRobinAttacker,
-    RoundRobinNoActionAttacker,
-    WellInformedAttacker,
-)
+from .attackers import InformedAttacker, RandomAttacker, RoundRobinAttacker, WellInformedAttacker
 from .baseline_agents import (
     DisableProbabilityAgent,
     NewRuleBasedAgent,
@@ -22,11 +15,11 @@ from .baseline_agents import (
 from .pathfinder import PathFinderAttacker
 
 ATTACKERS: Dict[str, Type[Agent]] = {
-    #"well-informed": WellInformedAttacker,
-    #"informed": InformedAttacker,
-    #"round-robin-no-action": RoundRobinNoActionAttacker,
-    #"round-robin": RoundRobinAttacker,
-    #"random-no-action": RandomNoActionAttacker,
+    # "well-informed": WellInformedAttacker,
+    # "informed": InformedAttacker,
+    # "round-robin-no-action": RoundRobinNoActionAttacker,
+    # "round-robin": RoundRobinAttacker,
+    # "random-no-action": RandomNoActionAttacker,
     "random": RandomAttacker,
     "pathplanner": PathFinderAttacker,
     "depth-first": DepthFirstAttacker,

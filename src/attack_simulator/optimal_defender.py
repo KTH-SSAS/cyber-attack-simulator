@@ -1,27 +1,17 @@
+from typing import Dict, List, Optional, Tuple, Union
 
-from typing import Union, Optional, List, Tuple, Dict
-from typing import Dict, List
 import torch
-from ray.rllib.models import ModelCatalog
-from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
-from ray.rllib.utils.torch_utils import FLOAT_MAX, FLOAT_MIN
-from torch import Tensor
-import numpy as np
-from torch import nn
-from attack_simulator.graph import AttackGraph
-from ray.rllib.utils.typing import TensorType, TensorStructType
-
-from ray.rllib.policy.policy import Policy
 from ray.rllib.algorithms.algorithm import Algorithm
-from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.models.modelv2 import restore_original_dimensions
-import tree
-
-
+from ray.rllib.policy.policy import Policy
+from ray.rllib.policy.sample_batch import SampleBatch
+from ray.rllib.utils.typing import TensorStructType, TensorType
+from torch import Tensor
 
 
 class TripwireDefender(Algorithm):
-    _allow_unknown_configs = True
+    # _allow_unknown_configs = True
+
     def get_default_policy_class(self, config):
         return TripwirePolicy
 
@@ -57,36 +47,33 @@ class TripwirePolicy(Policy):
         **kwargs,
     ) -> Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
 
-        
-        #obs = input_dict["obs"]
-        #sim_state: Tensor = obs["sim_obs"].type(torch.FloatTensor)
-
+        # obs = input_dict["obs"]
+        # sim_state: Tensor = obs["sim_obs"].type(torch.FloatTensor)
 
         obs = restore_original_dimensions(
-                torch.Tensor(input_dict["obs"]), self.observation_space, "numpy"
-            )
+            torch.Tensor(input_dict["obs"]), self.observation_space, "numpy"
+        )
 
         sim_state: Tensor = obs["sim_obs"].type(torch.FloatTensor)
 
-        attack_state = sim_state[:, self.num_defense_steps:]
-        defense_state = sim_state[:, :self.num_defense_steps]
+        attack_state = sim_state[:, self.num_defense_steps :]
+        defense_state = sim_state[:, : self.num_defense_steps]
 
         defenses_to_activate = torch.zeros(attack_state.shape[0], self.num_defense_steps)
 
         for b in range(attack_state.shape[0]):
             for d_s, defendable_steps in enumerate(self.attack_steps_by_defense_steps):
-                if defense_state[b, d_s] == 1: # if the defense is available
+                if defense_state[b, d_s] == 1:  # if the defense is available
                     for a_s in defendable_steps:
                         if attack_state[b, a_s] == 1:
                             defenses_to_activate[b, d_s] = 1
-                
+
         policy_out = torch.zeros(attack_state.shape[0], self.num_outputs)
         for b, defense in enumerate(defenses_to_activate):
             if sum(defense) == 0:
                 policy_out[b, 0] = 1
             else:
                 policy_out[b, 1:] = defense
-
 
         return torch.argmax(policy_out, dim=1), [], {}
 
@@ -101,7 +88,6 @@ class TripwirePolicy(Policy):
 
     def set_weights(self, weights) -> None:
         pass
-
 
     def init_view_requirements(self):
         super().init_view_requirements()

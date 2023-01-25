@@ -68,5 +68,8 @@ def get_minimum_rewards(
     action_cost: FLOAT_TYPE, num_actions: INT_TYPE, episode_length: INT_TYPE
 ) -> NDArray[FLOAT_TYPE]:
     return np.array(
-        [action_cost_for_timestep(t + 1, action_cost, num_actions) for t in np.arange(episode_length)]
+        [
+            action_cost_for_timestep(t + 1, action_cost, num_actions)
+            for t in np.arange(episode_length)
+        ]
     )
