@@ -1,4 +1,5 @@
 import pickle
+from collections import OrderedDict
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 import numpy as np
@@ -20,15 +21,16 @@ from .ids import ProbabilityIDS
 class AttackSimulator:
     """Does the simulation."""
 
-    def __init__(self, config: SimulatorConfig, attack_graph: AttackGraph, seed: UINT) -> None:
+    def __init__(self, config: SimulatorConfig, attack_graph: AttackGraph) -> None:
         ## Constants
         self.config = config
-
-        self.ids = ProbabilityIDS(seed, config.false_negative_rate, config.false_positive_rate)
+        self.ids = ProbabilityIDS(
+            config.seed, config.false_negative_rate, config.false_positive_rate
+        )
         self.fnr = config.false_negative_rate
         self.fpr = config.false_positive_rate
         self.g: AttackGraph = attack_graph
-        self.entry_attack_index = self.g.attack_indices[self.g.root]
+        self.entry_attack_index: UINT = self.g.attack_indices[self.g.root]
 
         ## State
         (
@@ -44,7 +46,8 @@ class AttackSimulator:
             self.attack_start_time,
             self.num_observed_alerts,
             self.prev_actions,
-        ) = self.get_initial_state(seed)
+            self.valid_actions,
+        ) = self.get_initial_state(config.seed)
 
         # Set the TTC for the entry attack to be the attack start time
         self.ttc_remaining, self.ttc_total = self.get_initial_ttc_vals(self.attack_start_time)
@@ -73,11 +76,11 @@ class AttackSimulator:
 
         ttc_remaining[self.entry_attack_index] = attack_start_time
 
-        return ttc_remaining, sum(ttc_remaining)
+        return ttc_remaining, np.sum(ttc_remaining)
 
     @property
-    def num_flags(self) -> UINT:
-        return len(self.g.flag_indices)
+    def num_flags(self) -> int:
+        return self.g.flag_indices.shape[0]
 
     @property
     def attacker_observation(self) -> NDArray:
@@ -88,18 +91,29 @@ class AttackSimulator:
         return self.g.num_attacks
 
     @property
-    def num_assets(self) -> UINT:
+    def num_assets(self) -> np.uintp:
         return self.g.num_services
 
     @property
-    def num_defense_steps(self) -> UINT:
+    def num_defense_steps(self) -> np.uintp:
         return self.g.num_defenses
 
     @property
     def attack_surface_empty(self) -> bool:
         return not any(self.attack_surface)
 
-    def reset(self, seed: UINT) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    @property
+    def valid_attacks(self) -> NDArray[np.intp]:
+        return np.flatnonzero(self.attack_surface)
+
+    @property
+    def valid_defenses(self) -> NDArray[np.intp]:
+        return np.flatnonzero(self.defense_state)
+
+    def reset(self, seed: Optional[UINT] = None) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        if seed is None:
+            seed = self.config.seed
+
         (
             self.time,
             self.service_state,
@@ -113,6 +127,7 @@ class AttackSimulator:
             self.attack_start_time,
             self.num_observed_alerts,
             self.prev_actions,
+            self.valid_actions,
         ) = self.get_initial_state(seed)
 
         self.ttc_remaining, self.ttc_total = self.get_initial_ttc_vals(self.attack_start_time)
@@ -120,7 +135,7 @@ class AttackSimulator:
         return self.get_obs_dict(None), self.info()
 
     def get_initial_state(
-        self, seed: UINT
+        self, seed: int
     ) -> Tuple[
         UINT,
         NDArray[np.int8],
@@ -133,7 +148,8 @@ class AttackSimulator:
         NDArray[np.float64],
         UINT,
         UINT,
-        Dict[str, UINT],
+        OrderedDict[str, UINT],
+        Dict[str, bool],
     ]:
         return (
             0,  # time
@@ -149,39 +165,59 @@ class AttackSimulator:
                 np.random.default_rng(seed).exponential(self.config.attack_start_time)
             ),  # attack start time
             0,  # num observed alerts
-            {AGENT_ATTACKER: self.entry_attack_index, AGENT_DEFENDER: 0},
+            OrderedDict([(AGENT_ATTACKER, self.entry_attack_index), (AGENT_DEFENDER, UINT(0))]),
+            {AGENT_ATTACKER: False, AGENT_DEFENDER: False},
         )
 
-    def action(self, action: UINT, actor_id: str) -> Dict[str, Any]:
-        self.prev_actions[actor_id] = action
+    def step(self, actions: OrderedDict[str, UINT]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        self.prev_actions = actions
 
-        if action < len(special_actions):
-            return self.get_obs_dict(None)
-
-        step_index = action - len(special_actions)
-
-        if actor_id == AGENT_ATTACKER:
-            affected_steps = self.attack_step(step_index)
-        elif actor_id == AGENT_DEFENDER:
-            affected_steps = self.enable_defense_step(step_index)
-        else:
-            raise ValueError("Invalid actor id")
-
-        return self.get_obs_dict(affected_steps)
-
-    def get_obs_dict(self, affected_steps: Optional[UINT] = None) -> Dict[str, Any]:
-        return {
-            "defender_obs": self.observe(),
-            "attack_surface": self.attack_surface,
-            "affected_steps": [] if affected_steps is None else affected_steps,
+        funcs: Dict[str, Callable[[UINT], Tuple[NDArray[np.int8], bool]]] = {
+            AGENT_ATTACKER: self.attack_step,
+            AGENT_DEFENDER: self.enable_defense_step,
         }
 
-    def enable_defense_step(self, defense_idx: UINT) -> NDArray[UINT]:
+        difference = np.zeros(self.g.num_attacks, dtype=np.int8)
+        valid_actions = {AGENT_ATTACKER: False, AGENT_DEFENDER: False}
+
+        for actor_id, action in actions.items():
+
+            if action < len(special_actions):
+                # Only special action is to wait for now
+                valid_action = True
+                agent_diff = np.zeros(self.g.num_attacks, dtype=np.int8)
+            else:
+                step_index = action - len(special_actions)
+                agent_diff, valid_action = funcs[actor_id](step_index)
+
+            difference += agent_diff
+            valid_actions[actor_id] = valid_action
+
+        self.time += 1
+        # Generate new noise so that FP and FN alerts change
+        self.noise = self.rng.random(self.attack_state.shape, dtype=np.float64)
+        self.valid_actions = valid_actions
+
+        return self.get_obs_dict(difference), self.info()
+
+    def get_obs_dict(self, affected_steps: Optional[NDArray[np.int8]] = None) -> Dict[str, Any]:
+        return {
+            "ids_observation": self.ids_observe(),
+            "attack_surface": self.attack_surface,
+            "attack_state": self.attack_state,
+            "defense_state": self.defense_state,
+            "ttc_remaining": self.ttc_remaining,
+            "affected_steps": np.zeros(self.num_attack_steps, dtype=np.int8)
+            if affected_steps is None
+            else affected_steps,
+        }
+
+    def enable_defense_step(self, defense_idx: UINT) -> Tuple[NDArray[np.int8], bool]:
         """Enable (disable) a defense step."""
 
         # Only enable defenses that are disabled
         if not self.defense_state[defense_idx]:
-            return np.array([], dtype=UINT)
+            return np.zeros(self.g.num_attacks, dtype=np.int8), False
 
         # Enable (disable) the denfense step
         self.defense_state[defense_idx] = 0
@@ -190,38 +226,33 @@ class AttackSimulator:
         affected_steps = self.g.attack_steps_by_defense_step[defense_idx]
         self.attack_surface[affected_steps] = 0
 
-        return np.array(affected_steps, dtype=UINT)
+        # Return the affected steps
+        effect = np.zeros(self.g.num_attacks, dtype=np.int8)
+        effect[affected_steps] = -1
 
-    @property
-    def valid_actions(self) -> np.ndarray:
-        return np.flatnonzero(self.attack_surface)
+        return effect, True
 
-    def attack_step(self, attack_idx: UINT) -> NDArray[np.uint64]:
+    def attack_step(self, attack_idx: UINT) -> Tuple[NDArray[np.int8], bool]:
         """Have the attacker perform an action."""
 
         # assert (
         #     attack_idx in self.valid_actions
         # ), "Attacker tried to perform an attack not in attack surface"
 
-        if attack_idx not in self.valid_actions:
-            return np.array([], dtype=UINT)
+        if attack_idx not in np.flatnonzero(self.attack_surface):
+            return np.zeros(self.g.num_attacks, dtype=np.int8), False
 
         # steps that the attacker compromised by performing this action
-
-        set2array: Callable[[Set[UINT]], NDArray[np.uint64]] = lambda x: np.array(
-            list(x), dtype=UINT
-        )
-
         compromised_steps: Set[UINT] = set()
 
         # If attack surface is empty, no need to perform an action
         if self.attack_surface_empty:
-            return set2array(compromised_steps)
+            return np.zeros(self.g.num_attacks, dtype=np.int8), True
 
         self.ttc_remaining[attack_idx] -= 1
 
         if self.ttc_remaining[attack_idx] != 0:
-            return set2array(compromised_steps)
+            return np.zeros(self.g.num_attacks, dtype=np.int8), True
 
         # successful attack, update reward, attack_state, attack_surface
         compromised_step = attack_idx
@@ -241,7 +272,10 @@ class AttackSimulator:
                 compromised_steps.add(step)
             compromised_ass = self.compromise_steps()
 
-        return set2array(compromised_steps)
+        effect = np.zeros(self.g.num_attacks, dtype=np.int8)
+        effect[list(compromised_steps)] = 1
+
+        return effect, True
 
     def compromise_steps(self) -> NDArray[UINT]:
         """Set all steps with ttc=0 to compromised."""
@@ -255,36 +289,19 @@ class AttackSimulator:
     def _get_vulnerable_children(self, attack_index: UINT) -> List[UINT]:
         return self.g.get_vulnerable_children(attack_index, self.attack_state, self.defense_state)
 
-    def step(self) -> Tuple[bool, Dict[str, Any]]:
-        self.time += 1
-
-        # Generate new noise so that FP and FN alerts change
-        self.noise = self.rng.random(self.attack_state.shape, dtype=np.float64)
-
-        # Log alerts
-        self.num_observed_alerts += self.last_observation.sum()
-        # self.num_alerts += self.attack_state.sum()
-
-        info = self.info()
-
-        # Nothing here to end the episode yet
-        return False, info
-
     def info(self) -> Dict[str, Any]:
         current_step, ttc_remaining = self.current_attack_step()
         return {
             "time": self.time,
             "current_step": current_step,
             "ttc_remaining_on_current_step": ttc_remaining,
-            "attack_surface": self.attack_surface,
-            "attack_state": self.attack_state,
-            "defense_state": self.defense_state,
             "num_compromised_steps": len(self.compromised_steps),
             "num_compromised_flags": len(self.compromised_flags),
             "perc_compromised_steps": len(self.compromised_steps) / self.num_attack_steps,
             "perc_compromised_flags": len(self.compromised_flags) / self.num_flags,
             "perc_defenses_activated": sum(np.logical_not(self.defense_state))
             / self.num_defense_steps,
+            "prev_action_valid": self.valid_actions,
         }
 
     def summary(self) -> Dict[str, Any]:
@@ -298,10 +315,10 @@ class AttackSimulator:
             "num_observed_alerts": self.num_observed_alerts,
         }
 
-    def interpret_defender_action(self, action: UINT) -> str:
+    def interpret_defender_action(self, action: int) -> str:
         return ACTION_STRINGS[action] if action in special_actions else self.g.defense_names[action]
 
-    def observe(self) -> np.ndarray:
+    def ids_observe(self) -> np.ndarray:
         """Observation of attack steps is subject to the true/false positive
         rates of an assumed underlying intrusion detection system Depending on
         the true and false positive rates for each step, ongoing attacks may

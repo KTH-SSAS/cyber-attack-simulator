@@ -1,11 +1,17 @@
 attacker: pathplanner
-false_positive: 0.0
-false_negative: 0.0
+
 save_graphs: false
 save_logs: false
 seed: 0
 attack_start_time: 0 # average of exponential dist.
 reward_mode: simple
+
+sim_config: {
+  seed: 0,
+  false_positive: 0.0,
+  false_negative: 0.0
+}
+
 graph_config: {
   ttc: {easy: 1.0, hard: 10.0, default: 0.0},
   rewards: {high_flag: 100.0, low_flag: 1.0, default: 0.0},

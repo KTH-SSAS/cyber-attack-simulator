@@ -10,4 +10,4 @@ ACTION_STRINGS = {ACTION_TERMINATE: "terminate", ACTION_WAIT: "wait"}
 
 special_actions = [ACTION_TERMINATE, ACTION_WAIT]
 
-UINT = np.uint64
+UINT = np.uintp

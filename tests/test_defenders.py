@@ -1,87 +1,42 @@
-import numpy as np
 import pytest
 
-from attack_simulator.agents import DisableProbabilityAgent, RandomAgent, RuleBasedAgent, SkipAgent
-from attack_simulator.graph import AttackGraph
-
-from .test_tests_utils import np_bits
+from attack_simulator.optimal_defender import TripwirePolicy
+from attack_simulator.random_defender import RandomPolicy
+from attack_simulator.sim import AttackSimulator
 
 NUM_TRIALS = 1000
 
 
-def test_agents_baseline_random():
-    num_actions = 3
-    visited = np.zeros(num_actions)
-
-    agent = RandomAgent(dict(num_actions=num_actions))
-
-    for _ in range(NUM_TRIALS):
-        action = agent.act(np.ones(1))
-        assert 0 <= action < num_actions
-        visited[action] += 1
-
-    assert np.allclose(visited / NUM_TRIALS, 1 / num_actions, atol=0.1)
-
-
-def test_agents_baseline_skip():
-    agent = SkipAgent({})
-
-    for _ in range(NUM_TRIALS):
-        action = agent.act(np.ones(1))
-        assert action == 0
-
-
-def test_agents_baseline_disable_probability(attack_graph: AttackGraph):
-    num_services = attack_graph.num_services
-    num_attacks = attack_graph.num_attacks
-    dim_observations = num_services + num_attacks
-
-    num_actions = num_services + 1
-    num_options = 1 << num_services
-    num_rounds = round(0.5 + NUM_TRIALS / (num_options - 1))
-
-    for p in (0.0, np.random.uniform(0.05, 0.3), 1.0):
-
-        agent = DisableProbabilityAgent(
-            dict(disable_probability=p, num_actions=num_services + 1, random_seed=42)
-        )
-
-        visited = np.zeros(num_actions)
-
-        for _ in range(1, num_rounds):
-            for i in range(1, num_options):
-                obs = np_bits(i, size=dim_observations)
-                action = agent.act(obs)
-                visited[action] += 1
-                action -= 1
-                assert action == -1 or action in np.flatnonzero(obs[:num_services])
-
-        expected = np.full(num_actions, p / num_services)
-        expected[0] = 1 - p
-        assert np.allclose(visited / num_rounds / (num_options - 1), expected, atol=0.1)
-
-
-@pytest.mark.skip(reason="Not working with new conditions. Need to think about rules.")
-def test_agents_baseline_rule_based(attack_graph: AttackGraph):
-    agent = RuleBasedAgent(dict(attack_graph=attack_graph))
-    num_services = attack_graph.num_services
-    num_attacks = attack_graph.num_attacks
-    dim_observations = num_services + num_attacks
-
-    for i in range(1, 1 << num_services):
-        obs = np_bits(i, size=dim_observations)
-        # for each service combination pretend to compromise attack steps one-by-one
-        for j in range(num_attacks):
-            obs[num_services + j] = 1
-            action = agent.act(obs) - 1
-            assert action == -1 or action in np.flatnonzero(obs[:num_services])
-
-
 @pytest.mark.parametrize(
-    "agent_class", [RandomAgent, SkipAgent, DisableProbabilityAgent, RuleBasedAgent]
+    "attacker_class",
+    [
+        RandomPolicy,
+        TripwirePolicy,
+    ],
 )
-def test_not_trainable(agent_class, attack_graph):
-    agent = agent_class(
-        dict(disable_probability=0.5, num_actions=13, random_seed=42, attack_graph=attack_graph)
+def test_sim_defender_actions(simulator: AttackSimulator, defender_class) -> None:
+    done = False
+    obs, _ = simulator.reset()
+
+    total_ttc = simulator.ttc_total
+
+    attacker: Agent = attacker_class(
+        dict(
+            attack_graph=simulator.g,
+            num_special_actions=2,
+            terminate_action=ACTION_TERMINATE,
+            wait_action=ACTION_WAIT,
+        )
     )
-    assert not agent.trainable
+
+    while simulator.time < total_ttc and not done:
+        action = attacker.compute_action_from_dict(obs)
+        obs, info = simulator.step(OrderedDict([(AGENT_ATTACKER, action)]))
+
+        assert info["prev_action_valid"][
+            AGENT_ATTACKER
+        ], f"Invalid attack step {action-attacker.num_special_actions}. Valid steps are {simulator.valid_attacks}."
+
+        done = not obs["attack_surface"].any()
+
+    assert done, "Attacker failed to explore all attack steps"

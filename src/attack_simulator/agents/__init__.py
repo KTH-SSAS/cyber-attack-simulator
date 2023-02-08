@@ -4,7 +4,7 @@ from attack_simulator.agents.searchers import BreadthFirstAttacker, DepthFirstAt
 
 from .agent import Agent
 from .attackers import InformedAttacker, RandomAttacker, RoundRobinAttacker, WellInformedAttacker
-from .baseline_agents import (
+from .baseline_defender import (
     DisableProbabilityAgent,
     NewRuleBasedAgent,
     RandomAgent,

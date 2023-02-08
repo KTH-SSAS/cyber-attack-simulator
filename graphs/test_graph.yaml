@@ -1,84 +1,87 @@
-# Simple attack graph with 6 attack steps, 2 flags and 2 defense steps. 
+# Simple attack graph with 6 attack steps, 2 flags and 2 defense steps.
 # Using defense step c.defend will disable c, making c and d inaccessible.
 # Using defense step b.defend will disable b, making b and d inaccessible.
 # b and d have flags.
-#    a
-#   / \
-#  b   c
-# / \ /
-#f   d
-#    |
-#    f
+# d is an AND-step
+#            a
+#           / \
+# b.defend―b   c―c.defend
+#         / \ /
+#        f   d
+#        |
+#        f.flag
+
 attack_graph:
-- asset: a
-  children:
-  - b.attack
-  - c.attack
-  id: a.attack
-  name: attack
-  ttc: null
-  reward: null
-- asset: b
-  children:
-  - b.capture
-  - d.attack
-  id: b.attack
-  name: attack
-  ttc: null
-  reward: null
-- asset: b
-  id: b.capture
-  name: capture
-  ttc: null
-  reward: null
-- asset: c
-  children:
-  - d.attack
-  id: c.attack
-  name: attack
-  ttc: null
-  reward: null
-- asset: d
-  children:
-  - d.capture
-  id: d.attack
-  name: attack
-  step_type: and
-  ttc: null
-  reward: null
-- asset: d
-  id: d.capture
-  name: capture
-  ttc: hard
-  reward: null
-- asset: c
-  children:
-  - c.attack
-  id: c.defend
-  name: defend
-  reward: 2
-  ttc: null
-  step_type: defense
-- asset: b
-  children:
-  - b.attack
-  - b.capture
-  id: b.defend
-  name: defend
-  reward: 1
-  step_type: defense
-  ttc: null
-instance_model:
-- dependents:
-  - b
-  id: a
-- dependents: []
-  id: b
-- dependents:
-  - d
-  id: c
-- dependents: []
-  id: d
+  - asset: a
+    children:
+      - b.attack
+      - c.attack
+    id: a.attack
+    name: attack
+    ttc: 1
+    step_type: or
+
+  - asset: b
+    children:
+      - b.capture
+      - d.attack
+    id: b.attack
+    name: attack
+    ttc: 1
+    step_type: and
+
+  - asset: b
+    id: b.capture
+    name: capture
+    ttc: 1
+    step_type: or
+
+  - asset: c
+    children:
+      - d.attack
+    id: c.attack
+    name: attack
+    ttc: 1
+    step_type: and
+
+  - asset: d
+    children:
+      - d.capture
+    id: d.attack
+    name: attack
+    step_type: and
+    ttc: 5
+
+  - asset: d
+    id: d.capture
+    name: capture
+    ttc: 1
+    step_type: or
+
+  - asset: c
+    children:
+      - c.attack
+    id: c.defend
+    name: defend
+
+    ttc: 1
+    step_type: or
+  - asset: b
+    children:
+      - b.attack
+      - b.capture
+    id: b.defend
+    name: defend
+
+    step_type: or
+    ttc: 1
+
 flags:
   b.capture: low_flag
   d.capture: high_flag
+
+instance_model: []
+
+entry_points: [a.attack]
+
+defenses: [c.defend, b.defend]

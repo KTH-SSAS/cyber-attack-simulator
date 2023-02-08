@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+from typing import Any, Dict
 
-from numpy import ndarray
+from attack_simulator.constants import UINT
 
 
 class Agent(ABC):
@@ -8,15 +9,14 @@ class Agent(ABC):
 
     @abstractmethod
     def __init__(self, agent_config: dict) -> None:
-        self.done = False
+        self.num_special_actions = agent_config["num_special_actions"]
+        self.wait_action = agent_config["wait_action"]
+        self.terminate_action = agent_config["terminate_action"]
         ...  # pragma: no cover
 
     @abstractmethod
-    def act(self, observation: ndarray) -> int:
+    def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
         ...  # pragma: no cover
-
-    def update(self, new_observation: ndarray, reward: float, done: bool) -> None:
-        pass
 
     @property
     def trainable(self) -> bool:

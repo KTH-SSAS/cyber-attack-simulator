@@ -6,9 +6,11 @@ an attack in the current attack surface; essentially [0, num_attacks]
 inclusive.
 """
 import logging
+from typing import Any, Dict
 
 import numpy as np
 
+from attack_simulator.constants import UINT
 from attack_simulator.graph import AttackGraph
 
 from ..rng import get_rng
@@ -22,10 +24,14 @@ class RandomAttacker(Agent):
         super().__init__(agent_config)
         self.rng, _ = get_rng(agent_config.get("random_seed"))
 
-    def act(self, observation: np.ndarray) -> int:
-        attack_surface = observation[0]
+    def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
+        attack_surface = observation["attack_surface"]
         valid_attack_indices = np.flatnonzero(attack_surface)
-        return self.rng.choice(valid_attack_indices) if len(valid_attack_indices) > 0 else 0
+        return (
+            self.rng.choice(valid_attack_indices) + self.num_special_actions
+            if len(valid_attack_indices) > 0
+            else self.terminate_action
+        )
 
 
 class RandomNoActionAttacker(Agent):
@@ -36,7 +42,7 @@ class RandomNoActionAttacker(Agent):
     def act(self, observation: np.ndarray) -> int:
         attack_surface = observation[0]
         valid_attacks = np.concatenate([[0], np.flatnonzero(attack_surface)])
-        return self.rng.choice(valid_attacks)
+        return self.rng.choice(valid_attacks) + self.num_special_actions
 
 
 class RoundRobinAttacker(Agent):
@@ -44,11 +50,11 @@ class RoundRobinAttacker(Agent):
         super().__init__(agent_config)
         self.last = 0
 
-    def act(self, observation: np.ndarray) -> int:
-        valid = np.flatnonzero(observation)
+    def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
+        valid = np.flatnonzero(observation["attack_surface"])
         above = valid[self.last < valid]
         self.last = valid[0] if 0 == above.size else above[0]
-        return self.last + 1
+        return self.last + self.num_special_actions
 
 
 class RoundRobinNoActionAttacker(Agent):
@@ -60,7 +66,7 @@ class RoundRobinNoActionAttacker(Agent):
         valid = np.concatenate([[0], np.flatnonzero(observation) + 1])
         above = valid[self.last < valid]
         self.last = valid[0] if 0 == above.size else above[0]
-        return self.last
+        return self.last + self.num_special_actions
 
 
 class WellInformedAttacker(Agent):

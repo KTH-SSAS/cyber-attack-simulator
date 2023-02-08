@@ -12,11 +12,12 @@ from numpy.typing import NDArray
 from yaml import safe_load
 
 from attack_simulator.config import GraphConfig
+from attack_simulator.constants import UINT
 
 
 @dataclass
 class AttackStep:
-    ttc: float
+    ttc: UINT
     id: str
     parents: List[str] = field(default_factory=list)
     children: List[str] = field(default_factory=list)
@@ -107,7 +108,9 @@ class AttackGraph:
 
         # Store index-based attributes
         self.service_indices = {name: index for (index, name) in enumerate(self.service_names)}
-        self.attack_indices = {name: index for (index, name) in enumerate(self.attack_names)}
+        self.attack_indices: Dict[str, UINT] = {
+            name: index for (index, name) in enumerate(self.attack_names)
+        }
         self.defense_indices = {name: index for (index, name) in enumerate(self.defense_names)}
 
         self.entry_points: List[str] = data["entry_points"]
@@ -181,19 +184,19 @@ class AttackGraph:
         ]
 
     @property
-    def total_ttc(self) -> float:
+    def total_ttc(self) -> UINT:
         return sum(step.ttc for step in self.attack_steps.values())
 
     @property
-    def num_attacks(self) -> int:
+    def num_attacks(self) -> UINT:
         return len(self.attack_names)
 
     @property
-    def num_defenses(self) -> int:
+    def num_defenses(self) -> UINT:
         return len(self.defense_steps)
 
     @property
-    def num_services(self) -> int:
+    def num_services(self) -> UINT:
         return len(self.service_names)
 
     def __str__(self) -> str:
@@ -203,25 +206,25 @@ class AttackGraph:
             f" {self.num_attacks} attack steps)"
         )
 
-    def is_defendable(self, step: int) -> bool:
+    def is_defendable(self, step: UINT) -> np.bool_:
         """Return True if the given step is defendable."""
         return len(self.defense_steps_by_attack_step[step]) > 0
 
-    def get_defendable_steps(self) -> List[int]:
+    def get_defendable_steps(self) -> List[UINT]:
         return [i for i in self.attack_indices.values() if self.is_defendable(i)]
 
-    def get_undefendable_steps(self) -> List[int]:
+    def get_undefendable_steps(self) -> List[UINT]:
         return [i for i in self.attack_indices.values() if not self.is_defendable(i)]
 
-    def is_traversable(self, step: int, attack_state: NDArray[np.int8]) -> bool:
+    def is_traversable(self, step: UINT, attack_state: NDArray[np.int8]) -> np.bool_:
         """Return True if the given step is traversable, i.e. all conditions
         are met."""
         logic, prerequisites = self.attack_prerequisites[step]
         return logic(attack_state[prerequisites]) if prerequisites else False
 
     def is_vulnerable(
-        self, step: int, attack_state: NDArray[np.int8], defense_state: NDArray[np.int8]
-    ) -> bool:
+        self, step: UINT, attack_state: NDArray[np.int8], defense_state: NDArray[np.int8]
+    ) -> np.bool_:
         """Return True if the given step is vulnerable, i.e. can be
         attacked."""
         traversable = self.is_traversable(step, attack_state)
@@ -236,8 +239,8 @@ class AttackGraph:
         )
 
     def get_vulnerable_children(
-        self, attack_index: int, attack_state: NDArray[np.int8], defense_state: NDArray[np.int8]
-    ) -> List[int]:
+        self, attack_index: UINT, attack_state: NDArray[np.int8], defense_state: NDArray[np.int8]
+    ) -> List[UINT]:
         """Get all child steps of a step that can be attacked, given the state
         of compromised steps."""
 
@@ -249,8 +252,11 @@ class AttackGraph:
         return vulnerable_children
 
     def is_traversible(
-        self, node: int, defense_state: NDArray[np.int8], calculated_steps: Dict[int, bool]
-    ) -> bool:
+        self,
+        node: np.uintp,
+        defense_state: NDArray[np.int8],
+        calculated_steps: Dict[UINT, np.bool_],
+    ) -> np.bool_:
         """Check if a node is traversible given the current state of the
         defense."""
         if node in calculated_steps:
@@ -266,11 +272,13 @@ class AttackGraph:
 
         return conditions_met and not_defended
 
-    def get_traversable_steps(self, start_node: int, defense_state: NDArray[np.int8]) -> List[int]:
+    def get_traversable_steps(
+        self, start_node: UINT, defense_state: NDArray[np.int8]
+    ) -> List[UINT]:
         """Get all reachable attack steps in the graph, given supplied current
         state vectors."""
 
-        traversible_steps: Dict[int, bool] = {}
+        traversible_steps: Dict[UINT, bool] = {}
         traversible_steps[start_node] = self.is_traversible(
             start_node, defense_state, traversible_steps
         )
@@ -372,7 +380,7 @@ class AttackGraph:
 
         return dig
 
-    def step_is_defended(self, step: int, defense_state: np.ndarray) -> bool:
+    def step_is_defended(self, step: UINT, defense_state: np.ndarray) -> bool:
         defended = not all(defense_state[self.defense_steps_by_attack_step[step]])
         return defended
 
@@ -386,8 +394,8 @@ class AttackGraph:
         return list(np.array(self.attack_names)[np.flatnonzero(attacks)])
 
     def interpret_observation(self, observation: np.ndarray) -> Tuple[List[str], List[str]]:
-        defenses = observation[: self.num_defenses]
-        attacks = observation[self.num_defenses :]
+        defenses = observation[: self.num_defenses]  # type: ignore[misc]
+        attacks = observation[self.num_defenses :]  # type: ignore[misc]
         return self.interpret_defenses(defenses), self.interpret_attacks(attacks)
 
     def draw(self, width=500, height=500, add_defense=True) -> None:

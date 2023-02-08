@@ -1,11 +1,9 @@
 from collections import deque
-from typing import Deque, List, Set, Union
+from typing import Any, Deque, Dict, List, Set, Union
 
 import numpy as np
-from numpy.typing import NDArray
 
-from attack_simulator.constants import ACTION_TERMINATE, special_actions
-
+from ..constants import UINT
 from .agent import Agent
 
 STOP = -1
@@ -38,10 +36,12 @@ class BreadthFirstAttacker(Agent):
         super().__init__(agent_config)
         self.current_target = STOP
         self.targets: Deque[int] = deque([])
-        self.rng = np.random.default_rng(agent_config["seed"])
 
-    def act(self, observation: NDArray) -> int:
-        surface_indexes = set(np.flatnonzero(observation))
+        seed = agent_config["seed"] if "seed" in agent_config else np.random.SeedSequence().entropy
+        self.rng = np.random.default_rng(seed)
+
+    def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
+        surface_indexes = set(np.flatnonzero(observation["attack_surface"]))
         new_targets = [idx for idx in surface_indexes if idx not in self.targets]
 
         # Add new targets to the back of the queue
@@ -52,10 +52,10 @@ class BreadthFirstAttacker(Agent):
         self.current_target = select_next_target(self.current_target, self.targets, surface_indexes)
 
         if self.current_target == STOP:
-            return ACTION_TERMINATE
+            return self.terminate_action
 
         # Offset the action by the number of special actions
-        return self.current_target + len(special_actions)
+        return self.current_target + self.num_special_actions
 
 
 class DepthFirstAttacker(Agent):
@@ -63,10 +63,11 @@ class DepthFirstAttacker(Agent):
         super().__init__(agent_config)
         self.current_target = -1
         self.targets: List[int] = []
-        self.rng = np.random.default_rng(agent_config["random_seed"])
+        seed = agent_config["seed"] if "seed" in agent_config else np.random.SeedSequence().entropy
+        self.rng = np.random.default_rng(seed)
 
-    def act(self, observation: NDArray[np.int8]) -> int:
-        surface_indexes = set(np.flatnonzero(observation))
+    def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
+        surface_indexes = set(np.flatnonzero(observation["attack_surface"]))
         new_targets = [idx for idx in surface_indexes if idx not in self.targets]
 
         # Add new targets to the top of the stack
@@ -74,13 +75,10 @@ class DepthFirstAttacker(Agent):
         for c in new_targets:
             self.targets.append(c)
 
-        if self.current_target in surface_indexes:
-            return self.current_target
-
         self.current_target = select_next_target(self.current_target, self.targets, surface_indexes)
 
         if self.current_target == STOP:
-            return ACTION_TERMINATE
+            return self.terminate_action
 
         # Offset the action by the number of special actions
-        return self.current_target + len(special_actions)
+        return self.current_target + self.num_special_actions

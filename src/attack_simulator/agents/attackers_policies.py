@@ -1,11 +1,12 @@
 from typing import Dict, List, Optional, Tuple, Union
 
-import numpy as np
 import tree
+from ray.rllib.models.modelv2 import restore_original_dimensions
 from ray.rllib.policy.policy import Policy
 from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.typing import TensorStructType, TensorType
 
+from attack_simulator.agents.attackers import RandomAttacker
 from attack_simulator.agents.searchers import BreadthFirstAttacker, DepthFirstAttacker
 
 
@@ -62,7 +63,7 @@ class NonLearningAttackerPolicy(Policy):
 class BreadthFirstPolicy(NonLearningAttackerPolicy):
     def __init__(self, obs_space, action_space, config):
         super().__init__(obs_space, action_space, config)
-        self.attacker = BreadthFirstAttacker({"seed": config["seed"]})
+        self.attacker = [BreadthFirstAttacker(config) for _ in range(config["num_envs_per_worker"])]
 
     def compute_actions_from_input_dict(
         self,
@@ -72,15 +73,23 @@ class BreadthFirstPolicy(NonLearningAttackerPolicy):
         episodes: Optional[List["Episode"]] = None,
         **kwargs,
     ) -> Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
-        attack_surface = input_dict["obs"]
-        action = self.attacker.act(attack_surface)
-        return [action], [], {}
+
+        actions = [
+            self.attacker[i].compute_action_from_dict(
+                restore_original_dimensions(
+                    input_dict["obs"][i].reshape(1, -1), self.observation_space, "numpy"
+                )
+            )
+            for i in range(input_dict["obs"].shape[0])
+        ]
+
+        return actions, [], {}
 
 
 class DepthFirstPolicy(NonLearningAttackerPolicy):
     def __init__(self, obs_space, action_space, config):
         super().__init__(obs_space, action_space, config)
-        self.attacker = DepthFirstAttacker({"seed": config["seed"]})
+        self.attacker = [DepthFirstAttacker(config) for _ in range(config["num_envs_per_worker"])]
 
     def compute_actions_from_input_dict(
         self,
@@ -90,19 +99,23 @@ class DepthFirstPolicy(NonLearningAttackerPolicy):
         episodes: Optional[List["Episode"]] = None,
         **kwargs,
     ) -> Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
-        attack_surface = input_dict["obs"]
-        action = self.attacker.act(attack_surface)
-        return [action], [], {}
+        actions = [
+            self.attacker[i].compute_action_from_dict(
+                restore_original_dimensions(
+                    input_dict["obs"][i].reshape(1, -1), self.observation_space, "numpy"
+                )
+            )
+            for i in range(input_dict["obs"].shape[0])
+        ]
+        return actions, [], {}
 
 
-class DedicatedRandomPolicy(NonLearningAttackerPolicy):
-    """Selects a random attack step from the attack surface and works on it
-    until it is compromised."""
+class RandomPolicy(NonLearningAttackerPolicy):
+    """Selects a random attack step from the attack surface."""
 
     def __init__(self, obs_space, action_space, config):
         super().__init__(obs_space, action_space, config)
-        self.current_step = None
-        self.rng = np.random.default_rng(config["seed"])
+        self.attacker = [RandomAttacker(config) for _ in range(config["num_envs_per_worker"])]
 
     def compute_actions_from_input_dict(
         self,
@@ -113,11 +126,13 @@ class DedicatedRandomPolicy(NonLearningAttackerPolicy):
         **kwargs,
     ) -> Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
 
-        attack_surface = input_dict["obs"]
-        valid_attack_indices = np.flatnonzero(attack_surface)
-        if self.current_step is None or self.current_step not in valid_attack_indices:
-            self.current_step = (
-                self.rng.choice(valid_attack_indices) if len(valid_attack_indices) > 0 else 0
+        actions = [
+            self.attacker[i].compute_action_from_dict(
+                restore_original_dimensions(
+                    input_dict["obs"][i].reshape(1, -1), self.observation_space, "numpy"
+                )
             )
+            for i in range(input_dict["obs"].shape[0])
+        ]
 
-        return [self.current_step], [], {}
+        return actions, [], {}

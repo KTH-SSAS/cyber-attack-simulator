@@ -1,5 +1,6 @@
+import dataclasses
 import logging
-from typing import Dict, Optional, Tuple, Type
+from typing import Any, Dict, Optional, Tuple, Type
 
 import gymnasium.spaces as spaces
 import numpy as np
@@ -14,6 +15,7 @@ from attack_simulator.constants import (
     ACTION_TERMINATE,
     AGENT_ATTACKER,
     AGENT_DEFENDER,
+    UINT,
     special_actions,
 )
 from attack_simulator.graph import AttackGraph
@@ -53,10 +55,13 @@ class AttackSimulationEnv(MultiAgentEnv):
             else SimulatorConfig(**config.sim_config)
         )
 
+        # Environment seed overrides the simulator seed
+        sim_config = dataclasses.replace(sim_config, seed=self.env_seed)
+
         self.state_cache = {}
 
         self.g: AttackGraph = AttackGraph(graph_config)
-        self.sim = AttackSimulator(sim_config, self.g, self.env_seed)
+        self.sim = AttackSimulator(sim_config, self.g)
         # self.sim = Simulator(json.dumps(sim_config.replace(seed=self.env_seed).to_dict()), graph_config.filename)
 
         # An observation informs the defender of
@@ -74,7 +79,19 @@ class AttackSimulationEnv(MultiAgentEnv):
                         "sim_obs": spaces.Box(0, 1, shape=(self.dim_observations,), dtype=np.int8),
                     }
                 ),
-                AGENT_ATTACKER: spaces.Box(0, 1, shape=(self.g.num_attacks,), dtype=np.int8),
+                AGENT_ATTACKER: spaces.Dict(
+                    {
+                        "attack_surface": spaces.Box(
+                            0, 1, shape=(self.g.num_attacks,), dtype=np.int8
+                        ),
+                        "ttc_remaining": spaces.Box(
+                            0, np.iinfo(UINT).max, shape=(self.g.num_attacks,), dtype=UINT
+                        ),
+                        "defense_state": spaces.Box(
+                            0, 1, shape=(self.g.num_defenses,), dtype=np.int8
+                        ),
+                    }
+                ),
             }
         )
 
@@ -157,7 +174,7 @@ class AttackSimulationEnv(MultiAgentEnv):
         self.defender_reward = 0
 
         # Reset the simulator
-        obs, info = self.sim.reset(self.env_seed + self.episode_count)
+        sim_obs, info = self.sim.reset(self.env_seed + self.episode_count)
 
         # Include reward for wait action (-1)
         self.attacker_rewards = np.concatenate((np.array(self.g.reward_params), np.zeros(1)))
@@ -173,15 +190,12 @@ class AttackSimulationEnv(MultiAgentEnv):
         #     "sim_obs": np.array(obs.defense_state + obs.attack_state, dtype=np.int8),
         # }
 
-        obs = {
-            "sim_obs": obs["defender_obs"],
-            "action_mask": self.get_action_mask(info["defense_state"]),
-        }
+        agent_obs = self.get_agent_obs(sim_obs)
 
         if self.render_env:
             self.render()
 
-        return {AGENT_DEFENDER: obs, AGENT_ATTACKER: info["attack_surface"]}, info
+        return agent_obs, info
 
     def observation_space_sample(self, agent_ids: list = None):
         return {
@@ -232,34 +246,39 @@ class AttackSimulationEnv(MultiAgentEnv):
 
         return reward
 
+    def get_agent_obs(self, sim_obs) -> Dict[str, Any]:
+        defender_obs = {
+            "sim_obs": sim_obs["ids_observation"],
+            "action_mask": self.get_action_mask(sim_obs["defense_state"]),
+        }
+
+        attacker_obs = {
+            "attack_surface": sim_obs["attack_surface"],
+            "ttc_remaining": sim_obs["ttc_remaining"],
+            "defense_state": sim_obs["defense_state"],
+        }
+
+        return {AGENT_DEFENDER: defender_obs, AGENT_ATTACKER: attacker_obs}
+
     def step(self, action_dict) -> Tuple[Dict, float, bool, dict]:
         attacker_reward = 0
 
-        # offset action to take the wait action into account
         defender_action = action_dict[AGENT_DEFENDER]
-        defender_obs = self.sim.action(defender_action, AGENT_DEFENDER)
-
-        # Obtain attacker action, this _can_ be 0 for no action
-        # attacker_action = self.attacker.act(self.sim.attacker_observation)
-        # done |= self.attacker.done
-        # assert -1 <= attacker_action < self.sim.num_attack_steps
-
         attacker_action = action_dict[AGENT_ATTACKER]
-        attacker_obs = self.sim.action(attacker_action, AGENT_ATTACKER)
 
-        self.state_cache = attacker_obs
+        sim_obs, info = self.sim.step(action_dict)
 
-        attack_surface = attacker_obs["attack_surface"]
-        compromised_steps = attacker_obs["affected_steps"]
+        self.state_cache = sim_obs
+
+        attack_surface = sim_obs["attack_surface"]
+        compromised_steps = sim_obs["affected_steps"]
 
         attacker_done = not any(attack_surface) or attacker_action == ACTION_TERMINATE
         attacker_reward = np.sum(self.attacker_rewards[compromised_steps])
 
         self.sum_attacker_reward += attacker_reward
 
-        _, info = self.sim.step()
-
-        defense_state = info["defense_state"]
+        defense_state = sim_obs["defense_state"]
 
         defender_penalty = self.reward_function(
             defender_action,
@@ -271,13 +290,7 @@ class AttackSimulationEnv(MultiAgentEnv):
 
         self.defender_reward = defender_penalty - attacker_reward
 
-        obs = {
-            AGENT_DEFENDER: {
-                "sim_obs": defender_obs["defender_obs"],
-                "action_mask": self.get_action_mask(defense_state),
-            },
-            AGENT_ATTACKER: info["attack_surface"],
-        }
+        obs = self.get_agent_obs(sim_obs)
 
         rewards = {AGENT_DEFENDER: self.defender_reward, AGENT_ATTACKER: attacker_reward}
         terminated = {
