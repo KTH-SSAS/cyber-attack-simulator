@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
 import argparse
-from pathlib import Path
-from attack_simulator import evaluate
-from attack_simulator.env import register_rllib_env
-import attack_simulator.ids_model as ids_model
-from tqdm import tqdm
 import re
+from pathlib import Path
+
 import ray
 
-from ray.rllib.algorithms.registry import ALGORITHMS
+import attack_simulator.ids_model as ids_model
+from attack_simulator import evaluate
+from attack_simulator.env import register_rllib_env
+
 
 def get_checkpoint_path(run_dir: Path) -> Path:
     checkpoint_folder = reversed(sorted((run_dir.glob("checkpoint_*")))).__next__()
@@ -20,8 +20,14 @@ def get_checkpoint_path(run_dir: Path) -> Path:
     return checkpoint_folder
 
 
-def run_evaluation(run_id, 
-    parser: argparse.ArgumentParser, algorithm, env_name, num_episodes, checkpoint=None, config=None
+def run_evaluation(
+    run_id,
+    parser: argparse.ArgumentParser,
+    algorithm,
+    env_name,
+    num_episodes,
+    checkpoint=None,
+    config=None,
 ):
 
     args_to_parse = [
@@ -65,13 +71,22 @@ def main():
     ray.init(local_mode=local_mode)
     for sweep_id in sweeps:
         for algorithm in ray_results.iterdir():
-            result_folders = filter(lambda x: re.search(sweep_id, x.name), (ray_results / algorithm).iterdir())
+            result_folders = filter(
+                lambda x: re.search(sweep_id, x.name), (ray_results / algorithm).iterdir()
+            )
             for folder in result_folders:
-                run_id = "_".join(folder.name.split('_')[2:4])
+                run_id = "_".join(folder.name.split("_")[2:4])
                 run_id = "_".join([algorithm.name, run_id])
                 checkpoint = get_checkpoint_path(folder)
                 if checkpoint:
-                    run_evaluation(run_id, parser, algorithm.name, env_name, num_episodes, checkpoint=str(checkpoint))
+                    run_evaluation(
+                        run_id,
+                        parser,
+                        algorithm.name,
+                        env_name,
+                        num_episodes,
+                        checkpoint=str(checkpoint),
+                    )
 
 
 if __name__ == "__main__":
