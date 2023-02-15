@@ -1,0 +1,453 @@
+attack_graph:
+  '0.0':
+    children:
+    - '5.1'
+    - '6.2'
+    - '7.3'
+    - '4.12'
+    conditions: []
+    step_type: or
+    ttc: EASY_TTC
+  '10.14':
+    children:
+    - '10.16'
+    conditions:
+    - '9'
+    - '10'
+    - '3'
+    - '7'
+    step_type: and
+    ttc: EASY_TTC
+  '10.16':
+    children:
+    - '10.23'
+    conditions:
+    - '9'
+    - '10'
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '10.23':
+    children:
+    - '10.24'
+    - '10.40'
+    conditions:
+    - '9'
+    - '10'
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '10.24':
+    children:
+    - '10.38'
+    conditions:
+    - '9'
+    - '10'
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '10.38':
+    children: []
+    conditions:
+    - '9'
+    - '10'
+    - '3'
+    - '7'
+    step_type: and
+    ttc: EASY_TTC
+  '10.40':
+    children:
+    - '10.45'
+    conditions:
+    - '9'
+    - '10'
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '10.45':
+    children: []
+    conditions:
+    - '9'
+    - '10'
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '4.12':
+    children:
+    - '4.17'
+    - '9.6'
+    conditions:
+    - '4'
+    step_type: and
+    ttc: EASY_TTC
+  '4.17':
+    children:
+    - '4.22'
+    conditions:
+    - '4'
+    step_type: and
+    ttc: EASY_TTC
+  '4.22':
+    children:
+    - '4.42'
+    conditions:
+    - '4'
+    step_type: and
+    ttc: EASY_TTC
+  '4.42':
+    children:
+    - '4.43'
+    - '8.48'
+    conditions:
+    - '4'
+    step_type: or
+    ttc: EASY_TTC
+  '4.43':
+    children: []
+    conditions:
+    - '4'
+    step_type: and
+    ttc: EASY_TTC
+  '5.1':
+    children:
+    - 5.4_flag
+    - '5.13'
+    - '5.27'
+    - '5.37'
+    - '5.44'
+    conditions:
+    - '1'
+    - '5'
+    step_type: and
+    ttc: EASY_TTC
+  '5.13':
+    children:
+    - '5.28'
+    conditions:
+    - '1'
+    - '5'
+    step_type: or
+    ttc: EASY_TTC
+  '5.27':
+    children:
+    - '5.34'
+    conditions:
+    - '1'
+    - '5'
+    step_type: and
+    ttc: EASY_TTC
+  '5.28':
+    children: []
+    conditions:
+    - '1'
+    - '5'
+    step_type: and
+    ttc: EASY_TTC
+  '5.34':
+    children: []
+    conditions:
+    - '1'
+    - '5'
+    step_type: and
+    ttc: EASY_TTC
+  '5.37':
+    children: []
+    conditions:
+    - '1'
+    - '5'
+    step_type: and
+    ttc: EASY_TTC
+  '5.44':
+    children: []
+    conditions:
+    - '1'
+    - '5'
+    step_type: or
+    ttc: EASY_TTC
+  5.4_flag:
+    children: []
+    conditions:
+    - '1'
+    - '5'
+    reward: LOW_FLAG_REWARD
+    step_type: and
+    ttc: EASY_TTC
+  '6.15':
+    children:
+    - '6.32'
+    - '6.33'
+    conditions:
+    - '2'
+    - '6'
+    step_type: and
+    ttc: EASY_TTC
+  6.19_flag:
+    children:
+    - '5.13'
+    conditions:
+    - '2'
+    - '6'
+    reward: MEDIUM_FLAG_REWARD
+    step_type: and
+    ttc: EASY_TTC
+  '6.2':
+    children:
+    - '6.8'
+    - '6.26'
+    - '6.31'
+    conditions:
+    - '2'
+    - '6'
+    step_type: or
+    ttc: EASY_TTC
+  '6.26':
+    children: []
+    conditions:
+    - '2'
+    - '6'
+    step_type: and
+    ttc: EASY_TTC
+  '6.31':
+    children: []
+    conditions:
+    - '2'
+    - '6'
+    step_type: and
+    ttc: EASY_TTC
+  '6.32':
+    children: []
+    conditions:
+    - '2'
+    - '6'
+    step_type: and
+    ttc: EASY_TTC
+  '6.33':
+    children: []
+    conditions:
+    - '2'
+    - '6'
+    step_type: or
+    ttc: EASY_TTC
+  '6.8':
+    children:
+    - '6.15'
+    - 6.19_flag
+    conditions:
+    - '2'
+    - '6'
+    step_type: or
+    ttc: EASY_TTC
+  '7.10':
+    children:
+    - 7.20_flag
+    - '7.21'
+    - '7.47'
+    conditions:
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  7.20_flag:
+    children: []
+    conditions:
+    - '3'
+    - '7'
+    reward: MEDIUM_FLAG_REWARD
+    step_type: or
+    ttc: EASY_TTC
+  '7.21':
+    children: []
+    conditions:
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '7.3':
+    children:
+    - '8.5'
+    - '9.6'
+    - 7.9_flag
+    - '7.10'
+    - '7.49'
+    conditions:
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '7.47':
+    children: []
+    conditions:
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '7.49':
+    children: []
+    conditions:
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  7.9_flag:
+    children:
+    - '10.40'
+    conditions:
+    - '3'
+    - '7'
+    reward: LOW_FLAG_REWARD
+    step_type: or
+    ttc: EASY_TTC
+  '8.25':
+    children: []
+    conditions:
+    - '8'
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '8.30':
+    children:
+    - '8.46'
+    conditions:
+    - '8'
+    - '3'
+    - '7'
+    step_type: and
+    ttc: EASY_TTC
+  '8.39':
+    children:
+    - '8.48'
+    conditions:
+    - '8'
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '8.41':
+    children: []
+    conditions:
+    - '8'
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '8.46':
+    children: []
+    conditions:
+    - '8'
+    - '3'
+    - '7'
+    step_type: and
+    ttc: EASY_TTC
+  '8.48':
+    children: []
+    conditions:
+    - '8'
+    - '3'
+    - '7'
+    step_type: and
+    ttc: EASY_TTC
+  '8.5':
+    children:
+    - '8.7'
+    - '8.30'
+    - '8.41'
+    conditions:
+    - '8'
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '8.7':
+    children:
+    - '8.25'
+    - '8.39'
+    conditions:
+    - '8'
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '9.11':
+    children:
+    - '9.29'
+    conditions:
+    - '9'
+    - '3'
+    - '7'
+    step_type: and
+    ttc: EASY_TTC
+  9.18_flag:
+    children: []
+    conditions:
+    - '9'
+    - '3'
+    - '7'
+    reward: MEDIUM_FLAG_REWARD
+    step_type: and
+    ttc: EASY_TTC
+  '9.29':
+    children:
+    - '9.35'
+    - '9.36'
+    - '7.49'
+    conditions:
+    - '9'
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '9.35':
+    children: []
+    conditions:
+    - '9'
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '9.36':
+    children: []
+    conditions:
+    - '9'
+    - '3'
+    - '7'
+    step_type: or
+    ttc: EASY_TTC
+  '9.6':
+    children:
+    - '9.11'
+    - '10.14'
+    - 9.18_flag
+    conditions:
+    - '9'
+    - '3'
+    - '7'
+    step_type: and
+    ttc: EASY_TTC
+instance_model:
+  '0': []
+  '1':
+  - '5'
+  '10': []
+  '2':
+  - '6'
+  '3':
+  - '8'
+  - '9'
+  - '10'
+  - '7'
+  '4': []
+  '5': []
+  '6': []
+  '7':
+  - '8'
+  - '9'
+  - '10'
+  '8': []
+  '9':
+  - '10'

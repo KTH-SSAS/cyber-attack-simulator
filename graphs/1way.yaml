@@ -1,0 +1,93 @@
+attack_graph:
+- asset: attacker
+  children:
+  - host:1:connect:1
+  id: attacker:0:enter:0
+  name: enter
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - host:2:connect:2
+  id: host:1:connect:1
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - host:3:connect:3
+  id: host:2:connect:2
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - host:4:connect:4
+  id: host:3:connect:3
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - host:5:connect:5
+  id: host:4:connect:4
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - host:6:connect:6
+  id: host:5:connect:5
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - firewall:7:connect:7
+  id: host:6:connect:6
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: firewall
+  children:
+  - flag:8:take:8
+  id: firewall:7:connect:7
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: flag
+  children: []
+  id: flag:8:take:8
+  name: gather
+  step_type: or
+  ttc: 1
+- asset: firewall
+  children:
+  - firewall:7:connect:7
+  - flag:8:take:8
+  id: firewall:7:defend:9
+  name: enable
+  step_type: defense
+  ttc: 0
+flags:
+  firewall:7:defend:9: default
+  flag:8:take:8: default
+instance_model:
+- dependents: []
+  id: 0
+- dependents: []
+  id: 1
+- dependents: []
+  id: 2
+- dependents: []
+  id: 3
+- dependents: []
+  id: 4
+- dependents: []
+  id: 5
+- dependents: []
+  id: 6
+- dependents: []
+  id: 7
+- dependents: []
+  id: 8
