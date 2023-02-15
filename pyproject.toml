@@ -38,7 +38,7 @@ docformatter = "^1.4"
 poetry = "^1.1.13"
 agraphlib = { path = "../agraphlib/", develop = true }
 gymnasium = "^0.26.3"
-#rust-sim = {path = "../rust-sim", develop = true}
+rust-sim = {path = "../rust-sim", develop = true}
 scipy = "^1.10.0"
 
 [tool.poetry.group.dev.dependencies]
