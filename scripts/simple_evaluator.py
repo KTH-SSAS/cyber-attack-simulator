@@ -22,9 +22,9 @@ def get_checkpoint(folder):
 
 # @ray.remote
 def run_eval(config: dict, checkpoint, trainer_name: str, sweep_id, num: int):
-    # config["env_config"]["false_positive"] = fp
-    # config["env_config"]["false_negative"] = fn
-    # if filename:
+    #config["env_config"]["sim_config"]["false_positive_rate"] = fp
+    #config["env_config"]["sim_config"]["false_negative_rate"] = fn
+    #if filename:
     #    config["env_config"]["graph_config"]["filename"] = filename
     # config["seed"] = seed
 

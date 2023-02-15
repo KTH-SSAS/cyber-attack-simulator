@@ -9,12 +9,15 @@ ids_fnr = 0.5
 
 env_config = {
     "attacker": "depth-first",
-    "false_positive": ids_fpr,
     "save_graphs": False,
     "save_logs": False,
-    "false_negative": ids_fnr,
-    "attack_start_time": 5,
     "seed": 22,
+    "sim_config" {
+        "seed": 22,
+        "attack_start_time": 5,
+        "false_positive_rate": ids_fpr,
+        "false_negative_rate": ids_fnr,
+    },
     "reward_mode": "downtime-penalty",
     "run_id": "simple",
     "graph_config": {
