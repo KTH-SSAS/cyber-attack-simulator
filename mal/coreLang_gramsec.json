@@ -1,0 +1,398 @@
+{
+  "meta": {
+    "modelName": "Untitled"
+  },
+  "objects": {
+    "PhishedUser": {
+      "metaconcept": "User",
+      "defenses": {
+        "noPasswordReuse": false,
+        "securityAwareness": false
+      }
+    },
+    "OfficeIdentity": {
+      "metaconcept": "Identity",
+      "defenses": {
+        "disabled": false
+      }
+    },
+    "MSOffice2016": {
+      "metaconcept": "Application",
+      "defenses": {
+        "disabled": false,
+        "airGapped": false,
+        "supplyChainAuditing": false
+      }
+    },
+    "BlackEnergyExploit": {
+      "metaconcept": "SoftwareVulnerability",
+      "defenses": {
+        "remove": false,
+        "networkAccessRequired": false,
+        "localAccessRequired": false,
+        "physicalAccessRequired": false,
+        "lowPrivilegesRequired": false,
+        "highPrivilegesRequired": false,
+        "userInteractionRequired": false,
+        "confidentialityImpactLimitations": false,
+        "availabilityImpactLimitations": false,
+        "integrityImpactLimitations": false,
+        "highComplexityExploitRequired": false
+      }
+    },
+    "Windows7": {
+      "metaconcept": "Application",
+      "defenses": {
+        "disabled": false,
+        "airGapped": false,
+        "supplyChainAuditing": false
+      }
+    },
+    "WindowsExploit": {
+      "metaconcept": "SoftwareVulnerability",
+      "defenses": {
+        "remove": false,
+        "networkAccessRequired": false,
+        "localAccessRequired": false,
+        "physicalAccessRequired": false,
+        "lowPrivilegesRequired": false,
+        "highPrivilegesRequired": false,
+        "userInteractionRequired": false,
+        "confidentialityImpactLimitations": false,
+        "availabilityImpactLimitations": false,
+        "integrityImpactLimitations": false,
+        "highComplexityExploitRequired": false
+      }
+    },
+    "StoredCreds": {
+      "metaconcept": "Data",
+      "defenses": {
+        "authenticated": false,
+        "dataNotPresent": false
+      }
+    },
+    "WinWorkstationCreds": {
+      "metaconcept": "Credentials",
+      "defenses": {
+        "notDisclosed": false,
+        "notGuessable": false,
+        "unique": false,
+        "notPhishable": false
+      }
+    },
+    "WorkstationIdentity": {
+      "metaconcept": "Identity",
+      "defenses": {
+        "disabled": false
+      }
+    },
+    "OfficeNetwork": {
+      "metaconcept": "Network",
+      "defenses": {
+        "networkAccessControl": false,
+        "eavesdropDefense": false,
+        "manInTheMiddleDefense": false
+      }
+    },
+    "Windows7_Workstation": {
+      "metaconcept": "Application",
+      "defenses": {
+        "disabled": false,
+        "airGapped": false,
+        "supplyChainAuditing": false
+      }
+    },
+    "VPN_StoredCreds": {
+      "metaconcept": "Data",
+      "defenses": {
+        "authenticated": false,
+        "dataNotPresent": false
+      }
+    },
+    "VPN_Creds": {
+      "metaconcept": "Credentials",
+      "defenses": {
+        "notDisclosed": false,
+        "notGuessable": false,
+        "unique": false,
+        "notPhishable": false
+      }
+    },
+    "VPN_Identity": {
+      "metaconcept": "Identity",
+      "defenses": {
+        "disabled": false
+      }
+    },
+    "VPN_Server": {
+      "metaconcept": "Application",
+      "defenses": {
+        "disabled": false,
+        "airGapped": false,
+        "supplyChainAuditing": false
+      }
+    },
+    "VPN_Connection": {
+      "metaconcept": "ConnectionRule",
+      "defenses": {
+        "restricted": false,
+        "payloadInspection": false
+      }
+    },
+    "VPN_Client": {
+      "metaconcept": "Application",
+      "defenses": {
+        "disabled": false,
+        "airGapped": false,
+        "supplyChainAuditing": false
+      }
+    },
+    "Connection_to_HMI": {
+      "metaconcept": "ConnectionRule",
+      "defenses": {
+        "restricted": false,
+        "payloadInspection": false
+      }
+    },
+    "Server": {
+      "metaconcept": "System",
+      "defenses": {
+        "supplyChainAuditing": false,
+        "hardwareModificationsProtection": false
+      }
+    },
+    "Linux_OS": {
+      "metaconcept": "Application",
+      "defenses": {
+        "disabled": false,
+        "airGapped": false,
+        "supplyChainAuditing": false
+      }
+    },
+    "routingfirewall": {
+      "metaconcept": "RoutingFirewall",
+      "defenses": {
+        "disabled": false,
+        "airGapped": false,
+        "supplyChainAuditing": false
+      }
+    },
+    "DMZ_Network": {
+      "metaconcept": "Network",
+      "defenses": {
+        "networkAccessControl": false,
+        "eavesdropDefense": false,
+        "manInTheMiddleDefense": false
+      }
+    },
+    "physicalZone": {
+      "metaconcept": "PhysicalZone",
+      "defenses": {}
+    }
+  },
+  "associations": {
+    "PhishedUser": {
+      "UserAssignedIdentities": {
+        "OfficeIdentity": "userIds"
+      }
+    },
+    "OfficeIdentity": {
+      "UserAssignedIdentities": {
+        "PhishedUser": "users"
+      },
+      "AppExecutionPrivilegeAccess": {
+        "MSOffice2016": "execPrivApps"
+      },
+      "LowPrivilegeLocalApplicationAccess": {
+        "Windows7": "lowPrivApps"
+      }
+    },
+    "MSOffice2016": {
+      "AppExecutionPrivilegeAccess": {
+        "OfficeIdentity": "executionPrivIds"
+      },
+      "ApplicationVulnerability": {
+        "BlackEnergyExploit": "vulnerabilities"
+      },
+      "AppExecution": {
+        "Windows7": "appExecutedApps"
+      }
+    },
+    "Windows7": {
+      "LowPrivilegeLocalApplicationAccess": {
+        "OfficeIdentity": "lowPrivAppIds"
+      },
+      "AppExecution": {
+        "MSOffice2016": "hostApp"
+      },
+      "NetworkExposure": {
+        "OfficeNetwork": "networks"
+      },
+      "AppContainment": {
+        "StoredCreds": "containedData"
+      },
+      "ApplicationVulnerability": {
+        "WindowsExploit": "vulnerabilities"
+      }
+    },
+    "BlackEnergyExploit": {
+      "ApplicationVulnerability": {
+        "MSOffice2016": "application"
+      }
+    },
+    "OfficeNetwork": {
+      "NetworkExposure": {
+        "Windows7": "applications",
+        "Windows7_Workstation": "applications"
+      }
+    },
+    "StoredCreds": {
+      "AppContainment": {
+        "Windows7": "containingApp"
+      },
+      "InfoContainment": {
+        "WinWorkstationCreds": "information"
+      }
+    },
+    "WindowsExploit": {
+      "ApplicationVulnerability": {
+        "Windows7": "application"
+      }
+    },
+    "Windows7_Workstation": {
+      "NetworkExposure": {
+        "OfficeNetwork": "networks"
+      },
+      "HighPrivilegeApplicationAccess": {
+        "WorkstationIdentity": "highPrivAppIds"
+      },
+      "AppContainment": {
+        "VPN_StoredCreds": "containedData"
+      },
+      "AppExecution": {
+        "VPN_Client": "appExecutedApps"
+      }
+    },
+    "WinWorkstationCreds": {
+      "InfoContainment": {
+        "StoredCreds": "information"
+      },
+      "IdentityCredentials": {
+        "WorkstationIdentity": "identities"
+      }
+    },
+    "WorkstationIdentity": {
+      "HighPrivilegeApplicationAccess": {
+        "Windows7_Workstation": "highPrivApps"
+      },
+      "IdentityCredentials": {
+        "WinWorkstationCreds": "credentials"
+      }
+    },
+    "VPN_StoredCreds": {
+      "AppContainment": {
+        "Windows7_Workstation": "containingApp"
+      },
+      "InfoContainment": {
+        "VPN_Creds": "information"
+      }
+    },
+    "VPN_Client": {
+      "AppExecution": {
+        "Windows7_Workstation": "hostApp"
+      },
+      "ApplicationConnection": {
+        "VPN_Connection": "appConnections"
+      }
+    },
+    "VPN_Creds": {
+      "InfoContainment": {
+        "VPN_StoredCreds": "information"
+      },
+      "IdentityCredentials": {
+        "VPN_Identity": "identities"
+      }
+    },
+    "VPN_Connection": {
+      "ApplicationConnection": {
+        "VPN_Client": "applications",
+        "VPN_Server": "applications"
+      },
+      "ConnectionRule": {
+        "routingfirewall": "routingFirewalls"
+      }
+    },
+    "VPN_Identity": {
+      "IdentityCredentials": {
+        "VPN_Creds": "credentials"
+      },
+      "LowPrivilegeLocalApplicationAccess": {
+        "VPN_Server": "lowPrivApps"
+      }
+    },
+    "VPN_Server": {
+      "LowPrivilegeLocalApplicationAccess": {
+        "VPN_Identity": "lowPrivAppIds"
+      },
+      "ApplicationConnection": {
+        "VPN_Connection": "appConnections",
+        "Connection_to_HMI": "appConnections"
+      },
+      "SysExecution": {
+        "Server": "hostSystem"
+      },
+      "AppExecution": {
+        "Linux_OS": "appExecutedApps"
+      }
+    },
+    "Connection_to_HMI": {
+      "ApplicationConnection": {
+        "VPN_Server": "applications"
+      }
+    },
+    "Server": {
+      "SysExecution": {
+        "VPN_Server": "sysExecutedApps",
+        "Linux_OS": "sysExecutedApps"
+      },
+      "ZoneInclusion": {
+        "physicalZone": "physicalZone"
+      }
+    },
+    "Linux_OS": {
+      "AppExecution": {
+        "VPN_Server": "hostApp"
+      },
+      "SysExecution": {
+        "Server": "hostSystem"
+      },
+      "NetworkExposure": {
+        "DMZ_Network": "networks"
+      }
+    },
+    "routingfirewall": {
+      "ConnectionRule": {
+        "VPN_Connection": "connectionRules"
+      }
+    },
+    "physicalZone": {
+      "ZoneInclusion": {
+        "Server": "systems"
+      }
+    },
+    "DMZ_Network": {
+      "NetworkExposure": {
+        "Linux_OS": "applications"
+      }
+    }
+  },
+  "agents": {
+    "eve": {
+      "startingPoints": {
+        "PhishedUser": {
+          "phishUser": true
+        }
+      }
+    }
+  }
+}

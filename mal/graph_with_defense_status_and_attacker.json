@@ -1,0 +1,1481 @@
+[
+    {
+        "id": "Credentials:-3746579751403632785:notDisclosed",
+        "type": "defense",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "notDisclosed",
+        "ttc": {
+            "type": "function",
+            "name": "Enabled",
+            "arguments": []
+        },
+        "links": [
+            "Credentials:-3746579751403632785:useLeakedCredentials"
+        ],
+        "is_reachable": false,
+        "defense_status": {
+            "distribution": "Bernoulli",
+            "value": "1.0"
+        },
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:notGuessable",
+        "type": "defense",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "notGuessable",
+        "ttc": {
+            "type": "function",
+            "name": "Enabled",
+            "arguments": []
+        },
+        "links": [
+            "Credentials:-3746579751403632785:guessCredentials"
+        ],
+        "is_reachable": false,
+        "defense_status": {
+            "distribution": "FixedBoolean",
+            "value": "1.0"
+        },
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:unique",
+        "type": "defense",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "unique",
+        "ttc": {
+            "type": "function",
+            "name": "Enabled",
+            "arguments": []
+        },
+        "links": [
+            "Credentials:-3746579751403632785:credentialsReuse",
+            "Credentials:-3746579751403632785:propagateOneCredentialCompromised"
+        ],
+        "is_reachable": false,
+        "defense_status": {
+            "distribution": "Bernoulli",
+            "value": "1.0"
+        },
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:notPhishable",
+        "type": "defense",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "notPhishable",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "Credentials:-3746579751403632785:credentialTheft"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:useLeakedCredentials",
+        "type": "or",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "useLeakedCredentials",
+        "ttc": {
+            "type": "function",
+            "name": "EasyAndCertain",
+            "arguments": []
+        },
+        "links": [
+            "Credentials:-3746579751403632785:attemptUse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:useLeakedCredentials",
+            "-:credentialsReuse",
+            "-:attemptAccess",
+            "-:credentialTheft",
+            "-:guessCredentials"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:attemptCredentialsReuse",
+        "type": "or",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "attemptCredentialsReuse",
+        "ttc": null,
+        "links": [
+            "Credentials:-3746579751403632785:credentialsReuse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "User:passwordReuseCompromise"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:credentialsReuse",
+        "type": "and",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "credentialsReuse",
+        "ttc": null,
+        "links": [
+            "Credentials:-3746579751403632785:attemptUse"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:useLeakedCredentials",
+            "-:credentialsReuse",
+            "-:attemptAccess",
+            "-:credentialTheft",
+            "-:guessCredentials"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:attemptUse",
+        "type": "or",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "attemptUse",
+        "ttc": null,
+        "links": [
+            "Credentials:-3746579751403632785:use"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptUse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:use",
+        "type": "and",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "use",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:accessDecryptedData",
+            "Credentials:-3746579751403632785:attemptPropagateOneCredentialCompromised"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptUse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:attemptPropagateOneCredentialCompromised",
+        "type": "or",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "attemptPropagateOneCredentialCompromised",
+        "ttc": null,
+        "links": [
+            "Credentials:-3746579751403632785:propagateOneCredentialCompromised"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:unique",
+            "-:attemptPropagateOneCredentialCompromised"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:propagateOneCredentialCompromised",
+        "type": "and",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "propagateOneCredentialCompromised",
+        "ttc": null,
+        "links": [],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:propagateOneCredentialCompromised"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:attemptAccess",
+        "type": "or",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "attemptAccess",
+        "ttc": null,
+        "links": [
+            "Credentials:-3746579751403632785:attemptUse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:useLeakedCredentials",
+            "-:credentialsReuse",
+            "-:attemptAccess",
+            "-:credentialTheft",
+            "-:guessCredentials"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:attemptCredentialTheft",
+        "type": "or",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "attemptCredentialTheft",
+        "ttc": null,
+        "links": [
+            "Credentials:-3746579751403632785:credentialTheft"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "User:credentialTheft"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:credentialTheft",
+        "type": "and",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "credentialTheft",
+        "ttc": null,
+        "links": [
+            "Credentials:-3746579751403632785:attemptUse"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:useLeakedCredentials",
+            "-:credentialsReuse",
+            "-:attemptAccess",
+            "-:credentialTheft",
+            "-:guessCredentials"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:weakCredentials",
+        "type": "or",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "weakCredentials",
+        "ttc": null,
+        "links": [
+            "Credentials:-3746579751403632785:guessCredentials"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "User:weakCredentials"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:guessCredentials",
+        "type": "and",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "guessCredentials",
+        "ttc": {
+            "type": "function",
+            "name": "HardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Credentials:-3746579751403632785:attemptUse"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:useLeakedCredentials",
+            "-:credentialsReuse",
+            "-:attemptAccess",
+            "-:credentialTheft",
+            "-:guessCredentials"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:attemptRead",
+        "type": "or",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "attemptRead",
+        "ttc": null,
+        "links": [
+            "Credentials:-3746579751403632785:read"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptRead"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:read",
+        "type": "and",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "read",
+        "ttc": null,
+        "links": [],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptRead"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:attemptWrite",
+        "type": "or",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "attemptWrite",
+        "ttc": null,
+        "links": [
+            "Credentials:-3746579751403632785:write"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptWrite",
+            "-:breakReplication"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:write",
+        "type": "and",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "write",
+        "ttc": null,
+        "links": [],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptWrite",
+            "-:breakReplication"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:attemptDelete",
+        "type": "or",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "attemptDelete",
+        "ttc": null,
+        "links": [
+            "Credentials:-3746579751403632785:delete"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptDelete",
+            "-:breakReplication"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:delete",
+        "type": "and",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "delete",
+        "ttc": null,
+        "links": [],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptDelete",
+            "-:breakReplication"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:attemptDeny",
+        "type": "or",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "attemptDeny",
+        "ttc": null,
+        "links": [
+            "Credentials:-3746579751403632785:deny"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptDeny",
+            "-:breakReplication"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:deny",
+        "type": "and",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "deny",
+        "ttc": null,
+        "links": [],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptDeny",
+            "-:breakReplication"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:attemptBreakReplication",
+        "type": "and",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "attemptBreakReplication",
+        "ttc": null,
+        "links": [
+            "Credentials:-3746579751403632785:breakReplication"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptBreakReplication"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Credentials:-3746579751403632785:breakReplication",
+        "type": "or",
+        "objclass": "Credentials",
+        "objid": "-3746579751403632785",
+        "atkname": "breakReplication",
+        "ttc": null,
+        "links": [
+            "Credentials:-3746579751403632785:write",
+            "Credentials:-3746579751403632785:delete",
+            "Credentials:-3746579751403632785:deny"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptDeny",
+            "-:breakReplication"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:attemptAccess",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "attemptAccess",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:access"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptAccess",
+            "-:accessDecryptedData"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:attemptAccessFromIdentity",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "attemptAccessFromIdentity",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:identityRead",
+            "Data:-4416186161744101015:identityWrite",
+            "Data:-4416186161744101015:identityDelete"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptAccessFromIdentity",
+            "-:identityAttemptDelete"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:access",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "access",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:attemptRead",
+            "Data:-4416186161744101015:attemptWrite",
+            "Data:-4416186161744101015:attemptDelete"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "System:fullAccess",
+            "Application:fullAccess",
+            "Application:modify",
+            "RoutingFirewall:fullAccess",
+            "RoutingFirewall:modify"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:dataEncrypted",
+        "type": "notExist",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "dataEncrypted",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:accessUnencryptedData"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:dataReplicated",
+        "type": "notExist",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "dataReplicated",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:unreplicatedWrite",
+            "Data:-4416186161744101015:unreplicatedDelete",
+            "Data:-4416186161744101015:unreplicatedDeny"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:authenticated",
+        "type": "defense",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "authenticated",
+        "ttc": null,
+        "links": [],
+        "is_reachable": false,
+        "defense_status": {
+            "distribution": "FixedBoolean",
+            "value": "1.0"
+        },
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:accessUnencryptedData",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "accessUnencryptedData",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:accessDecryptedData"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:accessUnencryptedData",
+            "Credentials:use"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:accessDecryptedData",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "accessDecryptedData",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:access",
+            "Data:-4416186161744101015:readContainedInformation",
+            "Data:-4416186161744101015:applicationRespondConnect",
+            "Data:-4416186161744101015:eavesdrop",
+            "Data:-4416186161744101015:manInTheMiddle",
+            "Data:-4416186161744101015:successfulRead",
+            "Data:-4416186161744101015:successfulWrite",
+            "Data:-4416186161744101015:successfulDelete"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:accessDecryptedData",
+            "-:attemptDelete"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:dataNotPresent",
+        "type": "defense",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "dataNotPresent",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "Data:-4416186161744101015:accessUnencryptedData",
+            "Data:-4416186161744101015:successfulDeny"
+        ],
+        "is_reachable": false,
+        "defense_status": {
+            "distribution": "Bernoulli",
+            "value": "0.5"
+        },
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:readContainedInformation",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "readContainedInformation",
+        "ttc": null,
+        "links": [],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "System:fullAccess",
+            "Application:fullAccess",
+            "Application:modify",
+            "RoutingFirewall:fullAccess",
+            "RoutingFirewall:modify"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:overrideCredentials",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "overrideCredentials",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "System:fullAccess",
+            "Application:fullAccess",
+            "Application:modify",
+            "RoutingFirewall:fullAccess",
+            "RoutingFirewall:modify"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:attemptApplicationRespondConnect",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "attemptApplicationRespondConnect",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:applicationRespondConnect"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:accessDecryptedData",
+            "-:attemptApplicationRespondConnect"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:applicationRespondConnect",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "applicationRespondConnect",
+        "ttc": null,
+        "links": [],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:attemptRead",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "attemptRead",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:successfulRead"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:accessDecryptedData",
+            "-:attemptRead"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:identityAttemptRead",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "identityAttemptRead",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:identityRead"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptAccessFromIdentity",
+            "-:identityAttemptRead"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:identityRead",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "identityRead",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:attemptRead"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:access",
+            "-:identityRead",
+            "-:eavesdrop",
+            "-:manInTheMiddle",
+            "Application:fullAccess",
+            "Application:read",
+            "RoutingFirewall:fullAccess",
+            "RoutingFirewall:read"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:attemptWrite",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "attemptWrite",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:successfulWrite"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:accessDecryptedData",
+            "-:attemptWrite"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:identityAttemptWrite",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "identityAttemptWrite",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:identityWrite"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptAccessFromIdentity",
+            "-:identityAttemptWrite"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:identityWrite",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "identityWrite",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:attemptWrite"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:access",
+            "-:identityWrite",
+            "-:manInTheMiddle",
+            "-:writeDataInTransit"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:attemptDelete",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "attemptDelete",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:successfulDelete"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:accessDecryptedData",
+            "-:attemptDelete"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:identityAttemptDelete",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "identityAttemptDelete",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:identityDelete"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptAccessFromIdentity",
+            "-:identityAttemptDelete"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:identityDelete",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "identityDelete",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:attemptDelete"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:access",
+            "-:identityDelete",
+            "-:write"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:successfulRead",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "successfulRead",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:read"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulRead",
+            "Information:read",
+            "Credentials:read"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:read",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "read",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:readContainedInformation"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:access",
+            "-:identityRead",
+            "-:eavesdrop",
+            "-:manInTheMiddle",
+            "Application:fullAccess",
+            "Application:read",
+            "RoutingFirewall:fullAccess",
+            "RoutingFirewall:read"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:breakReplication",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "breakReplication",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:successfulWrite",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "successfulWrite",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:breakReplication",
+            "Data:-4416186161744101015:unreplicatedWrite"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:dataReplicated",
+            "-:successfulWrite"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:unreplicatedWrite",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "unreplicatedWrite",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:write"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:unreplicatedWrite",
+            "Information:write",
+            "Credentials:write"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:write",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "write",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:attemptDelete",
+            "Data:-4416186161744101015:compromiseAppOrigin",
+            "Data:-4416186161744101015:overrideCredentials"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:write"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:successfulDelete",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "successfulDelete",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:breakReplication",
+            "Data:-4416186161744101015:unreplicatedDelete"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:dataReplicated",
+            "-:successfulDelete"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:unreplicatedDelete",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "unreplicatedDelete",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:delete"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:unreplicatedDelete",
+            "Information:delete",
+            "Credentials:delete"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:delete",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "delete",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:access",
+            "-:identityDelete",
+            "-:write"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:attemptDeny",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "attemptDeny",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:successfulDeny"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:dataNotPresent",
+            "-:attemptDeny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:successfulDeny",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "successfulDeny",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:breakReplication",
+            "Data:-4416186161744101015:unreplicatedDeny"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:dataReplicated",
+            "-:successfulDeny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:unreplicatedDeny",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "unreplicatedDeny",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:deny"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:unreplicatedDeny",
+            "Information:deny",
+            "Credentials:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:deny",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "deny",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:unreplicatedDeny",
+            "Information:deny",
+            "Credentials:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:attemptEavesdrop",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "attemptEavesdrop",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:eavesdrop"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:accessDecryptedData",
+            "-:attemptEavesdrop"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:attemptManInTheMiddle",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "attemptManInTheMiddle",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:manInTheMiddle"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:accessDecryptedData",
+            "-:attemptManInTheMiddle"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:eavesdrop",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "eavesdrop",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:attemptRead"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:access",
+            "-:identityRead",
+            "-:eavesdrop",
+            "-:manInTheMiddle",
+            "Application:fullAccess",
+            "Application:read",
+            "RoutingFirewall:fullAccess",
+            "RoutingFirewall:read"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:manInTheMiddle",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "manInTheMiddle",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:attemptRead",
+            "Data:-4416186161744101015:attemptWrite",
+            "Data:-4416186161744101015:attemptApplicationRespondConnect"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:manInTheMiddle",
+            "Application:attemptApplicationRespondConnectThroughData",
+            "RoutingFirewall:attemptApplicationRespondConnectThroughData"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:attemptWriteDataInTransitFromApplication",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "attemptWriteDataInTransitFromApplication",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:writeDataInTransit"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptWriteDataInTransitFromApplication",
+            "-:attemptWriteDataInTransitFromConnectionRule"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:attemptIdentityWriteDataInTransitFromApplication",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "attemptIdentityWriteDataInTransitFromApplication",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:identityWriteDataInTransit"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptIdentityWriteDataInTransitFromApplication",
+            "-:attemptWriteDataInTransitFromConnectionRule"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:attemptWriteDataInTransitFromConnectionRule",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "attemptWriteDataInTransitFromConnectionRule",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:writeDataInTransit",
+            "Data:-4416186161744101015:identityWriteDataInTransit"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptIdentityWriteDataInTransitFromApplication",
+            "-:attemptWriteDataInTransitFromConnectionRule"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:identityWriteDataInTransit",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "identityWriteDataInTransit",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:identityAttemptWrite"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:identityWriteDataInTransit",
+            "Identity:assume",
+            "Privileges:assume",
+            "Group:compromiseGroup"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:writeDataInTransit",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "writeDataInTransit",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:attemptWrite"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:access",
+            "-:identityWrite",
+            "-:manInTheMiddle",
+            "-:writeDataInTransit"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:attemptDenyDataInTransitFromApplication",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "attemptDenyDataInTransitFromApplication",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:denyDataInTransit"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptDenyDataInTransitFromApplication",
+            "-:attemptDenyDataInTransitFromConnectionRule"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:attemptDenyDataInTransitFromConnectionRule",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "attemptDenyDataInTransitFromConnectionRule",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:denyDataInTransit"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptDenyDataInTransitFromApplication",
+            "-:attemptDenyDataInTransitFromConnectionRule"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:denyDataInTransit",
+        "type": "and",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "denyDataInTransit",
+        "ttc": null,
+        "links": [
+            "Data:-4416186161744101015:attemptDeny"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [
+            "-:denyDataInTransit",
+            "Application:deny",
+            "RoutingFirewall:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Data:-4416186161744101015:compromiseAppOrigin",
+        "type": "or",
+        "objclass": "Data",
+        "objid": "-4416186161744101015",
+        "atkname": "compromiseAppOrigin",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Attacker:-8227084409955727818:firstSteps",
+        "type": "or",
+        "objclass": "Attacker",
+        "objid": "-8227084409955727818",
+        "atkname": "firstSteps",
+        "ttc": null,
+        "links": [
+            "Credentials:-3746579751403632785:credentialTheft"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    }
+]

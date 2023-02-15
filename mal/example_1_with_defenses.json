@@ -1,0 +1,3836 @@
+[
+    {
+        "id": "Application:2213271547579497:disabled",
+        "type": "defense",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "disabled",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "Application:2213271547579497:specificAccessFromLocalConnection",
+            "Application:2213271547579497:specificAccessFromNetworkConnection",
+            "Application:2213271547579497:localAccess",
+            "Application:2213271547579497:networkAccess",
+            "Application:2213271547579497:fullAccessAfterSoftProdVulnerability",
+            "Application:2213271547579497:readAfterSoftProdVulnerability",
+            "Application:2213271547579497:modifyAfterSoftProdVulnerability",
+            "Application:2213271547579497:denyAfterSoftProdVulnerability",
+            "Application:2213271547579497:useVulnerability"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:localConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "localConnect",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:localAccess",
+            "Application:2213271547579497:specificAccessFromLocalConnection",
+            "Application:2213271547579497:attemptUseVulnerability",
+            "Application:2213271547579497:softwareProductVulnerabilityLocalAccessAchieved"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:localConnect",
+            "SoftwareVulnerability:localAccessRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:attemptUseVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "attemptUseVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:useVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:attemptUseVulnerability"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:useVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "useVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:attemptSoftwareProductAbuse",
+            "Application:2213271547579497:fullAccessAfterSoftProdVulnerability",
+            "Application:2213271547579497:readAfterSoftProdVulnerability",
+            "Application:2213271547579497:modifyAfterSoftProdVulnerability",
+            "Application:2213271547579497:denyAfterSoftProdVulnerability"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:useVulnerability",
+            "-:attemptDenyAfterSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:attemptNetworkConnectFromReverseTakeover",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "attemptNetworkConnectFromReverseTakeover",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:networkConnectFromReverseTakeover"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptNetworkConnectFromReverseTakeover",
+            "-:airGapped"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:networkConnectFromReverseTakeover",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "networkConnectFromReverseTakeover",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:networkConnect",
+            "Application:2213271547579497:localConnect"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkConnectFromReverseTakeover",
+            "-:unsafeUserActivityConnect",
+            "System:specificAccess",
+            "RoutingFirewall:specificAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:airGapped",
+        "type": "defense",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "airGapped",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:networkConnectFromReverseTakeover",
+            "Application:2213271547579497:reverseReach"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:networkConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "networkConnect",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:networkConnectWithoutTriggeringVulnerabilities",
+            "Application:2213271547579497:attemptUseVulnerability",
+            "Application:2213271547579497:softwareProductVulnerabilityNetworkAccessAchieved"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkConnect",
+            "SoftwareVulnerability:networkAccessRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:attemptReverseReach",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "attemptReverseReach",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:reverseReach"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:airGapped",
+            "-:attemptReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:reverseReach",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "reverseReach",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:attemptReverseReach",
+            "Application:2213271547579497:unsafeUserActivityConnect"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:reverseReach",
+            "-:attemptUnsafeUserActivityConnect"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:networkConnectWithoutTriggeringVulnerabilities",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "networkConnectWithoutTriggeringVulnerabilities",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:networkAccess",
+            "Application:2213271547579497:specificAccessFromNetworkConnection"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:networkConnectWithoutTriggeringVulnerabilities",
+            "-:specificAccessAuthenticate"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:accessNetworkAndConnections",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "accessNetworkAndConnections",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:access"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:networkRequestConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "networkRequestConnect",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:networkRespondConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "networkRespondConnect",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Application:2213271547579497:networkConnect"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkConnectFromReverseTakeover",
+            "-:networkRespondConnect",
+            "-:unsafeUserActivityConnect",
+            "Network:successfulAccess",
+            "RoutingFirewall:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:specificAccessFromLocalConnection",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "specificAccessFromLocalConnection",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:specificAccess"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccessFromLocalConnection",
+            "-:specificAccessFromNetworkConnection",
+            "-:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:specificAccessFromNetworkConnection",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "specificAccessFromNetworkConnection",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:specificAccess"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccessFromLocalConnection",
+            "-:specificAccessFromNetworkConnection",
+            "-:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:specificAccess",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "specificAccess",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:attemptLocalConnectVulnOnHost",
+            "Application:2213271547579497:attemptUseVulnerability",
+            "Application:2213271547579497:attemptApplicationRespondConnectThroughData",
+            "Application:2213271547579497:accessNetworkAndConnections",
+            "Application:2213271547579497:attemptReverseReach"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccess",
+            "-:fullAccess",
+            "Network:reverseReach",
+            "RoutingFirewall:reverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:attemptLocalConnectVulnOnHost",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "attemptLocalConnectVulnOnHost",
+        "ttc": {
+            "type": "function",
+            "name": "HardAndUncertain",
+            "arguments": []
+        },
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:localConnect",
+            "-:networkConnect",
+            "-:specificAccess",
+            "RoutingFirewall:attemptLocalConnectVulnOnHost"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:authenticate",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "authenticate",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:localAccess",
+            "Application:2213271547579497:networkAccess",
+            "Application:2213271547579497:softwareProductVulnerabilityHighPrivilegesAchieved"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:authenticate",
+            "-:attemptUnsafeUserActivityWithHighPrivileges",
+            "SoftwareVulnerability:highPrivilegesRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:specificAccessAuthenticate",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "specificAccessAuthenticate",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:specificAccessFromLocalConnection",
+            "Application:2213271547579497:specificAccessFromNetworkConnection",
+            "Application:2213271547579497:softwareProductVulnerabilityLowPrivilegesAchieved"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccessAuthenticate",
+            "-:attemptUnsafeUserActivityWithLowPrivileges",
+            "SoftwareVulnerability:lowPrivilegesRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:localAccess",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "localAccess",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:fullAccess"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessAfterSoftProdCompromise",
+            "-:fullAccessAfterSoftProdVulnerability",
+            "-:modify",
+            "System:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:networkAccess",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "networkAccess",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:fullAccess"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessAfterSoftProdCompromise",
+            "-:fullAccessAfterSoftProdVulnerability",
+            "-:modify",
+            "System:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:fullAccess",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "fullAccess",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:read",
+            "Application:2213271547579497:modify",
+            "Application:2213271547579497:deny",
+            "Application:2213271547579497:attemptApplicationRespondConnectThroughData",
+            "Application:2213271547579497:accessNetworkAndConnections",
+            "Application:2213271547579497:specificAccess",
+            "Application:2213271547579497:attemptReverseReach"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccess",
+            "-:fullAccess",
+            "Network:reverseReach",
+            "RoutingFirewall:reverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:physicalAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "physicalAccessAchieved",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:softwareProductVulnerabilityPhysicalAccessAchieved"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "System:physicalAccess",
+            "RoutingFirewall:physicalAccessAchieved"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:attemptUnsafeUserActivityConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "attemptUnsafeUserActivityConnect",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:unsafeUserActivityConnect"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:reverseReach",
+            "-:attemptUnsafeUserActivityConnect"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:unsafeUserActivityConnect",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "unsafeUserActivityConnect",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:localConnect",
+            "Application:2213271547579497:networkConnect"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkConnectFromReverseTakeover",
+            "-:networkRespondConnect",
+            "-:unsafeUserActivityConnect",
+            "Network:successfulAccess",
+            "RoutingFirewall:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:attemptUnsafeUserActivityWithLowPrivileges",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "attemptUnsafeUserActivityWithLowPrivileges",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:attemptUnsafeUserActivityConnect",
+            "Application:2213271547579497:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "Application:2213271547579497:softwareProductVulnerabilityUserInteractionAchieved"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptUnsafeUserActivityWithLowPrivileges",
+            "-:attemptUnsafeUserActivityWithHighPrivileges",
+            "SoftwareVulnerability:userInteractionRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:attemptUnsafeUserActivityWithHighPrivileges",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "attemptUnsafeUserActivityWithHighPrivileges",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:attemptUnsafeUserActivityConnect",
+            "Application:2213271547579497:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "Application:2213271547579497:softwareProductVulnerabilityUserInteractionAchieved"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptUnsafeUserActivityWithLowPrivileges",
+            "-:attemptUnsafeUserActivityWithHighPrivileges",
+            "SoftwareVulnerability:userInteractionRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:supplyChainAuditing",
+        "type": "defense",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "supplyChainAuditing",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:fullAccessAfterSoftProdCompromise"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:attemptFullAccessAfterSoftProdCompromise",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "attemptFullAccessAfterSoftProdCompromise",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:fullAccessAfterSoftProdCompromise"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:supplyChainAuditing",
+            "-:attemptFullAccessAfterSoftProdCompromise"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:fullAccessAfterSoftProdCompromise",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "fullAccessAfterSoftProdCompromise",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:fullAccess"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessAfterSoftProdCompromise",
+            "-:fullAccessAfterSoftProdVulnerability",
+            "-:modify",
+            "System:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:attemptFullAccessAfterSoftProdVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "attemptFullAccessAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:fullAccessAfterSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:useVulnerability",
+            "-:attemptFullAccessAfterSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:attemptReadAfterSoftProdVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "attemptReadAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:readAfterSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:useVulnerability",
+            "-:attemptReadAfterSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:attemptModifyAfterSoftProdVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "attemptModifyAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:modifyAfterSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:useVulnerability",
+            "-:attemptModifyAfterSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:attemptDenyAfterSoftProdVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "attemptDenyAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:denyAfterSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:useVulnerability",
+            "-:attemptDenyAfterSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:softwareCheck",
+        "type": "exist",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "softwareCheck",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:fullAccessAfterSoftProdVulnerability",
+            "Application:2213271547579497:readAfterSoftProdVulnerability",
+            "Application:2213271547579497:modifyAfterSoftProdVulnerability",
+            "Application:2213271547579497:denyAfterSoftProdVulnerability"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:softwareProductVulnerabilityLocalAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "softwareProductVulnerabilityLocalAccessAchieved",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:softwareProductVulnerabilityNetworkAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "softwareProductVulnerabilityNetworkAccessAchieved",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:softwareProductVulnerabilityPhysicalAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "softwareProductVulnerabilityPhysicalAccessAchieved",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:softwareProductVulnerabilityLowPrivilegesAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "softwareProductVulnerabilityLowPrivilegesAchieved",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:softwareProductVulnerabilityHighPrivilegesAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "softwareProductVulnerabilityHighPrivilegesAchieved",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:softwareProductVulnerabilityUserInteractionAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "softwareProductVulnerabilityUserInteractionAchieved",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:attemptSoftwareProductAbuse",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "attemptSoftwareProductAbuse",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:softwareProductAbuse",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "softwareProductAbuse",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:fullAccessAfterSoftProdVulnerability",
+            "Application:2213271547579497:readAfterSoftProdVulnerability",
+            "Application:2213271547579497:modifyAfterSoftProdVulnerability",
+            "Application:2213271547579497:denyAfterSoftProdVulnerability"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:useVulnerability",
+            "-:attemptDenyAfterSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:fullAccessAfterSoftProdVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "fullAccessAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:fullAccess"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessAfterSoftProdCompromise",
+            "-:fullAccessAfterSoftProdVulnerability",
+            "-:modify",
+            "System:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:readAfterSoftProdVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "readAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:read"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:readAfterSoftProdVulnerability",
+            "SoftwareVulnerability:read",
+            "UnknownSoftwareVulnerability:read"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:modifyAfterSoftProdVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "modifyAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:modify"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:modifyAfterSoftProdVulnerability",
+            "SoftwareVulnerability:modify",
+            "UnknownSoftwareVulnerability:modify"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:denyAfterSoftProdVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "denyAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:deny"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyAfterSoftProdVulnerability",
+            "-:denyFromConnectionRule",
+            "SoftwareVulnerability:deny",
+            "UnknownSoftwareVulnerability:deny",
+            "System:deny",
+            "RoutingFirewall:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:attemptApplicationRespondConnectThroughData",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "attemptApplicationRespondConnectThroughData",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:read",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "read",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:modify",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "modify",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:fullAccess"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessAfterSoftProdCompromise",
+            "-:fullAccessAfterSoftProdVulnerability",
+            "-:modify",
+            "System:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:deny",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "deny",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyAfterSoftProdVulnerability",
+            "-:denyFromConnectionRule",
+            "SoftwareVulnerability:deny",
+            "UnknownSoftwareVulnerability:deny",
+            "System:deny",
+            "RoutingFirewall:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:denyFromConnectionRule",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "denyFromConnectionRule",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:deny"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyAfterSoftProdVulnerability",
+            "-:denyFromConnectionRule",
+            "SoftwareVulnerability:deny",
+            "UnknownSoftwareVulnerability:deny",
+            "System:deny",
+            "RoutingFirewall:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:2213271547579497:bypassAccessControl",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "2213271547579497",
+        "atkname": "bypassAccessControl",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyAfterSoftProdVulnerability",
+            "-:denyFromConnectionRule",
+            "SoftwareVulnerability:deny",
+            "UnknownSoftwareVulnerability:deny",
+            "System:deny",
+            "RoutingFirewall:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:physicalAccess",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "physicalAccess",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:denialOfService",
+            "Network:8176711980537409:eavesdropAfterPhysicalAccess",
+            "Network:8176711980537409:attemptAccess",
+            "Network:8176711980537409:bypassAccessControl"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:physicalAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:networkAccessControl",
+        "type": "defense",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "networkAccessControl",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:eavesdropAfterPhysicalAccess",
+            "Network:8176711980537409:attemptAccess"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:bypassAccessControl",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "bypassAccessControl",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Network:8176711980537409:successfulAccess"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:bypassAccessControl",
+            "-:access"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:attemptAccess",
+        "type": "and",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "attemptAccess",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:access"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptAccess",
+            "Application:accessNetworkAndConnections",
+            "RoutingFirewall:accessNetworkAndConnections"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:access",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "access",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:successfulAccess"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:bypassAccessControl",
+            "-:access"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:successfulAccess",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "successfulAccess",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:networkConnect",
+            "Application:7219598629313512:networkConnect",
+            "Application:2213271547579497:networkRequestConnect",
+            "Application:7219598629313512:networkRequestConnect",
+            "Network:8176711980537409:accessNetworkData",
+            "Network:8176711980537409:networkForwarding",
+            "Network:8176711980537409:denialOfService",
+            "Network:8176711980537409:attemptReverseReach"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulAccess",
+            "-:reverseReach",
+            "Application:reverseReach",
+            "RoutingFirewall:reverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:attemptReverseReach",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "attemptReverseReach",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:reverseReach"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:reverseReach",
+        "type": "and",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "reverseReach",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:attemptReverseReach",
+            "Application:2213271547579497:attemptReverseReach",
+            "Application:7219598629313512:attemptReverseReach"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulAccess",
+            "-:reverseReach",
+            "Application:reverseReach",
+            "RoutingFirewall:reverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:networkForwarding",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "networkForwarding",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:denialOfService",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "denialOfService",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:denyFromConnectionRule",
+            "Application:2213271547579497:denyFromConnectionRule"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:accessNetworkData",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "accessNetworkData",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:eavesdrop",
+            "Network:8176711980537409:bypassEavesdropProtection",
+            "Network:8176711980537409:manInTheMiddle",
+            "Network:8176711980537409:bypassMitMProtection"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:accessNetworkData"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:eavesdropDefense",
+        "type": "defense",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "eavesdropDefense",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:eavesdrop",
+            "Network:8176711980537409:eavesdropAfterPhysicalAccess"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:manInTheMiddleDefense",
+        "type": "defense",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "manInTheMiddleDefense",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:manInTheMiddle"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:eavesdrop",
+        "type": "and",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "eavesdrop",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:successfulEavesdrop"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:eavesdrop",
+            "-:bypassEavesdropProtection",
+            "-:eavesdropAfterPhysicalAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:bypassEavesdropProtection",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "bypassEavesdropProtection",
+        "ttc": {
+            "type": "function",
+            "name": "HardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Network:8176711980537409:successfulEavesdrop"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:eavesdrop",
+            "-:bypassEavesdropProtection",
+            "-:eavesdropAfterPhysicalAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:successfulEavesdrop",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "successfulEavesdrop",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:manInTheMiddle",
+        "type": "and",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "manInTheMiddle",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:successfulManInTheMiddle"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:manInTheMiddle",
+            "-:bypassMitMProtection"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:bypassMitMProtection",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "bypassMitMProtection",
+        "ttc": {
+            "type": "function",
+            "name": "HardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Network:8176711980537409:successfulManInTheMiddle"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:manInTheMiddle",
+            "-:bypassMitMProtection"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:successfulManInTheMiddle",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "successfulManInTheMiddle",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Network:8176711980537409:eavesdropAfterPhysicalAccess",
+        "type": "and",
+        "objclass": "Network",
+        "objid": "8176711980537409",
+        "atkname": "eavesdropAfterPhysicalAccess",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:successfulEavesdrop"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:eavesdrop",
+            "-:bypassEavesdropProtection",
+            "-:eavesdropAfterPhysicalAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "SoftwareProduct:7171166722614432:compromiseApplication",
+        "type": "or",
+        "objclass": "SoftwareProduct",
+        "objid": "7171166722614432",
+        "atkname": "compromiseApplication",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:attemptFullAccessAfterSoftProdCompromise"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "SoftwareProduct:7171166722614432:readApplication",
+        "type": "or",
+        "objclass": "SoftwareProduct",
+        "objid": "7171166722614432",
+        "atkname": "readApplication",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:attemptReadAfterSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "SoftwareProduct:7171166722614432:modifyApplication",
+        "type": "or",
+        "objclass": "SoftwareProduct",
+        "objid": "7171166722614432",
+        "atkname": "modifyApplication",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:attemptModifyAfterSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "SoftwareProduct:7171166722614432:denyApplication",
+        "type": "or",
+        "objclass": "SoftwareProduct",
+        "objid": "7171166722614432",
+        "atkname": "denyApplication",
+        "ttc": null,
+        "links": [
+            "Application:2213271547579497:attemptDenyAfterSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:disabled",
+        "type": "defense",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "disabled",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "Application:7219598629313512:specificAccessFromLocalConnection",
+            "Application:7219598629313512:specificAccessFromNetworkConnection",
+            "Application:7219598629313512:localAccess",
+            "Application:7219598629313512:networkAccess",
+            "Application:7219598629313512:fullAccessAfterSoftProdVulnerability",
+            "Application:7219598629313512:readAfterSoftProdVulnerability",
+            "Application:7219598629313512:modifyAfterSoftProdVulnerability",
+            "Application:7219598629313512:denyAfterSoftProdVulnerability",
+            "Application:7219598629313512:useVulnerability"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:localConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "localConnect",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:localAccess",
+            "Application:7219598629313512:specificAccessFromLocalConnection",
+            "Application:7219598629313512:attemptUseVulnerability",
+            "UnknownSoftwareVulnerability:929864580059290:localAccessAchieved",
+            "SoftwareVulnerability:892728578927324:localAccessAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityLocalAccessAchieved"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:localConnect",
+            "SoftwareVulnerability:localAccessRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:attemptUseVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "attemptUseVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:useVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:attemptUseVulnerability"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:useVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "useVulnerability",
+        "ttc": null,
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:attemptAbuse",
+            "SoftwareVulnerability:892728578927324:attemptAbuse",
+            "Application:7219598629313512:attemptSoftwareProductAbuse",
+            "Application:7219598629313512:fullAccessAfterSoftProdVulnerability",
+            "Application:7219598629313512:readAfterSoftProdVulnerability",
+            "Application:7219598629313512:modifyAfterSoftProdVulnerability",
+            "Application:7219598629313512:denyAfterSoftProdVulnerability"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:useVulnerability",
+            "-:attemptDenyAfterSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:attemptNetworkConnectFromReverseTakeover",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "attemptNetworkConnectFromReverseTakeover",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:networkConnectFromReverseTakeover"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptNetworkConnectFromReverseTakeover",
+            "-:airGapped"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:networkConnectFromReverseTakeover",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "networkConnectFromReverseTakeover",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:networkConnect",
+            "Application:7219598629313512:localConnect"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkConnectFromReverseTakeover",
+            "-:unsafeUserActivityConnect",
+            "System:specificAccess",
+            "RoutingFirewall:specificAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:airGapped",
+        "type": "defense",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "airGapped",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:networkConnectFromReverseTakeover",
+            "Application:7219598629313512:reverseReach"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:networkConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "networkConnect",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:networkConnectWithoutTriggeringVulnerabilities",
+            "Application:7219598629313512:attemptUseVulnerability",
+            "UnknownSoftwareVulnerability:929864580059290:networkAccessAchieved",
+            "SoftwareVulnerability:892728578927324:networkAccessAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityNetworkAccessAchieved"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkConnect",
+            "SoftwareVulnerability:networkAccessRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:attemptReverseReach",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "attemptReverseReach",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:reverseReach"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:airGapped",
+            "-:attemptReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:reverseReach",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "reverseReach",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:attemptReverseReach",
+            "Application:7219598629313512:unsafeUserActivityConnect"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:reverseReach",
+            "-:attemptUnsafeUserActivityConnect"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:networkConnectWithoutTriggeringVulnerabilities",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "networkConnectWithoutTriggeringVulnerabilities",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:networkAccess",
+            "Application:7219598629313512:specificAccessFromNetworkConnection"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:networkConnectWithoutTriggeringVulnerabilities",
+            "-:specificAccessAuthenticate"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:accessNetworkAndConnections",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "accessNetworkAndConnections",
+        "ttc": null,
+        "links": [
+            "Network:8176711980537409:access"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:networkRequestConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "networkRequestConnect",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:networkRespondConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "networkRespondConnect",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Application:7219598629313512:networkConnect"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkConnectFromReverseTakeover",
+            "-:networkRespondConnect",
+            "-:unsafeUserActivityConnect",
+            "Network:successfulAccess",
+            "RoutingFirewall:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:specificAccessFromLocalConnection",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "specificAccessFromLocalConnection",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:specificAccess"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccessFromLocalConnection",
+            "-:specificAccessFromNetworkConnection",
+            "-:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:specificAccessFromNetworkConnection",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "specificAccessFromNetworkConnection",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:specificAccess"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccessFromLocalConnection",
+            "-:specificAccessFromNetworkConnection",
+            "-:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:specificAccess",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "specificAccess",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:attemptLocalConnectVulnOnHost",
+            "Application:7219598629313512:attemptUseVulnerability",
+            "Application:7219598629313512:attemptApplicationRespondConnectThroughData",
+            "Application:7219598629313512:accessNetworkAndConnections",
+            "Application:7219598629313512:attemptReverseReach"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccess",
+            "-:fullAccess",
+            "Network:reverseReach",
+            "RoutingFirewall:reverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:attemptLocalConnectVulnOnHost",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "attemptLocalConnectVulnOnHost",
+        "ttc": {
+            "type": "function",
+            "name": "HardAndUncertain",
+            "arguments": []
+        },
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:localConnect",
+            "-:networkConnect",
+            "-:specificAccess",
+            "RoutingFirewall:attemptLocalConnectVulnOnHost"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:authenticate",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "authenticate",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:localAccess",
+            "Application:7219598629313512:networkAccess",
+            "UnknownSoftwareVulnerability:929864580059290:highPrivilegesAchieved",
+            "SoftwareVulnerability:892728578927324:highPrivilegesAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityHighPrivilegesAchieved"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:authenticate",
+            "-:attemptUnsafeUserActivityWithHighPrivileges",
+            "SoftwareVulnerability:highPrivilegesRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:specificAccessAuthenticate",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "specificAccessAuthenticate",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:specificAccessFromLocalConnection",
+            "Application:7219598629313512:specificAccessFromNetworkConnection",
+            "UnknownSoftwareVulnerability:929864580059290:lowPrivilegesAchieved",
+            "SoftwareVulnerability:892728578927324:lowPrivilegesAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityLowPrivilegesAchieved"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccessAuthenticate",
+            "-:attemptUnsafeUserActivityWithLowPrivileges",
+            "SoftwareVulnerability:lowPrivilegesRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:localAccess",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "localAccess",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:fullAccess"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessAfterSoftProdCompromise",
+            "-:fullAccessAfterSoftProdVulnerability",
+            "-:modify",
+            "System:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:networkAccess",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "networkAccess",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:fullAccess"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessAfterSoftProdCompromise",
+            "-:fullAccessAfterSoftProdVulnerability",
+            "-:modify",
+            "System:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:fullAccess",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "fullAccess",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:read",
+            "Application:7219598629313512:modify",
+            "Application:7219598629313512:deny",
+            "Application:7219598629313512:attemptApplicationRespondConnectThroughData",
+            "Application:7219598629313512:accessNetworkAndConnections",
+            "Application:7219598629313512:specificAccess",
+            "Application:7219598629313512:attemptReverseReach"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccess",
+            "-:fullAccess",
+            "Network:reverseReach",
+            "RoutingFirewall:reverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:physicalAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "physicalAccessAchieved",
+        "ttc": null,
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:physicalAccessAchieved",
+            "SoftwareVulnerability:892728578927324:physicalAccessAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityPhysicalAccessAchieved"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "System:physicalAccess",
+            "RoutingFirewall:physicalAccessAchieved"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:attemptUnsafeUserActivityConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "attemptUnsafeUserActivityConnect",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:unsafeUserActivityConnect"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:reverseReach",
+            "-:attemptUnsafeUserActivityConnect"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:unsafeUserActivityConnect",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "unsafeUserActivityConnect",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:localConnect",
+            "Application:7219598629313512:networkConnect"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkConnectFromReverseTakeover",
+            "-:networkRespondConnect",
+            "-:unsafeUserActivityConnect",
+            "Network:successfulAccess",
+            "RoutingFirewall:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:attemptUnsafeUserActivityWithLowPrivileges",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "attemptUnsafeUserActivityWithLowPrivileges",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:attemptUnsafeUserActivityConnect",
+            "UnknownSoftwareVulnerability:929864580059290:lowPrivilegesAchieved",
+            "SoftwareVulnerability:892728578927324:lowPrivilegesAchieved",
+            "UnknownSoftwareVulnerability:929864580059290:userInteractionAchieved",
+            "SoftwareVulnerability:892728578927324:userInteractionAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityUserInteractionAchieved"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptUnsafeUserActivityWithLowPrivileges",
+            "-:attemptUnsafeUserActivityWithHighPrivileges",
+            "SoftwareVulnerability:userInteractionRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:attemptUnsafeUserActivityWithHighPrivileges",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "attemptUnsafeUserActivityWithHighPrivileges",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:attemptUnsafeUserActivityConnect",
+            "UnknownSoftwareVulnerability:929864580059290:highPrivilegesAchieved",
+            "SoftwareVulnerability:892728578927324:highPrivilegesAchieved",
+            "UnknownSoftwareVulnerability:929864580059290:userInteractionAchieved",
+            "SoftwareVulnerability:892728578927324:userInteractionAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityUserInteractionAchieved"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptUnsafeUserActivityWithLowPrivileges",
+            "-:attemptUnsafeUserActivityWithHighPrivileges",
+            "SoftwareVulnerability:userInteractionRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:supplyChainAuditing",
+        "type": "defense",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "supplyChainAuditing",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:fullAccessAfterSoftProdCompromise"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:attemptFullAccessAfterSoftProdCompromise",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "attemptFullAccessAfterSoftProdCompromise",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:fullAccessAfterSoftProdCompromise"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:supplyChainAuditing",
+            "-:attemptFullAccessAfterSoftProdCompromise"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:fullAccessAfterSoftProdCompromise",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "fullAccessAfterSoftProdCompromise",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:fullAccess"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessAfterSoftProdCompromise",
+            "-:fullAccessAfterSoftProdVulnerability",
+            "-:modify",
+            "System:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:attemptFullAccessAfterSoftProdVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "attemptFullAccessAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:fullAccessAfterSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:useVulnerability",
+            "-:attemptFullAccessAfterSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:attemptReadAfterSoftProdVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "attemptReadAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:readAfterSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:useVulnerability",
+            "-:attemptReadAfterSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:attemptModifyAfterSoftProdVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "attemptModifyAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:modifyAfterSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:useVulnerability",
+            "-:attemptModifyAfterSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:attemptDenyAfterSoftProdVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "attemptDenyAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:denyAfterSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:useVulnerability",
+            "-:attemptDenyAfterSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:softwareCheck",
+        "type": "exist",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "softwareCheck",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:fullAccessAfterSoftProdVulnerability",
+            "Application:7219598629313512:readAfterSoftProdVulnerability",
+            "Application:7219598629313512:modifyAfterSoftProdVulnerability",
+            "Application:7219598629313512:denyAfterSoftProdVulnerability"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:softwareProductVulnerabilityLocalAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "softwareProductVulnerabilityLocalAccessAchieved",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:localAccessAchieved",
+            "UnknownSoftwareVulnerability:929864580059290:localAccessAchieved",
+            "Application:7219598629313512:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:softwareProductVulnerabilityNetworkAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "softwareProductVulnerabilityNetworkAccessAchieved",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:networkAccessAchieved",
+            "UnknownSoftwareVulnerability:929864580059290:networkAccessAchieved",
+            "Application:7219598629313512:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:softwareProductVulnerabilityPhysicalAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "softwareProductVulnerabilityPhysicalAccessAchieved",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:physicalAccessAchieved",
+            "UnknownSoftwareVulnerability:929864580059290:physicalAccessAchieved",
+            "Application:7219598629313512:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:softwareProductVulnerabilityLowPrivilegesAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "softwareProductVulnerabilityLowPrivilegesAchieved",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:lowPrivilegesAchieved",
+            "UnknownSoftwareVulnerability:929864580059290:lowPrivilegesAchieved",
+            "Application:7219598629313512:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:softwareProductVulnerabilityHighPrivilegesAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "softwareProductVulnerabilityHighPrivilegesAchieved",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:highPrivilegesAchieved",
+            "UnknownSoftwareVulnerability:929864580059290:highPrivilegesAchieved",
+            "Application:7219598629313512:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:softwareProductVulnerabilityUserInteractionAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "softwareProductVulnerabilityUserInteractionAchieved",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:userInteractionAchieved",
+            "UnknownSoftwareVulnerability:929864580059290:userInteractionAchieved",
+            "Application:7219598629313512:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:attemptSoftwareProductAbuse",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "attemptSoftwareProductAbuse",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:softwareProductAbuse",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "softwareProductAbuse",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:fullAccessAfterSoftProdVulnerability",
+            "Application:7219598629313512:readAfterSoftProdVulnerability",
+            "Application:7219598629313512:modifyAfterSoftProdVulnerability",
+            "Application:7219598629313512:denyAfterSoftProdVulnerability"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:disabled",
+            "-:useVulnerability",
+            "-:attemptDenyAfterSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:fullAccessAfterSoftProdVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "fullAccessAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:fullAccess"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessAfterSoftProdCompromise",
+            "-:fullAccessAfterSoftProdVulnerability",
+            "-:modify",
+            "System:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:readAfterSoftProdVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "readAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:read"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:readAfterSoftProdVulnerability",
+            "SoftwareVulnerability:read",
+            "UnknownSoftwareVulnerability:read"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:modifyAfterSoftProdVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "modifyAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:modify"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:modifyAfterSoftProdVulnerability",
+            "SoftwareVulnerability:modify",
+            "UnknownSoftwareVulnerability:modify"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:denyAfterSoftProdVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "denyAfterSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:deny"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyAfterSoftProdVulnerability",
+            "-:denyFromConnectionRule",
+            "SoftwareVulnerability:deny",
+            "UnknownSoftwareVulnerability:deny",
+            "System:deny",
+            "RoutingFirewall:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:attemptApplicationRespondConnectThroughData",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "attemptApplicationRespondConnectThroughData",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:read",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "read",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:modify",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "modify",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:fullAccess"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessAfterSoftProdCompromise",
+            "-:fullAccessAfterSoftProdVulnerability",
+            "-:modify",
+            "System:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:deny",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "deny",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyAfterSoftProdVulnerability",
+            "-:denyFromConnectionRule",
+            "SoftwareVulnerability:deny",
+            "UnknownSoftwareVulnerability:deny",
+            "System:deny",
+            "RoutingFirewall:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:denyFromConnectionRule",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "denyFromConnectionRule",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:deny"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyAfterSoftProdVulnerability",
+            "-:denyFromConnectionRule",
+            "SoftwareVulnerability:deny",
+            "UnknownSoftwareVulnerability:deny",
+            "System:deny",
+            "RoutingFirewall:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:7219598629313512:bypassAccessControl",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "7219598629313512",
+        "atkname": "bypassAccessControl",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyAfterSoftProdVulnerability",
+            "-:denyFromConnectionRule",
+            "SoftwareVulnerability:deny",
+            "UnknownSoftwareVulnerability:deny",
+            "System:deny",
+            "RoutingFirewall:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "SoftwareProduct:287968155802853:compromiseApplication",
+        "type": "or",
+        "objclass": "SoftwareProduct",
+        "objid": "287968155802853",
+        "atkname": "compromiseApplication",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:attemptFullAccessAfterSoftProdCompromise"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "SoftwareProduct:287968155802853:readApplication",
+        "type": "or",
+        "objclass": "SoftwareProduct",
+        "objid": "287968155802853",
+        "atkname": "readApplication",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:attemptReadAfterSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "SoftwareProduct:287968155802853:modifyApplication",
+        "type": "or",
+        "objclass": "SoftwareProduct",
+        "objid": "287968155802853",
+        "atkname": "modifyApplication",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:attemptModifyAfterSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "SoftwareProduct:287968155802853:denyApplication",
+        "type": "or",
+        "objclass": "SoftwareProduct",
+        "objid": "287968155802853",
+        "atkname": "denyApplication",
+        "ttc": null,
+        "links": [
+            "Application:7219598629313512:attemptDenyAfterSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:networkAccessRequired",
+        "type": "defense",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "networkAccessRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "SoftwareVulnerability:892728578927324:networkAccessAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityNetworkAccessAchieved"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:localAccessRequired",
+        "type": "defense",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "localAccessRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "SoftwareVulnerability:892728578927324:localAccessAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityLocalAccessAchieved"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:physicalAccessRequired",
+        "type": "defense",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "physicalAccessRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "SoftwareVulnerability:892728578927324:physicalAccessAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityPhysicalAccessAchieved"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:lowPrivilegesRequired",
+        "type": "defense",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "lowPrivilegesRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "SoftwareVulnerability:892728578927324:lowPrivilegesAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityLowPrivilegesAchieved"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:highPrivilegesRequired",
+        "type": "defense",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "highPrivilegesRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "SoftwareVulnerability:892728578927324:highPrivilegesAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityHighPrivilegesAchieved"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:userInteractionRequired",
+        "type": "defense",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "userInteractionRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "SoftwareVulnerability:892728578927324:userInteractionAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityUserInteractionAchieved"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:confidentialityImpactLimitations",
+        "type": "defense",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "confidentialityImpactLimitations",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "SoftwareVulnerability:892728578927324:read"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:availabilityImpactLimitations",
+        "type": "defense",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "availabilityImpactLimitations",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "SoftwareVulnerability:892728578927324:deny"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:integrityImpactLimitations",
+        "type": "defense",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "integrityImpactLimitations",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "SoftwareVulnerability:892728578927324:modify"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:highComplexityExploitRequired",
+        "type": "defense",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "highComplexityExploitRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "SoftwareVulnerability:892728578927324:exploitTrivially"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:networkAccessAchieved",
+        "type": "or",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "networkAccessAchieved",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:abuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkAccessAchieved",
+            "-:localAccessAchieved",
+            "-:physicalAccessAchieved",
+            "-:lowPrivilegesAchieved",
+            "-:highPrivilegesAchieved",
+            "-:userInteractionAchieved",
+            "-:remove",
+            "-:attemptAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:localAccessAchieved",
+        "type": "or",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "localAccessAchieved",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:abuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkAccessAchieved",
+            "-:localAccessAchieved",
+            "-:physicalAccessAchieved",
+            "-:lowPrivilegesAchieved",
+            "-:highPrivilegesAchieved",
+            "-:userInteractionAchieved",
+            "-:remove",
+            "-:attemptAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:physicalAccessAchieved",
+        "type": "or",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "physicalAccessAchieved",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:abuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkAccessAchieved",
+            "-:localAccessAchieved",
+            "-:physicalAccessAchieved",
+            "-:lowPrivilegesAchieved",
+            "-:highPrivilegesAchieved",
+            "-:userInteractionAchieved",
+            "-:remove",
+            "-:attemptAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:lowPrivilegesAchieved",
+        "type": "or",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "lowPrivilegesAchieved",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:abuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkAccessAchieved",
+            "-:localAccessAchieved",
+            "-:physicalAccessAchieved",
+            "-:lowPrivilegesAchieved",
+            "-:highPrivilegesAchieved",
+            "-:userInteractionAchieved",
+            "-:remove",
+            "-:attemptAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:highPrivilegesAchieved",
+        "type": "or",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "highPrivilegesAchieved",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:abuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkAccessAchieved",
+            "-:localAccessAchieved",
+            "-:physicalAccessAchieved",
+            "-:lowPrivilegesAchieved",
+            "-:highPrivilegesAchieved",
+            "-:userInteractionAchieved",
+            "-:remove",
+            "-:attemptAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:userInteractionAchieved",
+        "type": "or",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "userInteractionAchieved",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:abuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkAccessAchieved",
+            "-:localAccessAchieved",
+            "-:physicalAccessAchieved",
+            "-:lowPrivilegesAchieved",
+            "-:highPrivilegesAchieved",
+            "-:userInteractionAchieved",
+            "-:remove",
+            "-:attemptAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:read",
+        "type": "and",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "read",
+        "ttc": null,
+        "links": [
+            "SoftwareProduct:287968155802853:readApplication"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:modify",
+        "type": "and",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "modify",
+        "ttc": null,
+        "links": [
+            "SoftwareProduct:287968155802853:modifyApplication"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:deny",
+        "type": "and",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "deny",
+        "ttc": null,
+        "links": [
+            "SoftwareProduct:287968155802853:denyApplication"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:attemptExploit",
+        "type": "or",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "attemptExploit",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:exploitTrivially",
+            "SoftwareVulnerability:892728578927324:exploitWithEffort"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptExploit"
+        ],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:exploitTrivially",
+        "type": "and",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "exploitTrivially",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:exploit"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:exploitTrivially",
+            "-:exploitWithEffort"
+        ],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:exploitWithEffort",
+        "type": "and",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "exploitWithEffort",
+        "ttc": {
+            "type": "function",
+            "name": "Exponential",
+            "arguments": [
+                0.01
+            ]
+        },
+        "links": [
+            "SoftwareVulnerability:892728578927324:exploit"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:exploitTrivially",
+            "-:exploitWithEffort"
+        ],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:impact",
+        "type": "or",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "impact",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:read",
+            "SoftwareVulnerability:892728578927324:modify",
+            "SoftwareVulnerability:892728578927324:deny"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:availabilityImpactLimitations",
+            "-:impact"
+        ],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:remove",
+        "type": "defense",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "remove",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:abuse"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:attemptAbuse",
+        "type": "or",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "attemptAbuse",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:abuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkAccessAchieved",
+            "-:localAccessAchieved",
+            "-:physicalAccessAchieved",
+            "-:lowPrivilegesAchieved",
+            "-:highPrivilegesAchieved",
+            "-:userInteractionAchieved",
+            "-:remove",
+            "-:attemptAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:abuse",
+        "type": "and",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "abuse",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:attemptExploit"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:abuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "SoftwareVulnerability:892728578927324:exploit",
+        "type": "or",
+        "objclass": "SoftwareVulnerability",
+        "objid": "892728578927324",
+        "atkname": "exploit",
+        "ttc": null,
+        "links": [
+            "SoftwareVulnerability:892728578927324:impact"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:exploit"
+        ],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:impact",
+        "type": "or",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "impact",
+        "ttc": null,
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:requestForgery",
+            "UnknownSoftwareVulnerability:929864580059290:modify",
+            "UnknownSoftwareVulnerability:929864580059290:deny",
+            "UnknownSoftwareVulnerability:929864580059290:read"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:impact",
+            "-:confidentialityImpactLimitations"
+        ],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:requestForgery",
+        "type": "or",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "requestForgery",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:modify",
+        "type": "and",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "modify",
+        "ttc": null,
+        "links": [
+            "SoftwareProduct:287968155802853:modifyApplication"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:deny",
+        "type": "and",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "deny",
+        "ttc": null,
+        "links": [
+            "SoftwareProduct:287968155802853:denyApplication"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:read",
+        "type": "and",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "read",
+        "ttc": null,
+        "links": [
+            "SoftwareProduct:287968155802853:readApplication"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:networkAccessRequired",
+        "type": "defense",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "networkAccessRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:networkAccessAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityNetworkAccessAchieved"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:localAccessRequired",
+        "type": "defense",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "localAccessRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:localAccessAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityLocalAccessAchieved"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:physicalAccessRequired",
+        "type": "defense",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "physicalAccessRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:physicalAccessAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityPhysicalAccessAchieved"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:lowPrivilegesRequired",
+        "type": "defense",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "lowPrivilegesRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:lowPrivilegesAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityLowPrivilegesAchieved"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:highPrivilegesRequired",
+        "type": "defense",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "highPrivilegesRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:highPrivilegesAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityHighPrivilegesAchieved"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:userInteractionRequired",
+        "type": "defense",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "userInteractionRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:userInteractionAchieved",
+            "Application:7219598629313512:softwareProductVulnerabilityUserInteractionAchieved"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:confidentialityImpactLimitations",
+        "type": "defense",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "confidentialityImpactLimitations",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:read"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:availabilityImpactLimitations",
+        "type": "defense",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "availabilityImpactLimitations",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:deny"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:integrityImpactLimitations",
+        "type": "defense",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "integrityImpactLimitations",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:modify"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:highComplexityExploitRequired",
+        "type": "defense",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "highComplexityExploitRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:exploitTrivially"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:networkAccessAchieved",
+        "type": "or",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "networkAccessAchieved",
+        "ttc": null,
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:abuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkAccessAchieved",
+            "-:localAccessAchieved",
+            "-:physicalAccessAchieved",
+            "-:lowPrivilegesAchieved",
+            "-:highPrivilegesAchieved",
+            "-:userInteractionAchieved",
+            "-:remove",
+            "-:attemptAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:localAccessAchieved",
+        "type": "or",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "localAccessAchieved",
+        "ttc": null,
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:abuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkAccessAchieved",
+            "-:localAccessAchieved",
+            "-:physicalAccessAchieved",
+            "-:lowPrivilegesAchieved",
+            "-:highPrivilegesAchieved",
+            "-:userInteractionAchieved",
+            "-:remove",
+            "-:attemptAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:physicalAccessAchieved",
+        "type": "or",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "physicalAccessAchieved",
+        "ttc": null,
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:abuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkAccessAchieved",
+            "-:localAccessAchieved",
+            "-:physicalAccessAchieved",
+            "-:lowPrivilegesAchieved",
+            "-:highPrivilegesAchieved",
+            "-:userInteractionAchieved",
+            "-:remove",
+            "-:attemptAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:lowPrivilegesAchieved",
+        "type": "or",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "lowPrivilegesAchieved",
+        "ttc": null,
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:abuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkAccessAchieved",
+            "-:localAccessAchieved",
+            "-:physicalAccessAchieved",
+            "-:lowPrivilegesAchieved",
+            "-:highPrivilegesAchieved",
+            "-:userInteractionAchieved",
+            "-:remove",
+            "-:attemptAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:highPrivilegesAchieved",
+        "type": "or",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "highPrivilegesAchieved",
+        "ttc": null,
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:abuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkAccessAchieved",
+            "-:localAccessAchieved",
+            "-:physicalAccessAchieved",
+            "-:lowPrivilegesAchieved",
+            "-:highPrivilegesAchieved",
+            "-:userInteractionAchieved",
+            "-:remove",
+            "-:attemptAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:userInteractionAchieved",
+        "type": "or",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "userInteractionAchieved",
+        "ttc": null,
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:abuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkAccessAchieved",
+            "-:localAccessAchieved",
+            "-:physicalAccessAchieved",
+            "-:lowPrivilegesAchieved",
+            "-:highPrivilegesAchieved",
+            "-:userInteractionAchieved",
+            "-:remove",
+            "-:attemptAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:attemptExploit",
+        "type": "or",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "attemptExploit",
+        "ttc": null,
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:exploitTrivially",
+            "UnknownSoftwareVulnerability:929864580059290:exploitWithEffort"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptExploit"
+        ],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:exploitTrivially",
+        "type": "and",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "exploitTrivially",
+        "ttc": null,
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:exploit"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:exploitTrivially",
+            "-:exploitWithEffort"
+        ],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:exploitWithEffort",
+        "type": "and",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "exploitWithEffort",
+        "ttc": {
+            "type": "function",
+            "name": "Exponential",
+            "arguments": [
+                0.01
+            ]
+        },
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:exploit"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:exploitTrivially",
+            "-:exploitWithEffort"
+        ],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:remove",
+        "type": "defense",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "remove",
+        "ttc": null,
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:abuse"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:attemptAbuse",
+        "type": "or",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "attemptAbuse",
+        "ttc": null,
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:abuse"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkAccessAchieved",
+            "-:localAccessAchieved",
+            "-:physicalAccessAchieved",
+            "-:lowPrivilegesAchieved",
+            "-:highPrivilegesAchieved",
+            "-:userInteractionAchieved",
+            "-:remove",
+            "-:attemptAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:abuse",
+        "type": "and",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "abuse",
+        "ttc": null,
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:attemptExploit"
+        ],
+        "is_reachable": false,
+        "is_traversable": false,
+        "required_steps": [
+            "-:abuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "UnknownSoftwareVulnerability:929864580059290:exploit",
+        "type": "or",
+        "objclass": "UnknownSoftwareVulnerability",
+        "objid": "929864580059290",
+        "atkname": "exploit",
+        "ttc": null,
+        "links": [
+            "UnknownSoftwareVulnerability:929864580059290:impact"
+        ],
+        "is_reachable": true,
+        "is_traversable": false,
+        "required_steps": [
+            "-:exploit"
+        ],
+        "extra": null
+    }
+]
