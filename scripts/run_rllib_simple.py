@@ -112,7 +112,7 @@ if __name__ == "__main__":
     )
 
     trainer = ppo.PPOTrainer(config=config)
-    # trainer = dqn.DQNTrainer(config=config)
+    # trainer = dqn.DQN(config=config)
     # trainer = RandomDefender(config=config)
     # trainer = optimal_defender.TripwireDefender(config=config | {"simple_optimizer": True, "defense_steps": dummy_graph.attack_steps_by_defense_step})
 
