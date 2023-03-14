@@ -61,10 +61,11 @@ reward_funcs = {
 def select_random_attacker(rng: np.random.Generator):
     return list(ATTACKERS.values())[rng.integers(0, len(ATTACKERS))]
 
-def get_agent_obs(sim_obs: Observation) -> Dict[str, Any]:
+def get_agent_obs(sim_obs: Observation, graph: AttackGraph) -> Dict[str, Any]:
     defender_obs = {
         "ids_observation": np.array(sim_obs.ids_observation, dtype=np.int8),
         "action_mask": np.array(sim_obs.defender_action_mask),
+        "edges": graph.get_edge_list(),
     }
 
     attacker_obs = {
@@ -168,6 +169,7 @@ class AttackSimulationEnv(MultiAgentEnv):
                         "ids_observation": spaces.Box(
                             0, 1, shape=(dim_observations,), dtype=np.int8
                         ),
+                        "edges": spaces.Box(0, np.inf, shape=graph.get_edge_list().shape, dtype=np.int64),
                     }
                 ),
                 AGENT_ATTACKER: spaces.Dict(
@@ -243,6 +245,7 @@ class AttackSimulationEnv(MultiAgentEnv):
 
     def observation_space_contains(self, x) -> bool:
         return all(self.observation_space[agent_id].contains(x[agent_id]) for agent_id in x)
+
 
     def get_agent_info(self, info: Info) -> Dict[str, Any]:
         infos = {
