@@ -177,6 +177,15 @@ class AttackGraph:
             for attack_name in self.attack_names
         ]
 
+    def get_edge_list(self) ->  NDArray[np.int64]:
+        """Return the attack graph as an edge list."""
+        children =  [
+            (self.attack_indices[step], self.attack_indices[child])
+            for step in self.attack_steps
+            for child in self.attack_steps[step].children
+        ]
+        return np.array(children, dtype=np.int64)
+
     @property
     def total_ttc(self) -> UINT:
         return sum(step.ttc for step in self.attack_steps.values())
