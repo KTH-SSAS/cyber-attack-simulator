@@ -1,0 +1,4623 @@
+[
+    {
+        "id": "Application:0:notPresent",
+        "type": "defense",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "notPresent",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "Application:0:successfulUseVulnerability",
+            "Application:0:successfulReverseReach",
+            "Application:0:networkConnectFromResponse",
+            "Application:0:specificAccessFromLocalConnection",
+            "Application:0:specificAccessFromNetworkConnection",
+            "Application:0:localAccess",
+            "Application:0:networkAccess",
+            "Application:0:successfulUnsafeUserActivity",
+            "Application:0:fullAccessFromSupplyChainCompromise",
+            "Application:0:readFromSoftProdVulnerability",
+            "Application:0:modifyFromSoftProdVulnerability",
+            "Application:0:denyFromSoftProdVulnerability",
+            "Application:0:successfulApplicationRespondConnectThroughData",
+            "Application:0:successfulAuthorizedApplicationRespondConnectThroughData",
+            "Application:0:successfulRead",
+            "Application:0:successfulModify",
+            "Application:0:successfulDeny"
+        ],
+        "is_reachable": false,
+        "defense_status": "unset",
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Application:0:attemptUseVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attemptUseVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:0:successfulUseVulnerability"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:0:successfulUseVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "successfulUseVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:0:useVulnerability"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulUseVulnerability"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:useVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "useVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:0:attemptSoftwareProductAbuse",
+            "Application:0:readFromSoftProdVulnerability",
+            "Application:0:modifyFromSoftProdVulnerability",
+            "Application:0:denyFromSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:useVulnerability",
+            "-:attemptDenyFromSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attemptReverseReach",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attemptReverseReach",
+        "ttc": null,
+        "links": [
+            "Application:0:successfulReverseReach"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:attemptReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:successfulReverseReach",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "successfulReverseReach",
+        "ttc": null,
+        "links": [
+            "Application:0:reverseReach"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:reverseReach",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "reverseReach",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:3:attemptReverseReach",
+            "Application:0:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "Application:0:networkConnectFromResponse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:reverseReach",
+            "-:attemptNetworkConnectFromResponse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:localConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "localConnect",
+        "ttc": null,
+        "links": [
+            "Application:0:localAccess",
+            "Application:0:specificAccessFromLocalConnection",
+            "Application:0:attemptUseVulnerability",
+            "Application:0:softwareProductVulnerabilityLocalAccessAchieved"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:localConnect",
+            "SoftwareVulnerability:localAccessRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:networkConnectUninspected",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "networkConnectUninspected",
+        "ttc": null,
+        "links": [
+            "Application:0:attemptUseVulnerability",
+            "Application:0:softwareProductVulnerabilityNetworkAccessAchieved",
+            "Application:0:networkConnect",
+            "Application:0:specificAccessNetworkConnect"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkConnectUninspected",
+            "-:networkConnectInspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:networkConnectInspected",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "networkConnectInspected",
+        "ttc": null,
+        "links": [
+            "Application:0:networkConnect",
+            "Application:0:specificAccessNetworkConnect"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkConnectUninspected",
+            "-:networkConnectInspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:networkConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "networkConnect",
+        "ttc": null,
+        "links": [
+            "Application:0:networkAccess"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:networkConnect",
+            "-:authenticate"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:specificAccessNetworkConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "specificAccessNetworkConnect",
+        "ttc": null,
+        "links": [
+            "Application:0:specificAccessFromNetworkConnection"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:specificAccessNetworkConnect",
+            "-:specificAccessAuthenticate"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:accessNetworkAndConnections",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "accessNetworkAndConnections",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:3:attemptConnectToApplicationsUninspected",
+            "ConnectionRule:3:attemptConnectToApplicationsInspected",
+            "ConnectionRule:3:attemptAccessNetworksUninspected",
+            "ConnectionRule:3:attemptAccessNetworksInspected"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attemptNetworkConnectFromResponse",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attemptNetworkConnectFromResponse",
+        "ttc": null,
+        "links": [
+            "Application:0:networkConnectFromResponse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:reverseReach",
+            "-:attemptNetworkConnectFromResponse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:networkConnectFromResponse",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "networkConnectFromResponse",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Application:0:networkConnectUninspected"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkConnectFromResponse",
+            "-:unsafeUserActivity",
+            "Network:accessUninspected",
+            "RoutingFirewall:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:specificAccessFromLocalConnection",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "specificAccessFromLocalConnection",
+        "ttc": null,
+        "links": [
+            "Application:0:specificAccess"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccessFromLocalConnection",
+            "-:specificAccessFromNetworkConnection",
+            "-:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:specificAccessFromNetworkConnection",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "specificAccessFromNetworkConnection",
+        "ttc": null,
+        "links": [
+            "Application:0:specificAccess"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccessFromLocalConnection",
+            "-:specificAccessFromNetworkConnection",
+            "-:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:specificAccess",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "specificAccess",
+        "ttc": null,
+        "links": [
+            "Application:0:specificAccessRead",
+            "Application:0:specificAccessModify",
+            "Application:0:specificAccessDelete",
+            "Application:0:bypassContainerization",
+            "Application:0:attemptUseVulnerability",
+            "Application:0:attemptAuthorizedApplicationRespondConnectThroughData",
+            "Application:0:accessNetworkAndConnections"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccess",
+            "-:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:bypassContainerization",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "bypassContainerization",
+        "ttc": {
+            "type": "function",
+            "name": "HardAndUncertain",
+            "arguments": []
+        },
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:localConnect",
+            "-:networkConnectUninspected",
+            "-:specificAccess",
+            "IDPS:bypassContainerization",
+            "RoutingFirewall:bypassContainerization"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:authenticate",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "authenticate",
+        "ttc": null,
+        "links": [
+            "Application:0:localAccess",
+            "Application:0:networkAccess",
+            "Application:0:softwareProductVulnerabilityHighPrivilegesAchieved"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:authenticate",
+            "SoftwareVulnerability:highPrivilegesRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:specificAccessAuthenticate",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "specificAccessAuthenticate",
+        "ttc": null,
+        "links": [
+            "Application:0:specificAccessFromLocalConnection",
+            "Application:0:specificAccessFromNetworkConnection",
+            "Application:0:softwareProductVulnerabilityLowPrivilegesAchieved"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccessAuthenticate",
+            "SoftwareVulnerability:lowPrivilegesRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:localAccess",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "localAccess",
+        "ttc": null,
+        "links": [
+            "Application:0:fullAccess"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessFromSupplyChainCompromise",
+            "-:modify",
+            "Hardware:fullAccess",
+            "SoftwareProduct:write",
+            "Information:write",
+            "Data:write",
+            "IAMObject:write",
+            "Identity:write",
+            "Privileges:write",
+            "Group:write",
+            "Credentials:write"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:networkAccess",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "networkAccess",
+        "ttc": null,
+        "links": [
+            "Application:0:fullAccess"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessFromSupplyChainCompromise",
+            "-:modify",
+            "Hardware:fullAccess",
+            "SoftwareProduct:write",
+            "Information:write",
+            "Data:write",
+            "IAMObject:write",
+            "Identity:write",
+            "Privileges:write",
+            "Group:write",
+            "Credentials:write"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:fullAccess",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "fullAccess",
+        "ttc": null,
+        "links": [
+            "Application:0:attemptRead",
+            "Application:0:attemptModify",
+            "Application:0:attemptDeny",
+            "Application:0:attemptApplicationRespondConnectThroughData",
+            "Application:0:accessNetworkAndConnections",
+            "Application:0:specificAccess"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccessFromLocalConnection",
+            "-:specificAccessFromNetworkConnection",
+            "-:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:physicalAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "physicalAccessAchieved",
+        "ttc": null,
+        "links": [
+            "Application:0:softwareProductVulnerabilityPhysicalAccessAchieved"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "Hardware:hardwareModifications",
+            "Hardware:unsafeUserActivity",
+            "IDPS:physicalAccessAchieved",
+            "RoutingFirewall:physicalAccessAchieved"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attemptUnsafeUserActivity",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attemptUnsafeUserActivity",
+        "ttc": null,
+        "links": [
+            "Application:0:successfulUnsafeUserActivity",
+            "Application:0:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "Application:0:attackerUnsafeUserActivityCapabilityWithoutReverseReach"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:0:successfulUnsafeUserActivity",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "successfulUnsafeUserActivity",
+        "ttc": null,
+        "links": [
+            "Application:0:unsafeUserActivity"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulUnsafeUserActivity"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:unsafeUserActivity",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "unsafeUserActivity",
+        "ttc": null,
+        "links": [
+            "Application:0:localConnect",
+            "Application:0:networkConnectUninspected"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attackerUnsafeUserActivityCapability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attackerUnsafeUserActivityCapability",
+        "ttc": null,
+        "links": [
+            "Application:0:successfulUnsafeUserActivity"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:attemptUnsafeUserActivity",
+            "-:attackerUnsafeUserActivityCapability",
+            "IDPS:effectivenessBypassed"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attackerUnsafeUserActivityCapabilityWithReverseReach",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attackerUnsafeUserActivityCapabilityWithReverseReach",
+        "ttc": null,
+        "links": [
+            "Application:0:attackerUnsafeUserActivityCapability"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "-:attackerUnsafeUserActivityCapabilityWithoutReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attackerUnsafeUserActivityCapabilityWithoutReverseReach",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attackerUnsafeUserActivityCapabilityWithoutReverseReach",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Application:0:attackerUnsafeUserActivityCapability"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "-:attackerUnsafeUserActivityCapabilityWithoutReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:supplyChainAuditing",
+        "type": "defense",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "supplyChainAuditing",
+        "ttc": null,
+        "links": [
+            "Application:0:supplyChainAuditingBypassed"
+        ],
+        "is_reachable": false,
+        "defense_status": "unset",
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Application:0:bypassSupplyChainAuditing",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "bypassSupplyChainAuditing",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Application:0:supplyChainAuditingBypassed"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:supplyChainAuditing",
+            "-:bypassSupplyChainAuditing"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:supplyChainAuditingBypassed",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "supplyChainAuditingBypassed",
+        "ttc": null,
+        "links": [
+            "Application:0:fullAccessFromSupplyChainCompromise"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:supplyChainAuditingBypassed",
+            "-:attemptFullAccessFromSupplyChainCompromise"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attemptFullAccessFromSupplyChainCompromise",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attemptFullAccessFromSupplyChainCompromise",
+        "ttc": null,
+        "links": [
+            "Application:0:fullAccessFromSupplyChainCompromise",
+            "Application:0:bypassSupplyChainAuditing"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptFullAccessFromSupplyChainCompromise"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:fullAccessFromSupplyChainCompromise",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "fullAccessFromSupplyChainCompromise",
+        "ttc": null,
+        "links": [
+            "Application:0:fullAccess"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessFromSupplyChainCompromise",
+            "-:modify",
+            "Hardware:fullAccess",
+            "SoftwareProduct:write",
+            "Information:write",
+            "Data:write",
+            "IAMObject:write",
+            "Identity:write",
+            "Privileges:write",
+            "Group:write",
+            "Credentials:write"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attemptReadFromSoftProdVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attemptReadFromSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:0:readFromSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:useVulnerability",
+            "-:attemptReadFromSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attemptModifyFromSoftProdVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attemptModifyFromSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:0:modifyFromSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:useVulnerability",
+            "-:attemptModifyFromSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attemptDenyFromSoftProdVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attemptDenyFromSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:0:denyFromSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:useVulnerability",
+            "-:attemptDenyFromSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:softwareCheck",
+        "type": "exist",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "softwareCheck",
+        "ttc": null,
+        "links": [
+            "Application:0:readFromSoftProdVulnerability",
+            "Application:0:modifyFromSoftProdVulnerability",
+            "Application:0:denyFromSoftProdVulnerability"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Application:0:softwareProductVulnerabilityLocalAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "softwareProductVulnerabilityLocalAccessAchieved",
+        "ttc": null,
+        "links": [
+            "Application:0:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:softwareProductVulnerabilityNetworkAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "softwareProductVulnerabilityNetworkAccessAchieved",
+        "ttc": null,
+        "links": [
+            "Application:0:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:softwareProductVulnerabilityPhysicalAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "softwareProductVulnerabilityPhysicalAccessAchieved",
+        "ttc": null,
+        "links": [
+            "Application:0:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:softwareProductVulnerabilityLowPrivilegesAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "softwareProductVulnerabilityLowPrivilegesAchieved",
+        "ttc": null,
+        "links": [
+            "Application:0:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:softwareProductVulnerabilityHighPrivilegesAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "softwareProductVulnerabilityHighPrivilegesAchieved",
+        "ttc": null,
+        "links": [
+            "Application:0:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:softwareProductVulnerabilityUserInteractionAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "softwareProductVulnerabilityUserInteractionAchieved",
+        "ttc": null,
+        "links": [
+            "Application:0:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attemptSoftwareProductAbuse",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attemptSoftwareProductAbuse",
+        "ttc": null,
+        "links": [
+            "Application:0:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:softwareProductAbuse",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "softwareProductAbuse",
+        "ttc": null,
+        "links": [
+            "Application:0:readFromSoftProdVulnerability",
+            "Application:0:modifyFromSoftProdVulnerability",
+            "Application:0:denyFromSoftProdVulnerability"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:useVulnerability",
+            "-:attemptDenyFromSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:readFromSoftProdVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "readFromSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:0:attemptRead"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:readFromSoftProdVulnerability",
+            "Hardware:read",
+            "IDPS:read",
+            "RoutingFirewall:read"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:modifyFromSoftProdVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "modifyFromSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:0:attemptModify"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:modifyFromSoftProdVulnerability",
+            "Hardware:modify",
+            "IDPS:modify",
+            "RoutingFirewall:modify"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:denyFromSoftProdVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "denyFromSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:0:attemptDeny"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyFromSoftProdVulnerability",
+            "-:denyFromNetworkingAsset",
+            "-:denyFromLockout",
+            "Hardware:deny",
+            "IDPS:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attemptApplicationRespondConnectThroughData",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attemptApplicationRespondConnectThroughData",
+        "ttc": null,
+        "links": [
+            "Application:0:successfulApplicationRespondConnectThroughData"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:attemptApplicationRespondConnectThroughData"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:successfulApplicationRespondConnectThroughData",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "successfulApplicationRespondConnectThroughData",
+        "ttc": null,
+        "links": [
+            "Application:0:applicationRespondConnectThroughData"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulApplicationRespondConnectThroughData"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:applicationRespondConnectThroughData",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "applicationRespondConnectThroughData",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attemptAuthorizedApplicationRespondConnectThroughData",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attemptAuthorizedApplicationRespondConnectThroughData",
+        "ttc": null,
+        "links": [
+            "Application:0:successfulAuthorizedApplicationRespondConnectThroughData"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:attemptAuthorizedApplicationRespondConnectThroughData"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:successfulAuthorizedApplicationRespondConnectThroughData",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "successfulAuthorizedApplicationRespondConnectThroughData",
+        "ttc": null,
+        "links": [
+            "Application:0:authorizedApplicationRespondConnectThroughData"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulAuthorizedApplicationRespondConnectThroughData"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:authorizedApplicationRespondConnectThroughData",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "authorizedApplicationRespondConnectThroughData",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attemptRead",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attemptRead",
+        "ttc": null,
+        "links": [
+            "Application:0:successfulRead"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:attemptRead"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:successfulRead",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "successfulRead",
+        "ttc": null,
+        "links": [
+            "Application:0:read"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulRead",
+            "SoftwareVulnerability:read"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:read",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "read",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:readFromSoftProdVulnerability",
+            "Hardware:read",
+            "IDPS:read",
+            "RoutingFirewall:read"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:specificAccessRead",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "specificAccessRead",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attemptModify",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attemptModify",
+        "ttc": null,
+        "links": [
+            "Application:0:successfulModify"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:attemptModify"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:successfulModify",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "successfulModify",
+        "ttc": null,
+        "links": [
+            "Application:0:modify"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulModify",
+            "SoftwareVulnerability:modify"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:modify",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "modify",
+        "ttc": null,
+        "links": [
+            "Application:0:fullAccess"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:0:specificAccessModify",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "specificAccessModify",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:0:attemptDeny",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "attemptDeny",
+        "ttc": null,
+        "links": [
+            "Application:0:successfulDeny"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:attemptDeny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:successfulDeny",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "successfulDeny",
+        "ttc": null,
+        "links": [
+            "Application:0:deny"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulDeny",
+            "SoftwareProduct:deny",
+            "Information:deny",
+            "Data:deny",
+            "IAMObject:deny",
+            "Identity:deny",
+            "Privileges:deny",
+            "Group:deny",
+            "Credentials:deny",
+            "SoftwareVulnerability:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:deny",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "deny",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyFromSoftProdVulnerability",
+            "-:denyFromNetworkingAsset",
+            "-:denyFromLockout",
+            "Hardware:deny",
+            "IDPS:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:specificAccessDelete",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "specificAccessDelete",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:0:denyFromNetworkingAsset",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "denyFromNetworkingAsset",
+        "ttc": null,
+        "links": [
+            "Application:0:attemptDeny"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyFromSoftProdVulnerability",
+            "-:denyFromNetworkingAsset",
+            "-:denyFromLockout",
+            "Hardware:deny",
+            "IDPS:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:0:denyFromLockout",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "0",
+        "atkname": "denyFromLockout",
+        "ttc": null,
+        "links": [
+            "Application:0:attemptDeny"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyFromSoftProdVulnerability",
+            "-:denyFromNetworkingAsset",
+            "-:denyFromLockout",
+            "Hardware:deny",
+            "IDPS:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:notPresent",
+        "type": "defense",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "notPresent",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "Application:1:successfulUseVulnerability",
+            "Application:1:successfulReverseReach",
+            "Application:1:networkConnectFromResponse",
+            "Application:1:specificAccessFromLocalConnection",
+            "Application:1:specificAccessFromNetworkConnection",
+            "Application:1:localAccess",
+            "Application:1:networkAccess",
+            "Application:1:successfulUnsafeUserActivity",
+            "Application:1:fullAccessFromSupplyChainCompromise",
+            "Application:1:readFromSoftProdVulnerability",
+            "Application:1:modifyFromSoftProdVulnerability",
+            "Application:1:denyFromSoftProdVulnerability",
+            "Application:1:successfulApplicationRespondConnectThroughData",
+            "Application:1:successfulAuthorizedApplicationRespondConnectThroughData",
+            "Application:1:successfulRead",
+            "Application:1:successfulModify",
+            "Application:1:successfulDeny"
+        ],
+        "is_reachable": false,
+        "defense_status": "unset",
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Application:1:attemptUseVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attemptUseVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:1:successfulUseVulnerability"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:1:successfulUseVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "successfulUseVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:1:useVulnerability"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulUseVulnerability"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:useVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "useVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:1:attemptSoftwareProductAbuse",
+            "Application:1:readFromSoftProdVulnerability",
+            "Application:1:modifyFromSoftProdVulnerability",
+            "Application:1:denyFromSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:useVulnerability",
+            "-:attemptDenyFromSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attemptReverseReach",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attemptReverseReach",
+        "ttc": null,
+        "links": [
+            "Application:1:successfulReverseReach"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:attemptReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:successfulReverseReach",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "successfulReverseReach",
+        "ttc": null,
+        "links": [
+            "Application:1:reverseReach"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:reverseReach",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "reverseReach",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:attemptReverseReach",
+            "Application:1:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "Application:1:networkConnectFromResponse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:reverseReach",
+            "-:attemptNetworkConnectFromResponse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:localConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "localConnect",
+        "ttc": null,
+        "links": [
+            "Application:1:localAccess",
+            "Application:1:specificAccessFromLocalConnection",
+            "Application:1:attemptUseVulnerability",
+            "Application:1:softwareProductVulnerabilityLocalAccessAchieved"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:localConnect",
+            "SoftwareVulnerability:localAccessRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:networkConnectUninspected",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "networkConnectUninspected",
+        "ttc": null,
+        "links": [
+            "Application:1:attemptUseVulnerability",
+            "Application:1:softwareProductVulnerabilityNetworkAccessAchieved",
+            "Application:1:networkConnect",
+            "Application:1:specificAccessNetworkConnect"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkConnectUninspected",
+            "-:networkConnectInspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:networkConnectInspected",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "networkConnectInspected",
+        "ttc": null,
+        "links": [
+            "Application:1:networkConnect",
+            "Application:1:specificAccessNetworkConnect"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkConnectUninspected",
+            "-:networkConnectInspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:networkConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "networkConnect",
+        "ttc": null,
+        "links": [
+            "Application:1:networkAccess"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:networkConnect",
+            "-:authenticate"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:specificAccessNetworkConnect",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "specificAccessNetworkConnect",
+        "ttc": null,
+        "links": [
+            "Application:1:specificAccessFromNetworkConnection"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:specificAccessNetworkConnect",
+            "-:specificAccessAuthenticate"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:accessNetworkAndConnections",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "accessNetworkAndConnections",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:attemptConnectToApplicationsUninspected",
+            "ConnectionRule:4:attemptConnectToApplicationsInspected",
+            "ConnectionRule:4:attemptAccessNetworksUninspected",
+            "ConnectionRule:4:attemptAccessNetworksInspected"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attemptNetworkConnectFromResponse",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attemptNetworkConnectFromResponse",
+        "ttc": null,
+        "links": [
+            "Application:1:networkConnectFromResponse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:reverseReach",
+            "-:attemptNetworkConnectFromResponse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:networkConnectFromResponse",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "networkConnectFromResponse",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Application:1:networkConnectUninspected"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkConnectFromResponse",
+            "-:unsafeUserActivity",
+            "Network:accessUninspected",
+            "RoutingFirewall:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:specificAccessFromLocalConnection",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "specificAccessFromLocalConnection",
+        "ttc": null,
+        "links": [
+            "Application:1:specificAccess"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccessFromLocalConnection",
+            "-:specificAccessFromNetworkConnection",
+            "-:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:specificAccessFromNetworkConnection",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "specificAccessFromNetworkConnection",
+        "ttc": null,
+        "links": [
+            "Application:1:specificAccess"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccessFromLocalConnection",
+            "-:specificAccessFromNetworkConnection",
+            "-:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:specificAccess",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "specificAccess",
+        "ttc": null,
+        "links": [
+            "Application:1:specificAccessRead",
+            "Application:1:specificAccessModify",
+            "Application:1:specificAccessDelete",
+            "Application:1:bypassContainerization",
+            "Application:1:attemptUseVulnerability",
+            "Application:1:attemptAuthorizedApplicationRespondConnectThroughData",
+            "Application:1:accessNetworkAndConnections"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccess",
+            "-:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:bypassContainerization",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "bypassContainerization",
+        "ttc": {
+            "type": "function",
+            "name": "HardAndUncertain",
+            "arguments": []
+        },
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:localConnect",
+            "-:networkConnectUninspected",
+            "-:specificAccess",
+            "IDPS:bypassContainerization",
+            "RoutingFirewall:bypassContainerization"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:authenticate",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "authenticate",
+        "ttc": null,
+        "links": [
+            "Application:1:localAccess",
+            "Application:1:networkAccess",
+            "Application:1:softwareProductVulnerabilityHighPrivilegesAchieved"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:authenticate",
+            "SoftwareVulnerability:highPrivilegesRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:specificAccessAuthenticate",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "specificAccessAuthenticate",
+        "ttc": null,
+        "links": [
+            "Application:1:specificAccessFromLocalConnection",
+            "Application:1:specificAccessFromNetworkConnection",
+            "Application:1:softwareProductVulnerabilityLowPrivilegesAchieved"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccessAuthenticate",
+            "SoftwareVulnerability:lowPrivilegesRequired"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:localAccess",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "localAccess",
+        "ttc": null,
+        "links": [
+            "Application:1:fullAccess"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessFromSupplyChainCompromise",
+            "-:modify",
+            "Hardware:fullAccess",
+            "SoftwareProduct:write",
+            "Information:write",
+            "Data:write",
+            "IAMObject:write",
+            "Identity:write",
+            "Privileges:write",
+            "Group:write",
+            "Credentials:write"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:networkAccess",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "networkAccess",
+        "ttc": null,
+        "links": [
+            "Application:1:fullAccess"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessFromSupplyChainCompromise",
+            "-:modify",
+            "Hardware:fullAccess",
+            "SoftwareProduct:write",
+            "Information:write",
+            "Data:write",
+            "IAMObject:write",
+            "Identity:write",
+            "Privileges:write",
+            "Group:write",
+            "Credentials:write"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:fullAccess",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "fullAccess",
+        "ttc": null,
+        "links": [
+            "Application:1:attemptRead",
+            "Application:1:attemptModify",
+            "Application:1:attemptDeny",
+            "Application:1:attemptApplicationRespondConnectThroughData",
+            "Application:1:accessNetworkAndConnections",
+            "Application:1:specificAccess"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:specificAccessFromLocalConnection",
+            "-:specificAccessFromNetworkConnection",
+            "-:fullAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:physicalAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "physicalAccessAchieved",
+        "ttc": null,
+        "links": [
+            "Application:1:softwareProductVulnerabilityPhysicalAccessAchieved"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "Hardware:hardwareModifications",
+            "Hardware:unsafeUserActivity",
+            "IDPS:physicalAccessAchieved",
+            "RoutingFirewall:physicalAccessAchieved"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attemptUnsafeUserActivity",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attemptUnsafeUserActivity",
+        "ttc": null,
+        "links": [
+            "Application:1:successfulUnsafeUserActivity",
+            "Application:1:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "Application:1:attackerUnsafeUserActivityCapabilityWithoutReverseReach"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:1:successfulUnsafeUserActivity",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "successfulUnsafeUserActivity",
+        "ttc": null,
+        "links": [
+            "Application:1:unsafeUserActivity"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulUnsafeUserActivity"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:unsafeUserActivity",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "unsafeUserActivity",
+        "ttc": null,
+        "links": [
+            "Application:1:localConnect",
+            "Application:1:networkConnectUninspected"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attackerUnsafeUserActivityCapability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attackerUnsafeUserActivityCapability",
+        "ttc": null,
+        "links": [
+            "Application:1:successfulUnsafeUserActivity"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:attemptUnsafeUserActivity",
+            "-:attackerUnsafeUserActivityCapability",
+            "IDPS:effectivenessBypassed"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attackerUnsafeUserActivityCapabilityWithReverseReach",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attackerUnsafeUserActivityCapabilityWithReverseReach",
+        "ttc": null,
+        "links": [
+            "Application:1:attackerUnsafeUserActivityCapability"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "-:attackerUnsafeUserActivityCapabilityWithoutReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attackerUnsafeUserActivityCapabilityWithoutReverseReach",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attackerUnsafeUserActivityCapabilityWithoutReverseReach",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Application:1:attackerUnsafeUserActivityCapability"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "-:attackerUnsafeUserActivityCapabilityWithoutReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:supplyChainAuditing",
+        "type": "defense",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "supplyChainAuditing",
+        "ttc": null,
+        "links": [
+            "Application:1:supplyChainAuditingBypassed"
+        ],
+        "is_reachable": false,
+        "defense_status": "unset",
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Application:1:bypassSupplyChainAuditing",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "bypassSupplyChainAuditing",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Application:1:supplyChainAuditingBypassed"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:supplyChainAuditing",
+            "-:bypassSupplyChainAuditing"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:supplyChainAuditingBypassed",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "supplyChainAuditingBypassed",
+        "ttc": null,
+        "links": [
+            "Application:1:fullAccessFromSupplyChainCompromise"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:supplyChainAuditingBypassed",
+            "-:attemptFullAccessFromSupplyChainCompromise"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attemptFullAccessFromSupplyChainCompromise",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attemptFullAccessFromSupplyChainCompromise",
+        "ttc": null,
+        "links": [
+            "Application:1:fullAccessFromSupplyChainCompromise",
+            "Application:1:bypassSupplyChainAuditing"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptFullAccessFromSupplyChainCompromise"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:fullAccessFromSupplyChainCompromise",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "fullAccessFromSupplyChainCompromise",
+        "ttc": null,
+        "links": [
+            "Application:1:fullAccess"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:localAccess",
+            "-:networkAccess",
+            "-:fullAccessFromSupplyChainCompromise",
+            "-:modify",
+            "Hardware:fullAccess",
+            "SoftwareProduct:write",
+            "Information:write",
+            "Data:write",
+            "IAMObject:write",
+            "Identity:write",
+            "Privileges:write",
+            "Group:write",
+            "Credentials:write"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attemptReadFromSoftProdVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attemptReadFromSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:1:readFromSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:useVulnerability",
+            "-:attemptReadFromSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attemptModifyFromSoftProdVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attemptModifyFromSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:1:modifyFromSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:useVulnerability",
+            "-:attemptModifyFromSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attemptDenyFromSoftProdVulnerability",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attemptDenyFromSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:1:denyFromSoftProdVulnerability"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:useVulnerability",
+            "-:attemptDenyFromSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:softwareCheck",
+        "type": "exist",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "softwareCheck",
+        "ttc": null,
+        "links": [
+            "Application:1:readFromSoftProdVulnerability",
+            "Application:1:modifyFromSoftProdVulnerability",
+            "Application:1:denyFromSoftProdVulnerability"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Application:1:softwareProductVulnerabilityLocalAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "softwareProductVulnerabilityLocalAccessAchieved",
+        "ttc": null,
+        "links": [
+            "Application:1:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:softwareProductVulnerabilityNetworkAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "softwareProductVulnerabilityNetworkAccessAchieved",
+        "ttc": null,
+        "links": [
+            "Application:1:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:softwareProductVulnerabilityPhysicalAccessAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "softwareProductVulnerabilityPhysicalAccessAchieved",
+        "ttc": null,
+        "links": [
+            "Application:1:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:softwareProductVulnerabilityLowPrivilegesAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "softwareProductVulnerabilityLowPrivilegesAchieved",
+        "ttc": null,
+        "links": [
+            "Application:1:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:softwareProductVulnerabilityHighPrivilegesAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "softwareProductVulnerabilityHighPrivilegesAchieved",
+        "ttc": null,
+        "links": [
+            "Application:1:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:softwareProductVulnerabilityUserInteractionAchieved",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "softwareProductVulnerabilityUserInteractionAchieved",
+        "ttc": null,
+        "links": [
+            "Application:1:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attemptSoftwareProductAbuse",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attemptSoftwareProductAbuse",
+        "ttc": null,
+        "links": [
+            "Application:1:softwareProductAbuse"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:softwareProductVulnerabilityLocalAccessAchieved",
+            "-:softwareProductVulnerabilityNetworkAccessAchieved",
+            "-:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "-:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "-:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "-:softwareProductVulnerabilityUserInteractionAchieved",
+            "-:attemptSoftwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:softwareProductAbuse",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "softwareProductAbuse",
+        "ttc": null,
+        "links": [
+            "Application:1:readFromSoftProdVulnerability",
+            "Application:1:modifyFromSoftProdVulnerability",
+            "Application:1:denyFromSoftProdVulnerability"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:useVulnerability",
+            "-:attemptDenyFromSoftProdVulnerability",
+            "-:softwareCheck",
+            "-:softwareProductAbuse"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:readFromSoftProdVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "readFromSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:1:attemptRead"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:readFromSoftProdVulnerability",
+            "Hardware:read",
+            "IDPS:read",
+            "RoutingFirewall:read"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:modifyFromSoftProdVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "modifyFromSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:1:attemptModify"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:modifyFromSoftProdVulnerability",
+            "Hardware:modify",
+            "IDPS:modify",
+            "RoutingFirewall:modify"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:denyFromSoftProdVulnerability",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "denyFromSoftProdVulnerability",
+        "ttc": null,
+        "links": [
+            "Application:1:attemptDeny"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyFromSoftProdVulnerability",
+            "-:denyFromNetworkingAsset",
+            "-:denyFromLockout",
+            "Hardware:deny",
+            "IDPS:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attemptApplicationRespondConnectThroughData",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attemptApplicationRespondConnectThroughData",
+        "ttc": null,
+        "links": [
+            "Application:1:successfulApplicationRespondConnectThroughData"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:attemptApplicationRespondConnectThroughData"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:successfulApplicationRespondConnectThroughData",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "successfulApplicationRespondConnectThroughData",
+        "ttc": null,
+        "links": [
+            "Application:1:applicationRespondConnectThroughData"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulApplicationRespondConnectThroughData"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:applicationRespondConnectThroughData",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "applicationRespondConnectThroughData",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attemptAuthorizedApplicationRespondConnectThroughData",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attemptAuthorizedApplicationRespondConnectThroughData",
+        "ttc": null,
+        "links": [
+            "Application:1:successfulAuthorizedApplicationRespondConnectThroughData"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:attemptAuthorizedApplicationRespondConnectThroughData"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:successfulAuthorizedApplicationRespondConnectThroughData",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "successfulAuthorizedApplicationRespondConnectThroughData",
+        "ttc": null,
+        "links": [
+            "Application:1:authorizedApplicationRespondConnectThroughData"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulAuthorizedApplicationRespondConnectThroughData"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:authorizedApplicationRespondConnectThroughData",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "authorizedApplicationRespondConnectThroughData",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attemptRead",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attemptRead",
+        "ttc": null,
+        "links": [
+            "Application:1:successfulRead"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:attemptRead"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:successfulRead",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "successfulRead",
+        "ttc": null,
+        "links": [
+            "Application:1:read"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulRead",
+            "SoftwareVulnerability:read"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:read",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "read",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:readFromSoftProdVulnerability",
+            "Hardware:read",
+            "IDPS:read",
+            "RoutingFirewall:read"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:specificAccessRead",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "specificAccessRead",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attemptModify",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attemptModify",
+        "ttc": null,
+        "links": [
+            "Application:1:successfulModify"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:attemptModify"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:successfulModify",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "successfulModify",
+        "ttc": null,
+        "links": [
+            "Application:1:modify"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulModify",
+            "SoftwareVulnerability:modify"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:modify",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "modify",
+        "ttc": null,
+        "links": [
+            "Application:1:fullAccess"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:1:specificAccessModify",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "specificAccessModify",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:1:attemptDeny",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "attemptDeny",
+        "ttc": null,
+        "links": [
+            "Application:1:successfulDeny"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:notPresent",
+            "-:attemptDeny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:successfulDeny",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "successfulDeny",
+        "ttc": null,
+        "links": [
+            "Application:1:deny"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulDeny",
+            "SoftwareProduct:deny",
+            "Information:deny",
+            "Data:deny",
+            "IAMObject:deny",
+            "Identity:deny",
+            "Privileges:deny",
+            "Group:deny",
+            "Credentials:deny",
+            "SoftwareVulnerability:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:deny",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "deny",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyFromSoftProdVulnerability",
+            "-:denyFromNetworkingAsset",
+            "-:denyFromLockout",
+            "Hardware:deny",
+            "IDPS:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:specificAccessDelete",
+        "type": "or",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "specificAccessDelete",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Application:1:denyFromNetworkingAsset",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "denyFromNetworkingAsset",
+        "ttc": null,
+        "links": [
+            "Application:1:attemptDeny"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyFromSoftProdVulnerability",
+            "-:denyFromNetworkingAsset",
+            "-:denyFromLockout",
+            "Hardware:deny",
+            "IDPS:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Application:1:denyFromLockout",
+        "type": "and",
+        "objclass": "Application",
+        "objid": "1",
+        "atkname": "denyFromLockout",
+        "ttc": null,
+        "links": [
+            "Application:1:attemptDeny"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:fullAccess",
+            "-:denyFromSoftProdVulnerability",
+            "-:denyFromNetworkingAsset",
+            "-:denyFromLockout",
+            "Hardware:deny",
+            "IDPS:deny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:physicalAccess",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "physicalAccess",
+        "ttc": null,
+        "links": [
+            "Network:2:deny",
+            "Network:2:attemptAccessUninspected",
+            "Network:2:attemptAccessInspected",
+            "Network:2:bypassEavesdropDefenseFromPhysicalAccess",
+            "Network:2:bypassAdversaryInTheMiddleDefenseFromPhysicalAccess"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:physicalAccess"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:bypassEavesdropDefenseFromPhysicalAccess",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "bypassEavesdropDefenseFromPhysicalAccess",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Network:2:eavesdropDefenseBypassed"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:bypassEavesdropDefenseFromPhysicalAccess",
+            "-:eavesdropDefense",
+            "-:bypassEavesdropDefense"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:bypassAdversaryInTheMiddleDefenseFromPhysicalAccess",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "bypassAdversaryInTheMiddleDefenseFromPhysicalAccess",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Network:2:adversaryInTheMiddleDefenseBypassed"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:bypassAdversaryInTheMiddleDefenseFromPhysicalAccess",
+            "-:adversaryInTheMiddleDefense",
+            "-:bypassAdversaryInTheMiddleDefense"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:networkAccessControl",
+        "type": "defense",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "networkAccessControl",
+        "ttc": null,
+        "links": [
+            "Network:2:accessControlBypassed"
+        ],
+        "is_reachable": false,
+        "defense_status": "unset",
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Network:2:bypassAccessControl",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "bypassAccessControl",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Network:2:accessControlBypassed"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:networkAccessControl",
+            "-:bypassAccessControl"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:accessControlBypassed",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "accessControlBypassed",
+        "ttc": null,
+        "links": [
+            "Network:2:successfulAccessUninspected",
+            "Network:2:successfulAccessInspected"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:accessControlBypassed",
+            "-:attemptAccessInspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:attemptAccessUninspected",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "attemptAccessUninspected",
+        "ttc": null,
+        "links": [
+            "Network:2:successfulAccessUninspected",
+            "Network:2:bypassAccessControl"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptAccessUninspected",
+            "-:attemptAccessInspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:attemptAccessInspected",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "attemptAccessInspected",
+        "ttc": null,
+        "links": [
+            "Network:2:successfulAccessInspected",
+            "Network:2:bypassAccessControl"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptAccessUninspected",
+            "-:attemptAccessInspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:successfulAccessUninspected",
+        "type": "and",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "successfulAccessUninspected",
+        "ttc": null,
+        "links": [
+            "Network:2:accessUninspected"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulAccessUninspected",
+            "Application:accessNetworkAndConnections",
+            "IDPS:accessNetworkAndConnections",
+            "RoutingFirewall:accessNetworkAndConnections"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:successfulAccessInspected",
+        "type": "and",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "successfulAccessInspected",
+        "ttc": null,
+        "links": [
+            "Network:2:accessInspected"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulAccessInspected",
+            "Application:accessNetworkAndConnections",
+            "IDPS:accessNetworkAndConnections",
+            "RoutingFirewall:accessNetworkAndConnections"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:accessUninspected",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "accessUninspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:attemptConnectToApplicationsUninspected",
+            "ConnectionRule:3:attemptConnectToApplicationsUninspected",
+            "Network:2:networkForwardingUninspected",
+            "Network:2:attemptReverseReach",
+            "Network:2:accessNetworkData",
+            "Network:2:deny"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:physicalAccess",
+            "-:accessUninspected",
+            "-:accessInspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:accessInspected",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "accessInspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:attemptConnectToApplicationsInspected",
+            "ConnectionRule:3:attemptConnectToApplicationsInspected",
+            "Network:2:networkForwardingInspected",
+            "Network:2:accessNetworkData",
+            "Network:2:deny"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:physicalAccess",
+            "-:accessUninspected",
+            "-:accessInspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:attemptReverseReach",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "attemptReverseReach",
+        "ttc": null,
+        "links": [
+            "Network:2:reverseReach"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:reverseReach",
+        "type": "and",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "reverseReach",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:attemptReverseReach",
+            "ConnectionRule:3:attemptReverseReach"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:accessUninspected",
+            "Application:reverseReach",
+            "IDPS:reverseReach",
+            "RoutingFirewall:reverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:networkForwardingUninspected",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "networkForwardingUninspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:attemptAccessNetworksUninspected",
+            "ConnectionRule:3:attemptAccessNetworksUninspected",
+            "ConnectionRule:4:attemptConnectToApplicationsUninspected",
+            "ConnectionRule:3:attemptConnectToApplicationsUninspected",
+            "Network:2:networkForwardingInspected"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:accessInspected",
+            "-:networkForwardingUninspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:networkForwardingInspected",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "networkForwardingInspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:attemptAccessNetworksInspected",
+            "ConnectionRule:3:attemptAccessNetworksInspected",
+            "ConnectionRule:4:attemptConnectToApplicationsInspected",
+            "ConnectionRule:3:attemptConnectToApplicationsInspected"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Network:2:deny",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "deny",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:attemptDeny",
+            "ConnectionRule:3:attemptDeny"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Network:2:accessNetworkData",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "accessNetworkData",
+        "ttc": null,
+        "links": [
+            "Network:2:attemptEavesdrop",
+            "Network:2:attemptAdversaryInTheMiddle"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:accessNetworkData"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:eavesdropDefense",
+        "type": "defense",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "eavesdropDefense",
+        "ttc": null,
+        "links": [
+            "Network:2:eavesdropDefenseBypassed"
+        ],
+        "is_reachable": false,
+        "defense_status": "unset",
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Network:2:bypassEavesdropDefense",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "bypassEavesdropDefense",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Network:2:eavesdropDefenseBypassed"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:bypassEavesdropDefenseFromPhysicalAccess",
+            "-:eavesdropDefense",
+            "-:bypassEavesdropDefense"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:eavesdropDefenseBypassed",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "eavesdropDefenseBypassed",
+        "ttc": null,
+        "links": [
+            "Network:2:successfulEavesdrop"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:eavesdropDefenseBypassed",
+            "-:attemptEavesdrop"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:attemptEavesdrop",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "attemptEavesdrop",
+        "ttc": null,
+        "links": [
+            "Network:2:successfulEavesdrop",
+            "Network:2:bypassEavesdropDefense"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptEavesdrop"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:successfulEavesdrop",
+        "type": "and",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "successfulEavesdrop",
+        "ttc": null,
+        "links": [
+            "Network:2:eavesdrop"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulEavesdrop",
+            "-:adversaryInTheMiddle"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:eavesdrop",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "eavesdrop",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "Network:2:adversaryInTheMiddleDefense",
+        "type": "defense",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "adversaryInTheMiddleDefense",
+        "ttc": null,
+        "links": [
+            "Network:2:adversaryInTheMiddleDefenseBypassed"
+        ],
+        "is_reachable": false,
+        "defense_status": "unset",
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "Network:2:bypassAdversaryInTheMiddleDefense",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "bypassAdversaryInTheMiddleDefense",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "Network:2:adversaryInTheMiddleDefenseBypassed"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:bypassAdversaryInTheMiddleDefenseFromPhysicalAccess",
+            "-:adversaryInTheMiddleDefense",
+            "-:bypassAdversaryInTheMiddleDefense"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:adversaryInTheMiddleDefenseBypassed",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "adversaryInTheMiddleDefenseBypassed",
+        "ttc": null,
+        "links": [
+            "Network:2:successfulAdversaryInTheMiddle"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:adversaryInTheMiddleDefenseBypassed",
+            "-:attemptAdversaryInTheMiddle"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:attemptAdversaryInTheMiddle",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "attemptAdversaryInTheMiddle",
+        "ttc": null,
+        "links": [
+            "Network:2:successfulAdversaryInTheMiddle",
+            "Network:2:bypassAdversaryInTheMiddleDefense"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptAdversaryInTheMiddle"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:successfulAdversaryInTheMiddle",
+        "type": "and",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "successfulAdversaryInTheMiddle",
+        "ttc": null,
+        "links": [
+            "Network:2:adversaryInTheMiddle"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulAdversaryInTheMiddle"
+        ],
+        "extra": null
+    },
+    {
+        "id": "Network:2:adversaryInTheMiddle",
+        "type": "or",
+        "objclass": "Network",
+        "objid": "2",
+        "atkname": "adversaryInTheMiddle",
+        "ttc": null,
+        "links": [
+            "Network:2:eavesdrop"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:restricted",
+        "type": "defense",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "restricted",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "ConnectionRule:3:restrictedBypassed"
+        ],
+        "is_reachable": false,
+        "defense_status": "unset",
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:bypassRestricted",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "bypassRestricted",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "ConnectionRule:3:restrictedBypassed"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:restricted",
+            "-:bypassRestricted"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:restrictedBypassed",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "restrictedBypassed",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:3:successfulAccessNetworksUninspected",
+            "ConnectionRule:3:successfulAccessNetworksInspected",
+            "ConnectionRule:3:connectToApplicationsUninspected",
+            "ConnectionRule:3:connectToApplicationsInspected",
+            "ConnectionRule:3:deny",
+            "ConnectionRule:3:reverseReach"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:restrictedBypassed",
+            "-:payloadInspectionBypassed",
+            "-:attemptReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:payloadInspection",
+        "type": "defense",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "payloadInspection",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "ConnectionRule:3:payloadInspectionBypassed"
+        ],
+        "is_reachable": false,
+        "defense_status": "unset",
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:bypassPayloadInspection",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "bypassPayloadInspection",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "ConnectionRule:3:payloadInspectionBypassed"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:payloadInspection",
+            "-:bypassPayloadInspection"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:payloadInspectionBypassed",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "payloadInspectionBypassed",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:3:successfulAccessNetworksUninspected",
+            "ConnectionRule:3:connectToApplicationsUninspected",
+            "ConnectionRule:3:reverseReach"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:restrictedBypassed",
+            "-:payloadInspectionBypassed",
+            "-:attemptReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:attemptReverseReach",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "attemptReverseReach",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:3:reverseReach",
+            "ConnectionRule:3:bypassRestricted",
+            "ConnectionRule:3:bypassPayloadInspection"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptReverseReach",
+            "-:attemptConnectToApplicationsUninspected",
+            "-:attemptConnectToApplicationsInspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:reverseReach",
+        "type": "and",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "reverseReach",
+        "ttc": null,
+        "links": [
+            "Application:0:attemptReverseReach"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:attemptAccessNetworksUninspected",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "attemptAccessNetworksUninspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:3:successfulAccessNetworksUninspected",
+            "ConnectionRule:3:bypassRestricted"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptReverseReach",
+            "-:attemptAccessNetworksUninspected",
+            "-:attemptAccessNetworksInspected",
+            "-:attemptConnectToApplicationsUninspected",
+            "-:attemptConnectToApplicationsInspected",
+            "-:attemptDeny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:attemptAccessNetworksInspected",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "attemptAccessNetworksInspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:3:successfulAccessNetworksInspected",
+            "ConnectionRule:3:bypassRestricted"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptReverseReach",
+            "-:attemptAccessNetworksUninspected",
+            "-:attemptAccessNetworksInspected",
+            "-:attemptConnectToApplicationsUninspected",
+            "-:attemptConnectToApplicationsInspected",
+            "-:attemptDeny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:successfulAccessNetworksUninspected",
+        "type": "and",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "successfulAccessNetworksUninspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:3:accessNetworksUninspected"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulAccessNetworksUninspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:successfulAccessNetworksInspected",
+        "type": "and",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "successfulAccessNetworksInspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:3:accessNetworksInspected"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulAccessNetworksInspected",
+            "-:accessNetworksUninspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:accessNetworksUninspected",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "accessNetworksUninspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:3:accessNetworksInspected"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulAccessNetworksInspected",
+            "-:accessNetworksUninspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:accessNetworksInspected",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "accessNetworksInspected",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulAccessNetworksInspected",
+            "-:accessNetworksUninspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:attemptConnectToApplicationsUninspected",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "attemptConnectToApplicationsUninspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:3:connectToApplicationsUninspected",
+            "ConnectionRule:3:bypassRestricted",
+            "ConnectionRule:3:bypassPayloadInspection"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptReverseReach",
+            "-:attemptConnectToApplicationsUninspected",
+            "-:attemptConnectToApplicationsInspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:attemptConnectToApplicationsInspected",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "attemptConnectToApplicationsInspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:3:connectToApplicationsInspected",
+            "ConnectionRule:3:bypassRestricted",
+            "ConnectionRule:3:bypassPayloadInspection"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptReverseReach",
+            "-:attemptConnectToApplicationsUninspected",
+            "-:attemptConnectToApplicationsInspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:connectToApplicationsUninspected",
+        "type": "and",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "connectToApplicationsUninspected",
+        "ttc": null,
+        "links": [
+            "Application:0:networkConnectUninspected",
+            "Application:0:networkConnectInspected"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:connectToApplicationsInspected",
+        "type": "and",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "connectToApplicationsInspected",
+        "ttc": null,
+        "links": [
+            "Application:0:networkConnectInspected"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:attemptDeny",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "attemptDeny",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:3:deny",
+            "ConnectionRule:3:bypassRestricted"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptReverseReach",
+            "-:attemptAccessNetworksUninspected",
+            "-:attemptAccessNetworksInspected",
+            "-:attemptConnectToApplicationsUninspected",
+            "-:attemptConnectToApplicationsInspected",
+            "-:attemptDeny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:3:deny",
+        "type": "and",
+        "objclass": "ConnectionRule",
+        "objid": "3",
+        "atkname": "deny",
+        "ttc": null,
+        "links": [
+            "Application:0:denyFromNetworkingAsset"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:restricted",
+        "type": "defense",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "restricted",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "ConnectionRule:4:restrictedBypassed"
+        ],
+        "is_reachable": false,
+        "defense_status": "unset",
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:bypassRestricted",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "bypassRestricted",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "ConnectionRule:4:restrictedBypassed"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:restricted",
+            "-:bypassRestricted"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:restrictedBypassed",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "restrictedBypassed",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:successfulAccessNetworksUninspected",
+            "ConnectionRule:4:successfulAccessNetworksInspected",
+            "ConnectionRule:4:connectToApplicationsUninspected",
+            "ConnectionRule:4:connectToApplicationsInspected",
+            "ConnectionRule:4:deny",
+            "ConnectionRule:4:reverseReach"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:restrictedBypassed",
+            "-:payloadInspectionBypassed",
+            "-:attemptReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:payloadInspection",
+        "type": "defense",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "payloadInspection",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "links": [
+            "ConnectionRule:4:payloadInspectionBypassed"
+        ],
+        "is_reachable": false,
+        "defense_status": "unset",
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": null,
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:bypassPayloadInspection",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "bypassPayloadInspection",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "links": [
+            "ConnectionRule:4:payloadInspectionBypassed"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:payloadInspection",
+            "-:bypassPayloadInspection"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:payloadInspectionBypassed",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "payloadInspectionBypassed",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:successfulAccessNetworksUninspected",
+            "ConnectionRule:4:connectToApplicationsUninspected",
+            "ConnectionRule:4:reverseReach"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:restrictedBypassed",
+            "-:payloadInspectionBypassed",
+            "-:attemptReverseReach"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:attemptReverseReach",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "attemptReverseReach",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:reverseReach",
+            "ConnectionRule:4:bypassRestricted",
+            "ConnectionRule:4:bypassPayloadInspection"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptReverseReach",
+            "-:attemptConnectToApplicationsUninspected",
+            "-:attemptConnectToApplicationsInspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:reverseReach",
+        "type": "and",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "reverseReach",
+        "ttc": null,
+        "links": [
+            "Application:1:attemptReverseReach"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:attemptAccessNetworksUninspected",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "attemptAccessNetworksUninspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:successfulAccessNetworksUninspected",
+            "ConnectionRule:4:bypassRestricted"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptReverseReach",
+            "-:attemptAccessNetworksUninspected",
+            "-:attemptAccessNetworksInspected",
+            "-:attemptConnectToApplicationsUninspected",
+            "-:attemptConnectToApplicationsInspected",
+            "-:attemptDeny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:attemptAccessNetworksInspected",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "attemptAccessNetworksInspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:successfulAccessNetworksInspected",
+            "ConnectionRule:4:bypassRestricted"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptReverseReach",
+            "-:attemptAccessNetworksUninspected",
+            "-:attemptAccessNetworksInspected",
+            "-:attemptConnectToApplicationsUninspected",
+            "-:attemptConnectToApplicationsInspected",
+            "-:attemptDeny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:successfulAccessNetworksUninspected",
+        "type": "and",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "successfulAccessNetworksUninspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:accessNetworksUninspected"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulAccessNetworksUninspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:successfulAccessNetworksInspected",
+        "type": "and",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "successfulAccessNetworksInspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:accessNetworksInspected"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulAccessNetworksInspected",
+            "-:accessNetworksUninspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:accessNetworksUninspected",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "accessNetworksUninspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:accessNetworksInspected"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulAccessNetworksInspected",
+            "-:accessNetworksUninspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:accessNetworksInspected",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "accessNetworksInspected",
+        "ttc": null,
+        "links": [],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:successfulAccessNetworksInspected",
+            "-:accessNetworksUninspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:attemptConnectToApplicationsUninspected",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "attemptConnectToApplicationsUninspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:connectToApplicationsUninspected",
+            "ConnectionRule:4:bypassRestricted",
+            "ConnectionRule:4:bypassPayloadInspection"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptReverseReach",
+            "-:attemptConnectToApplicationsUninspected",
+            "-:attemptConnectToApplicationsInspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:attemptConnectToApplicationsInspected",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "attemptConnectToApplicationsInspected",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:connectToApplicationsInspected",
+            "ConnectionRule:4:bypassRestricted",
+            "ConnectionRule:4:bypassPayloadInspection"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptReverseReach",
+            "-:attemptConnectToApplicationsUninspected",
+            "-:attemptConnectToApplicationsInspected"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:connectToApplicationsUninspected",
+        "type": "and",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "connectToApplicationsUninspected",
+        "ttc": null,
+        "links": [
+            "Application:1:networkConnectUninspected",
+            "Application:1:networkConnectInspected"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:connectToApplicationsInspected",
+        "type": "and",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "connectToApplicationsInspected",
+        "ttc": null,
+        "links": [
+            "Application:1:networkConnectInspected"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:attemptDeny",
+        "type": "or",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "attemptDeny",
+        "ttc": null,
+        "links": [
+            "ConnectionRule:4:deny",
+            "ConnectionRule:4:bypassRestricted"
+        ],
+        "is_reachable": true,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [
+            "-:attemptReverseReach",
+            "-:attemptAccessNetworksUninspected",
+            "-:attemptAccessNetworksInspected",
+            "-:attemptConnectToApplicationsUninspected",
+            "-:attemptConnectToApplicationsInspected",
+            "-:attemptDeny"
+        ],
+        "extra": null
+    },
+    {
+        "id": "ConnectionRule:4:deny",
+        "type": "and",
+        "objclass": "ConnectionRule",
+        "objid": "4",
+        "atkname": "deny",
+        "ttc": null,
+        "links": [
+            "Application:1:denyFromNetworkingAsset"
+        ],
+        "is_reachable": false,
+        "defense_status": null,
+        "graph_type": "attackgraph",
+        "is_traversable": false,
+        "required_steps": [],
+        "extra": null
+    }
+]
