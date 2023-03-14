@@ -20,7 +20,8 @@ def test_sim_observe(simulator: AttackSimulator) -> None:
 
 def test_sim_step(simulator: AttackSimulator) -> None:
     # Take a step
-    simulator.step([(AGENT_DEFENDER, ACTION_WAIT), (AGENT_ATTACKER, ACTION_WAIT)])
+    actions = {AGENT_ATTACKER: ACTION_WAIT, AGENT_DEFENDER: ACTION_WAIT}
+    simulator.step(actions)
 
     # Check that the time has advanced
     assert simulator.time == 1
