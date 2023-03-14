@@ -1,0 +1,72 @@
+{
+  "metadata": {
+    "langVersion": "1.0.0",
+    "langID": "org.mal-lang.coreLang",
+    "malVersion": "0.1.0-SNAPSHOT",
+    "info": "Created by the modeller python module"
+  },
+  "objects": {
+    "0": {
+      "name": "DESKTOP-59RTKP0",
+      "metaconcept": "Application",
+      "eid": "0"
+    },
+    "1": {
+      "name": "andrewbwm-VirtualBox",
+      "metaconcept": "Application",
+      "eid": "1"
+    },
+    "2": {
+      "name": "192.168.15.0/24",
+      "metaconcept": "Network",
+      "eid": "2"
+    },
+    "3": {
+      "name": "CR DESKTOP-59RTKP0-192.168.15.0/24",
+      "metaconcept": "ConnectionRule",
+      "eid": "3"
+    },
+    "4": {
+      "name": "CR andrewbwm-VirtualBox-192.168.15.0/24",
+      "metaconcept": "ConnectionRule",
+      "eid": "4"
+    },
+    "5": {
+      "name": "Test Software Vulnerability",
+      "metaconcept": "SoftwareVulnerability",
+      "eid": "5"
+    }
+  },
+  "associations": [
+    {
+      "id1": "0",
+      "id2": "3",
+      "type1": "applications",
+      "type2": "appConnections"
+    },
+    {
+      "id1": "2",
+      "id2": "3",
+      "type1": "networks",
+      "type2": "netConnections"
+    },
+    {
+      "id1": "1",
+      "id2": "4",
+      "type1": "applications",
+      "type2": "appConnections"
+    },
+    {
+      "id1": "2",
+      "id2": "4",
+      "type1": "networks",
+      "type2": "netConnections"
+    },
+    {
+      "id1": "5",
+      "id2": "0",
+      "type1": "vulnerabilities",
+      "type2": "application"
+    }
+  ]
+}
