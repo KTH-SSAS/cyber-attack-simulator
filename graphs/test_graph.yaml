@@ -33,6 +33,7 @@ attack_graph:
   - asset: b
     id: b.capture
     name: capture
+    children: []
     ttc: 1
     step_type: or
 
@@ -54,6 +55,7 @@ attack_graph:
 
   - asset: d
     id: d.capture
+    children: []
     name: capture
     ttc: 1
     step_type: or
@@ -76,7 +78,7 @@ attack_graph:
     step_type: or
     ttc: 1
 
-flags:
+flags: 
   b.capture: low_flag
   d.capture: high_flag
 

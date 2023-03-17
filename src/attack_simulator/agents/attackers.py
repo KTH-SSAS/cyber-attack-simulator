@@ -22,7 +22,7 @@ logger = logging.getLogger("simulator")
 class RandomAttacker(Agent):
     def __init__(self, agent_config: dict) -> None:
         super().__init__(agent_config)
-        self.rng, _ = get_rng(agent_config.get("random_seed"))
+        self.rng, _ = get_rng(agent_config.get("seed"))
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
         attack_surface = observation["attack_surface"]

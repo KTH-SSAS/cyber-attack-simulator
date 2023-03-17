@@ -54,7 +54,7 @@ class TripwirePolicy(Policy):
             torch.Tensor(input_dict["obs"]), self.observation_space, "numpy"
         )
 
-        sim_state: Tensor = obs["sim_obs"].type(torch.FloatTensor)
+        sim_state: Tensor = obs["ids_observation"].type(torch.FloatTensor)
 
         attack_state = sim_state[:, self.num_defense_steps :]
         defense_state = sim_state[:, : self.num_defense_steps]

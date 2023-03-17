@@ -39,9 +39,12 @@ def get_tweaked_rng(seed: Optional[int] = None) -> Tuple[np.random.Generator, in
 
 
 def get_rng(seed: Optional[int] = None) -> Tuple[np.random.Generator, int]:
-    new_seed = np.random.SeedSequence(None).entropy if seed is None else seed
-    assert isinstance(new_seed, int)
-    return np.random.default_rng(new_seed), new_seed
+    new_seed = int(np.random.SeedSequence(None).entropy) if seed is None else seed
+
+    long_seed = np.uint64(0)
+    long_seed = np.bitwise_or(long_seed, new_seed)
+
+    return np.random.default_rng(long_seed), long_seed
 
 
 def set_seeds_from_bytes(seed: Optional[int] = None) -> Tuple[int, int]:

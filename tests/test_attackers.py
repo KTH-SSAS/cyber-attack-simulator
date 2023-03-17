@@ -10,6 +10,7 @@ from attack_simulator.agents import (  # InformedAttacker,; RandomNoActionAttack
 )
 from attack_simulator.agents.searchers import BreadthFirstAttacker, DepthFirstAttacker
 from attack_simulator.constants import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER
+from attack_simulator.observation import obs_to_dict
 from attack_simulator.sim import AttackSimulator
 
 
@@ -26,30 +27,29 @@ from attack_simulator.sim import AttackSimulator
         DepthFirstAttacker,
     ],
 )
-def test_sim_attacker_actions(simulator: AttackSimulator, attacker_class) -> None:
+def test_sim_attacker_actions(simulator: AttackSimulator, attack_graph, attacker_class) -> None:
     done = False
-    obs, _ = simulator.reset()
+    obs, info = simulator.reset()
 
     total_ttc = simulator.ttc_total
 
     attacker: Agent = attacker_class(
         dict(
-            attack_graph=simulator.g,
+            attack_graph=attack_graph,
             num_special_actions=2,
             terminate_action=ACTION_TERMINATE,
             wait_action=ACTION_WAIT,
+            seed=42,
         )
     )
 
-    while simulator.time < total_ttc and not done:
-        action = attacker.compute_action_from_dict(obs)
+    while info.time <= total_ttc and not done:
+        action = attacker.compute_action_from_dict(obs_to_dict(obs))
+        assert action != ACTION_TERMINATE
+        assert action != ACTION_WAIT
         obs, info = simulator.step(OrderedDict([(AGENT_ATTACKER, action)]))
 
-        assert info["prev_action_valid"][
-            AGENT_ATTACKER
-        ], f"Invalid attack step {action-attacker.num_special_actions}. Valid steps are {simulator.valid_attacks}."
-
-        done = not obs["attack_surface"].any()
+        done = not any(obs.attack_surface)
 
     assert done, "Attacker failed to explore all attack steps"
 
