@@ -5,6 +5,7 @@ from typing import Callable, Dict, Optional
 import numpy as np
 import torch
 import torch.nn as nn
+from gymnasium.spaces import Box
 from ray.rllib.algorithms.algorithm_config import AlgorithmConfig, NotProvided
 from ray.rllib.algorithms.dqn.dqn_torch_model import DQNTorchModel
 from ray.rllib.algorithms.ppo import PPO
@@ -109,12 +110,14 @@ class DefenderModel(TorchModelV2, nn.Module):
 
     _value_out: Tensor
 
-    def __init__(self, obs_space, action_space, num_outputs, model_config, name, **kwargs) -> None:
+    def __init__(
+        self, obs_space: Box, action_space, num_outputs, model_config, name, **kwargs
+    ) -> None:
         TorchModelV2.__init__(self, obs_space, action_space, num_outputs, model_config, name)
         nn.Module.__init__(self)
 
         self.obs_space = obs_space
-        sim_space = obs_space.original_space.spaces["sim_obs"]
+        sim_space = obs_space.original_space.spaces["ids_observation"]
         self.action_space = action_space
         self.num_outputs = num_outputs
         activation_func = nn.Tanh
@@ -147,7 +150,7 @@ class DefenderModel(TorchModelV2, nn.Module):
     def forward(self, input_dict, state, seq_lens):
         obs = input_dict["obs"]
 
-        sim_state: Tensor = obs["sim_obs"].type(torch.FloatTensor)
+        sim_state: Tensor = obs["ids_observation"].type(torch.FloatTensor)
         action_mask: Tensor = obs["action_mask"].type(torch.FloatTensor)
 
         if self.use_cuda:
@@ -194,7 +197,7 @@ class DQNDefenderModel(DQNTorchModel):
         DQNTorchModel.__init__(self, obs_space, action_space, num_outputs, model_config, name, **kw)
 
         self.obs_space = obs_space
-        sim_space = obs_space.original_space.spaces["sim_obs"]
+        sim_space = obs_space.original_space.spaces["ids_observation"]
         self.action_space = action_space
         self.num_outputs = num_outputs
         hidden_dim = 256
@@ -218,7 +221,7 @@ class DQNDefenderModel(DQNTorchModel):
     def forward(self, input_dict, state, seq_lens):
         obs = input_dict["obs"]
 
-        sim_state: Tensor = obs["sim_obs"].type(torch.FloatTensor)
+        sim_state: Tensor = obs["ids_observation"].type(torch.FloatTensor)
         action_mask: Tensor = obs["action_mask"].type(torch.FloatTensor)
 
         if action_mask.sum().item() == 0:

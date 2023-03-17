@@ -19,5 +19,3 @@ def test_sim_defender_actions(simulator: AttackSimulator, defender_class) -> Non
     obs, _ = simulator.reset()
 
     total_ttc = simulator.ttc_total
-
-    pass

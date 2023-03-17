@@ -156,6 +156,7 @@ attack_graph:
   
   step_type: or
   ttc: 8
+
 flags:
   flag-11-take-11: high_flag
   flag-19-take-19: high_flag

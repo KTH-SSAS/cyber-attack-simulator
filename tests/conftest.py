@@ -8,6 +8,7 @@ import pytest
 from attack_simulator.config import EnvConfig, GraphConfig
 from attack_simulator.env import AttackSimulationEnv
 from attack_simulator.graph import AttackGraph
+from attack_simulator.rust_wrapper import rust_sim_init
 from attack_simulator.sim import AttackSimulator
 
 
@@ -62,18 +63,35 @@ def fixture_graph(graph_config: GraphConfig) -> AttackGraph:
 @pytest.fixture(scope="session", name="env_config")
 def fixture_env_config(config_yaml: Path) -> EnvConfig:
     config: EnvConfig = EnvConfig.from_yaml(config_yaml)
-    dataclasses.replace(config, attacker="well-informed")
     return config
 
 
-@pytest.fixture(scope="session", name="env")
-def fixture_env(env_config: EnvConfig) -> AttackSimulationEnv:
+@pytest.fixture(
+    scope="session",
+    name="env",
+    params=[
+        pytest.param("python", id="python"),
+        pytest.param("rust", id="rust"),
+    ],
+)
+def fixture_env(request) -> AttackSimulationEnv:
+    env_config = request.getfixturevalue("env_config")
+    env_config.replace(backend=request.param)
     return AttackSimulationEnv(env_config)
 
 
-@pytest.fixture(name="simulator")
-def fixture_simulator(env_config: EnvConfig, attack_graph: AttackGraph) -> AttackSimulator:
-    return AttackSimulator(env_config.sim_config, attack_graph)
+@pytest.fixture(
+    name="simulator",
+    params=[
+        pytest.param(AttackSimulator, id="python"),
+        pytest.param(rust_sim_init, id="rust"),
+    ],
+)
+def fixture_simulator(request) -> AttackSimulator:
+    config_yaml = Path("config/test_config.yaml")
+    config: EnvConfig = EnvConfig.from_yaml(config_yaml)
+    graph = AttackGraph(config.graph_config)
+    return request.param(config.sim_config, graph)
 
 
 @pytest.fixture(scope="session")

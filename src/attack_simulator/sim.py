@@ -1,6 +1,6 @@
 import pickle
 from collections import OrderedDict
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Callable, Dict, List, Optional, Set, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -12,6 +12,8 @@ from attack_simulator.constants import (
     UINT,
     special_actions,
 )
+from attack_simulator.observation import Info, Observation
+from attack_simulator.rng import get_rng
 
 from .config import SimulatorConfig
 from .graph import AttackGraph
@@ -110,7 +112,7 @@ class AttackSimulator:
     def valid_defenses(self) -> NDArray[np.intp]:
         return np.flatnonzero(self.defense_state)
 
-    def reset(self, seed: Optional[UINT] = None) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def reset(self, seed: Optional[UINT] = None) -> Tuple[Observation, Info]:
         if seed is None:
             seed = self.config.seed
 
@@ -132,7 +134,7 @@ class AttackSimulator:
 
         self.ttc_remaining, self.ttc_total = self.get_initial_ttc_vals(self.attack_start_time)
         self.attack_surface = self.get_initial_attack_surface(self.attack_start_time)
-        return self.get_obs_dict(None), self.info()
+        return self.get_obs_dict(), self.info()
 
     def get_initial_state(
         self, seed: int
@@ -151,6 +153,7 @@ class AttackSimulator:
         OrderedDict[str, UINT],
         Dict[str, bool],
     ]:
+        rng = get_rng(seed)[0]
         return (
             0,  # time
             np.ones(self.g.num_services, dtype="int8"),  # service state
@@ -159,17 +162,15 @@ class AttackSimulator:
             np.zeros(self.g.num_attacks, dtype="int8"),  # false positives
             np.zeros(self.g.num_attacks, dtype="int8"),  # false negatives
             np.zeros(self.g.num_attacks, dtype="int8"),  # last observation
-            np.random.default_rng(seed),  # rng
-            np.random.default_rng(seed).random(self.g.num_attacks, dtype=np.float64),  # noise
-            UINT(
-                np.random.default_rng(seed).exponential(self.config.attack_start_time)
-            ),  # attack start time
+            rng,  # rng
+            rng.random(self.g.num_attacks, dtype=np.float64),  # noise
+            UINT(rng.exponential(self.config.attack_start_time)),  # attack start time
             0,  # num observed alerts
             OrderedDict([(AGENT_ATTACKER, self.entry_attack_index), (AGENT_DEFENDER, UINT(0))]),
             {AGENT_ATTACKER: False, AGENT_DEFENDER: False},
         )
 
-    def step(self, actions: OrderedDict[str, UINT]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def step(self, actions: OrderedDict[str, UINT]) -> Tuple[Observation, Info]:
         self.prev_actions = actions
 
         funcs: Dict[str, Callable[[UINT], Tuple[NDArray[np.int8], bool]]] = {
@@ -198,19 +199,16 @@ class AttackSimulator:
         self.noise = self.rng.random(self.attack_state.shape, dtype=np.float64)
         self.valid_actions = valid_actions
 
-        return self.get_obs_dict(difference), self.info()
+        return self.get_obs_dict(), self.info()
 
-    def get_obs_dict(self, affected_steps: Optional[NDArray[np.int8]] = None) -> Dict[str, Any]:
-        return {
-            "ids_observation": self.ids_observe(),
-            "attack_surface": self.attack_surface,
-            "attack_state": self.attack_state,
-            "defense_state": self.defense_state,
-            "ttc_remaining": self.ttc_remaining,
-            "affected_steps": np.zeros(self.num_attack_steps, dtype=np.int8)
-            if affected_steps is None
-            else affected_steps,
-        }
+    def get_obs_dict(self) -> Observation:
+        return Observation(
+            self.ids_observe(),
+            self.attack_surface,
+            self.defense_state,
+            self.ttc_remaining,
+            self.attack_state,
+        )
 
     def enable_defense_step(self, defense_idx: UINT) -> Tuple[NDArray[np.int8], bool]:
         """Enable (disable) a defense step."""
@@ -289,31 +287,16 @@ class AttackSimulator:
     def _get_vulnerable_children(self, attack_index: UINT) -> List[UINT]:
         return self.g.get_vulnerable_children(attack_index, self.attack_state, self.defense_state)
 
-    def info(self) -> Dict[str, Any]:
-        current_step, ttc_remaining = self.current_attack_step()
-        return {
-            "time": self.time,
-            "current_step": current_step,
-            "ttc_remaining_on_current_step": ttc_remaining,
-            "num_compromised_steps": len(self.compromised_steps),
-            "num_compromised_flags": len(self.compromised_flags),
-            "perc_compromised_steps": len(self.compromised_steps) / self.num_attack_steps,
-            "perc_compromised_flags": len(self.compromised_flags) / self.num_flags,
-            "perc_defenses_activated": sum(np.logical_not(self.defense_state))
-            / self.num_defense_steps,
-            "prev_action_valid": self.valid_actions,
-        }
-
-    def summary(self) -> Dict[str, Any]:
-        """Return a summary of the episode."""
-        return {
-            "attacker_start_time": self.attack_start_time,
-            "num_defenses": self.num_defense_steps,
-            "num_attack_steps": self.num_attack_steps,
-            "defense_costs": self.g.defense_costs,
-            "flag_costs": self.g.flag_rewards,
-            "num_observed_alerts": self.num_observed_alerts,
-        }
+    def info(self) -> Info:
+        return Info(
+            self.time,
+            len(self.compromised_steps),
+            len(self.compromised_flags),
+            len(self.compromised_flags) / self.num_flags,
+            len(self.compromised_steps) / self.num_attack_steps,
+            sum(np.logical_not(self.defense_state)) / self.num_defense_steps,
+            self.num_observed_alerts,
+        )
 
     def interpret_defender_action(self, action: int) -> str:
         return ACTION_STRINGS[action] if action in special_actions else self.g.defense_names[action]
