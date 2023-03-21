@@ -9,7 +9,7 @@ from ray.rllib.policy import Policy
 from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.typing import AgentID, PolicyID
 
-from .constants import AGENT_DEFENDER
+from .constants import AGENT_ATTACKER, AGENT_DEFENDER
 
 from .reward_utils import (
     defender_min,
@@ -85,23 +85,31 @@ class AttackSimCallback(DefaultCallbacks):
         info = episode._last_infos[AGENT_DEFENDER]
 
         for key in [
-            "attacker_start_time",
             "perc_defenses_activated",
-            "perc_compromised_steps",
-            "perc_compromised_flags",
-            "sum_attacker_reward",
-            "sum_defender_penalty",
+            f"{AGENT_DEFENDER}_cumulative_reward",
         ]:
             episode.custom_metrics[key] = info[key]
 
+        defender_cumulative_reward = info[f"{AGENT_DEFENDER}_cumulative_reward"]
         defense_costs = info["defense_costs"]
+        flag_costs = info["flag_costs"]
+        a_min = -np.sum(flag_costs)
+
+        info = episode._last_infos[AGENT_ATTACKER]
+
+        for key in [
+            "perc_compromised_steps",
+            "perc_compromised_flags",
+            f"{AGENT_ATTACKER}_cumulative_reward",
+        ]:
+            episode.custom_metrics[key] = info[key]
+
+
         avg_defense_cost = np.mean(defense_costs)
         num_defenses = defense_costs.shape[0]
 
-        a_min = -np.sum(info["flag_costs"])
-
         attacker_reward = get_normalized_attacker_reward(
-            info["flag_costs"], info["sum_attacker_reward"]
+            flag_costs, info[f"{AGENT_ATTACKER}_cumulative_reward"]
         )
 
         flag_defense_reward = 1 - attacker_reward
@@ -112,7 +120,7 @@ class AttackSimCallback(DefaultCallbacks):
             r_min = d_min + a_min
             r_max = 0
             defender_penalty = get_normalized_downtime_reward(
-                info["sum_defender_penalty"], avg_defense_cost, num_defenses, episode.length
+                defender_cumulative_reward, avg_defense_cost, num_defenses, episode.length
             )
             episode.custom_metrics["normalized_downtime_penalty"] = defender_penalty
             episode.custom_metrics["harmonic_mean_reward"] = harmonic_mean(

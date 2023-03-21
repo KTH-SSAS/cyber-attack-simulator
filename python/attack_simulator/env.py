@@ -267,15 +267,19 @@ class AttackSimulationEnv(MultiAgentEnv):
             AGENT_DEFENDER: {
                 "perc_defenses_activated": info.perc_defenses_activated,
                 "num_observed_alerts": info.num_observed_alerts,
+                "defense_costs": self.g.defense_costs,
+                "flag_costs": self.g.flag_rewards,
+
             },
             AGENT_ATTACKER: {
                 "num_compromised_steps": info.num_compromised_steps,
-                "percent_compromised_steps": info.perc_compromised_steps,
+                "perc_compromised_steps": info.perc_compromised_steps,
+                "perc_compromised_flags": info.perc_compromised_flags,
             },
         }
 
         for key, entry in infos.items():
-            entry["cumulative_reward"] = self.cumulative_rewards[key]
+            entry[f"{key}_cumulative_reward"] = self.cumulative_rewards[key]
 
         return infos
 
