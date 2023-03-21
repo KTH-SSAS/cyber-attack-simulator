@@ -12,8 +12,8 @@ from matplotlib.figure import Figure
 from matplotlib.text import Text
 from numpy.typing import NDArray
 
-from attack_simulator.constants import ACTION_WAIT
-from attack_simulator.graph import AttackGraph
+from .constants import ACTION_WAIT
+from .graph import AttackGraph
 
 from .svg_tooltips import add_tooltips, make_paths_relative, postprocess_frame, postprocess_html
 

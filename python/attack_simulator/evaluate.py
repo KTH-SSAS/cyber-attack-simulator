@@ -8,7 +8,7 @@ import os
 import shelve
 from pathlib import Path
 
-import gym
+
 import ray.cloudpickle as cloudpickle
 from ray.rllib.algorithms.registry import get_algorithm_class
 from ray.rllib.env import MultiAgentEnv
@@ -232,7 +232,7 @@ class RolloutSaver:
                 self._update_file = self._get_tmp_progress_filename().open(mode="w")
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, value, traceback):
         if self._shelf:
             # Close the shelf file, and store the number of episodes for ease
             # self._shelf["num_episodes"] = self._num_episodes

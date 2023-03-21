@@ -9,7 +9,7 @@ from ray.rllib.policy import Policy
 from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.typing import AgentID, PolicyID
 
-from attack_simulator.constants import AGENT_DEFENDER
+from .constants import AGENT_DEFENDER
 
 from .reward_utils import (
     defender_min,

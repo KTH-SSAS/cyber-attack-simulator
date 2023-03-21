@@ -4,12 +4,12 @@ from typing import Tuple
 import numpy as np
 from numpy.typing import NDArray
 
-from attack_simulator.constants import UINT
+from .constants import UINT
 
 
 # TODO: Move functionality from simulator to this class.
 class IDS:
-    def __init__(self, seed: int, fnr: float, fpr: float) -> None:
+    def __init__(self, seed: UINT, fnr: float, fpr: float) -> None:
         self.seed = seed
         self.fnr = fnr
         self.fpr = fpr
@@ -38,8 +38,10 @@ class ProbabilityIDS(IDS):
 
 
 class StrictIDS(IDS):
-    def __init__(self, seed: UINT) -> None:
+    def __init__(self, seed: UINT, fnr, fpr) -> None:
+        super().__init__(seed, fnr, fpr)
         self.rng = np.random.default_rng(seed=seed)
+        self.last_observation = None
 
     def observe(self, attack_state: NDArray[np.int8]) -> NDArray[np.int8]:
         """Observation of attack steps is subject to the true/false positive

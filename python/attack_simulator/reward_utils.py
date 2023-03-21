@@ -31,8 +31,7 @@ def action_cost_for_timestep(
 ) -> FLOAT_TYPE:
     if timestep < num_actions:
         return FLOAT_TYPE(timestep) * action_cost
-    else:
-        return FLOAT_TYPE(num_actions) * action_cost
+    return FLOAT_TYPE(num_actions) * action_cost
 
 
 def cumulative_defense_cost_for_timestep(

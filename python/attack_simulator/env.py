@@ -2,27 +2,27 @@ import dataclasses
 import logging
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
-import gymnasium.spaces as spaces
+from gymnasium import spaces
 import numpy as np
 from numpy.typing import NDArray
 from ray.rllib.env.multi_agent_env import MultiAgentEnv
 from ray.tune.registry import register_env
 from rust_sim import RustAttackSimulator
 
-from attack_simulator.agents import ATTACKERS
-from attack_simulator.agents.agent import Agent
-from attack_simulator.config import EnvConfig, GraphConfig, SimulatorConfig
-from attack_simulator.constants import (
+from .agents import ATTACKERS
+from .agents.agent import Agent
+from .config import EnvConfig, GraphConfig, SimulatorConfig
+from .constants import (
     ACTION_TERMINATE,
     AGENT_ATTACKER,
     AGENT_DEFENDER,
     UINT,
     special_actions,
 )
-from attack_simulator.graph import AttackGraph
-from attack_simulator.observation import Info, Observation
-from attack_simulator.rng import get_rng
-from attack_simulator.sim import AttackSimulator
+from .graph import AttackGraph
+from .observation import Info, Observation
+from .rng import get_rng
+from .sim import AttackSimulator
 
 from .renderer import AttackSimulationRenderer
 from .rust_wrapper import rust_sim_init
@@ -121,6 +121,7 @@ class AttackSimulationEnv(MultiAgentEnv):
         self._action_space_in_preferred_format = True
         self._observation_space_in_preferred_format = True
         self._obs_space_in_preferred_format = True
+        self.cumulative_rewards = {AGENT_DEFENDER: 0.0, AGENT_ATTACKER: 0.0}
         super().__init__()
 
         # Start episode count at -1 since it will be incremented the first time reset is called.
@@ -273,8 +274,8 @@ class AttackSimulationEnv(MultiAgentEnv):
             },
         }
 
-        for key in infos:
-            infos[key][f"cumulative_reward"] = self.cumulative_rewards[key]
+        for key, entry in infos.items():
+            entry["cumulative_reward"] = self.cumulative_rewards[key]
 
         return infos
 

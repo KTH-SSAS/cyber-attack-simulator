@@ -1,6 +1,6 @@
 from typing import Dict, Type
 
-from attack_simulator.agents.searchers import BreadthFirstAttacker, DepthFirstAttacker
+from .searchers import BreadthFirstAttacker, DepthFirstAttacker
 
 from .agent import Agent
 from .attackers import InformedAttacker, RandomAttacker, RoundRobinAttacker, WellInformedAttacker

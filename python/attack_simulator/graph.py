@@ -11,8 +11,8 @@ from agraphlib import STEP, GraphColors
 from numpy.typing import NDArray
 from yaml import safe_load
 
-from attack_simulator.config import GraphConfig
-from attack_simulator.constants import UINT
+from .config import GraphConfig
+from .constants import UINT
 
 
 @dataclass
