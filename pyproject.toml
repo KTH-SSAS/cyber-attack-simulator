@@ -1,18 +1,29 @@
 [build-system]
-requires = ["poetry-core>=1.1.0a6","poetry>=1.2.0a2"]
-build-backend = "poetry.core.masonry.api"
-
+requires = ["maturin>=0.14,<0.15"]
+build-backend = "maturin"
 
 [tool.poetry]
 name = "attack_simulator"
-version = "0.1.0"
+version = "2.0"
 description = "Reinforcement learning on attack simulations"
 license = "MIT"
 authors = [
     "Jakob Nyberg <jaknyb@kth.se>",
     "Pontus Johnson <pontusj@kth.se>"
 ]
-repository = "https://gitr.sys.kth.se/pontusj/openai_attack_simulation"
+
+
+[tool.maturin]
+python-source = "python"
+
+[project]
+name = "attack-simulator"
+version = "2.0"
+description = "A MAL based attack simulator"
+requires-python = ">=3.10"
+authors = [{ name = "Jakob Nyberg", email = "jaknyb@kth.se" }]
+
+# Dependencies via Poetry
 
 [[tool.poetry.source]]
 name = "ray-wheels"
@@ -21,7 +32,6 @@ secondary = true
 
 [tool.poetry.dependencies]
 python = "~3.10"
-#gym = "<0.24.0"
 numpy = "^1.21.4"
 matplotlib = "^3.4.2"
 pyyaml = "^6.0"
@@ -62,15 +72,15 @@ jupyterlab = "^3.2.2"
 tqdm = {extras = ["notebook"], version = "^4.62.3"}
 pylint = "^2.13.9"
 
+# Linting and formatting
+
 [tool.black]
 line_length = 100
 target_version = ['py310']
 
-
 [tool.isort]
 profile = "black"
 line_length = 100
-
 
 [tool.flakehell]
 max_line_length = 100
@@ -84,7 +94,6 @@ pycodestyle = ["+*", "-E302", "-E305", "-E402"]
 [tool.flakehell.plugins]
 pyflakes = ["+*"]
 pycodestyle = ["+*", "-E203", "-W503"]
-
 
 [tool.mypy]
 ignore_missing_imports = true

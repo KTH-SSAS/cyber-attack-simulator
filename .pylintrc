@@ -6,7 +6,8 @@ generated-members=
 			numpy.*,
 			torch.*,
 			wandb.*
-
+extension-pkg-allow-list=
+      rust_sim
 [MESSAGES CONTROL]
 disable=design,
 		missing-module-docstring,
@@ -17,3 +18,4 @@ disable=design,
 		consider-using-with,
 		too-many-nested-blocks,
 		duplicate-code
+

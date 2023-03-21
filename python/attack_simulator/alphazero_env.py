@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import Tuple
-
-import gym
+import gymnasium
+from gymnasium import spaces
 import numpy as np
 
 from .env import AttackSimulationEnv
@@ -21,8 +21,8 @@ class AttackSimulationAlphaZeroEnv(AttackSimulationEnv):
     def __init__(self, config: dict):
         super().__init__(config)
         shape = (self.action_space.n,)
-        self.observation_space = gym.spaces.Dict(
-            dict(obs=self.observation_space, action_mask=gym.spaces.Box(0, 1, shape, dtype="int8"))
+        self.observation_space = spaces.Dict(
+            dict(obs=self.observation_space, action_mask=spaces.Box(0, 1, shape, dtype="int8"))
         )
         self.mask = np.full(shape, 1, dtype="int8")
         self.total_reward = 0.0
@@ -32,8 +32,8 @@ class AttackSimulationAlphaZeroEnv(AttackSimulationEnv):
         observation = super().reset()
         return dict(obs=observation, action_mask=self.mask)
 
-    def step(self, action: int) -> Tuple[dict, float, bool, dict]:  # type: ignore
-        observation, reward, done, info = super().step(action)
+    def step(self, action_dict: int) -> Tuple[dict, float, bool, dict]:  # type: ignore
+        observation, reward, done, info = super().step(action_dict)
         self.total_reward += reward
         reward = self.total_reward if done else 0
         return dict(obs=observation, action_mask=self.mask), reward, done, info

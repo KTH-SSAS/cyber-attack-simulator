@@ -5,15 +5,15 @@ from typing import Callable, Dict, List, Optional, Set, Tuple
 import numpy as np
 from numpy.typing import NDArray
 
-from attack_simulator.constants import (
+from .constants import (
     ACTION_STRINGS,
     AGENT_ATTACKER,
     AGENT_DEFENDER,
     UINT,
     special_actions,
 )
-from attack_simulator.observation import Info, Observation
-from attack_simulator.rng import get_rng
+from .observation import Info, Observation
+from .rng import get_rng
 
 from .config import SimulatorConfig
 from .graph import AttackGraph

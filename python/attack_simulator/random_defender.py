@@ -15,8 +15,6 @@ class RandomDefender(Algorithm):
 
 
 class RandomPolicy(Policy):
-    def __init__(self, obs_space, action_space, config):
-        super().__init__(obs_space, action_space, config)
 
     def compute_actions(
         self,

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
-from attack_simulator.constants import UINT
+from ..constants import UINT
 
 
 class Agent(ABC):
@@ -12,7 +12,6 @@ class Agent(ABC):
         self.num_special_actions = agent_config["num_special_actions"]
         self.wait_action = agent_config["wait_action"]
         self.terminate_action = agent_config["terminate_action"]
-        ...  # pragma: no cover
 
     @abstractmethod
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:

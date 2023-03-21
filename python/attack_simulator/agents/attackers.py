@@ -10,8 +10,8 @@ from typing import Any, Dict
 
 import numpy as np
 
-from attack_simulator.constants import UINT
-from attack_simulator.graph import AttackGraph
+from ..constants import UINT
+from ..graph import AttackGraph
 
 from ..rng import get_rng
 from .agent import Agent
@@ -121,6 +121,6 @@ class InformedAttacker(WellInformedAttacker):
     rewards**"""
 
     def __init__(self, agent_config: dict):
-        graph: AttackGraph = agent_config["attack_graph"]
+        # graph: AttackGraph = agent_config["attack_graph"]
         # replace per-episode sampled info with base parameters
-        super(InformedAttacker, self).__init__(agent_config)
+        super().__init__(agent_config)

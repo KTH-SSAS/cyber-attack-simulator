@@ -17,7 +17,7 @@ from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 from ray.rllib.utils.torch_utils import FLOAT_MAX, FLOAT_MIN
 from torch import Tensor
 
-from attack_simulator.reward_utils import get_minimum_rewards, normalize
+from .reward_utils import get_minimum_rewards, normalize
 
 
 class DefenderConfig(PPOConfig):
