@@ -11,7 +11,7 @@ from attack_simulator.agents import (  # InformedAttacker,; RandomNoActionAttack
 from attack_simulator.agents.searchers import BreadthFirstAttacker, DepthFirstAttacker
 from attack_simulator.constants import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER
 from attack_simulator.observation import obs_to_dict
-from attack_simulator.sim import AttackSimulator
+from attack_simulator.sim import Simulator
 
 
 @pytest.mark.parametrize(
@@ -27,7 +27,7 @@ from attack_simulator.sim import AttackSimulator
         DepthFirstAttacker,
     ],
 )
-def test_sim_attacker_actions(simulator: AttackSimulator, attack_graph, attacker_class) -> None:
+def test_sim_attacker_actions(simulator: Simulator, attack_graph, attacker_class) -> None:
     done = False
     obs, info = simulator.reset()
 

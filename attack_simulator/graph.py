@@ -60,7 +60,7 @@ class AttackGraph:
         # load the YAML graph spec
 
         script_path = Path(__file__)
-        root_dir = script_path.parent.parent.parent
+        root_dir = script_path.parent.parent
 
         with open(root_dir / filename, "r", encoding="utf8") as yaml_file:
             data = safe_load(yaml_file.read())

@@ -11,14 +11,12 @@ use crate::attackgraph::{AttackGraph, TTCType};
 use crate::config::SimulatorConfig;
 use crate::graph::NodeID;
 
-use rand::rngs::StdRng;
 use rand::SeedableRng;
 use rand_distr::Exp;
 
-const TERMINATE: usize = 0; // Terminate the simulation
-pub const NO_ACTION: usize = 1; // No action
-
-pub const SPECIAL_ACTIONS: [usize; 2] = [NO_ACTION, TERMINATE];
+pub const ACTION_NOP: usize = 0; // No action
+pub const ACTION_TERMINATE: usize = 1; // Terminate the simulation
+pub const SPECIAL_ACTIONS: [usize; 2] = [ACTION_NOP, ACTION_TERMINATE];
 
 pub const ATTACKER: usize = 0;
 pub const DEFENDER: usize = 1;
@@ -45,6 +43,10 @@ pub(crate) struct Observation {
     pub attack_surface: Vec<bool>,
     #[pyo3(get)]
     pub defense_surface: Vec<bool>,
+    #[pyo3(get)]
+    pub attacker_action_mask: Vec<bool>,
+    #[pyo3(get)]
+    pub defender_action_mask: Vec<bool>,
     #[pyo3(get)]
     pub defense_state: Vec<bool>,
     #[pyo3(get)]
@@ -354,10 +356,22 @@ impl SimulatorRuntime {
         let mut ids_observation = defense_state.clone();
         ids_observation.extend(attack_state.clone());
 
+        let mut action_mask = vec![false; SPECIAL_ACTIONS.len()];
+        
+        action_mask[ACTION_NOP] = true;
+
+        let mut defender_action_mask = action_mask.clone();
+        let mut attacker_action_mask = action_mask.clone();
+        
+        defender_action_mask.extend(defense_state.clone());
+        attacker_action_mask.extend(attack_surface_vec.clone());
+
         Observation {
             attack_surface: attack_surface_vec,
             defense_state: defense_state.clone(),
             defense_surface: defense_state,
+            defender_action_mask,
+            attacker_action_mask,
             ttc_remaining,
             ids_observation,
             attack_state,
@@ -393,14 +407,9 @@ impl SimulatorRuntime {
         // Defender selects a defense step from the defense surface, which is the vector of all defense steps that are not disabled
 
         for (actor, action) in action_dict.iter() {
-            if *action == NO_ACTION {
+            
+            if *action < SPECIAL_ACTIONS.len()  {
                 continue;
-            }
-
-            if *action == TERMINATE {
-                return Err(SimError {
-                    error: "Termination action not allowed in this environment.".to_string(),
-                });
             }
 
             let step_idx = *action - SPECIAL_ACTIONS.len();

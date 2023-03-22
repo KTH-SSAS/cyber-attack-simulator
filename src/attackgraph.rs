@@ -334,7 +334,7 @@ pub(crate) fn load_graph_from_yaml<'a: 'b, 'b>(filename: &str) -> AttackGraph {
         .as_mapping()
         .unwrap()
         .iter()
-        .map(|(k, v)| {
+        .map(|(k, _)| {
  
                 k.as_str().unwrap().to_string()
             

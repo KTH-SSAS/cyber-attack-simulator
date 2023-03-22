@@ -13,16 +13,18 @@ class Observation:
     defense_state: NDArray[np.int8]
     ttc_remaining: NDArray[UINT]
     attack_state: NDArray[np.int8]
+    defender_action_mask: NDArray[np.int8]
+    attacker_action_mask: NDArray[np.int8]
 
 
 @dataclass
 class Info:
-    time: UINT
-    num_compromised_steps: UINT
-    num_compromised_flags: UINT
+    time: int
+    num_compromised_steps: int
+    num_compromised_flags: int
     perc_compromised_flags: float
-    perc_compromised_steps: float
-    perc_defenses_activated: float
+    perc_compromised_steps: np.double
+    perc_defenses_activated: np.double
     num_observed_alerts: UINT
 
 

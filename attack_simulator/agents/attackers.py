@@ -30,7 +30,7 @@ class RandomAttacker(Agent):
         return (
             self.rng.choice(valid_attack_indices) + self.num_special_actions
             if len(valid_attack_indices) > 0
-            else self.terminate_action
+            else self.wait_action
         )
 
 

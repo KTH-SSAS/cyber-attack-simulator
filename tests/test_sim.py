@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from pathlib import Path
+from typing import Sequence
 
 import pytest
 
@@ -10,27 +11,27 @@ from attack_simulator.constants import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTA
 from attack_simulator.graph import AttackGraph
 from attack_simulator.observation import Info, Observation
 from attack_simulator.rust_wrapper import rust_sim_init
-from attack_simulator.sim import AttackSimulator
+from attack_simulator.sim import Simulator, AttackSimulator
 
 
-def test_sim_reset(simulator: AttackSimulator) -> None:
+def test_sim_reset(simulator: Simulator) -> None:
     obs, info = simulator.reset()
     assert info.time == 0
 
 
 @pytest.mark.skip(reason="Not implemented")
-def test_sim_defender_action(simulator: AttackSimulator) -> None:
+def test_sim_defender_action(simulator: Simulator) -> None:
     pass
 
 
 @pytest.mark.skip(reason="Not implemented")
-def test_sim_attacker_action(simulator: AttackSimulator) -> None:
+def test_sim_attacker_action(simulator: Simulator) -> None:
     pass
 
 
-def test_sim_step(simulator) -> None:
+def test_sim_step(simulator: Simulator) -> None:
     # Take a step
-    actions = {AGENT_ATTACKER: ACTION_WAIT, AGENT_DEFENDER: ACTION_WAIT}
+    actions = {AGENT_ATTACKER: simulator.wait_action, AGENT_DEFENDER: simulator.wait_action}
     obs: Observation
     info: Info
     obs, info = simulator.step(actions)
@@ -39,7 +40,7 @@ def test_sim_step(simulator) -> None:
     assert info.time == 1
 
 
-def test_rust_and_python():
+def test_rust_and_python() -> None:
     pass
 
     config_yaml = Path("config/test_config.yaml")
@@ -61,7 +62,7 @@ def test_rust_and_python():
     rust_obs, rust_info = rust_sim.reset()
     python_obs, python_info = python_sim.reset()
 
-    def compare_obs(rust_obs, python_obs):
+    def compare_obs(rust_obs: Observation, python_obs: Observation) -> None:
         # Check that the observations are the same
         compare_fields(rust_obs.attack_state, python_obs.attack_state)
         compare_fields(rust_obs.defense_state, python_obs.defense_state)
@@ -69,7 +70,7 @@ def test_rust_and_python():
         # compare_fields(rust_obs.ids_observation, python_obs.ids_observation)
         compare_fields(rust_obs.ttc_remaining, python_obs.ttc_remaining)
 
-    def compare_fields(rust, python):
+    def compare_fields(rust: Sequence, python: Sequence) -> None:
         for i, (x1, x2) in enumerate(zip(rust, python)):
             assert x1 == x2, f"Failed at index {i}: rust: {x1} != python: {x2}"
 
@@ -111,8 +112,8 @@ def test_rust_and_python():
     assert sum(python_obs.ttc_remaining) == 0
 
 
-def test_determinism(simulator: AttackSimulator):
-    def compare_fields(v1, v2):
+def test_determinism(simulator: AttackSimulator) -> None:
+    def compare_fields(v1: Sequence, v2: Sequence) -> None:
         for i, (x1, x2) in enumerate(zip(v1, v2)):
             assert x1 == x2, f"Failed at index {i}: initial: {x1} != current: {x2}"
 

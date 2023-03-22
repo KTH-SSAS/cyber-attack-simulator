@@ -9,20 +9,20 @@ from .constants import UINT
 
 # TODO: Move functionality from simulator to this class.
 class IDS:
-    def __init__(self, seed: UINT, fnr: float, fpr: float) -> None:
+    def __init__(self, seed: int, fnr: float, fpr: float) -> None:
         self.seed = seed
         self.fnr = fnr
         self.fpr = fpr
 
 
 class ProbabilityIDS(IDS):
-    def ids_function(self, obs: UINT, p: float) -> UINT:
+    def ids_function(self, obs: int, p: float) -> bool:
         if obs == 1:
             if p <= self.fnr:
-                return UINT(not obs)
+                return not obs
             return obs
         if p <= self.fpr:
-            return UINT(not obs)
+            return not obs
         return obs
 
     def __call__(

@@ -12,10 +12,6 @@ authors = [
     "Pontus Johnson <pontusj@kth.se>"
 ]
 
-
-[tool.maturin]
-python-source = "python"
-
 [project]
 name = "attack-simulator"
 version = "2.0"

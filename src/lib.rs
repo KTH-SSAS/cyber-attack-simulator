@@ -12,7 +12,7 @@ use sim::RustAttackSimulator;
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn rust_sim(_py: Python, m: &PyModule) -> PyResult<()> {
+fn rusty_sim(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<RustAttackSimulator>()?;
     m.add_class::<Observation>()?;
     m.add_class::<Info>()?;
