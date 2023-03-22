@@ -159,7 +159,7 @@ class AttackSimulationEnv(MultiAgentEnv):
                 ),
                 AGENT_ATTACKER: spaces.Dict(
                     {
-                        "attack_surface": spaces.Box(
+                        "action_mask": spaces.Box(
                             0, 1, shape=(graph.num_attacks + num_special_actions,), dtype=np.int8
                         ),
                         "ttc_remaining": spaces.Box(
@@ -189,12 +189,13 @@ class AttackSimulationEnv(MultiAgentEnv):
         if seed is None:
             seed = self.config.seed
 
+        episode_count = self.episode_count + 1
         super().reset(seed=seed)
 
         rng, env_seed = get_rng(seed)
-        sim_obs, info = self.sim.reset(self.env_seed + self.episode_count)
+        sim_obs, info = self.sim.reset(env_seed + episode_count)
 
-        self.episode_count += 1
+        self.episode_count = episode_count
         self.reset_render = True
         self.state = EnvironmentState()
         self.rng = rng
@@ -237,7 +238,7 @@ class AttackSimulationEnv(MultiAgentEnv):
         }
 
         attacker_obs = {
-            "attack_surface": np.array(sim_obs.attack_surface, dtype=np.int8),
+            "action_mask":   np.array(sim_obs.attacker_action_mask, dtype=np.int8),
             "defense_state": np.array(sim_obs.defense_state, dtype=np.int8),
             "ttc_remaining": np.array(sim_obs.ttc_remaining, dtype=np.uint64),
         }

@@ -9,14 +9,12 @@ import attack_simulator.ids_model as ids_model
 from attack_simulator.agents.attackers_policies import RandomPolicy
 from attack_simulator.config import EnvConfig
 from attack_simulator.constants import (
-    ACTION_TERMINATE,
-    ACTION_WAIT,
     AGENT_ATTACKER,
     AGENT_DEFENDER,
-    special_actions,
 )
 from attack_simulator.custom_callback import AttackSimCallback
 from attack_simulator.env import AttackSimulationEnv, register_rllib_env
+
 
 if __name__ == "__main__":
 
@@ -46,6 +44,7 @@ if __name__ == "__main__":
     }
 
     env_config = {
+        "backend": "rust",
         "attacker": "depth-first",
         "save_graphs": False,
         "save_logs": False,
@@ -95,9 +94,9 @@ if __name__ == "__main__":
                 AGENT_ATTACKER: PolicySpec(
                     RandomPolicy,
                     config={
-                        "num_special_actions": len(special_actions),
-                        "wait_action": ACTION_WAIT,
-                        "terminate_action": ACTION_TERMINATE,
+                        "num_special_actions": dummy_env.num_special_actions,
+                        "wait_action": dummy_env.sim.wait_action,
+                        "terminate_action": dummy_env.sim.terminate_action,
                     },
                 ),
             },
@@ -113,3 +112,5 @@ if __name__ == "__main__":
 
     for i in range(1):
         result = trainer.train()
+
+    print(result)
