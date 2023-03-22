@@ -233,7 +233,8 @@ class PathFinderAttacker(Agent):
             ]
             flag_costs.sort(key=itemgetter(1))
             self.flags = [flag for flag, _ in flag_costs]
-            # self.done, self.planned_path = self.decide_next_target(ttc_remaining, compromised_steps, defense_state)
+            # self.done, self.planned_path = 
+            # self.decide_next_target(ttc_remaining, compromised_steps, defense_state)
 
         # If there are no more flags to take, do nothing
         if self.done:

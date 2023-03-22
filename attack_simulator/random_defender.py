@@ -5,7 +5,7 @@ from ray.rllib.algorithms.algorithm import Algorithm
 from ray.rllib.policy.policy import Policy
 from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.typing import TensorStructType, TensorType
-
+from ray.rllib.evaluation import Episode
 
 class RandomDefender(Algorithm):
     # _allow_unknown_configs = True

@@ -59,12 +59,16 @@ class AttackSimCallback(DefaultCallbacks):
         # num_defenses = len(defense_costs)
         # num_flags = len(flag_costs)
 
-        # min_defense_rewards = [-defense_cost_for_timestep(t+1, avg_defense_cost, num_defenses) for t in range(episode.length)]
-        # min_flag_rewards = [-attack_cost_for_timestep(t+1, avg_flag_cost, num_flags) for t in range(episode.length)]
+        # min_defense_rewards = 
+        # [-defense_cost_for_timestep(t+1, avg_defense_cost, num_defenses) 
+        # for t in range(episode.length)]
+        # min_flag_rewards = 
+        # [-attack_cost_for_timestep(t+1, avg_flag_cost, num_flags) for t in range(episode.length)]
 
         # rewards = postprocessed_batch["rewards"]
 
-        # postprocessed_rewards = [normalize(reward, min_d+min_a, 0, 0, 1) for reward, min_d, min_a in zip(rewards, min_defense_rewards, min_flag_rewards)]
+        # postprocessed_rewards = [normalize(reward, min_d+min_a, 0, 0, 1) 
+        # for reward, min_d, min_a in zip(rewards, min_defense_rewards, min_flag_rewards)]
         # rewards = postprocessed_batch["rewards"]
         # value_targets = postprocessed_batch["value_targets"]
         # postprocessed_batch["rewards"] =  rewards / sum(rewards)
@@ -136,11 +140,3 @@ class AttackSimCallback(DefaultCallbacks):
 
         episode.custom_metrics["normalized_reward"] = normalize(episode.total_reward, r_min, r_max)
         episode.custom_metrics["normalized_flag_defense_reward"] = flag_defense_reward
-
-        # num_alerts = info["num_alerts"]
-
-        # p_alert = num_alerts / (episode.length * info['num_attack_steps'])
-
-        # entropy = -(p_alert * np.log(p_alert) + (1 - p_alert) * np.log(1 - p_alert))
-
-        # episode.custom_metrics["uncertainty"] = (1 - p_alert) * worker.env_context["false_positive"] + p_alert * worker.env_context["false_negative"]

@@ -20,6 +20,7 @@ from ray.rllib.utils.deprecation import deprecation_warning
 from ray.rllib.utils.spaces.space_utils import flatten_to_single_ndarray
 from ray.tune.registry import ENV_CREATOR, _global_registry, get_trainable_cls
 from ray.tune.utils import merge_dicts
+import gymnasium
 
 EXAMPLE_USAGE = """
 Example usage via RLlib CLI:
@@ -449,11 +450,11 @@ def rollout(
 
     # Agent has neither evaluation- nor rollout workers.
     else:
-        from gym import envs
+        from gymnasium import envs
 
         if envs.registry.env_specs.get(agent.config["env"]):
             # if environment is gym environment, load from gym
-            env = gym.make(agent.config["env"])
+            env = gymnasium.make(agent.config["env"])
         else:
             # if environment registered ray environment, load from ray
             env_creator = _global_registry.get(ENV_CREATOR, agent.config["env"])

@@ -7,7 +7,7 @@ from ray.rllib.policy.policy import Policy
 from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.typing import TensorStructType, TensorType
 from torch import Tensor
-
+from ray.rllib.evaluation import Episode
 
 class TripwireDefender(Algorithm):
     # _allow_unknown_configs = True

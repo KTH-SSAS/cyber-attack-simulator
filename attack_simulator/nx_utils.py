@@ -19,7 +19,9 @@ def _handle_unassigned(
         size = len(unassigned)
         total = len(g.nodes)
         logger.warn(f"Generating random position(s) for {size} node(s) not connected to '{root}'")
-        (xmin, xmax), (ymin, ymax) = tuple(map(lambda l: (min(l), max(l)), zip(*pos.values())))
+        (xmin, xmax), (ymin, ymax) = tuple(
+            map(lambda coordinate: (min(coordinate), max(coordinate)), zip(*pos.values()))
+        )
         dx = xmax - xmin
         dy = ymax - ymin
         if dx <= dy:

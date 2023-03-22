@@ -86,12 +86,6 @@ class DefenderPolicy(PPOTorchPolicy):
                 except IndexError:
                     pass
 
-            # rewards = sample_batch["rewards"]
-
-            # postprocessed_rewards = [normalize(reward, min_d+min_a, 0, 0, 1) for reward, min_d, min_a in zip(rewards, min_defense_rewards, min_flag_rewards)]
-
-            # sample_batch["rewards"] = postprocessed_rewards
-
             return compute_gae_for_sample_batch(self, sample_batch, other_agent_batches, episode)
 
 

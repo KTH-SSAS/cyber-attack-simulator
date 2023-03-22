@@ -1,6 +1,5 @@
 from copy import deepcopy
 from typing import Tuple
-import gymnasium
 from gymnasium import spaces
 import numpy as np
 

@@ -55,7 +55,9 @@ class SimulatorState:
         self.prev_actions = {AGENT_ATTACKER: entrypoint, AGENT_DEFENDER: ACTION_WAIT}
         self.valid_actions = {AGENT_ATTACKER: False, AGENT_DEFENDER: False}
         # Set the TTC for the entry attack to be the attack start time
-        self.ttc_remaining, self.ttc_total = self.get_initial_ttc_vals(graph, self.attack_start_time, config.randomize_ttc)
+        self.ttc_remaining, self.ttc_total = self.get_initial_ttc_vals(
+            graph, self.attack_start_time, config.randomize_ttc
+        )
         self.attack_surface = self.get_initial_attack_surface(graph, self.attack_start_time)
         self.current_attack_step = entrypoint
 
@@ -91,7 +93,9 @@ class SimulatorState:
 
         return attack_surface
 
-    def get_initial_ttc_vals(self, graph: AttackGraph, attack_start_time: UINT, randomize_ttc: bool) -> Tuple[NDArray[UINT], UINT]:
+    def get_initial_ttc_vals(
+        self, graph: AttackGraph, attack_start_time: UINT, randomize_ttc: bool
+    ) -> Tuple[NDArray[UINT], UINT]:
         entrypoint = graph.attack_indices[graph.root]
         if randomize_ttc:
             ttc_remaining = np.array(
@@ -202,7 +206,7 @@ class AttackSimulator(Simulator):
             defender_action_mask=self.get_defender_action_mask(),
             attacker_action_mask=self.get_attacker_action_mask(),
         )
-    
+
     @property
     def ttc_total(self) -> UINT:
         return np.sum(self.state.ttc_remaining)

@@ -5,6 +5,7 @@ from ray.rllib.models.modelv2 import restore_original_dimensions
 from ray.rllib.policy.policy import Policy
 from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.typing import TensorStructType, TensorType
+from ray.rllib.evaluation import Episode
 
 from .attackers import RandomAttacker
 from .searchers import BreadthFirstAttacker, DepthFirstAttacker
@@ -23,7 +24,7 @@ class NonLearningAttackerPolicy(Policy):
         prev_action_batch: Union[List[TensorStructType], TensorStructType] = None,
         prev_reward_batch: Union[List[TensorStructType], TensorStructType] = None,
         info_batch: Optional[Dict[str, list]] = None,
-        episodes: Optional[List["Episode"]] = None,
+        episodes: Optional[List[Episode]] = None,
         explore: Optional[bool] = None,
         timestep: Optional[int] = None,
         **kwargs,
@@ -70,7 +71,7 @@ class BreadthFirstPolicy(NonLearningAttackerPolicy):
         input_dict: Union[SampleBatch, Dict[str, TensorStructType]],
         explore: bool = None,
         timestep: Optional[int] = None,
-        episodes: Optional[List["Episode"]] = None,
+        episodes: Optional[List[Episode]] = None,
         **kwargs,
     ) -> Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
 
@@ -96,7 +97,7 @@ class DepthFirstPolicy(NonLearningAttackerPolicy):
         input_dict: Union[SampleBatch, Dict[str, TensorStructType]],
         explore: bool = None,
         timestep: Optional[int] = None,
-        episodes: Optional[List["Episode"]] = None,
+        episodes: Optional[List[Episode]] = None,
         **kwargs,
     ) -> Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
         actions = [
@@ -122,7 +123,7 @@ class RandomPolicy(NonLearningAttackerPolicy):
         input_dict: Union[SampleBatch, Dict[str, TensorStructType]],
         explore: bool = None,
         timestep: Optional[int] = None,
-        episodes: Optional[List["Episode"]] = None,
+        episodes: Optional[List[Episode]] = None,
         **kwargs,
     ) -> Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
 

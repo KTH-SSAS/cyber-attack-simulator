@@ -41,7 +41,7 @@ mod tests {
 
         let action = match actions.choose(&mut rng) {
             Some(x) => *x,
-            None => return runtime::NO_ACTION,
+            None => return runtime::ACTION_NOP,
         };
         return action + runtime::SPECIAL_ACTIONS.len();
     }
@@ -85,7 +85,7 @@ mod tests {
             let action_dict = HashMap::from([("attacker".to_string(), action)]);
             let (new_observation, new_info) = sim.step(action_dict).unwrap();
 
-            if action != runtime::NO_ACTION {
+            if action != runtime::ACTION_NOP {
                 let step_idx = action - runtime::SPECIAL_ACTIONS.len();
                 assert_eq!(new_observation.ttc_remaining[step_idx], max(observation.ttc_remaining[step_idx].try_into().unwrap_or(0) - 1, 0) as u64);
                 let old_ttc_sum = observation.ttc_remaining.iter().sum::<u64>();

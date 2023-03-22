@@ -77,8 +77,6 @@ class AttackGraph:
         self.defense_steps = {step.id: step for step in self.steps if step.id in data["defenses"]}
         self.defense_costs = np.array([1 for _ in self.defense_steps])
 
-        # self.defense_costs = np.array([self.config.rewards["defense_default"] for _ in self.defense_steps.values()])
-
         self.attack_steps = {
             step.id: step for step in self.steps if step.id not in self.defense_steps
         }
