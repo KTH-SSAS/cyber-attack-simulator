@@ -8,6 +8,7 @@ import socket
 from dataclasses import asdict
 from datetime import datetime
 from typing import Any, Dict, Tuple
+from pathlib import Path
 
 import ray
 import ray.train.torch
@@ -21,7 +22,7 @@ from attack_simulator.agents.attackers_policies import BreadthFirstPolicy
 from attack_simulator.config import EnvConfig
 from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.custom_callback import AttackSimCallback
-from attack_simulator.env import register_rllib_env
+from attack_simulator.env import AttackSimulationEnv, register_rllib_env
 
 
 def add_fp_tp_sweep(config: dict, values: list) -> dict:
@@ -152,7 +153,7 @@ def main(
 
     os.environ["WANDB_MODE"] = "online" if wandb_sync else "offline"
 
-    register_rllib_env()
+    env_name = register_rllib_env()
 
     current_time = datetime.now().strftime(r"%m-%d_%H:%M:%S")
     id_string = f"{current_time}@{socket.gethostname()}"
@@ -172,7 +173,19 @@ def main(
         )
 
     env_config = EnvConfig.from_yaml(config_file)
+
+    cwd = os.getcwd()
+    absolute_graph_pathname = Path.absolute(Path(cwd, env_config.graph_config.filename))
+    env_config = dataclasses.replace(
+        env_config,
+        graph_config=dataclasses.replace(
+            env_config.graph_config, filename=str(absolute_graph_pathname)
+        ),
+    )
     env_config = dataclasses.replace(env_config, run_id=id_string)
+    dummy_env = AttackSimulationEnv(env_config)
+    env_config = dataclasses.replace(env_config, backend=tune.grid_search(["rust", "python"]))
+
 
     gpu_count = kwargs["gpu_count"]
     num_workers = 1  # kwargs["num_workers"]
@@ -194,13 +207,24 @@ def main(
 
     # fragment_length = 200
 
-    env_name = "AttackSimulationEnv"
-
     attacker_policy_class = BreadthFirstPolicy
 
     config = (
         ids_model.DefenderConfig()
-        .training(scale_rewards=False, gamma=1.0, sgd_minibatch_size=128)
+        .training(
+            scale_rewards=False,
+            gamma=1.0,
+            sgd_minibatch_size=128,
+            train_batch_size=128,
+            vf_clip_param=500,
+            clip_param=0.02,
+            vf_loss_coeff=0.001,
+            lr=0.0001,
+            use_critic=True,
+            use_gae=True,
+            kl_coeff=0.0,
+            entropy_coeff=0.0,
+        )
         .framework("torch")
         .environment(env_name, env_config=asdict(env_config))
         .debugging(seed=global_seed)
@@ -230,14 +254,19 @@ def main(
                     config={
                         "model": {
                             "custom_model": "DefenderModel",
-                            "fcnet_hiddens": [32],
+                            "fcnet_hiddens": [8],
                             "vf_share_layers": True,
                             "custom_model_config": {},
                         }
                     },
                 ),
                 AGENT_ATTACKER: PolicySpec(
-                    attacker_policy_class, config={"num_special_actions": 0}
+                    attacker_policy_class,
+                    config={
+                        "num_special_actions": dummy_env.num_special_actions,
+                        "wait_action": dummy_env.sim.wait_action,
+                        "terminate_action": dummy_env.sim.terminate_action,
+                    },
                 ),
             },
             policy_mapping_fn=lambda agent_id, episode, worker, **kwargs: agent_id,

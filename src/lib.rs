@@ -3,10 +3,11 @@ pub mod attackgraph;
 pub mod runtime;
 pub mod config;
 pub mod graph;
+pub mod observation;
 
 use pyo3::prelude::*;
 
-use runtime::{Observation, Info};
+use observation::{Observation, Info};
 use sim::RustAttackSimulator;
 
 

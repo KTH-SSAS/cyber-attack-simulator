@@ -41,7 +41,8 @@ class BreadthFirstAttacker(Agent):
         self.rng = np.random.default_rng(seed)
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        surface_indexes = set(np.flatnonzero(observation["attack_surface"]))
+        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions:]
+        surface_indexes = set(np.flatnonzero(attack_surface))
         new_targets = [idx for idx in surface_indexes if idx not in self.targets]
 
         # Add new targets to the back of the queue
@@ -67,7 +68,9 @@ class DepthFirstAttacker(Agent):
         self.rng = np.random.default_rng(seed)
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        surface_indexes = set(np.flatnonzero(observation["attack_surface"]))
+
+        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions:]
+        surface_indexes = set(np.flatnonzero(attack_surface))
         new_targets = [idx for idx in surface_indexes if idx not in self.targets]
 
         # Add new targets to the top of the stack

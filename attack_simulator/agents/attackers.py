@@ -25,11 +25,11 @@ class RandomAttacker(Agent):
         self.rng, _ = get_rng(agent_config.get("seed"))
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        attack_surface = observation["attack_surface"]
-        valid_attack_indices = np.flatnonzero(attack_surface)
+        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions:]
+        surface_indexes = set(np.flatnonzero(attack_surface))
         return (
-            self.rng.choice(valid_attack_indices) + self.num_special_actions
-            if len(valid_attack_indices) > 0
+            self.rng.choice(surface_indexes) + self.num_special_actions
+            if len(surface_indexes) > 0
             else self.wait_action
         )
 

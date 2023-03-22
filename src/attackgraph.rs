@@ -1,5 +1,5 @@
 use serde_yaml::{self, Mapping};
-use std::fmt;
+use std::{fmt, env};
 use std::{
     collections::{HashMap, HashSet},
     fs::File,
@@ -311,7 +311,11 @@ impl AttackGraph {
 // }
 
 pub(crate) fn load_graph_from_yaml<'a: 'b, 'b>(filename: &str) -> AttackGraph {
-    let file = File::open(filename).unwrap();
+
+    let file = match File::open(filename) {
+        Ok(f) => f,
+        Err(e) => panic!("Could not open file: {}. {}", filename, e),
+    };
     let reader = BufReader::new(file);
     let mapping: Mapping = serde_yaml::from_reader(reader).unwrap();
 

@@ -234,7 +234,7 @@ class AttackSimulationEnv(MultiAgentEnv):
     def get_agent_obs(self, sim_obs: Observation) -> Dict[str, Any]:
         defender_obs = {
             "ids_observation": np.array(sim_obs.ids_observation, dtype=np.int8),
-            "action_mask": sim_obs.defender_action_mask,
+            "action_mask": np.array(sim_obs.defender_action_mask),
         }
 
         attacker_obs = {

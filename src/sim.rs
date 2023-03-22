@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use crate::{
     config::SimulatorConfig,
-    runtime::{Info, Observation, SimulatorRuntime, ACTION_NOP, ACTION_TERMINATE, SPECIAL_ACTIONS},
+    runtime::{SimulatorRuntime, ACTION_NOP, ACTION_TERMINATE, SPECIAL_ACTIONS}, observation::{Observation, Info},
 };
 use pyo3::{exceptions::PyRuntimeError, pyclass, pymethods, PyErr, PyResult};
 
