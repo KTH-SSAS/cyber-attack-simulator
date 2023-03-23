@@ -1,14 +1,24 @@
 attacker: depth-first
-false_positive: 0.1
-false_negative: 0.1
 save_graphs: false
 save_logs: false
 randomize_ttc: false
 seed: 0
-attack_start_time: 0 # average of exponential dist.
 reward_mode: downtime-penalty
-graph_config: {
-  ttc: {easy: 2.0, hard: 5.0, default: 2.0, none: 0.0},
-  rewards: {easy: 10.0, default: 0.0, defense_default: 1.0},
-  filename: graphs/four_ways.yaml,
-}
+
+sim_config:
+  seed: 0
+  attack_start_time: 0 # average of exponential dist.
+  false_positive_rate: 0.1
+  false_negative_rate: 0.,
+
+graph_config:
+  ttc:
+    easy: 2.0
+    hard: 5.0
+    default: 2.0
+    none: 0.0
+  rewards:
+    easy: 10.0
+    default: 0.0
+    defense_default: 1.0
+  filename: graphs/four_ways.yaml

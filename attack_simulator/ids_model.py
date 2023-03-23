@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from itertools import repeat
 from logging import Logger
 from typing import Callable, Dict, Optional
@@ -15,6 +17,7 @@ from ray.rllib.evaluation.postprocessing import compute_gae_for_sample_batch
 from ray.rllib.models import ModelCatalog
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 from ray.rllib.utils.torch_utils import FLOAT_MAX, FLOAT_MIN
+from ray.rllib.utils.typing import PartialAlgorithmConfigDict
 from torch import Tensor
 
 from .reward_utils import get_minimum_rewards, normalize
@@ -24,7 +27,7 @@ class DefenderConfig(PPOConfig):
     # _allow_unknown_configs = True
     # _allow_unknown_subkeys = True
 
-    def __init__(self, algo_class=None):
+    def __init__(self, algo_class=None) -> None:
         super().__init__(algo_class=algo_class or PPO)
         # self._allow_unknown_configs = True
         # self._allow_unknown_subkeys = True
@@ -35,6 +38,17 @@ class DefenderConfig(PPOConfig):
         super().training(**kwargs)
         self.scale_rewards = scale_rewards
         return self
+
+    def update_from_dict(self, config_dict: PartialAlgorithmConfigDict) -> DefenderConfig:
+        # These get added in:
+        # ray/tune/execution/ray_trial_executor.py:_setup_remote_runner()
+        # for whatever reason. These trigger an error as DefenderConfig gets
+        # recreated between trials and the updated config (including these keys)
+        # is used to instantiate it.
+        config_dict.pop('__stdout_file__', None)
+        config_dict.pop('__stderr_file__', None)
+        config_dict.pop('__trial_info__', None)
+        return super().update_from_dict(config_dict)
 
 
 class Defender(PPO):
@@ -54,6 +68,10 @@ class Defender(PPO):
     def reset_config(self, new_config: Dict):
         self.config = new_config
         return True
+
+    @classmethod
+    def get_default_config(cls) -> DefenderConfig:
+        return DefenderConfig()
 
 
 class DefenderPolicy(PPOTorchPolicy):

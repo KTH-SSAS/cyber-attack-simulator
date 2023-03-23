@@ -27,15 +27,15 @@ from attack_simulator.env import AttackSimulationEnv, register_rllib_env
 
 def add_fp_tp_sweep(config: dict, values: list) -> dict:
     new_config = copy.deepcopy(config)
-    new_config["env_config"]["false_negative"] = tune.grid_search(values)
-    new_config["env_config"]["false_positive"] = tune.grid_search(values)
+    new_config["env_config"]["sim_config"]["false_negative_rate"] = tune.grid_search(values)
+    new_config["env_config"]["sim_config"]["false_positive_rate"] = tune.grid_search(values)
     return new_config
 
 
 def set_fp_fn_vals(config: dict, fp, fn):
     new_config = copy.deepcopy(config)
-    new_config["env_config"]["false_negative"] = fn
-    new_config["env_config"]["false_positive"] = fp
+    new_config["env_config"]["sim_config"]["false_negative_rate"] = fn
+    new_config["env_config"]["sim_config"]["false_positive_rate"] = fp
     return new_config
 
 

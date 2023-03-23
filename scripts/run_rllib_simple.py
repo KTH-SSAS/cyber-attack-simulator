@@ -46,10 +46,16 @@ if __name__ == "__main__":
     env_config = {
         "backend": "rust",
         "attacker": "depth-first",
+        "seed": seed,
         "save_graphs": False,
         "save_logs": False,
-        "seed": seed,
         "reward_mode": "downtime-penalty",
+        "sim_config": {
+            "seed": seed,
+            "attack_start_time": 5,
+            "false_positive_rate": 0.0,
+            "false_negative_rate": 0.0,
+        },
         "run_id": "simple",
         "sim_config": {
             "seed": 0,
@@ -106,7 +112,7 @@ if __name__ == "__main__":
     )
 
     trainer = ppo.PPOTrainer(config=config)
-    # trainer = dqn.DQNTrainer(config=config)
+    # trainer = dqn.DQN(config=config)
     # trainer = RandomDefender(config=config)
     # trainer = optimal_defender.TripwireDefender(config=config | {"simple_optimizer": True, "defense_steps": dummy_graph.attack_steps_by_defense_step})
 
