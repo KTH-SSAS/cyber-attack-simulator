@@ -188,7 +188,7 @@ def main(
 
 
     gpu_count = kwargs["gpu_count"]
-    num_workers = 1  # kwargs["num_workers"]
+    num_workers = kwargs["num_workers"]
     envs_per_worker = kwargs["env_per_worker"]
 
     global_seed = 22
