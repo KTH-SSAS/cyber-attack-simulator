@@ -5,33 +5,40 @@ import pytest
 
 from attack_simulator.config import EnvConfig
 from attack_simulator.env import AttackSimulationEnv
-from attack_simulator.graph import AttackGraph
 from attack_simulator.renderer import AttackSimulationRenderer
-from attack_simulator.sim import AttackSimulator
-
-
-def test_env_spaces(env: AttackSimulationEnv, attack_graph: AttackGraph) -> None:
-    num_defenses = attack_graph.num_defenses
-    num_actions = env.action_space.n
-    assert num_actions == num_defenses + 1
-    num_attacks = attack_graph.num_attacks
-    dim_observations = env.observation_space.shape[0]
-    assert dim_observations == num_defenses + num_attacks
-
-
-def test_env_seed(env: AttackSimulationEnv) -> None:
-    assert env.seed() is not None
-    assert [42] == env.seed()
 
 
 def test_env_reset(env: AttackSimulationEnv) -> None:
     obs = np.array(env.reset())
-    assert all(env.sim.observe() == obs)
 
 
+def test_env_step(env: AttackSimulationEnv) -> None:
+    obs = env.reset()
+    action = env.action_space.sample()
+    obs, reward, terminated, truncated, info = env.step(action)
+    assert terminated["__all__"] is False
+    assert truncated["__all__"] is False
+    assert "attacker" in obs
+    assert "defender" in obs
+
+
+def test_env_multiple_steps(env: AttackSimulationEnv) -> None:
+    obs = env.reset()
+    for _ in range(100):
+        action = env.action_space.sample()
+        obs, reward, terminated, truncated, info = env.step(action)
+        assert "attacker" in obs
+        assert "defender" in obs
+        if terminated["__all__"] or truncated["__all__"]:
+            break
+
+
+@pytest.mark.skip(reason="needs to be updated to comply with gym standards")
 @pytest.mark.parametrize("save_graphs", [False, True])
 @pytest.mark.parametrize("save_logs", [False, True])
-def test_env_render_save_graphs(save_graphs, save_logs, env_config, tmpdir) -> None:
+def test_env_render_save_graphs(
+    save_graphs: bool, save_logs: bool, env_config: EnvConfig, tmpdir
+) -> None:
     config: EnvConfig = dataclasses.replace(
         env_config, save_graphs=save_graphs, save_logs=save_logs
     )

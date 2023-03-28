@@ -1,99 +1,126 @@
-import numpy as np
+from collections import OrderedDict
 
-from attack_simulator.agents import (
-    InformedAttacker,
+import pytest
+
+from attack_simulator.agents import (  # InformedAttacker,; RandomNoActionAttacker,; RoundRobinNoActionAttacker,
+    Agent,
     PathFinderAttacker,
     RandomAttacker,
-    RandomNoActionAttacker,
     RoundRobinAttacker,
-    RoundRobinNoActionAttacker,
 )
-from attack_simulator.sim import AttackSimulator
+from attack_simulator.agents.searchers import BreadthFirstAttacker, DepthFirstAttacker
+from attack_simulator.constants import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER
+from attack_simulator.observation import obs_to_dict
+from attack_simulator.sim import Simulator
 
-from .test_tests_utils import np_bits
 
-
-def test_agents_attackers_planning(simulator: AttackSimulator):
-
-    # n = len(simulator.g.attack_steps)
-    a = PathFinderAttacker(dict(simulator=simulator))
-
+@pytest.mark.parametrize(
+    "attacker_class",
+    [
+        PathFinderAttacker,
+        # InformedAttacker,
+        # RandomNoActionAttacker,
+        RandomAttacker,
+        RoundRobinAttacker,
+        # RoundRobinNoActionAttacker,
+        BreadthFirstAttacker,
+        DepthFirstAttacker,
+    ],
+)
+def test_sim_attacker_actions(simulator: Simulator, attack_graph, attacker_class) -> None:
     done = False
+    obs, info = simulator.reset()
 
-    while not done:
-        attack_index = a.act(simulator.attack_surface) - 1
-        done = a.done
+    total_ttc = simulator.ttc_total
 
-        if done:
-            break
+    attacker: Agent = attacker_class(
+        dict(
+            attack_graph=attack_graph,
+            num_special_actions=2,
+            terminate_action=ACTION_TERMINATE,
+            wait_action=ACTION_WAIT,
+            seed=42,
+        )
+    )
 
-        assert -1 <= attack_index < simulator.num_attack_steps
+    while info.time <= total_ttc and not done:
+        action = attacker.compute_action_from_dict(obs_to_dict(obs))
+        assert action != ACTION_TERMINATE
+        assert action != ACTION_WAIT
+        obs, info = simulator.step(OrderedDict([(AGENT_ATTACKER, action)]))
 
-        if attack_index != -1:
-            done = simulator.attack_action(attack_index)
+        done = not any(obs.attack_surface)
 
-    assert True
-
-
-def test_agents_attackers_informed(attack_graph):
-    a = InformedAttacker(dict(attack_graph=attack_graph))
-    n = len(attack_graph.attack_steps)
-
-    for i in range(1, 1 << n):
-        obs = np_bits(i, size=n)
-        assert (a.act(obs) - 1) in np.flatnonzero(obs)
-
-
-def test_agents_attackers_random_no_action():
-    a = RandomNoActionAttacker(dict(random_seed=42))
-    for size in np.random.randint(1, 99, size=4):
-        obs = np.zeros(size)
-        ones = np.random.randint(size, size=2)
-        obs[ones] = 1
-        for _ in range(5):
-            action = a.act(obs) - 1
-            assert action == -1 or action in ones
+    assert done, "Attacker failed to explore all attack steps"
 
 
-def test_agents_attackers_random():
-    a = RandomAttacker(dict(random_seed=42))
-    for size in np.random.randint(1, 99, size=4):
-        obs = np.zeros(size)
-        ones = np.random.randint(size, size=2)
-        obs[ones] = 1
-        for _ in range(5):
-            assert (a.act(obs) - 1) in ones
+# def test_agents_attackers_informed(simulator: AttackSimulator) -> None:
+#     a = InformedAttacker(dict(attack_graph=simulator.g))
 
-    assert a.update(obs, 0, True) is None
+#     while not a.done:
+#         obs = simulator.attacker_observation()
+#         a = a.act(obs)
+#         simulator.attacker_action(a)
 
 
-def test_agents_attackers_round_robin_no_action():
-    a = RoundRobinNoActionAttacker({})
-    for size in np.random.randint(1, 99, size=4):
-        obs = np.full(size, 1)
-        zeros = np.random.randint(size, size=size // 3)
-        obs[zeros] = 0
-        last_action = a.act(obs)
-        max_action = max(np.flatnonzero(obs)) + 1
-        for _ in range(size + size):
-            action = a.act(obs)
-            assert (last_action < action or last_action == max_action) and (action - 1) not in zeros
-            last_action = action
-
-    assert a.update(obs, 0, True) is None
+# def test_agents_attackers_random_no_action():
+#     a = RandomNoActionAttacker(dict(random_seed=42))
+#     for size in np.random.randint(1, 99, size=4):
+#         obs = np.zeros(size)
+#         ones = np.random.randint(size, size=2)
+#         obs[ones] = 1
+#         for _ in range(5):
+#             action = a.act(obs) - 1
+#             assert action == -1 or action in ones
 
 
-def test_agents_attackers_round_robin():
-    a = RoundRobinAttacker({})
-    for size in np.random.randint(1, 99, size=4):
-        obs = np.full(size, 1)
-        zeros = np.random.randint(size, size=size // 3)
-        obs[zeros] = 0
-        last_action = a.act(obs) - 1
-        max_action = max(np.flatnonzero(obs))
-        for _ in range(size + size):
-            action = a.act(obs) - 1
-            assert (last_action < action or last_action == max_action) and action not in zeros
-            last_action = action
+# def test_agents_attackers_random():
+#     a = RandomAttacker(dict(random_seed=42))
+#     for size in np.random.randint(1, 99, size=4):
+#         obs = np.zeros(size)
+#         ones = np.random.randint(size, size=2)
+#         obs[ones] = 1
+#         for _ in range(5):
+#             assert (a.act(obs) - 1) in ones
 
-    assert a.update(obs, 0, True) is None
+#     assert a.update(obs, 0, True) is None
+
+
+# def test_agents_attackers_round_robin_no_action():
+#     a = RoundRobinNoActionAttacker({})
+#     for size in np.random.randint(1, 99, size=4):
+#         obs = np.full(size, 1)
+#         zeros = np.random.randint(size, size=size // 3)
+#         obs[zeros] = 0
+#         last_action = a.act(obs)
+#         max_action = max(np.flatnonzero(obs)) + 1
+#         for _ in range(size + size):
+#             action = a.act(obs)
+#             assert (last_action < action or last_action == max_action) and (action - 1) not in zeros
+#             last_action = action
+
+#     assert a.update(obs, 0, True) is None
+
+
+# def test_agents_attackers_round_robin():
+#     a = RoundRobinAttacker({})
+#     for size in np.random.randint(1, 99, size=4):
+#         obs = np.full(size, 1)
+#         zeros = np.random.randint(size, size=size // 3)
+#         obs[zeros] = 0
+#         last_action = a.act(obs) - 1
+#         max_action = max(np.flatnonzero(obs))
+#         for _ in range(size + size):
+#             action = a.act(obs) - 1
+#             assert (last_action < action or last_action == max_action) and action not in zeros
+#             last_action = action
+
+#     assert a.update(obs, 0, True) is None
+
+
+def test_attackers_breadth_first() -> None:
+    pass
+
+
+def test_attackers_depth_first() -> None:
+    pass

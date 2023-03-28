@@ -9,12 +9,15 @@ ids_fnr = 0.5
 
 env_config = {
     "attacker": "depth-first",
-    "false_positive": ids_fpr,
     "save_graphs": False,
     "save_logs": False,
-    "false_negative": ids_fnr,
-    "attack_start_time": 5,
     "seed": 22,
+    "sim_config" {
+        "seed": 22,
+        "attack_start_time": 5,
+        "false_positive_rate": ids_fpr,
+        "false_negative_rate": ids_fnr,
+    },
     "reward_mode": "downtime-penalty",
     "run_id": "simple",
     "graph_config": {
@@ -131,10 +134,7 @@ def run_episode(seed, verbose=False):
 if __name__ == "__main__":
     num_runs = 100
     print("Running over", num_runs, "runs")
-    results = [
-        run_episode(seed)
-        for seed in range(10)
-    ]
+    results = [run_episode(seed) for seed in range(10)]
     print("Average results:")
     print(f"{'FNR':<10}{'FPR':<10}")
     print(

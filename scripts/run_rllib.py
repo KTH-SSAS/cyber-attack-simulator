@@ -1,53 +1,55 @@
 import argparse
 import copy
 import dataclasses
-import itertools
 import os
+import random
+import re
 import socket
 from dataclasses import asdict
 from datetime import datetime
 from typing import Any, Dict, Tuple
-import re
-import numpy as np
+from pathlib import Path
 
 import ray
-from ray import tune
-from ray.air.callbacks.wandb import WandbLoggerCallback
-from ray.tune.utils.log import Verbosity
-from ray.rllib.agents.ppo import PPOTrainer
-from ray.rllib.agents.dqn import DQNTrainer
+import ray.train.torch
+from ray import air, tune
+from ray.air.integrations.wandb import WandbLoggerCallback
+from ray.rllib.policy.policy import PolicySpec
+from ray.tune.schedulers.pbt import PopulationBasedTraining
 
+import attack_simulator.ids_model as ids_model
+from attack_simulator.agents.attackers_policies import BreadthFirstPolicy
 from attack_simulator.config import EnvConfig
+from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.custom_callback import AttackSimCallback
 from attack_simulator.env import AttackSimulationEnv, register_rllib_env
-import attack_simulator.ids_model as ids_model
-import attack_simulator.optimal_defender as optimal_defender
-import attack_simulator.random_defender as random_defender
-from attack_simulator.rng import set_seeds
-from attack_simulator.telegram_utils import notify_ending
 
 
 def add_fp_tp_sweep(config: dict, values: list) -> dict:
     new_config = copy.deepcopy(config)
-    new_config["env_config"]["false_negative"] = tune.grid_search(values)
-    new_config["env_config"]["false_positive"] = tune.grid_search(values)
+    new_config["env_config"]["sim_config"]["false_negative_rate"] = tune.grid_search(values)
+    new_config["env_config"]["sim_config"]["false_positive_rate"] = tune.grid_search(values)
     return new_config
+
 
 def set_fp_fn_vals(config: dict, fp, fn):
     new_config = copy.deepcopy(config)
-    new_config["env_config"]["false_negative"] = fn
-    new_config["env_config"]["false_positive"] = fp
+    new_config["env_config"]["sim_config"]["false_negative_rate"] = fn
+    new_config["env_config"]["sim_config"]["false_positive_rate"] = fp
     return new_config
+
 
 def add_graph_sweep(config: dict, values: list) -> dict:
     new_config = copy.deepcopy(config)
     new_config["env_config"]["graph_config"]["filename"] = tune.grid_search(values)
     return new_config
 
+
 def add_attacker_sweep(config: dict, values: list) -> dict:
     new_config = copy.deepcopy(config)
     new_config["env_config"]["attacker"] = tune.grid_search(values)
     return new_config
+
 
 def add_seed_sweep(config: dict, values: list) -> dict:
     new_config = copy.deepcopy(config)
@@ -65,8 +67,9 @@ def add_dqn_options(config: dict) -> dict:
         "train_batch_size": 600,
     }
 
+
 def get_graph_size(config):
-    return int(re.search("_(\d+)\.yaml", config["env_config"]["graph_config"]["filename"])[1])
+    return int(re.search(r"_(\d+)\.yaml", config["env_config"]["graph_config"]["filename"])[1])
 
 
 def add_ppo_options(config: dict) -> dict:
@@ -82,8 +85,8 @@ def add_ppo_options(config: dict) -> dict:
         "use_critic": True,
         "use_gae": True,
         "kl_coeff": 0.0,
-        "entropy_coeff" : 0.0,
-        "scale_rewards": False
+        "entropy_coeff": 0.0,
+        "scale_rewards": False,
     }
 
 
@@ -94,7 +97,6 @@ def dict2choices(d: dict) -> Tuple[list, str]:
 
 
 def parse_args() -> Dict[str, Any]:
-
     parser = argparse.ArgumentParser(
         description="Reinforcement learning of a computer network defender, using RLlib"
     )
@@ -151,8 +153,7 @@ def main(
 
     os.environ["WANDB_MODE"] = "online" if wandb_sync else "offline"
 
-    register_rllib_env()
-    ids_model.register_rllib_model()
+    env_name = register_rllib_env()
 
     current_time = datetime.now().strftime(r"%m-%d_%H:%M:%S")
     id_string = f"{current_time}@{socket.gethostname()}"
@@ -172,152 +173,282 @@ def main(
         )
 
     env_config = EnvConfig.from_yaml(config_file)
-    env_config = dataclasses.replace(env_config, run_id=id_string)
 
-    model_config = {'fcnet_hiddens': [32, 32], "custom_model": "DefenderModel", "custom_model_config": {}}
+    cwd = os.getcwd()
+    absolute_graph_pathname = Path.absolute(Path(cwd, env_config.graph_config.filename))
+    env_config = dataclasses.replace(
+        env_config,
+        graph_config=dataclasses.replace(
+            env_config.graph_config, filename=str(absolute_graph_pathname)
+        ),
+    )
+    env_config = dataclasses.replace(env_config, run_id=id_string)
+    dummy_env = AttackSimulationEnv(env_config)
+    env_config = dataclasses.replace(env_config, backend=tune.grid_search(["rust", "python"]))
+
 
     gpu_count = kwargs["gpu_count"]
     num_workers = kwargs["num_workers"]
-    env_per_worker = kwargs["env_per_worker"]
-
+    envs_per_worker = kwargs["env_per_worker"]
 
     global_seed = 22
-    # Set global seeds
-    set_seeds(global_seed)
 
     # Allocate GPU power to workers
     # This is optimized for a single machine with multiple CPU-cores and a single GPU
-    #gpu_use_percentage = 0.15 if gpu_count > 0 else 0
-    #num_parallell_tasks = 3
-    #num_gpus = 0.001  # Driver GPU
-    #num_gpus_per_worker = (gpu_count / num_parallell_tasks - num_gpus) / num_workers
+    # gpu_use_percentage = 0.15 if gpu_count > 0 else 0
+    # num_parallell_tasks = 3
+    # num_gpus = 0.001  # Driver GPU
+    # num_gpus_per_worker = (gpu_count / num_parallell_tasks - num_gpus) / num_workers
 
-    num_gpus = 0.0001 # Driver GPU
-    num_gpus_per_worker = (gpu_count - num_gpus) / num_workers if num_workers > 0 else 0
+    num_gpus = 0.0001 if gpu_count > 0 else 0  # Driver GPU
+    num_gpus_per_worker = (
+        (gpu_count - num_gpus) / num_workers if num_workers > 0 and gpu_count > 0 else 0
+    )
 
     # fragment_length = 200
 
-    config = {
-        "seed": global_seed,
-        "horizon": 5000,
-        "framework": "torch",
-        "env": "AttackSimulationEnv",
-        # This is the fraction of the GPU(s) this trainer will use.
-        "num_gpus": num_gpus,
-        "num_workers": num_workers,
-        "num_envs_per_worker": env_per_worker,
-        "num_gpus_per_worker": num_gpus_per_worker,
-        "model": model_config,
-        "env_config": asdict(env_config),
-        "batch_mode": "complete_episodes",
-        # The number of iterations between renderings
-        "evaluation_interval": stop_iterations,
-        "evaluation_duration": 500,
-        # Special evaluation config. Keys specified here will override
-        # the same keys in the main config, but only for evaluation.
-        "evaluation_config": {
-            "render_env": render,
-            "num_envs_per_worker": 1,
-            "env_config": {
-                "save_graphs": render,
-                "save_logs": render,
-            },
-        },
-        "callbacks": AttackSimCallback,
-    }
+    attacker_policy_class = BreadthFirstPolicy
 
-    stop = {"training_iteration": stop_iterations, "episode_reward_mean": kwargs["stop_reward"]}
-
-    # Remove stop conditions that were not set
-    keys = list(stop.keys())
-    for k in keys:
-        if stop[k] is None:
-            del stop[k]
-
-    config = add_seed_sweep(config, [1, 2, 3])
-
-    config = add_fp_tp_sweep(config, [0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
-
-    run_ppo = True
-    run_dqn = False
-    run_random = False
-    run_tripwire = False
-
-    experiments = []
-
-    if run_ppo:
-        experiments.append(
-            tune.Experiment(
-                "PPO",
-                ids_model.Defender,
-                config=add_ppo_options(config),
-                stop=stop,
-                checkpoint_at_end=True,
-                keep_checkpoints_num=1,
-                checkpoint_freq=1,
-                checkpoint_score_attr="episode_reward_mean",
-            )
+    config = (
+        ids_model.DefenderConfig()
+        .training(
+            scale_rewards=False,
+            gamma=1.0,
+            sgd_minibatch_size=128,
+            train_batch_size=128,
+            vf_clip_param=500,
+            clip_param=0.02,
+            vf_loss_coeff=0.001,
+            lr=0.0001,
+            use_critic=True,
+            use_gae=True,
+            kl_coeff=0.0,
+            entropy_coeff=0.0,
         )
-
-    if run_dqn:
-        experiments.append(
-            tune.Experiment(
-                "DQN",
-                DQNTrainer,
-                config=add_dqn_options(config),
-                stop=stop,
-                checkpoint_at_end=True,
-                keep_checkpoints_num=1,
-                checkpoint_freq=1,
-                checkpoint_score_attr="episode_reward_mean",
-            )
-        )
-
-    heuristic_config = {
-        "train_batch_size": 15,
-        "num_gpus": 0,
-        "simple_optimizer": True,
-        "evaluation_interval": 1,
-    }
-
-    if run_random:
-        experiments.append(
-            tune.Experiment(
-                "Random",
-                random_defender.RandomDefender,
-                config=config | heuristic_config,
-                stop={"training_iteration": 1},
-                checkpoint_score_attr="episode_reward_mean",
-            )
-        )
-
-    if run_tripwire:
-        dummy_env = AttackSimulationEnv(env_config)
-        experiments.append(
-            tune.Experiment(
-                "Tripwire",
-                optimal_defender.TripwireDefender,
-                config=config
-                | heuristic_config
-                | {
-                    "defense_steps": dummy_env.sim.g.attack_steps_by_defense_step,
+        .framework("torch")
+        .environment(env_name, env_config=asdict(env_config))
+        .debugging(seed=global_seed)
+        .resources(num_gpus=num_gpus, num_gpus_per_worker=num_gpus_per_worker)
+        .evaluation(
+            evaluation_interval=stop_iterations,
+            evaluation_duration=500,
+            evaluation_config={
+                "render_env": render,
+                "num_envs_per_worker": 1,
+                "env_config": {
+                    "save_graphs": render,
+                    "save_logs": render,
                 },
-                stop={"training_iteration": 1},
-                checkpoint_score_attr="episode_reward_mean",
-            )
+            },
         )
-
-    analysis: tune.ExperimentAnalysis = tune.run_experiments(
-        experiments,
-        callbacks=callbacks,
-        progress_reporter=tune.CLIReporter(max_report_frequency=60),
-        verbose=Verbosity.V1_EXPERIMENT,
-        # restore=args.checkpoint_path,
-        # resume="PROMPT",
+        .callbacks(AttackSimCallback)
+        .rollouts(
+            num_rollout_workers=num_workers,
+            num_envs_per_worker=envs_per_worker,
+            batch_mode="complete_episodes",
+        )
+        .multi_agent(
+            policies={
+                AGENT_DEFENDER: PolicySpec(
+                    policy_class=ids_model.DefenderPolicy,
+                    config={
+                        "model": {
+                            "custom_model": "DefenderModel",
+                            "fcnet_hiddens": [8],
+                            "vf_share_layers": True,
+                            "custom_model_config": {},
+                        }
+                    },
+                ),
+                AGENT_ATTACKER: PolicySpec(
+                    attacker_policy_class,
+                    config={
+                        "num_special_actions": dummy_env.num_special_actions,
+                        "wait_action": dummy_env.sim.wait_action,
+                        "terminate_action": dummy_env.sim.terminate_action,
+                    },
+                ),
+            },
+            policy_mapping_fn=lambda agent_id, episode, worker, **kwargs: agent_id,
+            policies_to_train=[AGENT_DEFENDER],
+        )
     )
 
-    if wandb_sync:
-        notify_ending(f"Run {id_string} finished.")
+    # Remove stop conditions that were not set
+    # keys = list(stop.keys())
+    # for k in keys:
+    #     if stop[k] is None:
+    #         del stop[k]
+
+    # config = add_seed_sweep(config, [1])
+
+    # config = add_graph_sweep(config, [
+    #      f"graphs/second_graph_sweep/model_graph_{size}.yaml"
+    #      for size in [20] #[80, 20, 60, 40]
+    # ])
+
+    # config = add_attacker_sweep(config, ["random", "pathplanner", "depth-first", "breadth-first", "mixed"])
+
+    # config = add_fp_tp_sweep(config, np.geomspace(0.5, 1, 5)-0.5)
+
+    # run_ppo = True
+    # run_dqn = False
+
+    # experiments = []
+
+    # if run_ppo:
+    #     experiments.append(
+    #         tune.Experiment(
+    #             "PPO",
+    #             ids_model.Defender,
+    #             config=add_ppo_options(config),
+    #             stop=stop,
+    #             checkpoint_at_end=True,
+    #             keep_checkpoints_num=1,
+    #             checkpoint_freq=1,
+    #             checkpoint_score_attr="episode_reward_mean",
+    #         )
+    #     )
+
+    # if run_dqn:
+    #     experiments.append(
+    #         tune.Experiment(
+    #             "DQN",
+    #             DQNTrainer,
+    #             config=add_dqn_options(config),
+    #             stop=stop,
+    #             checkpoint_at_end=True,
+    #             keep_checkpoints_num=1,
+    #             checkpoint_freq=1,
+    #             checkpoint_score_attr="episode_reward_mean",
+    #         )
+    #     )
+
+    # heuristic_config = {
+    #     "train_batch_size": 15,
+    #     "num_gpus": 0,
+    #     "simple_optimizer": True,
+    #     "evaluation_interval": 1,
+    # }
+
+    # if run_random:
+    #     experiments.append(
+    #         tune.Experiment(
+    #             "Random",
+    #             random_defender.RandomDefender,
+    #             config=config | heuristic_config,
+    #             stop={"training_iteration": 1},
+    #             checkpoint_score_attr="episode_reward_mean",
+    #         )
+    #     )
+
+    # if run_tripwire:
+    #     dummy_env = AttackSimulationEnv(env_config)
+    #     experiments.append(
+    #         tune.Experiment(
+    #             "Tripwire",
+    #             optimal_defender.TripwireDefender,
+    #             config=config
+    #             | heuristic_config
+    #             | {
+    #                 "defense_steps": dummy_env.sim.g.attack_steps_by_defense_step,
+    #             },
+    #             stop={"training_iteration": 1},
+    #             checkpoint_score_attr="episode_reward_mean",
+    #         )
+    #      )
+
+    # Hyperparameter tuning
+
+    criteria = "episode_reward_mean"
+    perturb = 0.25
+
+    # pb2 = PB2(
+    #     time_attr=criteria,
+    #     metric="episode_reward_mean",
+    #     mode="max",
+    #     perturbation_interval=t_ready,
+    #     quantile_fraction=perturb,  # copy bottom % with top %
+    #     # Specifies the hyperparam search space
+    #     hyperparam_bounds={
+    #         "lambda": [0.9, 1.0],
+    #         "clip_param": [0.1, 0.5],
+    #         "lr": [1e-3, 1e-5],
+    #         "train_batch_size": [1000, 60000],
+    #     },
+    # )
+
+    # Postprocess the perturbed config to ensure it's still valid used if PBT.
+    def explore(config):
+        # Ensure we collect enough timesteps to do sgd.
+        if config["train_batch_size"] < config["sgd_minibatch_size"] * 2:
+            config["train_batch_size"] = config["sgd_minibatch_size"] * 2
+        # Ensure we run at least one sgd iter.
+        if config["lambda"] > 1:
+            config["lambda"] = 1
+        config["train_batch_size"] = int(config["train_batch_size"])
+        return config
+
+    pbt = PopulationBasedTraining(
+        time_attr="training_iteration",
+        metric="episode_reward_mean",
+        mode="max",
+        perturbation_interval=50,
+        resample_probability=perturb,
+        quantile_fraction=perturb,  # copy bottom % with top %
+        # Specifies the search space for these hyperparams
+        hyperparam_mutations={
+            "lambda": lambda: random.uniform(0.9, 1.0),
+            "clip_param": lambda: random.uniform(0.01, 0.5),
+            "lr": lambda: random.uniform(1e-3, 1e-5),
+            "train_batch_size": lambda: random.randint(300, 3000),
+            "vf_clip_param": lambda: random.randint(100, 1000),
+            "vf_loss_coeff": lambda: random.uniform(0.0001, 0.01),
+        },
+        custom_explore_fn=explore,
+    )
+
+    #     "train_batch_size": 2048,
+    # "sgd_minibatch_size": 2048,
+    # "vf_clip_param": 500,
+    # "clip_param": 0.02,
+    # "vf_loss_coeff": 0.001,
+    # "lr": 0.0001,
+    # "gamma": 1,
+    # "use_critic": True,
+    # "use_gae": True,
+    # "kl_coeff": 0.0,
+    # "entropy_coeff": 0.0,
+    # "scale_rewards": False,
+
+    tuner = tune.Tuner(
+        ids_model.Defender,
+        tune_config=tune.TuneConfig(reuse_actors=False),
+        run_config=air.RunConfig(
+            stop=tune.stopper.MaximumIterationStopper(stop_iterations),
+            callbacks=callbacks,
+            # progress_reporter=tune.CLIReporter(max_report_frequency=60),
+        ),
+        param_space=config,
+    )
+
+    results = tuner.fit()
+
+    best_result = results.get_best_result(metric="episode_reward_mean", mode="max")
+
+    print("Best result:", best_result)
+
+    # analysis: tune.ExperimentAnalysis = tune.run_experiments(
+    #     experiments,
+    #     callbacks=callbacks,
+    #     progress_reporter=tune.CLIReporter(max_report_frequency=60),
+    #     verbose=Verbosity.V1_EXPERIMENT,
+    #     # restore=args.checkpoint_path,
+    #     # resume="PROMPT",
+    # )
+
+    # if wandb_sync:
+    #     notify_ending(f"Run {id_string} finished.")
 
     # wandb.config.update(env_config_dict)
     # wandb.config.update(graph_config_dict)

@@ -24,7 +24,6 @@ def test_rng_get_rng(seed):
 
 @pytest.mark.parametrize("seed", [42, 43])
 def test_rng_set_seeds(seed):
-
     set_seeds(seed)
 
     u = torch.tensor([1 / 11] * 11)

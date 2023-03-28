@@ -1,28 +1,38 @@
 [build-system]
-requires = ["poetry-core>=1.1.0a6","poetry>=1.2.0a2"]
-build-backend = "poetry.core.masonry.api"
-
+requires = ["maturin>=0.14,<0.15"]
+build-backend = "maturin"
 
 [tool.poetry]
 name = "attack_simulator"
-version = "0.1.0"
+version = "2.0"
 description = "Reinforcement learning on attack simulations"
 license = "MIT"
 authors = [
     "Jakob Nyberg <jaknyb@kth.se>",
     "Pontus Johnson <pontusj@kth.se>"
 ]
-repository = "https://gitr.sys.kth.se/pontusj/openai_attack_simulation"
 
+[project]
+name = "attack-simulator"
+version = "2.0"
+description = "A MAL based attack simulator"
+requires-python = ">=3.10"
+authors = [{ name = "Jakob Nyberg", email = "jaknyb@kth.se" }]
+
+# Dependencies via Poetry
+
+[[tool.poetry.source]]
+name = "ray-wheels"
+url = "https://s3-us-west-2.amazonaws.com/ray-wheels/latest/"
+secondary = true
 
 [tool.poetry.dependencies]
 python = "~3.10"
-#gym = "<0.24.0"
 numpy = "^1.21.4"
 matplotlib = "^3.4.2"
 pyyaml = "^6.0"
 aiohttp = "^3.8"
-ray = {version = "^2.0.0", extras = ["default", "rllib", "k8s"]}
+ray = {version = "^3.0.0.dev0", extras = ["default", "tune", "rllib", "k8s"], source="ray-wheels"}
 networkx = "^2.6.3"
 seaborn = "^0.11.2"
 wandb = "^0.12.7"
@@ -33,12 +43,26 @@ pydot = "^1.4.2"
 docformatter = "^1.4"
 poetry = "^1.1.13"
 agraphlib = { path = "../agraphlib/", develop = true }
-gymnasium = "^0.27.1"
+gymnasium = "^0.26.3"
+rust-sim = {path = "../rust-sim/target/wheels/rust_sim-0.1.0-cp310-cp310-linux_x86_64.whl", develop = true}
+scipy = "^1.10.0"
+dm-tree = "^0.1.8"
+tabulate = "^0.9.0"
+scikit-image = "^0.19.3"
+lz4 = "^4.3.2"
+maturin = "^0.14.13"
+pandas = "^1.5.3"
+opencv-python = "^4.7.0.68"
+torch = "^1.13.1"
+torchvision = "^0.14.1"
+telegram = "^0.0.1"
+tensorboardx = "^2.6"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.0.257"
 tox = "^3.24.4"
 tox-poetry-dev-dependencies = "*"
-black = {version = "^21.10b0", extras = ["jupyter"]}
+black = {version = "^22.12.0", extras = ["jupyter"]}
 isort = "^5.10.1"
 flake8 = "^4.0.1"
 flakehell = "^0.9.0"
@@ -51,16 +75,18 @@ jupyterlab = "^3.2.2"
 tqdm = {extras = ["notebook"], version = "^4.62.3"}
 pylint = "^2.13.9"
 
+# Linting and formatting
 
 [tool.black]
 line_length = 100
-target_version = ['py39']
+target_version = ['py310']
 
+[tool.ruff]
+line-length = 100
 
 [tool.isort]
 profile = "black"
 line_length = 100
-
 
 [tool.flakehell]
 max_line_length = 100
@@ -75,7 +101,6 @@ pycodestyle = ["+*", "-E302", "-E305", "-E402"]
 pyflakes = ["+*"]
 pycodestyle = ["+*", "-E203", "-W503"]
 
-
 [tool.mypy]
 ignore_missing_imports = true
 check_untyped_defs = true
@@ -85,6 +110,7 @@ disallow_untyped_decorators = true
 disallow_incomplete_defs = true
 no_implicit_optional = true
 show_error_codes = true
+plugins = "numpy.typing.mypy_plugin"
 
 [tool.coverage.report]
 show_missing = true

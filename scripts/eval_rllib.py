@@ -37,8 +37,8 @@ class RLLibEvaluator:
                 save_graphs=True,
                 save_logs=True,
                 seed=2,
-                false_positive=0.0,
-                false_negative=0.0,
+                false_positive_rate=0.0,
+                false_negative_rate=0.0,
             )
             model_config = {"use_lstm": False, "lstm_cell_size": 256}
             config = {

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
-from pathlib import Path
 import sys
+from pathlib import Path
+
 from scripts.run_rllib import main
 
 
 def run(config_file: Path, num_workers: int, debug: bool = False) -> None:
-    stop_iterations = 500
+    stop_iterations = 5
     local_mode = debug
     wandb_sync = not debug
 
@@ -15,7 +16,7 @@ def run(config_file: Path, num_workers: int, debug: bool = False) -> None:
         stop_iterations,
         local_mode,
         wandb_sync,
-        gpu_count=1,
+        gpu_count=0,
         num_workers=num_workers,
         env_per_worker=1,
         stop_reward=None,
@@ -24,5 +25,6 @@ def run(config_file: Path, num_workers: int, debug: bool = False) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
+        print("Usage: debug.py <config_file>")
         sys.exit()
-    run(Path(sys.argv[1]), num_workers=10)
+    run(Path(sys.argv[1]), num_workers=0)

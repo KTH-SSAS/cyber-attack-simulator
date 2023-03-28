@@ -1,18 +1,20 @@
 [MASTER]
 max-line-length=120
 variable-naming-style=any
+init-hook='import sys; sys.path.append("/home/jakob/sentience/agraphlib")'
 generated-members=
 			numpy.*,
 			torch.*,
 			wandb.*
-
+extension-pkg-allow-list=
+      rust_sim
 [MESSAGES CONTROL]
 disable=design,
 		missing-module-docstring,
 		missing-class-docstring,
 		missing-function-docstring,
 		invalid-name,
-		max-attributes,
 		consider-using-with,
 		too-many-nested-blocks,
 		duplicate-code
+

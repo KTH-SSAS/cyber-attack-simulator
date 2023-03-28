@@ -1,0 +1,142 @@
+attack_graph:
+- asset: flag
+  children: []
+  id: flag-0-take-0
+  name: gather
+  
+  step_type: and
+  ttc: 0
+- asset: firewall
+  children:
+  - flag-0-take-0
+  id: firewall-1-connect-1
+  name: connect
+  
+  step_type: and
+  ttc: 0
+- asset: authenticator
+  children:
+  - firewall-1-connect-1
+  id: authenticator-2-unlock-2
+  name: unlock
+  
+  step_type: and
+  ttc: 0
+- asset: host
+  children:
+  - authenticator-2-discover-11
+  id: host-3-connect-3
+  name: connect
+  
+  step_type: or
+  ttc: 1
+- asset: credentials
+  children:
+  - authenticator-2-credentials_gathered-12
+  id: credentials-4-gather-4
+  name: gather
+  
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - credentials-4-gather-4
+  id: host-5-connect-5
+  name: connect
+  
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - host-3-connect-3
+  - host-5-connect-5
+  id: host-6-connect-6
+  name: connect
+  
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - host-6-connect-6
+  id: host-7-connect-7
+  name: connect
+  
+  step_type: or
+  ttc: 1
+- asset: attacker
+  children:
+  - host-7-connect-7
+  - credentials-9-gather-9
+  - host-10-connect-10
+  id: attacker-8-enter-8
+  name: enter
+  
+  step_type: or
+  ttc: 1
+- asset: credentials
+  children:
+  - authenticator-2-credentials_gathered-12
+  id: credentials-9-gather-9
+  name: gather
+  
+  step_type: or
+  ttc: 1
+- asset: host
+  children: []
+  id: host-10-connect-10
+  name: connect
+  
+  step_type: or
+  ttc: 1
+- asset: authenticator
+  children:
+  - authenticator-2-unlock-2
+  id: authenticator-2-discover-11
+  name: discover
+  
+  step_type: or
+  ttc: 1
+- asset: authenticator
+  children:
+  - authenticator-2-unlock-2
+  id: authenticator-2-credentials_gathered-12
+  name: credentials_gathered
+  
+  step_type: or
+  ttc: 0
+- asset: firewall
+  children:
+  - firewall-1-connect-1
+  - flag-0-take-0
+  id: firewall-1-defend-13
+  name: enable
+  
+  step_type: or
+  ttc: 0
+flags:
+  flag-0-take-0: high_flag
+entry_points: [attacker-8-enter-8]
+defenses: [firewall-1-defend-13]
+instance_model:
+- dependents: []
+  id: 0
+- dependents: []
+  id: 1
+- dependents: []
+  id: 2
+- dependents: []
+  id: 3
+- dependents: []
+  id: 4
+- dependents: []
+  id: 5
+- dependents: []
+  id: 6
+- dependents: []
+  id: 7
+- dependents: []
+  id: 8
+- dependents: []
+  id: 9
+- dependents: []
+  id: 10

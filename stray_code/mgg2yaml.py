@@ -1,8 +1,11 @@
 import json
+
 import yaml
 
+
 def replace_colons(name: str):
-	return name.replace(':', '-')
+    return name.replace(":", "-")
+
 
 def convert_ttc(ttc_field):
     if ttc_field:
@@ -13,9 +16,9 @@ def convert_ttc(ttc_field):
 
 def convert_step(step):
     return {
-        "id": step["id"].replace(':', '-'),
+        "id": step["id"].replace(":", "-"),
         "ttc": convert_ttc(step["ttc"]),
-        "children": [step.replace(':', '-') for step in step["links"]],
+        "children": [step.replace(":", "-") for step in step["links"]],
         "step_type": step["type"] if step["type"] != "notExist" else "or",
     }
 
@@ -39,7 +42,13 @@ new_steps = [convert_step(step) for step in graph]
 new_steps, defenses = convert_defenses(new_steps)
 
 
-full_file = {"attack_graph": new_steps, "flags": ["Credentials--3746579751403632785-credentialTheft"], "entry_points": ["Attacker--8227084409955727818-firstSteps"], "defenses": defenses, 'instance_model': []}
+full_file = {
+    "attack_graph": new_steps,
+    "flags": ["Credentials--3746579751403632785-credentialTheft"],
+    "entry_points": ["Attacker--8227084409955727818-firstSteps"],
+    "defenses": defenses,
+    "instance_model": [],
+}
 
 with open("mgg.yaml", "w") as f:
     yaml.dump(full_file, f)
