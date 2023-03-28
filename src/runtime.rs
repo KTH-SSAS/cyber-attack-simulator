@@ -477,7 +477,7 @@ mod tests {
 
     #[test]
     fn test_sim_init() {
-        let filename = "four_ways.yaml";
+        let filename = "graphs/four_ways.yaml";
         let graph = attackgraph::load_graph_from_yaml(filename);
         let config = config::SimulatorConfig::default();
         let sim = SimulatorRuntime::new(graph, config).unwrap();

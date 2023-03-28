@@ -26,7 +26,7 @@ fn rusty_sim(_py: Python, m: &PyModule) -> PyResult<()> {
 mod tests {
     use std::{cmp::max, collections::HashMap};
 
-    use crate::{attackgraph, runtime::{self, Observation, Info}, config};
+    use crate::{attackgraph, config, runtime, observation::{Observation, Info}};
     use rand::seq::SliceRandom;
 
     fn get_sim_from_filename(filename: &str) -> runtime::SimulatorRuntime {
@@ -56,7 +56,7 @@ mod tests {
 
     #[test]
     fn test_sim_obs() {
-        let filename = "four_ways.yaml";
+        let filename = "graphs/four_ways.yaml";
         let mut sim = get_sim_from_filename(filename);
 
         let observation: Observation;
@@ -72,7 +72,7 @@ mod tests {
 
     #[test]
     fn test_attacker() {
-        let filename = "four_ways.yaml";
+        let filename = "graphs/four_ways.yaml";
         let mut sim = get_sim_from_filename(filename);
 
         let mut observation: Observation;
@@ -108,7 +108,7 @@ mod tests {
 
     #[test]
     fn test_defender() {
-        let filename = "four_ways.yaml";
+        let filename = "graphs/four_ways.yaml";
         let mut sim = get_sim_from_filename(filename);
 
         let mut observation: Observation;

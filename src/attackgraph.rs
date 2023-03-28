@@ -466,7 +466,7 @@ mod tests {
     use crate::attackgraph;
     #[test]
     fn load_graph_from_file() {
-        let filename = "four_ways.yaml";
+        let filename = "graphs/four_ways.yaml";
         let attackgraph = attackgraph::load_graph_from_yaml(filename);
         let entry_point = attackgraph.entry_points.iter().collect::<Vec<&u64>>();
 
