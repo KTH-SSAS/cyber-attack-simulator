@@ -57,6 +57,7 @@ torch = "^1.13.1"
 torchvision = "^0.14.1"
 tensorboardx = "^2.6"
 pip = "^23.0.1"
+torch-geometric = "^2.3.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.257"
