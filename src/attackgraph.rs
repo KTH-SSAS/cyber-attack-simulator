@@ -1,5 +1,6 @@
+use itertools::Itertools;
 use serde_yaml::{self, Mapping};
-use std::{fmt, env};
+use std::fmt;
 use std::{
     collections::{HashMap, HashSet},
     fs::File,
@@ -26,15 +27,15 @@ impl std::error::Error for GraphError {
     }
 }
 
-impl GraphError {
-    fn new(message: String) -> GraphError {
-        GraphError { message }
-    }
+// impl GraphError {
+//     fn new(message: String) -> GraphError {
+//         GraphError { message }
+//     }
 
-    fn NoSuchAttackStep(id: u64) -> GraphError {
-        GraphError::new(format!("No such attack step: {}", id))
-    }
-}
+//     fn NoSuchAttackStep(id: u64) -> GraphError {
+//         GraphError::new(format!("No such attack step: {}", id))
+//     }
+// }
 
 pub(crate) enum Logic {
     And,
@@ -195,7 +196,11 @@ impl AttackGraph {
             })
             .collect();
 
-        let graph = Graph { nodes };
+
+        let graph = Graph {
+            nodes,
+            edges: HashSet::from_iter(edges),
+        };
 
         let attack_steps = graph
             .nodes
@@ -233,7 +238,7 @@ impl AttackGraph {
     }
 
     pub fn ttc_params(&self) -> Vec<(NodeID, TTCType)> {
-        let mut ttc_params: Vec<(NodeID, TTCType)> = self
+        let ttc_params: Vec<(NodeID, TTCType)> = self
             .attack_steps
             .iter()
             .map(|i| self.graph.nodes.get(i).unwrap())
@@ -242,8 +247,8 @@ impl AttackGraph {
                 true => (id, 0),
                 false => (id, ttc),
             })
+            .sorted()
             .collect();
-        ttc_params.sort();
         return ttc_params;
     }
 
@@ -311,7 +316,6 @@ impl AttackGraph {
 // }
 
 pub(crate) fn load_graph_from_yaml<'a: 'b, 'b>(filename: &str) -> AttackGraph {
-
     let file = match File::open(filename) {
         Ok(f) => f,
         Err(e) => panic!("Could not open file: {}. {}", filename, e),
@@ -323,29 +327,24 @@ pub(crate) fn load_graph_from_yaml<'a: 'b, 'b>(filename: &str) -> AttackGraph {
     //  	println!("{:?}", key);
     //  });
 
-    let mut defenses = mapping
+    let defenses = mapping
         .get(String::from("defenses"))
         .unwrap()
         .as_sequence()
         .unwrap()
         .iter()
         .map(|s| s.as_str().unwrap().to_string())
+        .sorted()
         .collect::<Vec<String>>();
 
-    let mut flags: Vec<String> = mapping
+    let flags: Vec<String> = mapping
         .get(String::from("flags"))
         .unwrap()
         .as_mapping()
         .unwrap()
         .iter()
-        .map(|(k, _)| {
- 
-                k.as_str().unwrap().to_string()
-            
-        })
+        .map(|(k, _)| k.as_str().unwrap().to_string())
         .collect();
-
-    defenses.sort();
 
     let entry_points = mapping
         .get(String::from("entry_points"))
@@ -364,12 +363,11 @@ pub(crate) fn load_graph_from_yaml<'a: 'b, 'b>(filename: &str) -> AttackGraph {
 
     let mut id = 0;
 
-    let mut step_names = attack_graph
+    let step_names = attack_graph
         .iter()
         .map(|s| s.get("id").unwrap().as_str().unwrap().to_string())
+        .sorted()
         .collect::<Vec<String>>();
-
-    step_names.sort();
 
     let attack_steps = step_names
         .iter()

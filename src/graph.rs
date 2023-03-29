@@ -5,6 +5,7 @@ pub type NodeID = u64; // Global ID of a node
 
 pub struct Graph<T> {
 	pub nodes: HashMap<NodeID, Node<T>>,
+	pub edges: HashSet<(NodeID, NodeID)>,
 }
 
 impl<T> Graph<T> {

@@ -6,12 +6,14 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::{fmt, vec};
 
+use itertools::Itertools;
+
 use crate::attackgraph::{AttackGraph, TTCType};
 use crate::config::SimulatorConfig;
 use crate::graph::NodeID;
 use crate::observation::{Info, Observation};
 
-use rand::SeedableRng;
+use rand::{Rng, SeedableRng};
 use rand_distr::Exp;
 
 pub const ACTION_NOP: usize = 0; // No action
@@ -45,16 +47,13 @@ pub(crate) struct SimulatorState {
     attack_surface: HashSet<NodeID>,
     remaining_ttc: HashMap<u64, TTCType>,
     num_observed_alerts: usize,
-    actions: HashMap<String, usize>,
+    false_alerts: HashSet<u64>,
+    missed_alerts: HashSet<u64>,
+    //actions: HashMap<String, usize>,
 }
 
 impl SimulatorState {
-    fn new(
-        graph: &AttackGraph,
-        seed: u64,
-        randomize_ttc: bool,
-    ) -> SimResult<SimulatorState> {
-        
+    fn new(graph: &AttackGraph, seed: u64, randomize_ttc: bool) -> SimResult<SimulatorState> {
         let mut rng = ChaChaRng::seed_from_u64(seed);
         let enabled_defenses = HashSet::new();
         let ttc_params = graph.ttc_params();
@@ -73,15 +72,21 @@ impl SimulatorState {
             remaining_ttc,
             num_observed_alerts: 0,
             compromised_steps,
-            actions: HashMap::new(),
+            //actions: HashMap::new(),
+            false_alerts: HashSet::new(),
+            missed_alerts: HashSet::new(),
         })
     }
 
-    fn to_info(&self, num_attacks: usize, num_defenses: usize, flag_status: HashMap<u64, bool>) -> Info {
+    fn to_info(
+        &self,
+        num_attacks: usize,
+        num_defenses: usize,
+        flag_status: HashMap<u64, bool>,
+    ) -> Info {
         let num_compromised_steps = self.compromised_steps.len();
         let num_enabled_defenses = self.enabled_defenses.len();
         let num_compromised_flags = flag_status.iter().filter(|(_, v)| **v).count();
-
 
         Info {
             time: self.time,
@@ -95,7 +100,7 @@ impl SimulatorState {
     }
 }
 
-type ActionIndex = usize;
+//type ActionIndex = usize;
 type ActorIndex = usize;
 
 pub(crate) struct SimulatorRuntime {
@@ -103,21 +108,18 @@ pub(crate) struct SimulatorRuntime {
     state: RefCell<SimulatorState>,
     history: Vec<SimulatorState>,
     pub config: SimulatorConfig,
-    false_negative_rate: f64,
-    false_positive_rate: f64,
+    pub confusion_per_step: HashMap<u64, (f64, f64)>,
     pub ttc_sum: TTCType,
-    
+
     pub actors: HashMap<String, ActorIndex>,
 
-    pub graph_to_attack_state: HashMap<NodeID, usize>,
-    pub graph_to_defense_state: HashMap<NodeID, usize>,
-
+    pub id_to_index: HashMap<NodeID, usize>,
     pub defender_action_to_graph: Vec<NodeID>,
     pub attacker_action_to_graph: Vec<NodeID>,
 }
 
 pub fn get_initial_ttc_vals(
-    rng : &mut ChaChaRng,
+    rng: &mut ChaChaRng,
     ttc_params: &Vec<(NodeID, TTCType)>,
 ) -> HashMap<NodeID, TTCType> {
     // Note! The sampling order has to be deterministic!
@@ -147,42 +149,54 @@ pub fn get_initial_ttc_vals(
 impl SimulatorRuntime {
     // Path: src/sim.rs
     pub fn new(graph: AttackGraph, config: SimulatorConfig) -> SimResult<SimulatorRuntime> {
-        let mut attack_indices = graph.attack_steps.iter().map(|x| *x).collect::<Vec<u64>>();
-        attack_indices.sort();
-        let mut defense_indices = graph.defense_steps.iter().map(|x| *x).collect::<Vec<u64>>();
-        defense_indices.sort();
+        let index_to_id = graph
+            .graph
+            .nodes
+            .iter()
+            .map(|(x, _)| *x)
+            .sorted() // ensure deterministic order
+            .collect::<Vec<u64>>();
 
-        let graph_to_attack_state = attack_indices
+        // Maps the id of a node in the graph to an index in the state vector
+        let id_to_index: HashMap<u64, usize> = index_to_id
             .iter()
             .enumerate()
             .map(|(i, n)| (*n, i))
             .collect();
 
-        let graph_to_defense_state = defense_indices
-            .iter()
-            .enumerate()
-            .map(|(i, n)| (*n, i))
-            .collect();
+        // Maps the index of the action to the id of the node in the graph
+        let attacker_action_to_graph = index_to_id.clone();
 
-        let attacker_action_to_graph = attack_indices.iter().enumerate().map(|(_, n)| *n).collect();
-
-        let defender_action_to_graph = defense_indices
+        let defender_action_to_graph = index_to_id
             .iter()
-            .enumerate()
-            .map(|(_, n)| *n)
-            .collect();
+            .filter_map(|id| match graph.defense_steps.contains(id) {
+                true => Some(*id),
+                false => None,
+            })
+            .collect::<Vec<u64>>();
 
         let initial_state = SimulatorState::new(&graph, config.seed, config.randomize_ttc)?;
+
+        let fnr_fpr_per_step = index_to_id
+            .iter()
+            .map(|id| {
+                match graph.attack_steps.contains(&id) {
+                    true => (
+                        *id,
+                        (config.false_negative_rate, config.false_positive_rate),
+                    ),
+                    false => (*id, (0.0, 0.0)), // No false negatives or positives for defense steps
+                }
+            })
+            .collect::<HashMap<u64, (f64, f64)>>();
 
         let sim = SimulatorRuntime {
             state: RefCell::new(initial_state),
             g: graph,
-            false_negative_rate: config.false_negative_rate,
-            false_positive_rate: config.false_positive_rate,
+            confusion_per_step: fnr_fpr_per_step,
             config,
             ttc_sum: 0,
-            graph_to_attack_state,
-            graph_to_defense_state,
+            id_to_index,
             attacker_action_to_graph,
             defender_action_to_graph,
             history: Vec::new(),
@@ -196,19 +210,21 @@ impl SimulatorRuntime {
     }
 
     pub fn reset(&mut self, seed: Option<u64>) -> SimResult<(Observation, Info)> {
-        
         if let Some(seed) = seed {
             self.config.seed = seed;
         }
 
-        let new_state =
-            SimulatorState::new(&self.g, self.config.seed, self.config.randomize_ttc)?;
+        let new_state = SimulatorState::new(&self.g, self.config.seed, self.config.randomize_ttc)?;
 
         let flag_status = get_flag_status(&self.g.flags, &new_state.compromised_steps);
-        
+
         let result = Ok((
             self.map_state_to_observation(&new_state),
-            new_state.to_info(self.g.attack_steps.len(), self.g.defense_steps.len(), flag_status),
+            new_state.to_info(
+                self.g.attack_steps.len(),
+                self.g.defense_steps.len(),
+                flag_status,
+            ),
         ));
         self.ttc_sum = new_state.remaining_ttc.iter().map(|(_, &ttc)| ttc).sum();
         self.history.clear();
@@ -217,7 +233,13 @@ impl SimulatorRuntime {
     }
 
     pub fn total_ttc_remaining(&self) -> TTCType {
-        return self.state.borrow().remaining_ttc.iter().map(|(_, &ttc)| ttc).sum();
+        return self
+            .state
+            .borrow()
+            .remaining_ttc
+            .iter()
+            .map(|(_, &ttc)| ttc)
+            .sum();
     }
 
     pub fn enable_defense_step(
@@ -248,9 +270,10 @@ impl SimulatorRuntime {
         let defense_step_id = self.defender_action_to_graph[action];
 
         if state.enabled_defenses.contains(&defense_step_id) {
-            return Err(SimError {
-                error: "Defense step not in defense surface.".to_string(),
-            });
+            panic!(
+                "Defense step {} is already enabled.",
+                defense_step_id
+            );
         }
 
         return self.enable_defense_step(defense_step_id);
@@ -260,11 +283,11 @@ impl SimulatorRuntime {
         return HashMap::from([(attack_step_id, -1)]);
     }
 
-    pub fn attack_action(&self, attack_surface_idx: usize) -> SimResult<HashMap<NodeID, i32>> {
+    pub fn attack_action(&self, attacker_action: usize) -> SimResult<HashMap<NodeID, i32>> {
         // Have the attacker perform an action.
-                
-        let attack_step_id = self.attacker_action_to_graph[attack_surface_idx];
-        
+
+        let attack_step_id = self.attacker_action_to_graph[attacker_action];
+
         let state = self.state.borrow();
         let attack_surface_empty = state.attack_surface.is_empty();
 
@@ -278,64 +301,96 @@ impl SimulatorRuntime {
     }
 
     fn map_state_to_observation(&self, state: &SimulatorState) -> Observation {
-        let mut ttc_remaining = vec![0; self.g.attack_steps.len()];
-        state
-            .remaining_ttc
-            .iter()
-            .map(|(node_id, &ttc)| (self.graph_to_attack_state[&node_id], ttc))
-            .for_each(|(index, ttc)| {
-                ttc_remaining[index] = ttc;
-            });
+        // reverse graph id to action index mapping
 
-        let mut attack_surface_vec = vec![false; self.g.attack_steps.len()];
+        let mut attack_surface_vec = vec![false; self.id_to_index.len()];
         state
             .attack_surface
             .iter()
-            .map(|node_id| self.graph_to_attack_state[&node_id])
+            .map(|node_id| self.id_to_index[&node_id])
             .for_each(|index| {
                 attack_surface_vec[index] = true;
             });
 
-        let mut defense_state = vec![true; self.g.defense_steps.len()];
+        let mut ttc_remaining = vec![0; self.id_to_index.len()];
         state
-            .enabled_defenses
+            .remaining_ttc
             .iter()
-            .map(|node_id| self.graph_to_defense_state[&node_id])
-            .for_each(|index| {
-                defense_state[index] = false;
+            .map(|(node_id, &ttc)| (self.id_to_index[&node_id], ttc))
+            .for_each(|(index, ttc)| {
+                ttc_remaining[index] = ttc;
             });
 
-        let mut attack_state = vec![false; self.g.attack_steps.len()];
+        let mut step_state = vec![false; self.id_to_index.len()];
+        
+        let disabled_defenses: HashSet<&u64> = self.g.defense_steps.difference(&state.enabled_defenses).collect();
+        disabled_defenses
+            .iter()
+            .map(|&node_id| self.id_to_index[node_id])
+            .for_each(|index| {
+                step_state[index] = true;
+            });
+
         state
             .compromised_steps
             .iter()
-            .map(|node_id| self.graph_to_attack_state[&node_id])
+            .map(|node_id| self.id_to_index[&node_id])
             .for_each(|index| {
-                attack_state[index] = true;
+                step_state[index] = true;
             });
 
-        let mut ids_observation = defense_state.clone();
-        ids_observation.extend(attack_state.clone());
+        let ids_observed = state
+            .compromised_steps // true alerts
+            .union(&state.false_alerts) // add false alerts
+            .filter_map(|x| match state.missed_alerts.contains(x) {
+                true => None, // remove missed alerts
+                false => Some(x),
+            })
+            .collect::<HashSet<&u64>>();
+
+        let mut ids_observed_vec = vec![false; self.id_to_index.len()];
+        ids_observed.iter().for_each(|node_id| {
+            ids_observed_vec[self.id_to_index[node_id]] = true;
+        });
 
         let mut action_mask = vec![false; SPECIAL_ACTIONS.len()];
-        
-        action_mask[ACTION_NOP] = true;
 
-        let mut defender_action_mask = action_mask.clone();
-        let mut attacker_action_mask = action_mask.clone();
-        
-        defender_action_mask.extend(defense_state.clone());
-        attacker_action_mask.extend(attack_surface_vec.clone());
+        action_mask[ACTION_NOP] = true;
+        action_mask[ACTION_TERMINATE] = false;
+
+        assert!(action_mask.len() == 2);
+
+        let defense_state = self
+            .defender_action_to_graph
+            .iter()
+            .map(|f| self.id_to_index[&f])
+            .map(|x| step_state[x])
+            .collect::<Vec<bool>>();
+
+        assert!(defense_state.len() == self.defender_action_to_graph.len());
+
+        let defender_action_mask = action_mask.iter().chain(defense_state.iter()).cloned().collect::<Vec<bool>>();
+        let attacker_action_mask = action_mask.iter().chain(attack_surface_vec.iter()).cloned().collect::<Vec<bool>>();
+
+        assert!(defender_action_mask.len() == self.defender_action_to_graph.len() + 2);
+
+        let edges = &self.g.graph.edges;
+
+        // map edge indices to the vector indices
+        let vector_edges = edges
+            .iter()
+            .map(|(from, to)| (self.id_to_index[from], self.id_to_index[to]))
+            .collect::<Vec<(usize, usize)>>();
 
         Observation {
             attack_surface: attack_surface_vec,
-            defense_state: defense_state.clone(),
             defense_surface: defense_state,
             defender_action_mask,
             attacker_action_mask,
             ttc_remaining,
-            ids_observation,
-            attack_state,
+            ids_observation: ids_observed_vec,
+            state: step_state,
+            edges: vector_edges,
         }
     }
 
@@ -346,7 +401,11 @@ impl SimulatorRuntime {
 
         let result = Ok((
             self.map_state_to_observation(&new_state),
-            new_state.to_info(self.g.attack_steps.len(), self.g.defense_steps.len(), flag_status),
+            new_state.to_info(
+                self.g.attack_steps.len(),
+                self.g.defense_steps.len(),
+                flag_status,
+            ),
         ));
 
         self.history.push(self.state.replace(new_state));
@@ -368,8 +427,7 @@ impl SimulatorRuntime {
         // Defender selects a defense step from the defense surface, which is the vector of all defense steps that are not disabled
 
         for (actor, action) in action_dict.iter() {
-            
-            if *action < SPECIAL_ACTIONS.len()  {
+            if *action < SPECIAL_ACTIONS.len() {
                 continue;
             }
 
@@ -402,8 +460,34 @@ impl SimulatorRuntime {
         enabled_defenses.extend(new_defenses);
 
         let compromised_steps = calculate_compromised_steps(&self.g, &remaining_ttc);
+
+        let uncompromised_steps: HashSet<&u64> =
+            self.g.attack_steps.difference(&compromised_steps).collect();
+
         let attack_surface =
             calculate_attack_surface(&self.g, &compromised_steps, &enabled_defenses)?;
+
+        let mut rng = old_state.rng.clone();
+
+        let missed_alerts = compromised_steps
+            .iter()
+            .filter_map(
+                |id| match rng.gen::<f64>() < self.confusion_per_step[id].0 {
+                    true => Some(*id), // if p < fnr, then we missed an alert
+                    false => None,
+                },
+            )
+            .collect::<HashSet<u64>>();
+
+        let false_alerts = uncompromised_steps
+            .iter()
+            .filter_map(
+                |id| match rng.gen::<f64>() < self.confusion_per_step[id].1 {
+                    true => Some(**id), // if p < fpr, then we got a false alert
+                    false => None,
+                },
+            )
+            .collect::<HashSet<u64>>();
 
         Ok(SimulatorState {
             attack_surface,
@@ -411,18 +495,20 @@ impl SimulatorRuntime {
             remaining_ttc,
             compromised_steps,
             time: old_state.time + 1,
-            rng: old_state.rng.clone(),
+            rng,
             num_observed_alerts: 0,
-            actions: action_dict,
+            //actions: action_dict,
+            missed_alerts,
+            false_alerts,
         })
     }
 }
 
 fn get_flag_status(flags: &HashSet<u64>, compromised_steps: &HashSet<u64>) -> HashMap<u64, bool> {
-    return flags.iter().map(|flag_id| {
-        (*flag_id, compromised_steps.contains(flag_id))
-    })
-    .collect()
+    return flags
+        .iter()
+        .map(|flag_id| (*flag_id, compromised_steps.contains(flag_id)))
+        .collect();
 }
 
 fn calculate_compromised_steps(
@@ -473,7 +559,7 @@ fn calculate_attack_surface(
 
 #[cfg(test)]
 mod tests {
-    use crate::{attackgraph, config, runtime::SimulatorRuntime};
+    use crate::{attackgraph, config, runtime::{SimulatorRuntime, SPECIAL_ACTIONS}, observation::{Observation, Info}};
 
     #[test]
     fn test_sim_init() {
@@ -495,6 +581,51 @@ mod tests {
             1
         );
         assert_eq!(initial_state.attack_surface.len(), 4);
+        assert_eq!(sim.defender_action_to_graph.len(), sim.g.defense_steps.len());
+        assert_eq!(sim.attacker_action_to_graph.len(), sim.g.graph.nodes.len());
+    }
+
+    #[test]
+    fn test_sim_obs() {
+        let filename = "graphs/four_ways.yaml";
+        let graph = attackgraph::load_graph_from_yaml(filename);
+        let config = config::SimulatorConfig::default();
+        let mut sim = SimulatorRuntime::new(graph, config).unwrap();
+
+        let observation: Observation;
+        let _info: Info;
+
+        (observation, _info) = sim.reset(None).unwrap();
+        
+        assert_eq!(observation.defense_surface.iter().filter(|&x| *x).count(), 4);
+        assert_eq!(observation.attack_surface.iter().filter(|&x| *x).count(), 4);
+        assert_eq!(observation.defender_action_mask.len(), 4 + SPECIAL_ACTIONS.len()); // count defenses + special actions
+        assert_eq!(observation.attacker_action_mask.len(), sim.g.graph.nodes.len() + SPECIAL_ACTIONS.len());
+        assert_eq!(observation.defender_action_mask.iter().filter(|&x| *x).count(), 4 + 1); // count available defenses + available special actions
+        assert_eq!(observation.attacker_action_mask.iter().filter(|&x| *x).count(), 4 + 1);
+        assert_eq!(observation.state.iter().filter(|&x| *x).count(), 4+1); // 4 available defenses + 1 compromised attack step
+        assert!(observation.ttc_remaining.iter().sum::<u64>() > 0);
+
+        let edges = observation.edges;
+        let entrypoint = sim.g.entry_points;
+        let entrypoint_index = sim.id_to_index.iter().find_map(|(id, index)| match entrypoint.contains(&id) {
+            true => Some(index),
+            false => None,
+        }).unwrap();
+
+        let indices_from_entrypoint = edges.iter().filter_map(|(from, to)| match from == entrypoint_index {
+            true => Some(to),
+            false => None,
+        }).collect::<Vec<&usize>>();
+
+        // There should be four edges from the entrypoint
+        assert_eq!(indices_from_entrypoint.len(), 4);
+
+        // All the outgoing edges should be in the attack surface
+        for index in indices_from_entrypoint {
+            assert_eq!(observation.attack_surface[*index], true);
+        }
+
     }
 
 }
