@@ -55,7 +55,6 @@ pandas = "^1.5.3"
 opencv-python = "^4.7.0.68"
 torch = "^1.13.1"
 torchvision = "^0.14.1"
-telegram = "^0.0.1"
 tensorboardx = "^2.6"
 
 [tool.poetry.group.dev.dependencies]
