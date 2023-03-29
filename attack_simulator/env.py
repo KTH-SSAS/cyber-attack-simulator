@@ -61,7 +61,20 @@ reward_funcs = {
 def select_random_attacker(rng: np.random.Generator):
     return list(ATTACKERS.values())[rng.integers(0, len(ATTACKERS))]
 
+def get_agent_obs(sim_obs: Observation) -> Dict[str, Any]:
+    defender_obs = {
+        "ids_observation": np.array(sim_obs.ids_observation, dtype=np.int8),
+        "action_mask": np.array(sim_obs.defender_action_mask),
+    }
 
+    attacker_obs = {
+        "action_mask":   np.array(sim_obs.attacker_action_mask, dtype=np.int8),
+        "defense_state": np.array(sim_obs.defense_state, dtype=np.int8),
+        "ttc_remaining": np.array(sim_obs.ttc_remaining, dtype=np.uint64),
+    }
+
+    return {AGENT_DEFENDER: defender_obs, AGENT_ATTACKER: attacker_obs}
+    
 class EnvironmentState:
     def __init__(self):
         self.cumulative_rewards = {AGENT_DEFENDER: 0.0, AGENT_ATTACKER: 0.0}
@@ -231,20 +244,6 @@ class AttackSimulationEnv(MultiAgentEnv):
     def observation_space_contains(self, x) -> bool:
         return all(self.observation_space[agent_id].contains(x[agent_id]) for agent_id in x)
 
-    def get_agent_obs(self, sim_obs: Observation) -> Dict[str, Any]:
-        defender_obs = {
-            "ids_observation": np.array(sim_obs.ids_observation, dtype=np.int8),
-            "action_mask": np.array(sim_obs.defender_action_mask),
-        }
-
-        attacker_obs = {
-            "action_mask":   np.array(sim_obs.attacker_action_mask, dtype=np.int8),
-            "defense_state": np.array(sim_obs.defense_state, dtype=np.int8),
-            "ttc_remaining": np.array(sim_obs.ttc_remaining, dtype=np.uint64),
-        }
-
-        return {AGENT_DEFENDER: defender_obs, AGENT_ATTACKER: attacker_obs}
-
     def get_agent_info(self, info: Info) -> Dict[str, Any]:
         infos = {
             AGENT_DEFENDER: {
@@ -304,7 +303,7 @@ class AttackSimulationEnv(MultiAgentEnv):
 
         defender_reward = defender_penalty - attacker_reward
 
-        obs = self.get_agent_obs(sim_obs)
+        obs = get_agent_obs(sim_obs)
         infos = self.get_agent_info(info)
 
         rewards = {AGENT_DEFENDER: defender_reward, AGENT_ATTACKER: attacker_reward}

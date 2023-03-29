@@ -1,4 +1,5 @@
 import dataclasses
+import os
 import re
 from pathlib import Path
 from typing import Any, Dict, List
@@ -14,6 +15,9 @@ from attack_simulator.sim import AttackSimulator
 
 @pytest.fixture(name="config_yaml", scope="session")
 def fixture_config_filename() -> Path:
+
+    
+
     return Path("config/test_config.yaml")
 
 
@@ -52,6 +56,8 @@ def fixture_graph_config(config_yaml: Path) -> GraphConfig:
     config = dataclasses.replace(
         config,
     )
+    absolute_graph_pathname = Path(config.filename).absolute()
+    config = dataclasses.replace(config, filename=str(absolute_graph_pathname))
     return config
 
 
@@ -63,6 +69,15 @@ def fixture_graph(graph_config: GraphConfig) -> AttackGraph:
 @pytest.fixture(scope="session", name="env_config")
 def fixture_env_config(config_yaml: Path) -> EnvConfig:
     config: EnvConfig = EnvConfig.from_yaml(config_yaml)
+
+    absolute_graph_pathname = Path(config.graph_config.filename).absolute()
+    config = dataclasses.replace(
+        config,
+        graph_config=dataclasses.replace(
+            config.graph_config, filename=str(absolute_graph_pathname)
+        ),
+    )
+
     return config
 
 

@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from pathlib import Path
 from typing import Sequence
+import numpy as np
 
 import pytest
 
@@ -40,11 +41,10 @@ def test_sim_step(simulator: Simulator) -> None:
     assert info.time == 1
 
 
-def test_rust_and_python() -> None:
+def test_rust_and_python(env_config) -> None:
     pass
 
-    config_yaml = Path("config/test_config.yaml")
-    config: EnvConfig = EnvConfig.from_yaml(config_yaml)
+    config: EnvConfig = env_config
 
     graph = AttackGraph(config.graph_config)
 
@@ -100,10 +100,10 @@ def test_rust_and_python() -> None:
 
         # Get the actions
         rust_action = rust_attacker.compute_action_from_dict(
-            {"attack_surface": rust_obs.attack_surface}
+            {"action_mask": np.array(rust_obs.attacker_action_mask)}
         )
         python_action = python_attacker.compute_action_from_dict(
-            {"attack_surface": python_obs.attack_surface}
+            {"action_mask": python_obs.attacker_action_mask}
         )
         rust_obs, rust_info = rust_sim.step(OrderedDict([(AGENT_ATTACKER, rust_action)]))
         python_obs, python_info = python_sim.step(OrderedDict([(AGENT_ATTACKER, python_action)]))

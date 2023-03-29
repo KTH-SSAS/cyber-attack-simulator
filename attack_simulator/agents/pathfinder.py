@@ -222,6 +222,7 @@ class PathFinderAttacker(Agent):
         """
 
         attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions:]
+        attack_surface = np.flatnonzero(attack_surface)
         defense_state = observation["defense_state"]
         ttc_remaining = observation["ttc_remaining"]
         compromised_steps = np.flatnonzero(ttc_remaining == 0)

@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import numpy as np
 
 import pytest
 
@@ -12,7 +13,7 @@ from attack_simulator.agents.searchers import BreadthFirstAttacker, DepthFirstAt
 from attack_simulator.constants import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER
 from attack_simulator.observation import obs_to_dict
 from attack_simulator.sim import Simulator
-
+from attack_simulator.env import get_agent_obs
 
 @pytest.mark.parametrize(
     "attacker_class",
@@ -43,13 +44,24 @@ def test_sim_attacker_actions(simulator: Simulator, attack_graph, attacker_class
         )
     )
 
+    last_ttc_sum = simulator.ttc_total
     while info.time <= total_ttc and not done:
-        action = attacker.compute_action_from_dict(obs_to_dict(obs))
+
+        obs_dict = get_agent_obs(obs)[AGENT_ATTACKER]
+        action = attacker.compute_action_from_dict(obs_dict)
         assert action != ACTION_TERMINATE
         assert action != ACTION_WAIT
+
+        attack_surface = obs_dict["action_mask"].reshape(-1)[2:]
+        assert all(attack_surface == obs.attack_surface)
+        valid_actions = np.flatnonzero(attack_surface)
+        assert action - 2 in valid_actions
+
         obs, info = simulator.step(OrderedDict([(AGENT_ATTACKER, action)]))
 
         done = not any(obs.attack_surface)
+        assert simulator.ttc_total < last_ttc_sum
+        last_ttc_sum = simulator.ttc_total
 
     assert done, "Attacker failed to explore all attack steps"
 

@@ -26,7 +26,7 @@ class RandomAttacker(Agent):
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
         attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions:]
-        surface_indexes = set(np.flatnonzero(attack_surface))
+        surface_indexes = np.flatnonzero(attack_surface)
         return (
             self.rng.choice(surface_indexes) + self.num_special_actions
             if len(surface_indexes) > 0
@@ -51,7 +51,8 @@ class RoundRobinAttacker(Agent):
         self.last = 0
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        valid = np.flatnonzero(observation["attack_surface"])
+        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions:]
+        valid = np.flatnonzero(attack_surface)
         above = valid[self.last < valid]
         self.last = valid[0] if 0 == above.size else above[0]
         return self.last + self.num_special_actions
