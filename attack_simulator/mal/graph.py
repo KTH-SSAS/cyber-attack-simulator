@@ -184,6 +184,15 @@ class AttackGraph:
             for step in self.attack_steps
             for child in self.attack_steps[step].children
         ]
+
+        defense_edges = [
+            (self.defense_indices[step], self.attack_indices[child])
+            for step in self.defense_steps
+            for child in self.defense_steps[step].children
+        ]
+
+        children.extend(defense_edges)
+
         return np.array(children, dtype=np.int64)
 
     @property
