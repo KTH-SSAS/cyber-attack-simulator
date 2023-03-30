@@ -2,6 +2,7 @@ import dataclasses
 
 import numpy as np
 import pytest
+from attack_simulator import AGENT_ATTACKER, AGENT_DEFENDER
 
 from attack_simulator.env.env import AttackSimulationEnv
 from attack_simulator.renderer.renderer import AttackSimulationRenderer
@@ -10,6 +11,35 @@ from attack_simulator.utils.config import EnvConfig
 
 def test_env_reset(env: AttackSimulationEnv) -> None:
     obs = np.array(env.reset())
+
+
+def test_check_spaces(env: AttackSimulationEnv) -> None:
+    
+    obs, _ = env.reset()
+
+    attacker_obs_space = env.observation_space.spaces[AGENT_ATTACKER]
+    defender_obs_space = env.observation_space.spaces[AGENT_DEFENDER]
+
+    attacker_obs = obs[AGENT_ATTACKER]
+    defender_obs = obs[AGENT_DEFENDER]
+
+    assert attacker_obs_space.contains(attacker_obs)
+    assert defender_obs_space.contains(defender_obs)
+
+    assert env.observation_space.contains(obs)
+
+    obs, *_ = env.step({AGENT_ATTACKER: 0, AGENT_DEFENDER: 0})
+
+    attacker_obs = obs[AGENT_ATTACKER]
+    defender_obs = obs[AGENT_DEFENDER]
+
+    assert attacker_obs_space.contains(attacker_obs)
+    assert defender_obs_space.contains(defender_obs)
+
+    assert env.observation_space.contains(obs)
+
+
+
 
 
 def test_env_step(env: AttackSimulationEnv) -> None:

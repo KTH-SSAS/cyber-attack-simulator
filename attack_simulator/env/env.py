@@ -57,16 +57,17 @@ reward_funcs = {
 def select_random_attacker(rng: np.random.Generator):
     return list(ATTACKERS.values())[rng.integers(0, len(ATTACKERS))]
 
+
 def get_agent_obs(sim_obs: Observation, graph: AttackGraph) -> Dict[str, Any]:
     defender_obs = {
         "ids_observation": np.array(sim_obs.ids_observation, dtype=np.int8),
-        "action_mask": np.array(sim_obs.defender_action_mask),
+        "action_mask": np.array(sim_obs.defender_action_mask, dtype=np.int8),
         "edges": graph.get_edge_list(),
     }
 
     attacker_obs = {
         "action_mask": np.array(sim_obs.attacker_action_mask, dtype=np.int8),
-        "defense_state": np.array(sim_obs.defense_state, dtype=np.int8),
+        "state": np.array(sim_obs.state, dtype=np.int8),
         "ttc_remaining": np.array(sim_obs.ttc_remaining, dtype=np.uint64),
     }
 
@@ -123,10 +124,12 @@ class AttackSimulationEnv(MultiAgentEnv):
         self.terminate_action_idx = self.sim.terminate_action
         self.wait_action_idx = self.sim.wait_action
 
-        self.observation_space = self.define_observation_space(
+        self.observation_space: spaces.Dict = self.define_observation_space(
             attack_graph, self.num_special_actions
         )
-        self.action_space = self.define_action_space(attack_graph, self.num_special_actions)
+        self.action_space: spaces.Dict = self.define_action_space(
+            attack_graph, self.num_special_actions
+        )
 
         self.state = EnvironmentState()
         self._agent_ids = [AGENT_DEFENDER, AGENT_ATTACKER]
@@ -165,24 +168,39 @@ class AttackSimulationEnv(MultiAgentEnv):
                         "ids_observation": spaces.Box(
                             0, 1, shape=(dim_observations,), dtype=np.int8
                         ),
-                        "edges": spaces.Box(0, np.inf, shape=graph.get_edge_list().shape, dtype=np.int64),
+                        "edges": spaces.Box(
+                            0, np.inf, shape=graph.get_edge_list().shape, dtype=np.int64
+                        ),
                     }
                 ),
                 AGENT_ATTACKER: spaces.Dict(
                     {
                         "action_mask": spaces.Box(
-                            0, 1, shape=(graph.num_attacks + num_special_actions,), dtype=np.int8
+                            0,
+                            1,
+                            shape=(graph.num_attacks + graph.num_defenses + num_special_actions,),
+                            dtype=np.int8,
                         ),
                         "ttc_remaining": spaces.Box(
-                            0, np.iinfo(UINT).max, shape=(graph.num_attacks,), dtype=UINT
+                            0,
+                            np.iinfo(np.uint64).max,
+                            shape=(graph.num_attacks + graph.num_defenses,),
+                            dtype=np.uint64,
                         ),
-                        "defense_state": spaces.Box(
-                            0, 1, shape=(graph.num_defenses,), dtype=np.int8
+                        "state": spaces.Box(
+                            0, 1, shape=(graph.num_defenses + graph.num_attacks,), dtype=np.int8
                         ),
                     }
                 ),
             }
         )
+
+    def get_observation_shapes(self):
+        return {
+            agent: {obs_key: space.shape}
+            for agent, a_space in self.observation_space.spaces.items()
+            for obs_key, space in a_space.spaces.items()
+        }
 
     @staticmethod
     def create_renderer(
@@ -216,7 +234,7 @@ class AttackSimulationEnv(MultiAgentEnv):
 
         self.last_obs = sim_obs
 
-        agent_obs = get_agent_obs(sim_obs)
+        agent_obs = get_agent_obs(sim_obs, self.g)
         agent_info = self.get_agent_info(info)
 
         if self.render_env:
@@ -241,7 +259,6 @@ class AttackSimulationEnv(MultiAgentEnv):
 
     def observation_space_contains(self, x) -> bool:
         return all(self.observation_space[agent_id].contains(x[agent_id]) for agent_id in x)
-
 
     def get_agent_info(self, info: Info) -> Dict[str, Any]:
         infos = {
@@ -273,7 +290,7 @@ class AttackSimulationEnv(MultiAgentEnv):
         defender_action = action_dict.get(AGENT_DEFENDER, self.wait_action_idx)
         attacker_action = action_dict.get(AGENT_ATTACKER, self.wait_action_idx)
 
-        old_attack_state = self.last_obs.attack_state
+        old_attack_state = self.last_obs.state
 
         terminated = {key: value == self.terminate_action_idx for key, value in action_dict.items()}
         terminated["__all__"] = all(terminated.values())
@@ -283,15 +300,14 @@ class AttackSimulationEnv(MultiAgentEnv):
         attack_surface = sim_obs.attack_surface
 
         new_compromised_steps = (
-            np.array(sim_obs.attack_state, dtype=np.int8)
-            - np.array(old_attack_state, dtype=np.int8)
+            np.array(sim_obs.state, dtype=np.int8) - np.array(old_attack_state, dtype=np.int8)
         ).clip(0, 1)
 
         attacker_done = not any(attack_surface) or attacker_action == self.terminate_action_idx
 
         attacker_reward = np.sum(self.attacker_action_rewards[new_compromised_steps])
 
-        defense_state = sim_obs.defense_state
+        defense_state = sim_obs.defense_surface
 
         defender_penalty = self.reward_function(
             defender_action,
@@ -301,7 +317,7 @@ class AttackSimulationEnv(MultiAgentEnv):
 
         defender_reward = defender_penalty - attacker_reward
 
-        obs = get_agent_obs(sim_obs)
+        obs = get_agent_obs(sim_obs, self.g)
         infos = self.get_agent_info(info)
 
         rewards = {AGENT_DEFENDER: defender_reward, AGENT_ATTACKER: attacker_reward}

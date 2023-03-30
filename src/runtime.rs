@@ -571,13 +571,14 @@ mod tests {
 
         assert_eq!(initial_state.enabled_defenses.len(), 0);
         assert_eq!(initial_state.compromised_steps.len(), 1);
+        assert_eq!(initial_state.remaining_ttc.len(), sim.g.graph.nodes.len());
         assert_eq!(
             initial_state
                 .remaining_ttc
                 .iter()
                 .filter(|(_, &ttc)| ttc == 0)
                 .count(),
-            1
+            4+1 // 4 defense steps + 1 entrypoint
         );
         assert_eq!(initial_state.attack_surface.len(), 4);
         assert_eq!(sim.defender_action_to_graph.len(), sim.g.defense_steps.len());
@@ -603,6 +604,8 @@ mod tests {
         assert_eq!(observation.defender_action_mask.iter().filter(|&x| *x).count(), 4 + 1); // count available defenses + available special actions
         assert_eq!(observation.attacker_action_mask.iter().filter(|&x| *x).count(), 4 + 1);
         assert_eq!(observation.state.iter().filter(|&x| *x).count(), 4+1); // 4 available defenses + 1 compromised attack step
+        assert_eq!(observation.state.len(), sim.g.graph.nodes.len());
+        
         assert!(observation.ttc_remaining.iter().sum::<u64>() > 0);
 
         let edges = observation.edges;
