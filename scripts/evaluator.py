@@ -6,7 +6,7 @@ from pathlib import Path
 
 import ray
 
-import attack_simulator.rllib.ids_model as ids_model
+import attack_simulator.rllib.defender_model as defender_model
 from attack_simulator.env.env import register_rllib_env
 from attack_simulator.rllib import evaluate
 
@@ -58,7 +58,7 @@ def run_evaluation(
 
 def main():
     env_name = register_rllib_env()
-    ids_model.register_rllib_model()
+    defender_model.register_rllib_model()
 
     parser = evaluate.create_parser()
 
