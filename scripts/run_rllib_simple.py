@@ -5,7 +5,7 @@ import ray
 from ray.rllib.agents import ppo
 from ray.rllib.policy.policy import PolicySpec
 
-import attack_simulator.rllib.ids_model as ids_model
+import attack_simulator.rllib.defender_model as defender_model
 from attack_simulator import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
 from attack_simulator.rllib.attackers_policies import RandomPolicy
@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     env_name = register_rllib_env()
     # Register the model with the registry.
-    ids_model.register_rllib_model()
+    defender_model.register_rllib_model()
     # optimal_defender.register_rllib_model()
     # random_defender.register_rllib_model()
 
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     policy_ids = {AGENT_DEFENDER: AGENT_DEFENDER, AGENT_ATTACKER: AGENT_ATTACKER}
 
     config = (
-        ids_model.DefenderConfig()
+        defender_model.DefenderConfig()
         .training(scale_rewards=False)
         .framework("torch")
         .environment(env_name, env_config=env_config)

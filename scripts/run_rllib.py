@@ -17,7 +17,7 @@ from ray.air.integrations.wandb import WandbLoggerCallback
 from ray.rllib.policy.policy import PolicySpec
 from ray.tune.schedulers.pbt import PopulationBasedTraining
 
-import attack_simulator.rllib.ids_model as ids_model
+from attack_simulator.rllib.defender_policy import DefenderPolicy, DefenderConfig, Defender
 from attack_simulator import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
 from attack_simulator.rllib.attackers_policies import BreadthFirstPolicy
@@ -209,7 +209,7 @@ def main(
     attacker_policy_class = BreadthFirstPolicy
 
     config = (
-        ids_model.DefenderConfig()
+        DefenderConfig()
         .training(
             scale_rewards=False,
             gamma=1.0,
@@ -249,7 +249,7 @@ def main(
         .multi_agent(
             policies={
                 AGENT_DEFENDER: PolicySpec(
-                    policy_class=ids_model.DefenderPolicy,
+                    policy_class=DefenderPolicy,
                     config={
                         "model": {
                             "custom_model": "DefenderModel",
@@ -421,7 +421,7 @@ def main(
     # "scale_rewards": False,
 
     tuner = tune.Tuner(
-        ids_model.Defender,
+        Defender,
         tune_config=tune.TuneConfig(reuse_actors=False),
         run_config=air.RunConfig(
             stop=tune.stopper.MaximumIterationStopper(stop_iterations),
