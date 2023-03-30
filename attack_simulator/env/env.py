@@ -260,7 +260,6 @@ class AttackSimulationEnv(MultiAgentEnv):
     def observation_space_contains(self, x) -> bool:
         return all(self.observation_space[agent_id].contains(x[agent_id]) for agent_id in x)
 
-
     def get_agent_info(self, info: Info) -> Dict[str, Any]:
         infos = {
             AGENT_DEFENDER: {
