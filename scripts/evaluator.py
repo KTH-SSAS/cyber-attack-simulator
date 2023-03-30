@@ -7,8 +7,8 @@ from pathlib import Path
 import ray
 
 import attack_simulator.rllib.ids_model as ids_model
-from attack_simulator.rllib import evaluate
 from attack_simulator.env.env import register_rllib_env
+from attack_simulator.rllib import evaluate
 
 
 def get_checkpoint_path(run_dir: Path) -> Path:

@@ -1,26 +1,22 @@
 import dataclasses
 import logging
 from typing import Any, Dict, Optional, Tuple
-from gymnasium import spaces
+
 import numpy as np
+from gymnasium import spaces
 from numpy.typing import NDArray
 from ray.rllib.env.multi_agent_env import MultiAgentEnv
 from ray.tune.registry import register_env
 
 from ..agents import ATTACKERS
-from ..utils.config import EnvConfig, GraphConfig, SimulatorConfig
-from . import (
-    AGENT_ATTACKER,
-    AGENT_DEFENDER,
-    UINT,
-)
-from ..mal.graph import AttackGraph
-from .observation import Info, Observation
-from ..utils.rng import get_rng
 from ..mal import AttackSimulator, Simulator
-
+from ..mal.graph import AttackGraph
 from ..render.renderer import AttackSimulationRenderer
+from ..utils.config import EnvConfig, GraphConfig, SimulatorConfig
+from ..utils.rng import get_rng
 from ..utils.rust_wrapper import rust_sim_init
+from . import AGENT_ATTACKER, AGENT_DEFENDER, UINT
+from .observation import Info, Observation
 
 logger = logging.getLogger("simulator")
 
@@ -96,7 +92,6 @@ class AttackSimulationEnv(MultiAgentEnv):
     last_obs: Observation
 
     def __init__(self, config: EnvConfig):
-
         graph_config = (
             config.graph_config
             if isinstance(config.graph_config, GraphConfig)
@@ -286,7 +281,6 @@ class AttackSimulationEnv(MultiAgentEnv):
         return infos
 
     def step(self, action_dict) -> Tuple[Dict, float, bool, dict]:
-
         truncated = {
             AGENT_DEFENDER: False,
             AGENT_ATTACKER: False,

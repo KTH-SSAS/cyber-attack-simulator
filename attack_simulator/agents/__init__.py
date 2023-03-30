@@ -1,9 +1,14 @@
 from typing import Dict, Type
 
-from .attackers.searchers import BreadthFirstAttacker, DepthFirstAttacker
-
 from .agent import Agent
-from .attackers.attackers import InformedAttacker, RandomAttacker, RoundRobinAttacker, WellInformedAttacker
+from .attackers.attackers import (
+    InformedAttacker,
+    RandomAttacker,
+    RoundRobinAttacker,
+    WellInformedAttacker,
+)
+from .attackers.pathfinder import PathFinderAttacker
+from .attackers.searchers import BreadthFirstAttacker, DepthFirstAttacker
 from .defenders.baseline_defender import (
     DisableProbabilityAgent,
     NewRuleBasedAgent,
@@ -12,7 +17,6 @@ from .defenders.baseline_defender import (
     RuleBasedAgent,
     SkipAgent,
 )
-from .attackers.pathfinder import PathFinderAttacker
 
 ATTACKERS: Dict[str, Type[Agent]] = {
     # "well-informed": WellInformedAttacker,

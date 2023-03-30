@@ -11,9 +11,9 @@ import torch
 from numpy.typing import NDArray
 from ray.rllib.agents import ppo
 
-from attack_simulator.utils.config import EnvConfig
 from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
 from attack_simulator.rllib.ids_model import register_rllib_model
+from attack_simulator.utils.config import EnvConfig
 from attack_simulator.utils.rng import set_seeds
 
 
