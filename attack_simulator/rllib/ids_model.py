@@ -45,9 +45,9 @@ class DefenderConfig(PPOConfig):
         # for whatever reason. These trigger an error as DefenderConfig gets
         # recreated between trials and the updated config (including these keys)
         # is used to instantiate it.
-        config_dict.pop('__stdout_file__', None)
-        config_dict.pop('__stderr_file__', None)
-        config_dict.pop('__trial_info__', None)
+        config_dict.pop("__stdout_file__", None)
+        config_dict.pop("__stderr_file__", None)
+        config_dict.pop("__trial_info__", None)
         return super().update_from_dict(config_dict)
 
 

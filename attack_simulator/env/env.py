@@ -1,26 +1,22 @@
 import dataclasses
 import logging
 from typing import Any, Dict, Optional, Tuple
-from gymnasium import spaces
+
 import numpy as np
+from gymnasium import spaces
 from numpy.typing import NDArray
 from ray.rllib.env.multi_agent_env import MultiAgentEnv
 from ray.tune.registry import register_env
 
 from ..agents import ATTACKERS
-from ..utils.config import EnvConfig, GraphConfig, SimulatorConfig
-from . import (
-    AGENT_ATTACKER,
-    AGENT_DEFENDER,
-    UINT,
-)
-from ..mal.graph import AttackGraph
-from .observation import Info, Observation
-from ..utils.rng import get_rng
 from ..mal import AttackSimulator, Simulator
-
+from ..mal.graph import AttackGraph
 from ..render.renderer import AttackSimulationRenderer
+from ..utils.config import EnvConfig, GraphConfig, SimulatorConfig
+from ..utils.rng import get_rng
 from ..utils.rust_wrapper import rust_sim_init
+from . import AGENT_ATTACKER, AGENT_DEFENDER, UINT
+from .observation import Info, Observation
 
 logger = logging.getLogger("simulator")
 
@@ -61,6 +57,7 @@ reward_funcs = {
 def select_random_attacker(rng: np.random.Generator):
     return list(ATTACKERS.values())[rng.integers(0, len(ATTACKERS))]
 
+
 def get_agent_obs(sim_obs: Observation) -> Dict[str, Any]:
     defender_obs = {
         "ids_observation": np.array(sim_obs.ids_observation, dtype=np.int8),
@@ -68,13 +65,14 @@ def get_agent_obs(sim_obs: Observation) -> Dict[str, Any]:
     }
 
     attacker_obs = {
-        "action_mask":   np.array(sim_obs.attacker_action_mask, dtype=np.int8),
+        "action_mask": np.array(sim_obs.attacker_action_mask, dtype=np.int8),
         "defense_state": np.array(sim_obs.defense_state, dtype=np.int8),
         "ttc_remaining": np.array(sim_obs.ttc_remaining, dtype=np.uint64),
     }
 
     return {AGENT_DEFENDER: defender_obs, AGENT_ATTACKER: attacker_obs}
-    
+
+
 class EnvironmentState:
     def __init__(self):
         self.cumulative_rewards = {AGENT_DEFENDER: 0.0, AGENT_ATTACKER: 0.0}
@@ -93,7 +91,6 @@ class AttackSimulationEnv(MultiAgentEnv):
     last_obs: Observation
 
     def __init__(self, config: EnvConfig):
-
         graph_config = (
             config.graph_config
             if isinstance(config.graph_config, GraphConfig)
@@ -122,7 +119,7 @@ class AttackSimulationEnv(MultiAgentEnv):
         self.config = config
 
         self.num_special_actions = self.sim.num_special_actions
-        
+
         self.terminate_action_idx = self.sim.terminate_action
         self.wait_action_idx = self.sim.wait_action
 
@@ -265,7 +262,6 @@ class AttackSimulationEnv(MultiAgentEnv):
         return infos
 
     def step(self, action_dict) -> Tuple[Dict, float, bool, dict]:
-
         truncated = {
             AGENT_DEFENDER: False,
             AGENT_ATTACKER: False,

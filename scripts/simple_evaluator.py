@@ -6,8 +6,8 @@ import ray
 from tqdm import tqdm
 
 import attack_simulator.rllib.ids_model as ids_model
-from attack_simulator.rllib.custom_callback import AttackSimCallback
 from attack_simulator.env.env import register_rllib_env
+from attack_simulator.rllib.custom_callback import AttackSimCallback
 
 trainers = {"PPO": ids_model.Defender}
 
@@ -22,9 +22,9 @@ def get_checkpoint(folder):
 
 # @ray.remote
 def run_eval(config: dict, checkpoint, trainer_name: str, sweep_id, num: int):
-    #config["env_config"]["sim_config"]["false_positive_rate"] = fp
-    #config["env_config"]["sim_config"]["false_negative_rate"] = fn
-    #if filename:
+    # config["env_config"]["sim_config"]["false_positive_rate"] = fp
+    # config["env_config"]["sim_config"]["false_negative_rate"] = fn
+    # if filename:
     #    config["env_config"]["graph_config"]["filename"] = filename
     # config["seed"] = seed
 

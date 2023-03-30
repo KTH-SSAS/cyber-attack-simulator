@@ -1,27 +1,19 @@
 import pickle
+from abc import ABC, abstractmethod
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
 
-from .constants import (
-    ACTION_TERMINATE,
-    ACTION_WAIT,
-    AGENT_ATTACKER,
-    AGENT_DEFENDER,
-    UINT,
-)
-from .env.observation import Info, Observation
-from .utils.rng import get_rng
-
-from .utils.config import SimulatorConfig
-from .sim.graph import AttackGraph
+from .. import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER, AGENT_DEFENDER, UINT
 from .env.ids import ProbabilityIDS
-from abc import ABC, abstractmethod
+from .env.observation import Info, Observation
+from .graph import AttackGraph
+from .utils.config import SimulatorConfig
+from .utils.rng import get_rng
 
 
 class Simulator(ABC):
-
     num_special_actions: int
     wait_action: int
     terminate_action: int
@@ -166,7 +158,6 @@ class AttackSimulator(Simulator):
         return self.get_obs_dict(), self.info()
 
     def step(self, actions: Dict[str, int]) -> Tuple[Observation, Info]:
-
         funcs: Dict[str, Callable[[int], Tuple[NDArray[np.int8], bool]]] = {
             AGENT_ATTACKER: self.attack_step,
             AGENT_DEFENDER: self.enable_defense_step,

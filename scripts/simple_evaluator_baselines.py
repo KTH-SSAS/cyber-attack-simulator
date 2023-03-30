@@ -5,11 +5,11 @@ import cloudpickle
 import ray
 from tqdm import tqdm
 
-from attack_simulator.utils.config import EnvConfig
-from attack_simulator.rllib.custom_callback import AttackSimCallback
 from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
+from attack_simulator.rllib.custom_callback import AttackSimCallback
 from attack_simulator.rllib.optimal_defender import TripwireDefender
 from attack_simulator.rllib.random_defender import RandomDefender
+from attack_simulator.utils.config import EnvConfig
 
 trainers = {"Tripwire": TripwireDefender, "Random": RandomDefender}
 

@@ -1,7 +1,6 @@
 """Process graph description into an Attack Graph."""
 import os
 from dataclasses import asdict, dataclass, field
-from pathlib import Path
 from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
@@ -11,8 +10,8 @@ from agraphlib import STEP, GraphColors
 from numpy.typing import NDArray
 from yaml import safe_load
 
+from .. import UINT
 from ..utils.config import GraphConfig
-from ..constants import UINT
 
 
 @dataclass
