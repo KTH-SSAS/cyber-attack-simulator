@@ -1,0 +1,101 @@
+import torch
+import torch.nn as nn
+from torch.nn import Linear, Parameter
+from torch_geometric.nn import MessagePassing
+from torch_geometric.utils import add_self_loops, degree
+from torch_geometric.data import Data, Batch
+
+
+class GCNConv(MessagePassing):
+    def __init__(self, in_channels, out_channels):
+        super().__init__(aggr="add")  # "Add" aggregation (Step 5).
+        self.lin = Linear(in_channels, out_channels, bias=False)
+        self.bias = Parameter(torch.Tensor(out_channels))
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        self.lin.reset_parameters()
+        self.bias.data.zero_()
+
+    def forward(self, x, edge_index):
+        # x has shape [N, in_channels]
+        # edge_index has shape [2, E]
+
+        # Step 1: Add self-loops to the adjacency matrix.
+        edge_index, _ = add_self_loops(edge_index, num_nodes=x.size(1))
+
+        # Step 2: Linearly transform node feature matrix.
+        x = self.lin(x)
+
+        # Step 3: Compute normalization.
+        row, col = edge_index
+        deg = degree(col, x.size(0), dtype=x.dtype)
+        deg_inv_sqrt = deg.pow(-0.5)
+        deg_inv_sqrt[deg_inv_sqrt == float("inf")] = 0
+        norm = deg_inv_sqrt[row] * deg_inv_sqrt[col]
+
+        # Step 4-5: Start propagating messages.
+        out = self.propagate(edge_index, x=x, norm=norm)
+
+        # Step 6: Apply a final bias vector.
+        out += self.bias
+
+        return out
+
+    def message(self, x_j, norm):
+        # x_j has shape [E, out_channels]
+
+        # Step 4: Normalize node features.
+        return norm.view(-1, 1) * x_j
+
+
+class GNNRLAgent(nn.Module):
+    def __init__(self, num_outputs):
+        super().__init__()
+        channels_out = 8
+        self.embedding_func = GCNConv(1, channels_out)
+
+        self.policy_fn = nn.Linear(channels_out, num_outputs)
+        self.value_fn = nn.Linear(channels_out, 1)
+
+    def forward(self, x, edge_index):
+        # x has shape [B, N, in_channels]
+        # N is the number of nodes
+        # B is the batch size
+        # in_channels is the number of features per node
+        # edge_index has shape [B, 2, E]
+        # B is the batch size
+        # E is the number of edges
+        batch = construct_gnn_batch(x, edge_index)
+        
+        # embedding has shape [BxN, channels_out]
+        embedding = self.embedding_func(batch.x, batch.edge_index)
+
+        # Reshape embedding to [B, N, channels_out]
+        # This assumes that all graphs in the batch have the same number of nodes
+        embedding = embedding.view(batch.num_graphs, x.shape[1], -1)
+
+        # Take the mean of the node embeddings to get a graph embedding
+        embedding = torch.mean(embedding, dim=1)
+
+        # Compute policy and value outputs
+        # policy_out has shape [B, num_outputs]
+        policy_out = self.policy_fn(embedding)
+        
+        # value_out has shape [B, 1]
+        value_out = self.value_fn(embedding)
+
+        return policy_out, value_out
+
+
+def construct_gnn_batch(x, edge_index):
+    # x has shape [B, N, in_channels]
+    # N is the number of nodes
+    # B is the batch size
+    # in_channels is the number of features per node
+    # edge_index has shape [B, 2, E]
+    # B is the batch size
+    # E is the number of edges
+    batch_size = x.shape[0]
+    return Batch.from_data_list([Data(x=x[i], edge_index=edge_index[i]) for i in range(batch_size)])
