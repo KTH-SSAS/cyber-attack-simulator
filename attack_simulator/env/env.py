@@ -8,15 +8,15 @@ from numpy.typing import NDArray
 from ray.rllib.env.multi_agent_env import MultiAgentEnv
 from ray.tune.registry import register_env
 
+from .. import AGENT_ATTACKER, AGENT_DEFENDER, UINT
 from ..agents import ATTACKERS
-from ..mal import AttackSimulator, Simulator
 from ..mal.graph import AttackGraph
-from ..render.renderer import AttackSimulationRenderer
+from ..mal.observation import Info, Observation
+from ..mal.sim import AttackSimulator, Simulator
+from ..renderer.renderer import AttackSimulationRenderer
 from ..utils.config import EnvConfig, GraphConfig, SimulatorConfig
 from ..utils.rng import get_rng
 from ..utils.rust_wrapper import rust_sim_init
-from . import AGENT_ATTACKER, AGENT_DEFENDER, UINT
-from .observation import Info, Observation
 
 logger = logging.getLogger("simulator")
 

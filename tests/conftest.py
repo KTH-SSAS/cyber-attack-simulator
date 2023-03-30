@@ -6,8 +6,8 @@ from typing import Any, Dict, List
 import pytest
 
 from attack_simulator.env.env import AttackSimulationEnv
-from attack_simulator.sim import AttackSimulator
-from attack_simulator.sim.graph import AttackGraph
+from attack_simulator.mal.sim import AttackSimulator
+from attack_simulator.mal.graph import AttackGraph
 from attack_simulator.utils.config import EnvConfig, GraphConfig
 from attack_simulator.utils.rust_wrapper import rust_sim_init
 

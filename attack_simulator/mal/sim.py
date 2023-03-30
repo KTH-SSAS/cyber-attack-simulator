@@ -6,11 +6,11 @@ import numpy as np
 from numpy.typing import NDArray
 
 from .. import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER, AGENT_DEFENDER, UINT
-from ..env.env import ProbabilityIDS
-from ..env.observation import Info, Observation
 from ..utils.config import SimulatorConfig
 from ..utils.rng import get_rng
 from .graph import AttackGraph
+from .ids import ProbabilityIDS
+from .observation import Info, Observation
 
 
 class Simulator(ABC):
