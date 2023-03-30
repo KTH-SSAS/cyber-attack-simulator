@@ -1,3 +1,5 @@
+import numpy as np
+
 AGENT_DEFENDER = "defender"
 AGENT_ATTACKER = "attacker"
 
