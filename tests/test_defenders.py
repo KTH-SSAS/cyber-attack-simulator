@@ -1,6 +1,6 @@
 import pytest
 
-from attack_simulator.rllib.optimal_defender import TripwirePolicy
+from attack_simulator.rllib.tripwire_defender import TripwirePolicy
 from attack_simulator.rllib.random_defender import RandomPolicy
 from attack_simulator.mal.sim import Simulator
 
