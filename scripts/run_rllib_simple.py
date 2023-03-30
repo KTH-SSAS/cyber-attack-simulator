@@ -5,15 +5,15 @@ import ray
 from ray.rllib.agents import ppo
 from ray.rllib.policy.policy import PolicySpec
 
-import attack_simulator.ids_model as ids_model
-from attack_simulator.agents.attackers_policies import RandomPolicy
-from attack_simulator.config import EnvConfig
+import attack_simulator.rllib.ids_model as ids_model
+from attack_simulator.rllib.attackers_policies import RandomPolicy
+from attack_simulator.utils.config import EnvConfig
 from attack_simulator.constants import (
     AGENT_ATTACKER,
     AGENT_DEFENDER,
 )
-from attack_simulator.custom_callback import AttackSimCallback
-from attack_simulator.env import AttackSimulationEnv, register_rllib_env
+from attack_simulator.rllib.custom_callback import AttackSimCallback
+from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
 
 
 if __name__ == "__main__":

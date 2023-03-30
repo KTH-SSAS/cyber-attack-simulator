@@ -20,7 +20,7 @@ from ray.rllib.utils.torch_utils import FLOAT_MAX, FLOAT_MIN
 from ray.rllib.utils.typing import PartialAlgorithmConfigDict
 from torch import Tensor
 
-from .reward_utils import get_minimum_rewards, normalize
+from ..utils.reward_utils import get_minimum_rewards, normalize
 
 
 class DefenderConfig(PPOConfig):

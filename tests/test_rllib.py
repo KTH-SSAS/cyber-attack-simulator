@@ -3,11 +3,11 @@ import pytest
 from ray.rllib.agents import ppo
 
 from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
-from attack_simulator.custom_callback import AttackSimCallback
-from attack_simulator.random_defender import RandomPolicy
-from attack_simulator import ids_model
+from attack_simulator.rllib.custom_callback import AttackSimCallback
+from attack_simulator.rllib.random_defender import RandomPolicy
+from attack_simulator.rllib import ids_model
 import ray
-from attack_simulator.env import AttackSimulationEnv, register_rllib_env
+from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
 from ray.rllib.policy.policy import PolicySpec
 
 

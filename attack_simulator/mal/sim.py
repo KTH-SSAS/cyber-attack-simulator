@@ -11,12 +11,12 @@ from .constants import (
     AGENT_DEFENDER,
     UINT,
 )
-from .env.observation import Info, Observation
-from .utils.rng import get_rng
+from ..env.observation import Info, Observation
+from .rng import get_rng
 
-from .utils.config import SimulatorConfig
-from .sim.graph import AttackGraph
-from .env.ids import ProbabilityIDS
+from .config import SimulatorConfig
+from .graph import AttackGraph
+from ..env.env import ProbabilityIDS
 from abc import ABC, abstractmethod
 
 

@@ -11,10 +11,10 @@ from typing import Any, Dict
 import numpy as np
 
 from ..constants import UINT
-from ..graph import AttackGraph
+from ..sim.graph import AttackGraph
 
-from ..rng import get_rng
-from .agent import Agent
+from ...utils.rng import get_rng
+from ..agent import Agent
 
 logger = logging.getLogger("simulator")
 

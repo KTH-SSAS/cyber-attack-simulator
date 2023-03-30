@@ -11,8 +11,8 @@ from agraphlib import STEP, GraphColors
 from numpy.typing import NDArray
 from yaml import safe_load
 
-from .config import GraphConfig
-from .constants import UINT
+from ..utils.config import GraphConfig
+from ..constants import UINT
 
 
 @dataclass

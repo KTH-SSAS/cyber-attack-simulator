@@ -3,9 +3,9 @@ import dataclasses
 import numpy as np
 import pytest
 
-from attack_simulator.config import EnvConfig
-from attack_simulator.env import AttackSimulationEnv
-from attack_simulator.renderer import AttackSimulationRenderer
+from attack_simulator.utils.config import EnvConfig
+from attack_simulator.env.env import AttackSimulationEnv
+from attack_simulator.render.renderer import AttackSimulationRenderer
 
 
 def test_env_reset(env: AttackSimulationEnv) -> None:

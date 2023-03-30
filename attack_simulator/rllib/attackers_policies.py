@@ -7,8 +7,8 @@ from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.typing import TensorStructType, TensorType
 from ray.rllib.evaluation import Episode
 
-from .attackers import RandomAttacker
-from .searchers import BreadthFirstAttacker, DepthFirstAttacker
+from ..agents.attackers.attackers import RandomAttacker
+from ..agents.attackers.searchers import BreadthFirstAttacker, DepthFirstAttacker
 
 
 class NonLearningAttackerPolicy(Policy):
