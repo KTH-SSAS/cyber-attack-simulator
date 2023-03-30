@@ -8,9 +8,9 @@ from agraphlib import STEP
 from networkx.algorithms.shortest_paths.generic import shortest_path
 from numpy.typing import NDArray
 
-from .. import UINT
+from ... import UINT
+from ...mal.graph import AttackGraph
 from ..agent import Agent
-from ..mal.graph import AttackGraph
 
 
 class PathFinderAttacker(Agent):

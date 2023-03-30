@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from attack_simulator.env.env import AttackSimulationEnv
-from attack_simulator.render.renderer import AttackSimulationRenderer
+from attack_simulator.renderer.renderer import AttackSimulationRenderer
 from attack_simulator.utils.config import EnvConfig
 
 
