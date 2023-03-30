@@ -10,11 +10,12 @@ from .constants import UINT
 class Observation:
     ids_observation: NDArray[np.int8]
     attack_surface: NDArray[np.int8]
-    defense_state: NDArray[np.int8]
+    defense_surface: NDArray[np.int8]
+    state: NDArray[np.int8]
     ttc_remaining: NDArray[UINT]
-    attack_state: NDArray[np.int8]
     defender_action_mask: NDArray[np.int8]
     attacker_action_mask: NDArray[np.int8]
+    edges: NDArray[UINT]
 
 
 @dataclass

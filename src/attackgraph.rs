@@ -239,9 +239,8 @@ impl AttackGraph {
 
     pub fn ttc_params(&self) -> Vec<(NodeID, TTCType)> {
         let ttc_params: Vec<(NodeID, TTCType)> = self
-            .attack_steps
-            .iter()
-            .map(|i| self.graph.nodes.get(i).unwrap())
+            .graph.nodes
+            .values()
             .map(|x| (x.id, x.data.ttc))
             .map(|(id, ttc)| match self.entry_points.contains(&id) {
                 true => (id, 0),
