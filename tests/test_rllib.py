@@ -5,7 +5,7 @@ from ray.rllib.policy.policy import PolicySpec
 
 from attack_simulator import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
-from attack_simulator.rllib import ids_model
+from attack_simulator.rllib.defender_policy import DefenderPolicy, DefenderConfig
 from attack_simulator.rllib.custom_callback import AttackSimCallback
 from attack_simulator.rllib.random_defender import RandomPolicy
 
@@ -18,7 +18,7 @@ def test_ppo_trainer(env: AttackSimulationEnv):
     policy_ids = {AGENT_DEFENDER: AGENT_DEFENDER, AGENT_ATTACKER: AGENT_ATTACKER}
 
     config = (
-        ids_model.DefenderConfig()
+        DefenderConfig()
         .training(scale_rewards=False)
         .framework("torch")
         .environment(env_name, env_config=asdict(env.config))
@@ -30,7 +30,7 @@ def test_ppo_trainer(env: AttackSimulationEnv):
         .multi_agent(
             policies={
                 AGENT_DEFENDER: PolicySpec(
-                    policy_class=ids_model.DefenderPolicy,
+                    policy_class=DefenderPolicy,
                     config={
                         "model": {
                             "custom_model": "DefenderModel",
