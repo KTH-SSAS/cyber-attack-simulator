@@ -53,12 +53,6 @@ if __name__ == "__main__":
             "false_negative_rate": 0.0,
         },
         "run_id": "simple",
-        "sim_config": {
-            "seed": 0,
-            "attack_start_time": 5,
-            "false_positive_rate": 0.0,
-            "false_negative_rate": 0.0,
-        },
         "graph_config": graph_config,
     }
 
