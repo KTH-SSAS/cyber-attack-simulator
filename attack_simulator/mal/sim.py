@@ -11,12 +11,12 @@ from .constants import (
     AGENT_DEFENDER,
     UINT,
 )
-from .env.observation import Info, Observation
-from .utils.rng import get_rng
+from ..env.observation import Info, Observation
+from .rng import get_rng
 
-from .utils.config import SimulatorConfig
-from .sim.graph import AttackGraph
-from .env.ids import ProbabilityIDS
+from .config import SimulatorConfig
+from .graph import AttackGraph
+from ..env.env import ProbabilityIDS
 from abc import ABC, abstractmethod
 
 
@@ -198,14 +198,13 @@ class AttackSimulator(Simulator):
 
     def get_obs_dict(self) -> Observation:
         return Observation(
-            ids_observation = self.ids_observe(),
-            attack_surface = self.state.attack_surface,
-            defense_surface = self.state.defense_state,
-            ttc_remaining = self.state.ttc_remaining,
-            state = np.append(self.state.defense_state, self.state.attack_state),
+            self.ids_observe(),
+            self.state.attack_surface,
+            self.state.defense_state,
+            self.state.ttc_remaining,
+            self.state.attack_state,
             defender_action_mask=self.get_defender_action_mask(),
             attacker_action_mask=self.get_attacker_action_mask(),
-            edges=self.g.get_edge_list(),
         )
 
     @property

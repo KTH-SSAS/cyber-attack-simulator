@@ -8,9 +8,9 @@ import cloudpickle
 import ray
 from tqdm import tqdm
 
-import attack_simulator.ids_model as ids_model
-from attack_simulator.custom_callback import AttackSimCallback
-from attack_simulator.env import register_rllib_env
+import attack_simulator.rllib.ids_model as ids_model
+from attack_simulator.rllib.custom_callback import AttackSimCallback
+from attack_simulator.env.env import register_rllib_env
 
 trainers = {"PPO": ids_model.Defender}
 

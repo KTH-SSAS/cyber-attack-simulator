@@ -9,9 +9,9 @@ from networkx.algorithms.shortest_paths.generic import shortest_path
 from numpy.typing import NDArray
 
 from ..constants import UINT
-from ..graph import AttackGraph
+from ..sim.graph import AttackGraph
 
-from .agent import Agent
+from ..agent import Agent
 
 
 class PathFinderAttacker(Agent):

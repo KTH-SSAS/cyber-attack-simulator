@@ -1,7 +1,7 @@
 import pytest
 
-from attack_simulator.optimal_defender import TripwirePolicy
-from attack_simulator.random_defender import RandomPolicy
+from attack_simulator.rllib.optimal_defender import TripwirePolicy
+from attack_simulator.rllib.random_defender import RandomPolicy
 from attack_simulator.sim import Simulator
 
 NUM_TRIALS = 1000

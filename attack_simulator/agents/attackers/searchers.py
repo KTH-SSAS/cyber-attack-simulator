@@ -4,7 +4,7 @@ from typing import Any, Deque, Dict, List, Set, Union
 import numpy as np
 
 from ..constants import UINT
-from .agent import Agent
+from ..agent import Agent
 
 STOP = -1
 

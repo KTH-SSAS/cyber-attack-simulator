@@ -6,10 +6,10 @@ from typing import Any, Dict, List
 
 import pytest
 
-from attack_simulator.config import EnvConfig, GraphConfig
-from attack_simulator.env import AttackSimulationEnv
-from attack_simulator.graph import AttackGraph
-from attack_simulator.rust_wrapper import rust_sim_init
+from attack_simulator.utils.config import EnvConfig, GraphConfig
+from attack_simulator.env.env import AttackSimulationEnv
+from attack_simulator.sim.graph import AttackGraph
+from attack_simulator.utils.rust_wrapper import rust_sim_init
 from attack_simulator.sim import AttackSimulator
 
 

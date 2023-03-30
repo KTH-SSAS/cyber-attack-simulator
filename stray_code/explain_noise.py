@@ -1,7 +1,7 @@
 import numpy as np
 
-from attack_simulator.agents.searchers import DepthFirstAttacker
-from attack_simulator.config import EnvConfig
+from attack_simulator.agents.attackers.searchers import DepthFirstAttacker
+from attack_simulator.utils.config import EnvConfig
 from attack_simulator.sim import AttackSimulator
 
 ids_fpr = 0.5

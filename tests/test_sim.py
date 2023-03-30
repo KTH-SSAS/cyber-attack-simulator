@@ -6,12 +6,12 @@ import numpy as np
 import pytest
 
 from attack_simulator.agents.agent import Agent
-from attack_simulator.agents.searchers import BreadthFirstAttacker
-from attack_simulator.config import EnvConfig
+from attack_simulator.agents.attackers.searchers import BreadthFirstAttacker
+from attack_simulator.utils.config import EnvConfig
 from attack_simulator.constants import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER, AGENT_DEFENDER
-from attack_simulator.graph import AttackGraph
-from attack_simulator.observation import Info, Observation
-from attack_simulator.rust_wrapper import rust_sim_init
+from attack_simulator.sim.graph import AttackGraph
+from attack_simulator.env.observation import Info, Observation
+from attack_simulator.utils.rust_wrapper import rust_sim_init
 from attack_simulator.sim import Simulator, AttackSimulator
 
 

@@ -3,7 +3,7 @@
 if __name__ == "__main__":
     from argparse import ArgumentParser
 
-    from attack_simulator.graph import save_all_default_graphviz
+    from attack_simulator.sim.graph import save_all_default_graphviz
 
     parser = ArgumentParser(description="Dot generator.")
     parser.add_argument(

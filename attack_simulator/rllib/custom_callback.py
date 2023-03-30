@@ -9,9 +9,9 @@ from ray.rllib.policy import Policy
 from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.typing import AgentID, PolicyID
 
-from .constants import AGENT_ATTACKER, AGENT_DEFENDER
+from ..constants import AGENT_ATTACKER, AGENT_DEFENDER
 
-from .reward_utils import (
+from ..utils.reward_utils import (
     defender_min,
     get_normalized_attacker_reward,
     get_normalized_downtime_reward,

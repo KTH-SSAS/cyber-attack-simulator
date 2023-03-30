@@ -2,7 +2,7 @@ import pickle
 
 import matplotlib.pyplot as plt
 
-from attack_simulator.renderer import AttackSimulationRenderer
+from attack_simulator.render.renderer import AttackSimulationRenderer
 from attack_simulator.sim import AttackSimulator
 
 with open("sim_dump.pkl", "rb") as f:
