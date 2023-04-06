@@ -398,27 +398,22 @@ pub(crate) fn load_graph_from_yaml<'a: 'b, 'b>(filename: &str) -> AttackGraph {
         .map(|s| (s.name.clone(), s.id))
         .collect::<HashMap<String, u64>>();
 
-    let mut edges: HashSet<(u64, u64)> = HashSet::new();
-
-    let mut edge: (u64, u64);
-    let mut step_id: u64;
-    let mut child_id: u64;
-    for attack_step in attack_graph.iter() {
-        let name = attack_step.get("id").unwrap().as_str().unwrap().to_string();
-        let children = match attack_step.get("children") {
+    let edges = attack_graph.iter().fold(HashSet::new(), |mut edges, step| {
+        let name = step.get("id").unwrap().as_str().unwrap().to_string();
+        let children = match step.get("children") {
             Some(c) => c.as_sequence().unwrap(),
             None => panic!("No 'children' field for {}", name),
         };
 
-        step_id = name2index[&name];
         for child in children.iter() {
-            child_id = *name2index
+            let child_id = *name2index
                 .get(&child.as_str().unwrap().to_string())
                 .unwrap();
-            edge = (step_id, child_id);
+            let edge = (name2index[&name], child_id);
             edges.insert(edge);
         }
-    }
+        edges
+    });
 
     // for step in attack_steps.iter() {
     //     let parents = attack_steps.iter().filter(|attack_step| {
@@ -433,20 +428,26 @@ pub(crate) fn load_graph_from_yaml<'a: 'b, 'b>(filename: &str) -> AttackGraph {
 
     let defense_ids = attack_steps
         .iter()
-        .filter(|step| defenses.contains(&step.name))
-        .map(|step| step.id)
+        .filter_map(|step| match defenses.contains(&step.name) {
+            true => Some(step.id),
+            false => None,
+        })
         .collect::<Vec<u64>>();
 
     let flag_ids = attack_steps
         .iter()
-        .filter(|step| flags.contains(&step.name))
-        .map(|step| step.id)
+        .filter_map(|step| match flags.contains(&step.name) {
+            true => Some(step.id),
+            false => None,
+        })
         .collect::<Vec<u64>>();
 
     let entry_ids = attack_steps
         .iter()
-        .filter(|step| entry_points.contains(&step.name))
-        .map(|step| step.id)
+        .filter_map(|step| match entry_points.contains(&step.name) {
+            true => Some(step.id),
+            false => None,
+        })
         .collect::<Vec<u64>>();
 
     return AttackGraph::new(
