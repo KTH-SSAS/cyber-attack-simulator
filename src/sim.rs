@@ -56,7 +56,7 @@ impl RustAttackSimulator {
     fn ttc_total(&self) -> u64 {
         self.runtime.total_ttc_remaining()
     }
-
+    
     pub(crate) fn step(
         &mut self,
         actions: HashMap<String, usize>,
