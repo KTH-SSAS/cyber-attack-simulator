@@ -39,6 +39,11 @@ impl fmt::Display for SimError {
     }
 }
 
+pub struct ActionResult {
+    pub ttc_diff: HashMap<NodeID, i32>,
+    pub enabled_defenses: HashSet<NodeID>,
+}
+
 pub(crate) struct SimulatorState {
     time: u64,
     rng: ChaChaRng,
@@ -232,6 +237,14 @@ impl SimulatorRuntime {
         return result;
     }
 
+    pub fn defender_action_to_state(&self) -> Vec<usize> {
+        return self
+            .defender_action_to_graph
+            .iter()
+            .map(|id| self.id_to_index[id])
+            .collect();
+    }
+
     pub fn total_ttc_remaining(&self) -> TTCType {
         return self
             .state
@@ -262,28 +275,29 @@ impl SimulatorRuntime {
         return Ok((HashSet::from([step_id]), ttc_change));
     }
 
-    pub fn defense_action(
-        &self,
-        action: usize,
-    ) -> SimResult<(HashSet<NodeID>, HashMap<NodeID, i32>)> {
+    pub fn defense_action(&self, action: usize) -> SimResult<ActionResult> {
         let state = self.state.borrow();
         let defense_step_id = self.defender_action_to_graph[action];
 
         if state.enabled_defenses.contains(&defense_step_id) {
-            panic!(
-                "Defense step {} is already enabled.",
-                defense_step_id
-            );
+            panic!("Defense step {} is already enabled.", defense_step_id);
         }
 
-        return self.enable_defense_step(defense_step_id);
+        let (enabled_defenses, ttc_diff) = self.enable_defense_step(defense_step_id)?;
+
+        let result = ActionResult {
+            enabled_defenses,
+            ttc_diff,
+        };
+
+        return Ok(result);
     }
 
     pub fn work_on_attack_step(attack_step_id: NodeID) -> HashMap<NodeID, i32> {
         return HashMap::from([(attack_step_id, -1)]);
     }
 
-    pub fn attack_action(&self, attacker_action: usize) -> SimResult<HashMap<NodeID, i32>> {
+    pub fn attack_action(&self, attacker_action: usize) -> SimResult<ActionResult> {
         // Have the attacker perform an action.
 
         let attack_step_id = self.attacker_action_to_graph[attacker_action];
@@ -297,7 +311,12 @@ impl SimulatorRuntime {
             });
         }
 
-        return Ok(SimulatorRuntime::work_on_attack_step(attack_step_id));
+        let result = ActionResult {
+            enabled_defenses: HashSet::new(),
+            ttc_diff: SimulatorRuntime::work_on_attack_step(attack_step_id),
+        };
+
+        return Ok(result);
     }
 
     fn map_state_to_observation(&self, state: &SimulatorState) -> Observation {
@@ -322,8 +341,12 @@ impl SimulatorRuntime {
             });
 
         let mut step_state = vec![false; self.id_to_index.len()];
-        
-        let disabled_defenses: HashSet<&u64> = self.g.defense_steps.difference(&state.enabled_defenses).collect();
+
+        let disabled_defenses: HashSet<&u64> = self
+            .g
+            .defense_steps
+            .difference(&state.enabled_defenses)
+            .collect();
         disabled_defenses
             .iter()
             .map(|&node_id| self.id_to_index[node_id])
@@ -369,8 +392,16 @@ impl SimulatorRuntime {
 
         assert!(defense_state.len() == self.defender_action_to_graph.len());
 
-        let defender_action_mask = action_mask.iter().chain(defense_state.iter()).cloned().collect::<Vec<bool>>();
-        let attacker_action_mask = action_mask.iter().chain(attack_surface_vec.iter()).cloned().collect::<Vec<bool>>();
+        let defender_action_mask = action_mask
+            .iter()
+            .chain(defense_state.iter())
+            .cloned()
+            .collect::<Vec<bool>>();
+        let attacker_action_mask = action_mask
+            .iter()
+            .chain(attack_surface_vec.iter())
+            .cloned()
+            .collect::<Vec<bool>>();
 
         assert!(defender_action_mask.len() == self.defender_action_to_graph.len() + 2);
 
@@ -391,6 +422,7 @@ impl SimulatorRuntime {
             ids_observation: ids_observed_vec,
             state: step_state,
             edges: vector_edges,
+            defense_indices: self.defender_action_to_state(),
         }
     }
 
@@ -419,45 +451,49 @@ impl SimulatorRuntime {
     ) -> SimResult<SimulatorState> {
         let old_state = self.state.borrow();
 
-        let mut total_ttc_diff: HashMap<NodeID, i32> = HashMap::new();
-        let mut ttc_diff: HashMap<NodeID, i32>;
-        let mut new_defenses: HashSet<u64> = HashSet::new();
-
         // Attacker selects and attack step from the attack surface
         // Defender selects a defense step from the defense surface, which is the vector of all defense steps that are not disabled
 
-        for (actor, action) in action_dict.iter() {
-            if *action < SPECIAL_ACTIONS.len() {
-                continue;
-            }
+        let actor_funcs: Vec<fn(&SimulatorRuntime, usize) -> SimResult<ActionResult>> = vec![
+            SimulatorRuntime::attack_action,
+            SimulatorRuntime::defense_action,
+        ];
 
-            let step_idx = *action - SPECIAL_ACTIONS.len();
-            let actor_id = self.actors[actor];
+        let total_result: ActionResult = action_dict.iter().fold(
+            ActionResult {
+                ttc_diff: HashMap::new(),
+                enabled_defenses: old_state.enabled_defenses.clone(),
+            },
+            |mut total_result, (actor, action)| {
+                if *action < SPECIAL_ACTIONS.len() {
+                    return total_result;
+                }
 
-            if actor_id == ATTACKER {
-                ttc_diff = self.attack_action(step_idx)?;
-            } else if actor_id == DEFENDER {
-                (new_defenses, ttc_diff) = self.defense_action(step_idx)?;
-            } else {
-                return Err(SimError {
-                    error: format!("Invalid actor: {}", actor),
-                });
-            }
+                let step_idx = *action - SPECIAL_ACTIONS.len();
+                let actor_id = self.actors[actor];
+                let result = actor_funcs[actor_id](&self, step_idx).unwrap();
 
-            for (step_id, ttc) in ttc_diff.iter() {
-                let current_ttc = total_ttc_diff.entry(*step_id).or_insert(0);
-                *current_ttc += *ttc;
-            }
-        }
+                for (step_id, ttc) in result.ttc_diff.iter() {
+                    let current_ttc = total_result.ttc_diff.entry(*step_id).or_insert(0);
+                    *current_ttc += *ttc;
+                }
+
+                total_result
+                    .enabled_defenses
+                    .extend(result.enabled_defenses);
+
+                total_result
+            },
+        );
 
         let mut remaining_ttc: HashMap<NodeID, u64> = old_state.remaining_ttc.clone();
-        for (step_id, ttc) in total_ttc_diff.iter() {
-            let current_ttc = remaining_ttc.entry(*step_id).or_insert(0);
-            *current_ttc = max(0, *current_ttc as i64 + *ttc as i64) as u64;
-        }
+        total_result.ttc_diff.iter().for_each(|(step_id, ttc)| {
+            remaining_ttc.entry(*step_id).and_modify(|current_ttc| {
+                *current_ttc = max(0, *current_ttc as i64 + *ttc as i64) as u64;
+            });
+        });
 
-        let mut enabled_defenses = old_state.enabled_defenses.clone();
-        enabled_defenses.extend(new_defenses);
+        let enabled_defenses = total_result.enabled_defenses;
 
         let compromised_steps = calculate_compromised_steps(&self.g, &remaining_ttc);
 
@@ -559,7 +595,11 @@ fn calculate_attack_surface(
 
 #[cfg(test)]
 mod tests {
-    use crate::{attackgraph, config, runtime::{SimulatorRuntime, SPECIAL_ACTIONS}, observation::{Observation, Info}};
+    use crate::{
+        attackgraph, config,
+        observation::{Info, Observation},
+        runtime::{SimulatorRuntime, SPECIAL_ACTIONS},
+    };
 
     #[test]
     fn test_sim_init() {
@@ -579,10 +619,13 @@ mod tests {
                 .iter()
                 .filter(|(_, &ttc)| ttc == 0)
                 .count(),
-            4+1 // 4 defense steps + 1 entrypoint
+            4 + 1 // 4 defense steps + 1 entrypoint
         );
         assert_eq!(initial_state.attack_surface.len(), 4);
-        assert_eq!(sim.defender_action_to_graph.len(), sim.g.defense_steps.len());
+        assert_eq!(
+            sim.defender_action_to_graph.len(),
+            sim.g.defense_steps.len()
+        );
         assert_eq!(sim.attacker_action_to_graph.len(), sim.g.graph.nodes.len());
     }
 
@@ -597,29 +640,59 @@ mod tests {
         let _info: Info;
 
         (observation, _info) = sim.reset(None).unwrap();
-        
-        assert_eq!(observation.defense_surface.iter().filter(|&x| *x).count(), 4);
+
+        assert_eq!(
+            observation.defense_surface.iter().filter(|&x| *x).count(),
+            4
+        );
         assert_eq!(observation.attack_surface.iter().filter(|&x| *x).count(), 4);
-        assert_eq!(observation.defender_action_mask.len(), 4 + SPECIAL_ACTIONS.len()); // count defenses + special actions
-        assert_eq!(observation.attacker_action_mask.len(), sim.g.graph.nodes.len() + SPECIAL_ACTIONS.len());
-        assert_eq!(observation.defender_action_mask.iter().filter(|&x| *x).count(), 4 + 1); // count available defenses + available special actions
-        assert_eq!(observation.attacker_action_mask.iter().filter(|&x| *x).count(), 4 + 1);
-        assert_eq!(observation.state.iter().filter(|&x| *x).count(), 4+1); // 4 available defenses + 1 compromised attack step
+        assert_eq!(
+            observation.defender_action_mask.len(),
+            4 + SPECIAL_ACTIONS.len()
+        ); // count defenses + special actions
+        assert_eq!(
+            observation.attacker_action_mask.len(),
+            sim.g.graph.nodes.len() + SPECIAL_ACTIONS.len()
+        );
+        assert_eq!(
+            observation
+                .defender_action_mask
+                .iter()
+                .filter(|&x| *x)
+                .count(),
+            4 + 1
+        ); // count available defenses + available special actions
+        assert_eq!(
+            observation
+                .attacker_action_mask
+                .iter()
+                .filter(|&x| *x)
+                .count(),
+            4 + 1
+        );
+        assert_eq!(observation.state.iter().filter(|&x| *x).count(), 4 + 1); // 4 available defenses + 1 compromised attack step
         assert_eq!(observation.state.len(), sim.g.graph.nodes.len());
-        
+
         assert!(observation.ttc_remaining.iter().sum::<u64>() > 0);
 
         let edges = observation.edges;
         let entrypoint = sim.g.entry_points;
-        let entrypoint_index = sim.id_to_index.iter().find_map(|(id, index)| match entrypoint.contains(&id) {
-            true => Some(index),
-            false => None,
-        }).unwrap();
+        let entrypoint_index = sim
+            .id_to_index
+            .iter()
+            .find_map(|(id, index)| match entrypoint.contains(&id) {
+                true => Some(index),
+                false => None,
+            })
+            .unwrap();
 
-        let indices_from_entrypoint = edges.iter().filter_map(|(from, to)| match from == entrypoint_index {
-            true => Some(to),
-            false => None,
-        }).collect::<Vec<&usize>>();
+        let indices_from_entrypoint = edges
+            .iter()
+            .filter_map(|(from, to)| match from == entrypoint_index {
+                true => Some(to),
+                false => None,
+            })
+            .collect::<Vec<&usize>>();
 
         // There should be four edges from the entrypoint
         assert_eq!(indices_from_entrypoint.len(), 4);
@@ -628,7 +701,5 @@ mod tests {
         for index in indices_from_entrypoint {
             assert_eq!(observation.attack_surface[*index], true);
         }
-
     }
-
 }
