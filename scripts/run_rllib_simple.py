@@ -11,6 +11,8 @@ from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
 from attack_simulator.rllib.attackers_policies import RandomPolicy
 from attack_simulator.rllib.custom_callback import AttackSimCallback
 from attack_simulator.utils.config import EnvConfig
+import attack_simulator.rllib.gnn_model as gnn_defender
+from attack_simulator.rllib.defender_policy import DefenderPolicy, DefenderConfig
 
 if __name__ == "__main__":
 
@@ -19,6 +21,7 @@ if __name__ == "__main__":
     env_name = register_rllib_env()
     # Register the model with the registry.
     defender_model.register_rllib_model()
+    gnn_defender.register_rllib_model()
     # optimal_defender.register_rllib_model()
     # random_defender.register_rllib_model()
 
@@ -65,22 +68,23 @@ if __name__ == "__main__":
     policy_ids = {AGENT_DEFENDER: AGENT_DEFENDER, AGENT_ATTACKER: AGENT_ATTACKER}
 
     config = (
-        defender_model.DefenderConfig()
+        DefenderConfig()
         .training(scale_rewards=False)
         .framework("torch")
         .environment(env_name, env_config=env_config)
         .callbacks(AttackSimCallback)
         .debugging(seed=seed)
         .rollouts(
-            num_envs_per_worker=5,
+            num_rollout_workers=0,
+            num_envs_per_worker=1,
         )
         .multi_agent(
             policies={
                 AGENT_DEFENDER: PolicySpec(
-                    policy_class=ids_model.DefenderPolicy,
+                    policy_class=DefenderPolicy,
                     config={
                         "model": {
-                            "custom_model": "DefenderModel",
+                            "custom_model": "GNNDefenderModel",
                             "fcnet_hiddens": [32],
                             "vf_share_layers": True,
                             "custom_model_config": {},
