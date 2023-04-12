@@ -7,7 +7,7 @@ generated-members=
 			torch.*,
 			wandb.*
 extension-pkg-allow-list=
-      rust_sim
+      rusty_sim
 [MESSAGES CONTROL]
 disable=design,
 		missing-module-docstring,
@@ -17,4 +17,5 @@ disable=design,
 		consider-using-with,
 		too-many-nested-blocks,
 		duplicate-code
+		abstract-method
 
