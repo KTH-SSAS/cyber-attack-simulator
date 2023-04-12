@@ -37,7 +37,7 @@ class GNNDefenderModel(TorchModelV2, nn.Module):
         edges = edges.transpose(1, -1)
         sim_state = sim_state.unsqueeze(-1)
 
-        policy_out, value_out = self.model(sim_state, edges)
+        policy_out, value_out = self.model(sim_state, edges, obs["defense_indices"].type(torch.LongTensor))
 
         self._value_out = value_out
 

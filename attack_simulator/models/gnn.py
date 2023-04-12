@@ -4,7 +4,7 @@ from torch.nn import Linear, Parameter
 from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import add_self_loops, degree
 from torch_geometric.data import Data, Batch
-
+import einops
 
 class GCNConv(MessagePassing):
     def __init__(self, in_channels, out_channels):
@@ -59,7 +59,7 @@ class GNNRLAgent(nn.Module):
         self.policy_fn = nn.Linear(channels_out, num_outputs)
         self.value_fn = nn.Linear(channels_out, 1)
 
-    def forward(self, x, edge_index):
+    def forward(self, x, edge_index, defense_indices):
         # x has shape [B, N, in_channels]
         # N is the number of nodes
         # B is the batch size
@@ -74,17 +74,23 @@ class GNNRLAgent(nn.Module):
 
         # Reshape embedding to [B, N, channels_out]
         # This assumes that all graphs in the batch have the same number of nodes
-        embedding = embedding.view(batch.num_graphs, x.shape[1], -1)
-
+        # https://einops.rocks/1-einops-basics/#decomposition-of-axis
+        embedding = einops.rearrange(embedding, "(b n) c -> b n c", b=batch.num_graphs)
+        
+        defense_indices = einops.repeat(defense_indices, "b k -> b k d", d=embedding.shape[-1])
+        
+        defense_embeddings = torch.gather(embedding, 1, defense_indices)
+        
         # Take the mean of the node embeddings to get a graph embedding
-        embedding = torch.mean(embedding, dim=1)
+        # embedding = torch.mean(embedding, dim=1)
 
         # Compute policy and value outputs
         # policy_out has shape [B, num_outputs]
-        policy_out = self.policy_fn(embedding)
+        # only compute policy func for defense nodes
+        policy_out = self.policy_fn(defense_embeddings)
         
         # value_out has shape [B, 1]
-        value_out = self.value_fn(embedding)
+        value_out = self.value_fn(defense_embeddings)
 
         return policy_out, value_out
 
