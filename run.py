@@ -7,7 +7,7 @@ from scripts.run_rllib import main
 
 
 def run(config_file: Path, num_workers: int, debug: bool = False) -> None:
-    stop_iterations = 5
+    stop_iterations = 100
     local_mode = debug
     wandb_sync = not debug
 
@@ -27,4 +27,4 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: debug.py <config_file>")
         sys.exit()
-    run(Path(sys.argv[1]), num_workers=0)
+    run(Path(sys.argv[1]), num_workers=1)

@@ -16,6 +16,7 @@ from ray import air, tune
 from ray.air.integrations.wandb import WandbLoggerCallback
 from ray.rllib.policy.policy import PolicySpec
 from ray.tune.schedulers.pbt import PopulationBasedTraining
+from ray.rllib.algorithms.ppo.ppo import PPOConfig
 
 from attack_simulator.rllib.defender_policy import DefenderPolicy, DefenderConfig, Defender
 from attack_simulator import AGENT_ATTACKER, AGENT_DEFENDER
@@ -24,71 +25,8 @@ from attack_simulator.rllib.attackers_policies import BreadthFirstPolicy
 from attack_simulator.rllib.custom_callback import AttackSimCallback
 from attack_simulator.utils.config import EnvConfig
 
-
-def add_fp_tp_sweep(config: dict, values: list) -> dict:
-    new_config = copy.deepcopy(config)
-    new_config["env_config"]["sim_config"]["false_negative_rate"] = tune.grid_search(values)
-    new_config["env_config"]["sim_config"]["false_positive_rate"] = tune.grid_search(values)
-    return new_config
-
-
-def set_fp_fn_vals(config: dict, fp, fn):
-    new_config = copy.deepcopy(config)
-    new_config["env_config"]["sim_config"]["false_negative_rate"] = fn
-    new_config["env_config"]["sim_config"]["false_positive_rate"] = fp
-    return new_config
-
-
-def add_graph_sweep(config: dict, values: list) -> dict:
-    new_config = copy.deepcopy(config)
-    new_config["env_config"]["graph_config"]["filename"] = tune.grid_search(values)
-    return new_config
-
-
-def add_attacker_sweep(config: dict, values: list) -> dict:
-    new_config = copy.deepcopy(config)
-    new_config["env_config"]["attacker"] = tune.grid_search(values)
-    return new_config
-
-
-def add_seed_sweep(config: dict, values: list) -> dict:
-    new_config = copy.deepcopy(config)
-    new_config["seed"] = tune.grid_search(values)
-    return new_config
-
-
-def add_dqn_options(config: dict) -> dict:
-    new_config = copy.deepcopy(config)
-    return new_config | {
-        "noisy": True,
-        "num_atoms": 5,
-        "v_min": -150.0,
-        "v_max": 0.0,
-        "train_batch_size": 600,
-    }
-
-
 def get_graph_size(config):
     return int(re.search(r"_(\d+)\.yaml", config["env_config"]["graph_config"]["filename"])[1])
-
-
-def add_ppo_options(config: dict) -> dict:
-    new_config = copy.deepcopy(config)
-    return new_config | {
-        "train_batch_size": 2048,
-        "sgd_minibatch_size": 2048,
-        "vf_clip_param": 500,
-        "clip_param": 0.02,
-        "vf_loss_coeff": 0.001,
-        "lr": 0.0001,
-        "gamma": 1,
-        "use_critic": True,
-        "use_gae": True,
-        "kl_coeff": 0.0,
-        "entropy_coeff": 0.0,
-        "scale_rewards": False,
-    }
-
 
 def dict2choices(d: dict) -> Tuple[list, str]:
     choices = list(d.keys())
@@ -184,7 +122,7 @@ def main(
     )
     env_config = dataclasses.replace(env_config, run_id=id_string)
     dummy_env = AttackSimulationEnv(env_config)
-    env_config = dataclasses.replace(env_config, backend=tune.grid_search(["rust", "python"]))
+    env_config = dataclasses.replace(env_config, backend=tune.grid_search(["rust"]))
 
     gpu_count = kwargs["gpu_count"]
     num_workers = kwargs["num_workers"]
@@ -209,16 +147,16 @@ def main(
     attacker_policy_class = BreadthFirstPolicy
 
     config = (
-        DefenderConfig()
+        PPOConfig()
         .training(
-            scale_rewards=False,
+            #scale_rewards=False,
             gamma=1.0,
-            sgd_minibatch_size=128,
-            train_batch_size=128,
-            vf_clip_param=500,
-            clip_param=0.02,
-            vf_loss_coeff=0.001,
-            lr=0.0001,
+            sgd_minibatch_size=64,
+            train_batch_size=64,
+            vf_clip_param=tune.uniform(100, 1000),
+            clip_param=tune.uniform(0.01, 0.5),
+            vf_loss_coeff=tune.uniform(1e-3, 1e-2),
+            lr=tune.uniform(1e-4, 1e-2),
             use_critic=True,
             use_gae=True,
             kl_coeff=0.0,
@@ -249,7 +187,7 @@ def main(
         .multi_agent(
             policies={
                 AGENT_DEFENDER: PolicySpec(
-                    policy_class=DefenderPolicy,
+                    policy_class="PPO",
                     config={
                         "model": {
                             "custom_model": "DefenderModel",
@@ -359,9 +297,6 @@ def main(
 
     # Hyperparameter tuning
 
-    criteria = "episode_reward_mean"
-    perturb = 0.25
-
     # pb2 = PB2(
     #     time_attr=criteria,
     #     metric="episode_reward_mean",
@@ -388,20 +323,23 @@ def main(
         config["train_batch_size"] = int(config["train_batch_size"])
         return config
 
+    criteria = "episode_reward_mean"
+    perturb = 0.25
+    perturbation_interval = 10
     pbt = PopulationBasedTraining(
         time_attr="training_iteration",
         metric="episode_reward_mean",
         mode="max",
-        perturbation_interval=50,
+        perturbation_interval=perturbation_interval,
         resample_probability=perturb,
         quantile_fraction=perturb,  # copy bottom % with top %
         # Specifies the search space for these hyperparams
         hyperparam_mutations={
-            "lambda": lambda: random.uniform(0.9, 1.0),
-            "clip_param": lambda: random.uniform(0.01, 0.5),
-            "lr": lambda: random.uniform(1e-3, 1e-5),
-            "train_batch_size": lambda: random.randint(300, 3000),
-            "vf_clip_param": lambda: random.randint(100, 1000),
+            "clip_param": lambda: random.uniform(0.001, 0.01),
+            "lr": lambda: random.uniform(1e-5, 1e-3),
+            "train_batch_size": lambda: random.randint(64, 512),
+            "sgd_minibatch_size": lambda: random.randint(64, 512),
+            "vf_clip_param": lambda: random.randint(10, 100),
             "vf_loss_coeff": lambda: random.uniform(0.0001, 0.01),
         },
         custom_explore_fn=explore,
@@ -422,10 +360,20 @@ def main(
 
     tuner = tune.Tuner(
         Defender,
-        tune_config=tune.TuneConfig(reuse_actors=False),
+        tune_config=tune.TuneConfig(
+            reuse_actors=False,
+            scheduler=pbt,
+            num_samples=2,
+            #metric=criteria,
+            #mode="max",
+        ),
         run_config=air.RunConfig(
             stop=tune.stopper.MaximumIterationStopper(stop_iterations),
             callbacks=callbacks,
+            checkpoint_config=air.CheckpointConfig(
+            checkpoint_score_attribute=criteria,
+            num_to_keep=perturbation_interval,
+        ),
             # progress_reporter=tune.CLIReporter(max_report_frequency=60),
         ),
         param_space=config,
@@ -434,8 +382,24 @@ def main(
     results = tuner.fit()
 
     best_result = results.get_best_result(metric="episode_reward_mean", mode="max")
+    import matplotlib.pyplot as plt
+    # Print `log_dir` where checkpoints are stored
+    print('Best result logdir:', best_result.log_dir)
 
-    print("Best result:", best_result)
+    # Print the best trial `config` reported at the last iteration
+    # NOTE: This config is just what the trial ended up with at the last iteration.
+    # See the next section for replaying the entire history of configs.
+    print('Best final iteration hyperparameter config:\n', best_result.config)
+
+    # Plot the learning curve for the best trial
+    df = best_result.metrics_dataframe
+    # Deduplicate, since PBT might introduce duplicate data
+    df = df.drop_duplicates(subset="training_iteration", keep="last")
+    df.plot("training_iteration", "episode_reward_mean")
+    plt.xlabel("Training Iterations")
+    plt.ylabel("Episode Reward Mean")
+    plt.show()
+
 
     # analysis: tune.ExperimentAnalysis = tune.run_experiments(
     #     experiments,
