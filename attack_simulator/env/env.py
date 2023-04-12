@@ -63,6 +63,7 @@ def get_agent_obs(sim_obs: Observation, graph: AttackGraph) -> Dict[str, Any]:
         "ids_observation": np.array(sim_obs.ids_observation, dtype=np.int8),
         "action_mask": np.array(sim_obs.defender_action_mask, dtype=np.int8),
         "edges": graph.get_edge_list(),
+        "defense_indices": np.array(sim_obs.defense_indices, dtype=np.int64),
     }
 
     attacker_obs = {
@@ -170,6 +171,9 @@ class AttackSimulationEnv(MultiAgentEnv):
                         ),
                         "edges": spaces.Box(
                             0, np.inf, shape=graph.get_edge_list().shape, dtype=np.int64
+                        ),
+                        "defense_indices": spaces.Box(
+                            0, dim_observations, shape=(graph.num_defenses,), dtype=np.int64
                         ),
                     }
                 ),
