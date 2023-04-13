@@ -2,6 +2,9 @@
 requires = ["maturin>=0.14,<0.15"]
 build-backend = "maturin"
 
+[tool.maturin]
+module-name = "attack_simulator.rusty_sim"
+
 [tool.poetry]
 name = "attack_simulator"
 version = "2.0"
