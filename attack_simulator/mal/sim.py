@@ -1,27 +1,19 @@
 import pickle
+from abc import ABC, abstractmethod
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
 
-from .constants import (
-    ACTION_TERMINATE,
-    ACTION_WAIT,
-    AGENT_ATTACKER,
-    AGENT_DEFENDER,
-    UINT,
-)
-from .observation import Info, Observation
-from .rng import get_rng
-
-from .config import SimulatorConfig
+from .. import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER, AGENT_DEFENDER, UINT
+from ..utils.config import SimulatorConfig
+from ..utils.rng import get_rng
 from .graph import AttackGraph
 from .ids import ProbabilityIDS
-from abc import ABC, abstractmethod
+from .observation import Info, Observation
 
 
 class Simulator(ABC):
-
     num_special_actions: int
     wait_action: int
     terminate_action: int
@@ -166,7 +158,6 @@ class AttackSimulator(Simulator):
         return self.get_obs_dict(), self.info()
 
     def step(self, actions: Dict[str, int]) -> Tuple[Observation, Info]:
-
         funcs: Dict[str, Callable[[int], Tuple[NDArray[np.int8], bool]]] = {
             AGENT_ATTACKER: self.attack_step,
             AGENT_DEFENDER: self.enable_defense_step,
@@ -232,7 +223,6 @@ class AttackSimulator(Simulator):
 
     def enable_defense_step(self, defense_idx: UINT) -> Tuple[NDArray[np.int8], bool]:
         """Enable (disable) a defense step."""
-
         # Only enable defenses that are disabled
         if not self.state.defense_state[defense_idx]:
             return np.zeros(self.g.num_attacks, dtype=np.int8), False
@@ -252,7 +242,6 @@ class AttackSimulator(Simulator):
 
     def attack_step(self, attack_idx: UINT) -> Tuple[NDArray[np.int8], bool]:
         """Have the attacker perform an action."""
-
         # assert (
         #     attack_idx in self.valid_actions
         # ), "Attacker tried to perform an attack not in attack surface"

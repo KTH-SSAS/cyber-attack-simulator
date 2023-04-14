@@ -1,19 +1,19 @@
 from collections import OrderedDict
-import numpy as np
 
+import numpy as np
 import pytest
 
+from attack_simulator import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER
 from attack_simulator.agents import (  # InformedAttacker,; RandomNoActionAttacker,; RoundRobinNoActionAttacker,
     Agent,
     PathFinderAttacker,
     RandomAttacker,
     RoundRobinAttacker,
 )
-from attack_simulator.agents.searchers import BreadthFirstAttacker, DepthFirstAttacker
-from attack_simulator.constants import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER
-from attack_simulator.observation import obs_to_dict
-from attack_simulator.sim import Simulator
-from attack_simulator.env import get_agent_obs
+from attack_simulator.agents.attackers.searchers import BreadthFirstAttacker, DepthFirstAttacker
+from attack_simulator.env.env import get_agent_obs
+from attack_simulator.mal.sim import Simulator
+
 
 @pytest.mark.parametrize(
     "attacker_class",

@@ -10,11 +10,10 @@ from typing import Any, Dict
 
 import numpy as np
 
-from ..constants import UINT
-from ..graph import AttackGraph
-
-from ..rng import get_rng
-from .agent import Agent
+from ... import UINT
+from ...mal.graph import AttackGraph
+from ...utils.rng import get_rng
+from ..agent import Agent
 
 logger = logging.getLogger("simulator")
 
@@ -25,7 +24,7 @@ class RandomAttacker(Agent):
         self.rng, _ = get_rng(agent_config.get("seed"))
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions:]
+        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions :]
         surface_indexes = np.flatnonzero(attack_surface)
         return (
             self.rng.choice(surface_indexes) + self.num_special_actions
@@ -51,7 +50,7 @@ class RoundRobinAttacker(Agent):
         self.last = 0
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions:]
+        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions :]
         valid = np.flatnonzero(attack_surface)
         above = valid[self.last < valid]
         self.last = valid[0] if 0 == above.size else above[0]

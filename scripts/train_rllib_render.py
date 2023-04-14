@@ -14,7 +14,7 @@ import os
 import ray
 from ray import tune
 
-from attack_simulator.env import AttackSimulationEnv
+from attack_simulator.env.env import AttackSimulationEnv
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--run", type=str, default="PPO", help="The RLlib-registered algorithm to use.")

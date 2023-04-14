@@ -1,23 +1,19 @@
 import dataclasses
-import os
 import re
 from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
 
-from attack_simulator.config import EnvConfig, GraphConfig
-from attack_simulator.env import AttackSimulationEnv
-from attack_simulator.graph import AttackGraph
-from attack_simulator.rust_wrapper import rust_sim_init
-from attack_simulator.sim import AttackSimulator
+from attack_simulator.env.env import AttackSimulationEnv
+from attack_simulator.mal.graph import AttackGraph
+from attack_simulator.mal.sim import AttackSimulator
+from attack_simulator.utils.config import EnvConfig, GraphConfig
+from attack_simulator.utils.rust_wrapper import rust_sim_init
 
 
 @pytest.fixture(name="config_yaml", scope="session")
 def fixture_config_filename() -> Path:
-
-    
-
     return Path("config/test_config.yaml")
 
 
