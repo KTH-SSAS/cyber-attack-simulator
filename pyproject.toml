@@ -61,6 +61,7 @@ tensorboardx = "^2.6"
 pip = "^23.0.1"
 torch-geometric = "^2.3.0"
 einops = "^0.6.0"
+bayesian-optimization = "^1.4.2"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.257"
