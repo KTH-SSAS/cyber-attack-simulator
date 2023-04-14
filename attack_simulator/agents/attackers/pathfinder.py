@@ -8,10 +8,9 @@ from agraphlib import STEP
 from networkx.algorithms.shortest_paths.generic import shortest_path
 from numpy.typing import NDArray
 
-from ..constants import UINT
-from ..graph import AttackGraph
-
-from .agent import Agent
+from ... import UINT
+from ...mal.graph import AttackGraph
+from ..agent import Agent
 
 
 class PathFinderAttacker(Agent):
@@ -221,7 +220,7 @@ class PathFinderAttacker(Agent):
         target.
         """
 
-        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions:]
+        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions :]
         attack_surface = np.flatnonzero(attack_surface)
         defense_state = observation["defense_state"]
         ttc_remaining = observation["ttc_remaining"]
@@ -234,7 +233,7 @@ class PathFinderAttacker(Agent):
             ]
             flag_costs.sort(key=itemgetter(1))
             self.flags = [flag for flag, _ in flag_costs]
-            # self.done, self.planned_path = 
+            # self.done, self.planned_path =
             # self.decide_next_target(ttc_remaining, compromised_steps, defense_state)
 
         # If there are no more flags to take, do nothing

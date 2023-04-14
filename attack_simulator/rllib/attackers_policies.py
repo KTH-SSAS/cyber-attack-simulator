@@ -1,14 +1,14 @@
 from typing import Dict, List, Optional, Tuple, Union
 
 import tree
+from ray.rllib.evaluation import Episode
 from ray.rllib.models.modelv2 import restore_original_dimensions
 from ray.rllib.policy.policy import Policy
 from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.typing import TensorStructType, TensorType
-from ray.rllib.evaluation import Episode
 
-from .attackers import RandomAttacker
-from .searchers import BreadthFirstAttacker, DepthFirstAttacker
+from ..agents.attackers.attackers import RandomAttacker
+from ..agents.attackers.searchers import BreadthFirstAttacker, DepthFirstAttacker
 
 
 class NonLearningAttackerPolicy(Policy):

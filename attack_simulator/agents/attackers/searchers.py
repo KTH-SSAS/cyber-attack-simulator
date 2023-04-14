@@ -3,8 +3,8 @@ from typing import Any, Deque, Dict, List, Set, Union
 
 import numpy as np
 
-from ..constants import UINT
-from .agent import Agent
+from ... import UINT
+from ..agent import Agent
 
 STOP = -1
 
@@ -41,7 +41,7 @@ class BreadthFirstAttacker(Agent):
         self.rng = np.random.default_rng(seed)
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions:]
+        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions :]
         surface_indexes = set(np.flatnonzero(attack_surface))
         new_targets = [idx for idx in surface_indexes if idx not in self.targets]
 
@@ -68,8 +68,7 @@ class DepthFirstAttacker(Agent):
         self.rng = np.random.default_rng(seed)
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-
-        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions:]
+        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions :]
         surface_indexes = set(np.flatnonzero(attack_surface))
         new_targets = [idx for idx in surface_indexes if idx not in self.targets]
 

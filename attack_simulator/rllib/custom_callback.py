@@ -9,9 +9,8 @@ from ray.rllib.policy import Policy
 from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.typing import AgentID, PolicyID
 
-from .constants import AGENT_ATTACKER, AGENT_DEFENDER
-
-from .reward_utils import (
+from .. import AGENT_ATTACKER, AGENT_DEFENDER
+from ..utils.reward_utils import (
     defender_min,
     get_normalized_attacker_reward,
     get_normalized_downtime_reward,
@@ -59,15 +58,15 @@ class AttackSimCallback(DefaultCallbacks):
         # num_defenses = len(defense_costs)
         # num_flags = len(flag_costs)
 
-        # min_defense_rewards = 
-        # [-defense_cost_for_timestep(t+1, avg_defense_cost, num_defenses) 
+        # min_defense_rewards =
+        # [-defense_cost_for_timestep(t+1, avg_defense_cost, num_defenses)
         # for t in range(episode.length)]
-        # min_flag_rewards = 
+        # min_flag_rewards =
         # [-attack_cost_for_timestep(t+1, avg_flag_cost, num_flags) for t in range(episode.length)]
 
         # rewards = postprocessed_batch["rewards"]
 
-        # postprocessed_rewards = [normalize(reward, min_d+min_a, 0, 0, 1) 
+        # postprocessed_rewards = [normalize(reward, min_d+min_a, 0, 0, 1)
         # for reward, min_d, min_a in zip(rewards, min_defense_rewards, min_flag_rewards)]
         # rewards = postprocessed_batch["rewards"]
         # value_targets = postprocessed_batch["value_targets"]
@@ -107,7 +106,6 @@ class AttackSimCallback(DefaultCallbacks):
             f"{AGENT_ATTACKER}_cumulative_reward",
         ]:
             episode.custom_metrics[key] = info[key]
-
 
         avg_defense_cost = np.mean(defense_costs)
         num_defenses = defense_costs.shape[0]

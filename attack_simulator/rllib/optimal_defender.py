@@ -2,12 +2,13 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 from ray.rllib.algorithms.algorithm import Algorithm
+from ray.rllib.evaluation import Episode
 from ray.rllib.models.modelv2 import restore_original_dimensions
 from ray.rllib.policy.policy import Policy
 from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.typing import TensorStructType, TensorType
 from torch import Tensor
-from ray.rllib.evaluation import Episode
+
 
 class TripwireDefender(Algorithm):
     # _allow_unknown_configs = True
