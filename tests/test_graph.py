@@ -1,6 +1,6 @@
 from typing import List
 
-from attack_simulator.mal.graph import AttackGraph
+from attack_simulator.graph import AttackGraph
 
 
 def test_graph_init(

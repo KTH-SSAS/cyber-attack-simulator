@@ -2,11 +2,10 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import tree
 from ray.rllib.algorithms.algorithm import Algorithm
-from ray.rllib.evaluation import Episode
 from ray.rllib.policy.policy import Policy
 from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.typing import TensorStructType, TensorType
-
+from ray.rllib.evaluation import Episode
 
 class RandomDefender(Algorithm):
     # _allow_unknown_configs = True
@@ -16,6 +15,7 @@ class RandomDefender(Algorithm):
 
 
 class RandomPolicy(Policy):
+
     def compute_actions(
         self,
         obs_batch: Union[List[TensorStructType], TensorStructType],

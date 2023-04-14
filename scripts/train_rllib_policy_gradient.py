@@ -5,7 +5,7 @@ import os
 import ray
 from ray.rllib.agents import pg
 
-from attack_simulator.env.env import AttackSimulationEnv
+from attack_simulator.env import AttackSimulationEnv
 
 # listen on all interfaces inside a container for port-forwarding to work
 dashboard_host = "0.0.0.0" if os.path.exists("/.dockerenv") else "127.0.0.1"

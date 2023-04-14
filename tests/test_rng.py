@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import torch
 
-from attack_simulator.utils.rng import get_rng, set_seeds
+from attack_simulator.rng import get_rng, set_seeds
 
 
 @pytest.mark.parametrize("seed", [42, None])

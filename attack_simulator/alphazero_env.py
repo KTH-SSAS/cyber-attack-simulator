@@ -1,8 +1,7 @@
 from copy import deepcopy
 from typing import Tuple
-
-import numpy as np
 from gymnasium import spaces
+import numpy as np
 
 from .env import AttackSimulationEnv
 

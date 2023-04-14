@@ -8,7 +8,7 @@ import os
 import shelve
 from pathlib import Path
 
-import gymnasium
+
 import ray.cloudpickle as cloudpickle
 from ray.rllib.algorithms.registry import get_algorithm_class
 from ray.rllib.env import MultiAgentEnv
@@ -20,6 +20,7 @@ from ray.rllib.utils.deprecation import deprecation_warning
 from ray.rllib.utils.spaces.space_utils import flatten_to_single_ndarray
 from ray.tune.registry import ENV_CREATOR, _global_registry, get_trainable_cls
 from ray.tune.utils import merge_dicts
+import gymnasium
 
 EXAMPLE_USAGE = """
 Example usage via RLlib CLI:

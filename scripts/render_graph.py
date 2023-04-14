@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from attack_simulator.sim.graph import AttackGraph
-from attack_simulator.utils.config import GraphConfig
+from attack_simulator.config import GraphConfig
+from attack_simulator.graph import AttackGraph
 
 seed = 22
 filename = "mgg.yaml"  # sys.argv[1]

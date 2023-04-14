@@ -7,8 +7,8 @@ import re
 import socket
 from dataclasses import asdict
 from datetime import datetime
-from pathlib import Path
 from typing import Any, Dict, Tuple
+from pathlib import Path
 
 import ray
 import ray.train.torch
@@ -17,12 +17,12 @@ from ray.air.integrations.wandb import WandbLoggerCallback
 from ray.rllib.policy.policy import PolicySpec
 from ray.tune.schedulers.pbt import PopulationBasedTraining
 
-import attack_simulator.rllib.ids_model as ids_model
-from attack_simulator import AGENT_ATTACKER, AGENT_DEFENDER
-from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
-from attack_simulator.rllib.attackers_policies import BreadthFirstPolicy
-from attack_simulator.rllib.custom_callback import AttackSimCallback
-from attack_simulator.utils.config import EnvConfig
+import attack_simulator.ids_model as ids_model
+from attack_simulator.agents.attackers_policies import BreadthFirstPolicy
+from attack_simulator.config import EnvConfig
+from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
+from attack_simulator.custom_callback import AttackSimCallback
+from attack_simulator.env import AttackSimulationEnv, register_rllib_env
 
 
 def add_fp_tp_sweep(config: dict, values: list) -> dict:
@@ -185,6 +185,7 @@ def main(
     env_config = dataclasses.replace(env_config, run_id=id_string)
     dummy_env = AttackSimulationEnv(env_config)
     env_config = dataclasses.replace(env_config, backend=tune.grid_search(["rust", "python"]))
+
 
     gpu_count = kwargs["gpu_count"]
     num_workers = kwargs["num_workers"]

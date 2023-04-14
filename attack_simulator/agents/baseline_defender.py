@@ -1,8 +1,8 @@
 """Simple agents that can be used as baselines for performance."""
 import numpy as np
 
-from ...utils.rng import get_rng
-from ..agent import Agent
+from ..rng import get_rng
+from .agent import Agent
 
 
 class RandomAgent(Agent):

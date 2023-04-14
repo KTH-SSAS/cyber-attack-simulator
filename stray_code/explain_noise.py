@@ -1,8 +1,8 @@
 import numpy as np
 
-from attack_simulator.agents.attackers.searchers import DepthFirstAttacker
+from attack_simulator.agents.searchers import DepthFirstAttacker
+from attack_simulator.config import EnvConfig
 from attack_simulator.sim import AttackSimulator
-from attack_simulator.utils.config import EnvConfig
 
 ids_fpr = 0.5
 ids_fnr = 0.5
@@ -12,7 +12,7 @@ env_config = {
     "save_graphs": False,
     "save_logs": False,
     "seed": 22,
-    "sim_config": {
+    "sim_config" {
         "seed": 22,
         "attack_start_time": 5,
         "false_positive_rate": ids_fpr,

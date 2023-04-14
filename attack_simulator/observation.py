@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
-from .. import UINT
+from .constants import UINT
 
 
 @dataclass
