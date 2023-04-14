@@ -1,5 +1,4 @@
 import argparse
-import copy
 import dataclasses
 import os
 import random
@@ -14,19 +13,21 @@ import ray
 import ray.train.torch
 from ray import air, tune
 from ray.air.integrations.wandb import WandbLoggerCallback
+from ray.rllib.algorithms.ppo.ppo import PPOConfig
 from ray.rllib.policy.policy import PolicySpec
 from ray.tune.schedulers.pbt import PopulationBasedTraining
-from ray.rllib.algorithms.ppo.ppo import PPOConfig
 
-from attack_simulator.rllib.defender_policy import DefenderPolicy, DefenderConfig, Defender
 from attack_simulator import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
 from attack_simulator.rllib.attackers_policies import BreadthFirstPolicy
 from attack_simulator.rllib.custom_callback import AttackSimCallback
+from attack_simulator.rllib.defender_policy import Defender
 from attack_simulator.utils.config import EnvConfig
+
 
 def get_graph_size(config):
     return int(re.search(r"_(\d+)\.yaml", config["env_config"]["graph_config"]["filename"])[1])
+
 
 def dict2choices(d: dict) -> Tuple[list, str]:
     choices = list(d.keys())
@@ -149,7 +150,7 @@ def main(
     config = (
         PPOConfig()
         .training(
-            #scale_rewards=False,
+            # scale_rewards=False,
             gamma=1.0,
             sgd_minibatch_size=64,
             train_batch_size=64,
@@ -364,16 +365,16 @@ def main(
             reuse_actors=False,
             scheduler=pbt,
             num_samples=2,
-            #metric=criteria,
-            #mode="max",
+            # metric=criteria,
+            # mode="max",
         ),
         run_config=air.RunConfig(
             stop=tune.stopper.MaximumIterationStopper(stop_iterations),
             callbacks=callbacks,
             checkpoint_config=air.CheckpointConfig(
-            checkpoint_score_attribute=criteria,
-            num_to_keep=perturbation_interval,
-        ),
+                checkpoint_score_attribute=criteria,
+                num_to_keep=perturbation_interval,
+            ),
             # progress_reporter=tune.CLIReporter(max_report_frequency=60),
         ),
         param_space=config,
@@ -383,13 +384,14 @@ def main(
 
     best_result = results.get_best_result(metric="episode_reward_mean", mode="max")
     import matplotlib.pyplot as plt
+
     # Print `log_dir` where checkpoints are stored
-    print('Best result logdir:', best_result.log_dir)
+    print("Best result logdir:", best_result.log_dir)
 
     # Print the best trial `config` reported at the last iteration
     # NOTE: This config is just what the trial ended up with at the last iteration.
     # See the next section for replaying the entire history of configs.
-    print('Best final iteration hyperparameter config:\n', best_result.config)
+    print("Best final iteration hyperparameter config:\n", best_result.config)
 
     # Plot the learning curve for the best trial
     df = best_result.metrics_dataframe
@@ -399,7 +401,6 @@ def main(
     plt.xlabel("Training Iterations")
     plt.ylabel("Episode Reward Mean")
     plt.show()
-
 
     # analysis: tune.ExperimentAnalysis = tune.run_experiments(
     #     experiments,

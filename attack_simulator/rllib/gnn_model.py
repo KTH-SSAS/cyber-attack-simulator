@@ -7,7 +7,9 @@ from ray.rllib.models import ModelCatalog
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 from ray.rllib.utils.torch_utils import FLOAT_MAX, FLOAT_MIN
 from torch import Tensor
+
 from ..models.gnn import GNNRLAgent
+
 
 class GNNDefenderModel(TorchModelV2, nn.Module):
     """Policy for the agent agent."""
@@ -26,7 +28,6 @@ class GNNDefenderModel(TorchModelV2, nn.Module):
 
         self.model = GNNRLAgent(num_outputs)
 
-
     def forward(self, input_dict, state, seq_lens):
         obs = input_dict["obs"]
 
@@ -37,7 +38,9 @@ class GNNDefenderModel(TorchModelV2, nn.Module):
         edges = edges.transpose(1, -1)
         sim_state = sim_state.unsqueeze(-1)
 
-        policy_out, value_out = self.model(sim_state, edges, obs["defense_indices"].type(torch.LongTensor))
+        policy_out, value_out = self.model(
+            sim_state, edges, obs["defense_indices"].type(torch.LongTensor)
+        )
 
         self._value_out = value_out
 

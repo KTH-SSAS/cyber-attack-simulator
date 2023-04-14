@@ -5,9 +5,9 @@ import cloudpickle
 import ray
 from tqdm import tqdm
 
-from attack_simulator.rllib.defender_policy import Defender
 from attack_simulator.env.env import register_rllib_env
 from attack_simulator.rllib.custom_callback import AttackSimCallback
+from attack_simulator.rllib.defender_policy import Defender
 
 trainers = {"PPO": Defender}
 

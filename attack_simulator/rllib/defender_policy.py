@@ -7,7 +7,6 @@ from typing import Callable, Dict, Optional
 import numpy as np
 import torch
 from ray.rllib.algorithms.algorithm_config import AlgorithmConfig, NotProvided
-
 from ray.rllib.algorithms.ppo import PPO
 from ray.rllib.algorithms.ppo.ppo import PPOConfig
 from ray.rllib.algorithms.ppo.ppo_torch_policy import PPOTorchPolicy
@@ -29,10 +28,18 @@ class DefenderConfig(PPOConfig):
         self.scale_rewards = True
         self.num_special_actions = 0
 
-    def training(self, *, scale_rewards: Optional[bool] = NotProvided, num_special_actions: Optional[int] = NotProvided, **kwargs):
+    def training(
+        self,
+        *,
+        scale_rewards: Optional[bool] = NotProvided,
+        num_special_actions: Optional[int] = NotProvided,
+        **kwargs,
+    ):
         super().training(**kwargs)
         self.scale_rewards = self.scale_rewards if scale_rewards is NotProvided else scale_rewards
-        self.num_special_actions = self.num_special_actions if num_special_actions is NotProvided else num_special_actions
+        self.num_special_actions = (
+            self.num_special_actions if num_special_actions is NotProvided else num_special_actions
+        )
         return self
 
     def update_from_dict(self, config_dict: PartialAlgorithmConfigDict) -> DefenderConfig:
