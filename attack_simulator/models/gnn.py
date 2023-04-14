@@ -1,10 +1,10 @@
+import einops
 import torch
 import torch.nn as nn
 from torch.nn import Linear, Parameter
+from torch_geometric.data import Batch, Data
 from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import add_self_loops, degree
-from torch_geometric.data import Data, Batch
-import einops
 
 
 class GCNConv(MessagePassing):

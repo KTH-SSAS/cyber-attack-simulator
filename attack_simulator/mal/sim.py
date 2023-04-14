@@ -189,11 +189,11 @@ class AttackSimulator(Simulator):
 
     def get_obs_dict(self) -> Observation:
         return Observation(
-            ids_observation = self.ids_observe(),
-            attack_surface = self.state.attack_surface,
-            defense_surface = self.state.defense_state,
-            ttc_remaining = self.state.ttc_remaining,
-            state = np.append(self.state.defense_state, self.state.attack_state),
+            ids_observation=self.ids_observe(),
+            attack_surface=self.state.attack_surface,
+            defense_surface=self.state.defense_state,
+            ttc_remaining=self.state.ttc_remaining,
+            state=np.append(self.state.defense_state, self.state.attack_state),
             defender_action_mask=self.get_defender_action_mask(),
             attacker_action_mask=self.get_attacker_action_mask(),
             edges=self.g.get_edge_list(),

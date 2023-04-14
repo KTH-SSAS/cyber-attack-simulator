@@ -14,7 +14,6 @@ def test_env_reset(env: AttackSimulationEnv) -> None:
 
 
 def test_check_spaces(env: AttackSimulationEnv) -> None:
-    
     obs, _ = env.reset()
 
     attacker_obs_space = env.observation_space.spaces[AGENT_ATTACKER]
@@ -37,9 +36,6 @@ def test_check_spaces(env: AttackSimulationEnv) -> None:
     assert defender_obs_space.contains(defender_obs)
 
     assert env.observation_space.contains(obs)
-
-
-
 
 
 def test_env_step(env: AttackSimulationEnv) -> None:

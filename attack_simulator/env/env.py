@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 from ray.rllib.env.multi_agent_env import MultiAgentEnv
 from ray.tune.registry import register_env
 
-from .. import AGENT_ATTACKER, AGENT_DEFENDER, UINT
+from .. import AGENT_ATTACKER, AGENT_DEFENDER
 from ..agents import ATTACKERS
 from ..mal.graph import AttackGraph
 from ..mal.observation import Info, Observation
