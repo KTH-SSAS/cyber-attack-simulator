@@ -27,10 +27,12 @@ class DefenderConfig(PPOConfig):
         # self._allow_unknown_subkeys = True
 
         self.scale_rewards = True
+        self.num_special_actions = 0
 
-    def training(self, *, scale_rewards: Optional[bool] = NotProvided, **kwargs):
+    def training(self, *, scale_rewards: Optional[bool] = NotProvided, num_special_actions: Optional[int] = NotProvided, **kwargs):
         super().training(**kwargs)
-        self.scale_rewards = scale_rewards
+        self.scale_rewards = self.scale_rewards if scale_rewards is NotProvided else scale_rewards
+        self.num_special_actions = self.num_special_actions if num_special_actions is NotProvided else num_special_actions
         return self
 
     def update_from_dict(self, config_dict: PartialAlgorithmConfigDict) -> DefenderConfig:
