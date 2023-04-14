@@ -322,7 +322,6 @@ class AttackSimulationEnv(MultiAgentEnv):
 
     def render(self) -> bool:
         """Render a frame of the environment."""
-
         if not self.render_env:
             return True
 

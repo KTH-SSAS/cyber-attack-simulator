@@ -219,7 +219,6 @@ class PathFinderAttacker(Agent):
         recalculate a path. If no path can be found, select a new
         target.
         """
-
         attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions :]
         attack_surface = np.flatnonzero(attack_surface)
         defense_state = observation["defense_state"]

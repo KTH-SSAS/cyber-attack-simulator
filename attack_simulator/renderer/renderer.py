@@ -348,7 +348,6 @@ class AttackSimulationRenderer:
 
     def render(self, state: Dict[str, Any], defender_reward: float, done: bool) -> None:
         """Render a frame."""
-
         logs = _generate_logs(state, self.graph, defender_reward, done)
 
         if self.save_logs:

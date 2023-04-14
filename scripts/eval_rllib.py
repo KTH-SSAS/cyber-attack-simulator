@@ -114,7 +114,6 @@ class RLLibEvaluator:
 
 def main() -> None:
     """Main function."""
-
     register_rllib_env()
     register_rllib_model()
     parser = ArgumentParser()

@@ -10,9 +10,9 @@ from typing import Any, Dict
 
 import numpy as np
 
+from ... import UINT
 from ...mal.graph import AttackGraph
 from ...utils.rng import get_rng
-from ... import UINT
 from ..agent import Agent
 
 logger = logging.getLogger("simulator")

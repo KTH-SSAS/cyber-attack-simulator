@@ -223,7 +223,6 @@ class AttackSimulator(Simulator):
 
     def enable_defense_step(self, defense_idx: UINT) -> Tuple[NDArray[np.int8], bool]:
         """Enable (disable) a defense step."""
-
         # Only enable defenses that are disabled
         if not self.state.defense_state[defense_idx]:
             return np.zeros(self.g.num_attacks, dtype=np.int8), False
@@ -243,7 +242,6 @@ class AttackSimulator(Simulator):
 
     def attack_step(self, attack_idx: UINT) -> Tuple[NDArray[np.int8], bool]:
         """Have the attacker perform an action."""
-
         # assert (
         #     attack_idx in self.valid_actions
         # ), "Attacker tried to perform an attack not in attack surface"
