@@ -87,22 +87,37 @@ class DefenderPolicy(PPOTorchPolicy):
                 try:
                     rewards = sample_batch["rewards"]
                     info = sample_batch["infos"][-1]
-                    avg_defense_cost = np.mean(info["defense_costs"])
-                    num_defenses = len(info["defense_costs"])
-                    avg_flag_cost = np.mean(info["flag_costs"])
                     episode_length = len(rewards)
-                    min_defense_rewards = get_minimum_rewards(
-                        avg_defense_cost, num_defenses, episode_length
-                    )
-                    min_flag_rewards = repeat(avg_flag_cost, episode_length)
-                    total_max_reward_per_timestep = map(
-                        sum, zip(min_defense_rewards, min_flag_rewards)
-                    )
+                    num_defenses = len(info["defense_costs"])
+
+                    # Assume the worst case where the defender immediately
+                    # enables the most expensive defenses first.
+                    sorted_costs = sorted(info["defense_costs"], reverse=True)
+                    initial_cost = [sum(sorted_costs[:x]) for x in range(1, len(sorted_costs) + 1)]
+                    # Rewards after all defenses are enabled
+                    min_reward = [sum(sorted_costs)] * (episode_length - num_defenses)
+
+                    # Defense costs for entire episode
+                    min_reward = initial_cost + min_reward
+
+                    # worst case flag cost
+                    # worst case for a timestep is if the attacker grabs the most
+                    # expensive flag in that
+                    min_flag_cost = np.min(info["flag_costs"])
+
+                    # Calculate the minimum reward for each timestep as the
+                    # worst case flag cost + the worst case defense cost
+                    min_flag_rewards = repeat(min_flag_cost, episode_length)
+                    total_min_reward_per_timestep = map(sum, zip(min_reward, min_flag_rewards))
+
+                    # Scale rewards to be between 0 and 1
                     scaled_rewards = map(
-                        lambda x: normalize(x[0], -x[1], 0, -1, 1),
-                        zip(rewards, total_max_reward_per_timestep),
+                        lambda x: normalize(
+                            x[0], min_val=-x[1], max_val=0, low_bound=0, upper_bound=1
+                        ),
+                        zip(rewards, total_min_reward_per_timestep),
                     )
-                    sample_batch["rewards"] = np.array(list(scaled_rewards)) / episode_length
+                    sample_batch["rewards"] = np.array(list(scaled_rewards))
 
                 except IndexError:
                     pass
