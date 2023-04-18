@@ -282,7 +282,7 @@ impl SimulatorRuntime {
         if state.enabled_defenses.contains(&defense_step_id) {
             // Already enabled
             // Do nothing
-            return Ok((HashSet::new(), HashMap::new()));
+            return Ok(ActionResult{enabled_defenses: HashSet::new(), ttc_diff: HashMap::new()});
         }
 
         let (enabled_defenses, ttc_diff) = self.enable_defense_step(defense_step_id)?;
