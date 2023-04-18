@@ -40,6 +40,7 @@ def test_sim_step(simulator: Simulator) -> None:
     assert info.time == 1
 
 
+@pytest.mark.skip(reason="Python imulator doesn't use the same state representation as the rust simulator")
 def test_rust_and_python(env_config) -> None:
     pass
 
