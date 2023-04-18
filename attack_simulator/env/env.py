@@ -268,8 +268,8 @@ class AttackSimulationEnv(MultiAgentEnv):
             "__all__": False,
         }
 
-        defender_action = action_dict[AGENT_DEFENDER]
-        attacker_action = action_dict[AGENT_ATTACKER]
+        defender_action = action_dict.get(AGENT_DEFENDER, self.wait_action_idx)
+        attacker_action = action_dict.get(AGENT_ATTACKER, self.wait_action_idx)
 
         old_attack_state = self.last_obs.attack_state
 

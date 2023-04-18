@@ -33,6 +33,21 @@ def test_env_multiple_steps(env: AttackSimulationEnv) -> None:
             break
 
 
+@pytest.mark.parametrize("agent", ["attacker", "defender"])
+def test_env_multiple_steps_single(env: AttackSimulationEnv, agent) -> None:
+    obs = env.reset()
+    for _ in range(100):
+        action = env.action_space.sample()
+        del action[agent]
+        obs, reward, terminated, truncated, info = env.step(action)
+        # note this techically is not how multi agents envs work in rllib
+        # only agents that took an action should be in the obs
+        assert "attacker" in obs
+        assert "defender" in obs
+        if terminated["__all__"] or truncated["__all__"]:
+            break
+
+
 @pytest.mark.skip(reason="needs to be updated to comply with gym standards")
 @pytest.mark.parametrize("save_graphs", [False, True])
 @pytest.mark.parametrize("save_logs", [False, True])
