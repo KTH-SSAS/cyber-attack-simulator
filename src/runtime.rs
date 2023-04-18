@@ -280,7 +280,9 @@ impl SimulatorRuntime {
         let defense_step_id = self.defender_action_to_graph[action];
 
         if state.enabled_defenses.contains(&defense_step_id) {
-            panic!("Defense step {} is already enabled.", defense_step_id);
+            // Already enabled
+            // Do nothing
+            return Ok((HashSet::new(), HashMap::new()));
         }
 
         let (enabled_defenses, ttc_diff) = self.enable_defense_step(defense_step_id)?;
