@@ -13,7 +13,7 @@ from ray.rllib.algorithms.ppo.ppo_torch_policy import PPOTorchPolicy
 from ray.rllib.evaluation.postprocessing import compute_gae_for_sample_batch
 from ray.rllib.utils.typing import PartialAlgorithmConfigDict
 
-from ..utils.reward_utils import get_minimum_rewards, normalize
+from ..utils.reward_utils import normalize
 
 
 class DefenderConfig(PPOConfig):

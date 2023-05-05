@@ -177,6 +177,9 @@ class AttackGraph:
             for attack_name in self.attack_names
         ]
 
+    def num_edges(self):
+        return self.get_edge_list().shape[0]
+
     def get_edge_list(self) -> NDArray[np.int64]:
         """Return the attack graph as an edge list."""
         children = [

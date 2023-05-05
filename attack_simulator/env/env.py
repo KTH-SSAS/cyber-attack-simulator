@@ -59,11 +59,46 @@ def select_random_attacker(rng: np.random.Generator):
 
 
 def get_agent_obs(sim_obs: Observation, graph: AttackGraph) -> Dict[str, Any]:
+    state = np.array(sim_obs.state, dtype=np.int8)
+    edges = np.array(sim_obs.edges, dtype=np.int8)
+    defense_indices = np.array(sim_obs.defense_indices, dtype=np.int64)
+
+    wait_index = len(state)
+    new_state = np.concatenate([state, np.array([1], dtype=np.int8)])
+    # Add edges for wait action
+
+    wait_edges = [[i, wait_index] for i in defense_indices]
+
+    defense_indices = np.concatenate([np.array([wait_index], dtype=np.int64), defense_indices])
+    
+    # Flip the edges for defense steps
+    flipped_edges = [edge[::-1] for edge in edges if edge[0] in defense_indices]
+
+    # remove old edges
+    edges_without_defense = [edge for edge in edges if edge[0] not in defense_indices]
+
+    new_edges = np.concatenate([edges_without_defense, wait_edges, flipped_edges], axis=0)
+
+    # import networkx as nx
+    # G = nx.DiGraph()
+
+    # for i, node in enumerate(state):
+    #     G.add_node(i, label=node)
+
+    # G.add_edges_from(new_edges)
+    # node_colors = ["red" if node in defense_indices else "blue" for node in G.nodes()]
+    # pos = nx.nx_pydot.graphviz_layout(G, prog="dot")
+    # nx.draw_networkx_nodes(G, pos=pos, node_color=node_colors)
+    # nx.draw_networkx_edges(G, pos=pos)
+    # nx.draw_networkx_labels(G, pos=pos, labels=dict(zip(range(len(state)), state)))
+    # import matplotlib.pyplot as plt
+    # plt.show()
+
     defender_obs = {
-        "ids_observation": np.array(sim_obs.ids_observation, dtype=np.int8),
+        "ids_observation": new_state,
         "action_mask": np.array(sim_obs.defender_action_mask, dtype=np.int8),
-        "edges": graph.get_edge_list(),
-        "defense_indices": np.array(sim_obs.defense_indices, dtype=np.int64),
+        "edges": new_edges,
+        "defense_indices": defense_indices,
     }
 
     attacker_obs = {
@@ -158,7 +193,7 @@ class AttackSimulationEnv(MultiAgentEnv):
 
     @staticmethod
     def define_observation_space(graph: AttackGraph, num_special_actions: int) -> spaces.Dict:
-        dim_observations = graph.num_defenses + graph.num_attacks
+        dim_observations = graph.num_defenses + graph.num_attacks + num_special_actions
         return spaces.Dict(
             {
                 AGENT_DEFENDER: spaces.Dict(
@@ -170,10 +205,16 @@ class AttackSimulationEnv(MultiAgentEnv):
                             0, 1, shape=(dim_observations,), dtype=np.int8
                         ),
                         "edges": spaces.Box(
-                            0, np.inf, shape=graph.get_edge_list().shape, dtype=np.int64
+                            0,
+                            np.inf,
+                            shape=(graph.num_edges() + graph.num_defenses * num_special_actions, 2),
+                            dtype=np.int64,
                         ),
                         "defense_indices": spaces.Box(
-                            0, dim_observations, shape=(graph.num_defenses,), dtype=np.int64
+                            0,
+                            dim_observations,
+                            shape=(graph.num_defenses + num_special_actions,),
+                            dtype=np.int64,
                         ),
                     }
                 ),
@@ -296,8 +337,8 @@ class AttackSimulationEnv(MultiAgentEnv):
 
         old_attack_state = self.last_obs.state
 
-        terminated = {key: value == self.terminate_action_idx for key, value in action_dict.items()}
-        terminated["__all__"] = all(terminated.values())
+        # terminated = {key: value == self.terminate_action_idx for key, value in action_dict.items()}
+        # terminated["__all__"] = all(terminated.values())
 
         sim_obs, info = self.sim.step(action_dict)
 
@@ -326,6 +367,7 @@ class AttackSimulationEnv(MultiAgentEnv):
 
         rewards = {AGENT_DEFENDER: defender_reward, AGENT_ATTACKER: attacker_reward}
 
+        terminated = self.state.terminated
         terminated[AGENT_ATTACKER] = attacker_done
         terminated["__all__"] = attacker_done
 
