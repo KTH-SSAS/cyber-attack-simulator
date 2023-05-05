@@ -18,7 +18,7 @@ use rand_distr::Exp;
 
 pub const ACTION_NOP: usize = 0; // No action
 pub const ACTION_TERMINATE: usize = 1; // Terminate the simulation
-pub const SPECIAL_ACTIONS: [usize; 2] = [ACTION_NOP, ACTION_TERMINATE];
+pub const SPECIAL_ACTIONS: [usize; 1] = [ACTION_NOP];
 
 pub const ATTACKER: usize = 0;
 pub const DEFENDER: usize = 1;
@@ -381,9 +381,7 @@ impl SimulatorRuntime {
         let mut action_mask = vec![false; SPECIAL_ACTIONS.len()];
 
         action_mask[ACTION_NOP] = true;
-        action_mask[ACTION_TERMINATE] = false;
-
-        assert!(action_mask.len() == 2);
+        //action_mask[ACTION_TERMINATE] = false;
 
         let defense_state = self
             .defender_action_to_graph
@@ -405,7 +403,7 @@ impl SimulatorRuntime {
             .cloned()
             .collect::<Vec<bool>>();
 
-        assert!(defender_action_mask.len() == self.defender_action_to_graph.len() + 2);
+        assert!(defender_action_mask.len() == self.defender_action_to_graph.len() + SPECIAL_ACTIONS.len());
 
         let edges = &self.g.graph.edges;
 
@@ -674,6 +672,11 @@ mod tests {
         );
         assert_eq!(observation.state.iter().filter(|&x| *x).count(), 4 + 1); // 4 available defenses + 1 compromised attack step
         assert_eq!(observation.state.len(), sim.g.graph.nodes.len());
+
+        //check that all defense steps are disabled
+        for i in observation.defense_indices.iter() {
+            assert_eq!(observation.state[*i], true);
+        }
 
         assert!(observation.ttc_remaining.iter().sum::<u64>() > 0);
 
