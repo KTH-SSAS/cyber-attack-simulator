@@ -53,7 +53,7 @@ class BreadthFirstAttacker(Agent):
         self.current_target = select_next_target(self.current_target, self.targets, surface_indexes)
 
         if self.current_target == STOP:
-            return self.terminate_action
+            return self.wait_action
 
         # Offset the action by the number of special actions
         return self.current_target + self.num_special_actions
@@ -80,7 +80,7 @@ class DepthFirstAttacker(Agent):
         self.current_target = select_next_target(self.current_target, self.targets, surface_indexes)
 
         if self.current_target == STOP:
-            return self.terminate_action
+            return self.wait_action
 
         # Offset the action by the number of special actions
         return self.current_target + self.num_special_actions

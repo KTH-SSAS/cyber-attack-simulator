@@ -3,7 +3,8 @@ import torch
 import torch.nn as nn
 from torch.nn import Linear, Parameter
 from torch_geometric.data import Batch, Data
-from torch_geometric.nn import MessagePassing
+from torch_geometric.nn import MessagePassing, TopKPooling
+from torch_geometric.nn.models import GIN
 from torch_geometric.utils import add_self_loops, degree
 
 
@@ -54,14 +55,16 @@ class GCNConv(MessagePassing):
 class GNNRLAgent(nn.Module):
     def __init__(self, num_outputs):
         super().__init__()
+        channels_in = 1
         channels_out = 8
-        self.embedding_func = GCNConv(1, channels_out)
+        num_layers = 3
+        # self.embedding_func = GCNConv(1, channels_out)
+        self.embedding_func = GIN(channels_in, channels_out, num_layers)
+        self.activation = nn.ReLU()
+        self.pool = TopKPooling(channels_out, ratio=0.8)
 
         self.policy_fn = nn.Linear(channels_out, 1)
         self.value_fn = nn.Linear(channels_out, 1)
-
-        self.wait_embedding = nn.Embedding(1, channels_out)
-        self.terminate_embedding = nn.Embedding(1, channels_out)
 
     def forward(self, x, edge_index, defense_indices):
         # x has shape [B, N, in_channels]
@@ -71,37 +74,39 @@ class GNNRLAgent(nn.Module):
         # edge_index has shape [B, 2, E]
         # B is the batch size
         # E is the number of edges
-        batch = construct_gnn_batch(x, edge_index)
+        num_nodes = x.shape[1]
+        batch_size = x.shape[0]
+        batch: Batch = construct_gnn_batch(x, edge_index)
 
-        # embedding has shape [BxN, channels_out]
-        embedding = self.embedding_func(batch.x, batch.edge_index)
+        # convert defense indices to batched indices
+        # for i in range(batch_size):
+        #    defense_indices[i] += i * num_nodes
+
+        # defense_edges, _ = subgraph(defense_indices, batch.edge_index)
+
+        # embedded graph has shape [BxN, channels_out]
+        embedded_graph = self.activation(self.embedding_func(batch.x, batch.edge_index))
 
         # Reshape embedding to [B, N, channels_out]
         # This assumes that all graphs in the batch have the same number of nodes
         # https://einops.rocks/1-einops-basics/#decomposition-of-axis
-        embedding = einops.rearrange(embedding, "(b n) c -> b n c", b=batch.num_graphs)
+        embedding = einops.rearrange(embedded_graph, "(b n) c -> b n c", b=batch.num_graphs)
 
         # gather embeddings for defense step
         defense_indices = einops.repeat(defense_indices, "b k -> b k d", d=embedding.shape[-1])
         defense_embeddings = torch.gather(embedding, 1, defense_indices)
 
-        # add embeddings for wait and terminate actions
-        wait_repeated = einops.repeat(
-            self.wait_embedding.weight, "k d -> b k d", b=embedding.shape[0]
-        )
-        terminate_repeated = einops.repeat(
-            self.terminate_embedding.weight, "k d -> b k d", b=embedding.shape[0]
-        )
-        policy_in = torch.cat([defense_embeddings, wait_repeated, terminate_repeated], dim=1)
-
         # Compute policy and value outputs
         # policy_out has shape [B, num_outputs]
         # only compute policy func for defense nodes
-        policy_out = self.policy_fn(policy_in).squeeze()
+        wait_embeddings = defense_embeddings[:, 0, :]
+
+        # pool_out = self.pool(embedded_graph, defense_edges)
+        policy_out = self.policy_fn(defense_embeddings).squeeze()
 
         # Take the mean of the node embeddings to get a (rough) graph embedding
         # value_out has shape [B, 1]
-        value_out = self.value_fn(embedding.mean(dim=1)).squeeze()
+        value_out = self.value_fn(wait_embeddings).squeeze()
 
         return policy_out, value_out
 

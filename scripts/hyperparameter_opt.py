@@ -1,28 +1,27 @@
 import dataclasses
-import json
 import os
 import pprint
 import socket
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Tuple
 
 import ray
 import ray.train.torch
 from ray import air, tune
 from ray.rllib.policy.policy import PolicySpec
 from ray.tune.schedulers.pb2 import PB2
-from ray.tune.stopper import MaximumIterationStopper
 from ray.tune.search import ConcurrencyLimiter
+from ray.tune.search.bayesopt import BayesOptSearch
+from ray.tune.stopper import MaximumIterationStopper
 
-import attack_simulator.rllib.ids_model as ids_model
+import attack_simulator.rllib.gnn_model as gnn_defender
 from attack_simulator import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
-from attack_simulator.rllib.attackers_policies import BreadthFirstPolicy
+from attack_simulator.rllib.attackers_policies import DepthFirstPolicy
 from attack_simulator.rllib.custom_callback import AttackSimCallback
+from attack_simulator.rllib.defender_policy import Defender, DefenderConfig, DefenderPolicy
 from attack_simulator.utils.config import EnvConfig
-from ray.tune.search.bayesopt import BayesOptSearch
 
 
 def make_graph_filename_absolute(env_config: EnvConfig):
@@ -39,9 +38,10 @@ def make_graph_filename_absolute(env_config: EnvConfig):
 
 def get_config(config_file, gpu_count):
     env_name = register_rllib_env()
+    gnn_defender.register_rllib_model()
     global_seed = 22
     id_string = f"{datetime.now().strftime(r'%m-%d_%H:%M:%S')}@{socket.gethostname()}"
-    attacker_policy_class = BreadthFirstPolicy
+    attacker_policy_class = DepthFirstPolicy
     num_workers = 0
 
     # Allocate GPU power to workers
@@ -58,38 +58,32 @@ def get_config(config_file, gpu_count):
     dummy_env = AttackSimulationEnv(env_config)
     defender_config = {
         "model": {
-            "custom_model": "DefenderModel",
+            "custom_model": "GNNDefenderModel",
             "fcnet_hiddens": [8],
             "vf_share_layers": True,
             "custom_model_config": {},
         }
     }
     attacker_config = {
-            "num_special_actions": dummy_env.num_special_actions,
-            "wait_action": dummy_env.sim.wait_action,
-            "terminate_action": dummy_env.sim.terminate_action,
-        }
-    
+        "num_special_actions": dummy_env.num_special_actions,
+        "wait_action": dummy_env.sim.wait_action,
+        "terminate_action": dummy_env.sim.terminate_action,
+    }
 
     config = (
-        ids_model.DefenderConfig()
+        DefenderConfig()
         .training(
-            sgd_minibatch_size=32,
+            sgd_minibatch_size=128,
             train_batch_size=128,
             vf_clip_param=1000,
-            vf_loss_coeff=0.01,
-            clip_param=0.3,
             gamma=1.0,
-            lr=1e-4,
-            kl_coeff=0.0,
-            entropy_coeff=0.0,
             use_critic=True,
             use_gae=True,
             scale_rewards=False,
         )
         .framework("torch")
         .environment(env_name, env_config=asdict(env_config))
-        #.debugging(seed=global_seed)
+        # .debugging(seed=global_seed)
         .resources(num_gpus=num_gpus, num_gpus_per_worker=num_gpus_per_worker)
         .callbacks(AttackSimCallback)
         .rollouts(
@@ -99,9 +93,7 @@ def get_config(config_file, gpu_count):
         )
         .multi_agent(
             policies={
-                AGENT_DEFENDER: PolicySpec(
-                    policy_class=ids_model.DefenderPolicy, config=defender_config
-                ),
+                AGENT_DEFENDER: PolicySpec(policy_class=DefenderPolicy, config=defender_config),
                 AGENT_ATTACKER: PolicySpec(
                     attacker_policy_class,
                     config=attacker_config,
@@ -128,21 +120,22 @@ def main(
 
     config = get_config(config_file, gpu_count=0)
 
-    metric = "info/learner/defender/learner_stats/total_loss"
+    metric = "info/learner/defender/learner_stats/vf_loss"
     mode = "min"
     method = "pbt"
     perturb = 0.25
+    max_iteration = 100
     perturbation_interval = 10
     num_samples = 3
-    max_iteration = 500
     hyperparam_bounds = {
-                # "lr": [1e-4, 1e-3],
-                # "train_batch_size": [512, 1024],
-                # "sgd_minibatch_size": [64, 512],
-                "vf_clip_param": [0.01, 1000],
-                "vf_loss_coeff": [0.01, 100],
-                "clip_param": [0.01, 10],
-            }
+        "lr": [1e-4, 1e-1],
+        "vf_clip_param": [1e-3, 1e3],
+        "vf_loss_coeff": [0.01, 100],
+        "clip_param": [0.0, 10],
+        # "entropy_coeff": [0.0, 1.0],
+        # "kl_coeff": [0.0, 1.0],
+        "lambda": [0.9, 1],
+    }
 
     if method == "pbt":
         scheduler = PB2(
@@ -159,38 +152,41 @@ def main(
     bayesopt = BayesOptSearch(metric=metric, mode=mode)
     bayesopt = ConcurrencyLimiter(bayesopt, max_concurrent=1)
     search_alg = bayesopt if method == "bayes" else None
-    restore = True
+    restore = False
 
-    tuner = tune.Tuner(
-        ids_model.Defender,
-        tune_config=tune.TuneConfig(
-            reuse_actors=False,
-            scheduler=scheduler,
-            search_alg=search_alg,
-            num_samples=num_samples,
-        ),
-        run_config=air.RunConfig(
-            stop=MaximumIterationStopper(max_iteration),
-            callbacks=callbacks,
-            checkpoint_config=air.CheckpointConfig(
-               checkpoint_score_attribute=metric,
-               num_to_keep=5,
-               checkpoint_frequency=perturbation_interval,
+    tuner = (
+        tune.Tuner(
+            Defender,
+            tune_config=tune.TuneConfig(
+                reuse_actors=False,
+                scheduler=scheduler,
+                search_alg=search_alg,
+                num_samples=num_samples,
             ),
-            failure_config=air.FailureConfig(
-                fail_fast=kwargs.get("fail_fast", True),
+            run_config=air.RunConfig(
+                stop=MaximumIterationStopper(max_iteration),
+                callbacks=callbacks,
+                checkpoint_config=air.CheckpointConfig(
+                    checkpoint_score_attribute=metric,
+                    num_to_keep=5,
+                    checkpoint_frequency=perturbation_interval,
+                ),
+                failure_config=air.FailureConfig(
+                    fail_fast=kwargs.get("fail_fast", True),
+                ),
+                verbose=1,
+                # progress_reporter=tune.CLIReporter(max_report_frequency=60),
             ),
-            verbose=1,
-            # progress_reporter=tune.CLIReporter(max_report_frequency=60),
-        ),
-        param_space=config,
-    ) if not restore else tune.Tuner.restore(
-        path="~/ray_results/Defender_2023-04-18_15-11-12/"
+            param_space=config,
+        )
+        if not restore
+        else tune.Tuner.restore(path="~/ray_results/Defender_2023-05-05_11-29-26/")
     )
 
     results = tuner.fit()
     result_dfs = [result.metrics_dataframe for result in results]
     import matplotlib.pyplot as plt
+
     plt.figure(figsize=(7, 4))
     for i, df in enumerate(result_dfs):
         plt.plot(df[metric], label=i)
@@ -212,9 +208,7 @@ def main(
     best_result = results.get_best_result(metric=metric, mode=mode)
     optimized_params = best_result.config
     print("Best performing trial's final set of hyperparameters:\n")
-    pprint.pprint(
-        {k: v for k, v in optimized_params.items() if k in hyperparam_bounds}
-    )
+    pprint.pprint({k: v for k, v in optimized_params.items() if k in hyperparam_bounds})
 
     print("\nBest performing trial's final reported metrics:\n")
 
@@ -225,9 +219,6 @@ def main(
         "episode_len_mean",
     ]
     pprint.pprint({k: v for k, v in best_result.metrics.items() if k in metrics_to_print})
-
-
-
 
 
 if __name__ == "__main__":

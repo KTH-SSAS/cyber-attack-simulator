@@ -16,6 +16,7 @@ class Observation:
     defender_action_mask: NDArray[np.int8]
     attacker_action_mask: NDArray[np.int8]
     edges: NDArray[UINT]
+    defense_indices: NDArray[UINT]
 
 
 @dataclass
