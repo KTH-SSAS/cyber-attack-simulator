@@ -10,6 +10,7 @@ def run(config_file: Path, num_workers: int, debug: bool = False) -> None:
     stop_iterations = 100
     local_mode = debug
     wandb_sync = not debug
+    fail_fast = "raise" if debug else True
 
     main(
         config_file,
@@ -20,6 +21,7 @@ def run(config_file: Path, num_workers: int, debug: bool = False) -> None:
         num_workers=num_workers,
         env_per_worker=1,
         stop_reward=None,
+        fail_fast=fail_fast,
     )
 
 
