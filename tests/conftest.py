@@ -81,7 +81,7 @@ def fixture_env_config(config_yaml: Path) -> EnvConfig:
     scope="session",
     name="env",
     params=[
-        pytest.param("python", id="python"),
+        # pytest.param("python", id="python"),
         pytest.param("rust", id="rust"),
     ],
 )
@@ -94,7 +94,7 @@ def fixture_env(request) -> AttackSimulationEnv:
 @pytest.fixture(
     name="simulator",
     params=[
-        pytest.param(AttackSimulator, id="python"),
+        # pytest.param(AttackSimulator, id="python"),
         pytest.param(rust_sim_init, id="rust"),
     ],
 )

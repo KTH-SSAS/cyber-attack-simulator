@@ -3,8 +3,8 @@ import dataclasses
 import numpy as np
 import pytest
 from attack_simulator import AGENT_ATTACKER, AGENT_DEFENDER
-
 from attack_simulator.env.env import AttackSimulationEnv
+from attack_simulator.models.gnn import GNNRLAgent
 from attack_simulator.renderer.renderer import AttackSimulationRenderer
 from attack_simulator.utils.config import EnvConfig
 
@@ -53,6 +53,30 @@ def test_env_multiple_steps(env: AttackSimulationEnv) -> None:
     for _ in range(100):
         action = env.action_space.sample()
         obs, reward, terminated, truncated, info = env.step(action)
+        assert "attacker" in obs
+        assert "defender" in obs
+        if terminated["__all__"] or truncated["__all__"]:
+            break
+
+
+def test_gnn(env: AttackSimulationEnv) -> None:
+    import torch
+    from torch import Tensor
+
+    obs = env.reset()
+    gnn = GNNRLAgent()
+    for _ in range(100):
+        action = env.action_space.sample()
+        obs, reward, terminated, truncated, info = env.step(action)
+
+        sim_state: Tensor = obs["ids_observation"].type(torch.FloatTensor)
+        action_mask: Tensor = obs["action_mask"].type(torch.FloatTensor)
+        edges = obs["edges"].type(torch.LongTensor)
+        defense_indices = obs["defense_indices"].type(torch.LongTensor)
+
+        edges = edges.transpose(1, -1)
+        sim_state = sim_state.unsqueeze(-1)
+
         assert "attacker" in obs
         assert "defender" in obs
         if terminated["__all__"] or truncated["__all__"]:
