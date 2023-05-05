@@ -40,7 +40,9 @@ def test_sim_step(simulator: Simulator) -> None:
     assert info.time == 1
 
 
-@pytest.mark.skip(reason="Python imulator doesn't use the same state representation as the rust simulator")
+@pytest.mark.skip(
+    reason="Python imulator doesn't use the same state representation as the rust simulator"
+)
 def test_rust_and_python(env_config) -> None:
     pass
 
@@ -121,5 +123,5 @@ def test_determinism(simulator: AttackSimulator) -> None:
 
     for _ in range(100):
         obs, info = simulator.reset()
-        compare_fields(first_obs.attack_state, obs.attack_state)
+        compare_fields(first_obs.state, obs.state)
         compare_fields(first_obs.ttc_remaining, obs.ttc_remaining)

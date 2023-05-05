@@ -11,9 +11,11 @@ from attack_simulator.rllib.random_defender import RandomPolicy
 
 
 def test_ppo_trainer(env: AttackSimulationEnv):
-    seed = 0
+    from attack_simulator.rllib.defender_model import register_rllib_model
 
+    seed = 0
     env_name = register_rllib_env()
+    register_rllib_model()
 
     policy_ids = {AGENT_DEFENDER: AGENT_DEFENDER, AGENT_ATTACKER: AGENT_ATTACKER}
 

@@ -47,7 +47,7 @@ def test_sim_attacker_actions(simulator: Simulator, attack_graph, attacker_class
     last_ttc_sum = simulator.ttc_total
     while info.time <= total_ttc and not done:
 
-        obs_dict = get_agent_obs(obs)[AGENT_ATTACKER]
+        obs_dict = get_agent_obs(obs, attack_graph)[AGENT_ATTACKER]
         action = attacker.compute_action_from_dict(obs_dict)
         assert action != ACTION_TERMINATE
         assert action != ACTION_WAIT
