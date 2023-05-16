@@ -26,27 +26,20 @@ class GNNDefenderModel(TorchModelV2, nn.Module):
         self.action_space = action_space
         self.num_outputs = num_outputs
 
-        self.model = GNNRLAgent(num_outputs)
+        fc_hidden = model_config["fcnet_hiddens"]
+        layers = len(fc_hidden)
+        hidden_size = fc_hidden[0]
+
+        self.model = GNNRLAgent(1, layers, hidden_size)
 
     def forward(self, input_dict, state, seq_lens):
         obs = input_dict["obs"]
 
-        sim_state: Tensor = obs["ids_observation"].type(torch.FloatTensor)
-        action_mask: Tensor = obs["action_mask"].type(torch.FloatTensor)
-        edges = obs["edges"].type(torch.LongTensor)
-
-        edges = edges.transpose(1, -1)
-        sim_state = sim_state.unsqueeze(-1)
-
-        policy_out, value_out = self.model(
-            sim_state, edges, obs["defense_indices"].type(torch.LongTensor)
-        )
+        policy_out, value_out = self.model.compute_action(obs)
 
         self._value_out = value_out
 
-        inf_mask = torch.clamp(torch.log(action_mask), FLOAT_MIN, FLOAT_MAX)
-
-        return policy_out + inf_mask, state
+        return policy_out, state
 
     def value_function(self):
         return self._value_out.flatten()

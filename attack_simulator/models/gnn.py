@@ -6,7 +6,7 @@ from torch_geometric.data import Batch, Data
 from torch_geometric.nn import MessagePassing, TopKPooling
 from torch_geometric.nn.models import GIN
 from torch_geometric.utils import add_self_loops, degree
-
+from torch import LongTensor, FloatTensor
 
 class GCNConv(MessagePassing):
     def __init__(self, in_channels, out_channels):
@@ -51,13 +51,15 @@ class GCNConv(MessagePassing):
         # Step 4: Normalize node features.
         return norm.view(-1, 1) * x_j
 
+FLOAT_MIN = -3.4e38
+FLOAT_MAX = 3.4e38
 
 class GNNRLAgent(nn.Module):
-    def __init__(self, num_outputs):
+    def __init__(self, channels_in, num_layers, hidden_channels):
         super().__init__()
         channels_in = 1
-        channels_out = 8
-        num_layers = 3
+        channels_out = hidden_channels
+        num_layers = num_layers
         # self.embedding_func = GCNConv(1, channels_out)
         self.embedding_func = GIN(channels_in, channels_out, num_layers)
         self.activation = nn.ReLU()
@@ -66,7 +68,28 @@ class GNNRLAgent(nn.Module):
         self.policy_fn = nn.Linear(channels_out, 1)
         self.value_fn = nn.Linear(channels_out, 1)
 
-    def forward(self, x, edge_index, defense_indices):
+    def compute_action(self, obs):
+        sim_state: FloatTensor = obs["ids_observation"].type(torch.FloatTensor)
+        action_mask: FloatTensor = obs["action_mask"].type(torch.FloatTensor)
+        edges: LongTensor = obs["edges"].type(LongTensor)
+        defense_indices: LongTensor = obs["defense_indices"].type(LongTensor)
+
+        defense_indices = defense_indices.unsqueeze(0) if len(defense_indices.shape) == 1 else defense_indices 
+
+        sim_state = sim_state.unsqueeze(-1)
+
+        inf_mask = torch.clamp(torch.log(action_mask), FLOAT_MIN, FLOAT_MAX)
+
+        batch: Batch = batch_to_gnn_batch(sim_state, edges)
+
+        action_dist, value_pred = self.forward(batch, defense_indices)
+
+        action_dist = action_dist + inf_mask
+
+        return action_dist, value_pred
+    
+
+    def forward(self, batch: Batch, defense_indices: LongTensor):
         # x has shape [B, N, in_channels]
         # N is the number of nodes
         # B is the batch size
@@ -74,9 +97,6 @@ class GNNRLAgent(nn.Module):
         # edge_index has shape [B, 2, E]
         # B is the batch size
         # E is the number of edges
-        num_nodes = x.shape[1]
-        batch_size = x.shape[0]
-        batch: Batch = construct_gnn_batch(x, edge_index)
 
         # convert defense indices to batched indices
         # for i in range(batch_size):
@@ -111,7 +131,7 @@ class GNNRLAgent(nn.Module):
         return policy_out, value_out
 
 
-def construct_gnn_batch(x, edge_index):
+def batch_to_gnn_batch(x, edge_index):
     # x has shape [B, N, in_channels]
     # N is the number of nodes
     # B is the batch size
@@ -119,5 +139,7 @@ def construct_gnn_batch(x, edge_index):
     # edge_index has shape [B, 2, E]
     # B is the batch size
     # E is the number of edges
+    x = x.unsqueeze(0) if len(x.shape) == 2 else x
+    edge_index = edge_index.unsqueeze(0) if len(edge_index.shape) == 2 else edge_index
     batch_size = x.shape[0]
     return Batch.from_data_list([Data(x=x[i], edge_index=edge_index[i]) for i in range(batch_size)])
