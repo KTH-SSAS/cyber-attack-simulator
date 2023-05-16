@@ -17,7 +17,6 @@ class Simulator(ABC):
     num_special_actions: int
     wait_action: int
     terminate_action: int
-    ttc_total: int
 
     @abstractmethod
     def reset(self) -> Tuple[Observation, Info]:
