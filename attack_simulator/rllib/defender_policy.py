@@ -13,7 +13,7 @@ from ray.rllib.algorithms.ppo.ppo_torch_policy import PPOTorchPolicy
 from ray.rllib.evaluation.postprocessing import compute_gae_for_sample_batch
 from ray.rllib.utils.typing import PartialAlgorithmConfigDict
 
-from ..utils.reward_utils import normalize
+from ..utils.reward_utils import normalize, scale_rewards
 
 
 class DefenderConfig(PPOConfig):
@@ -87,37 +87,9 @@ class DefenderPolicy(PPOTorchPolicy):
                 try:
                     rewards = sample_batch["rewards"]
                     info = sample_batch["infos"][-1]
-                    episode_length = len(rewards)
-                    num_defenses = len(info["defense_costs"])
-
-                    # Assume the worst case where the defender immediately
-                    # enables the most expensive defenses first.
-                    sorted_costs = sorted(info["defense_costs"], reverse=True)
-                    initial_cost = [sum(sorted_costs[:x]) for x in range(1, len(sorted_costs) + 1)]
-                    # Rewards after all defenses are enabled
-                    min_reward = [sum(sorted_costs)] * (episode_length - num_defenses)
-
-                    # Defense costs for entire episode
-                    min_reward = initial_cost + min_reward
-
-                    # worst case flag cost
-                    # worst case for a timestep is if the attacker grabs the most
-                    # expensive flag in that
-                    min_flag_cost = np.min(info["flag_costs"])
-
-                    # Calculate the minimum reward for each timestep as the
-                    # worst case flag cost + the worst case defense cost
-                    min_flag_rewards = repeat(min_flag_cost, episode_length)
-                    total_min_reward_per_timestep = map(sum, zip(min_reward, min_flag_rewards))
-
-                    # Scale rewards to be between 0 and 1
-                    scaled_rewards = map(
-                        lambda x: normalize(
-                            x[0], min_val=-x[1], max_val=0, low_bound=0, upper_bound=1
-                        ),
-                        zip(rewards, total_min_reward_per_timestep),
+                    sample_batch["rewards"] = scale_rewards(
+                        rewards, info["defense_costs"], info["flag_costs"]
                     )
-                    sample_batch["rewards"] = np.array(list(scaled_rewards))
 
                 except IndexError:
                     pass
