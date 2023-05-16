@@ -2,12 +2,12 @@ import dataclasses
 
 import numpy as np
 import pytest
+import torch
 from attack_simulator import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.env.env import AttackSimulationEnv
 from attack_simulator.models.gnn import GNNRLAgent
 from attack_simulator.renderer.renderer import AttackSimulationRenderer
 from attack_simulator.utils.config import EnvConfig
-
 
 def test_env_reset(env: AttackSimulationEnv) -> None:
     obs = np.array(env.reset())
@@ -49,7 +49,7 @@ def test_env_step(env: AttackSimulationEnv) -> None:
 
 
 def test_env_multiple_steps(env: AttackSimulationEnv) -> None:
-    obs = env.reset()
+    obs, _ = env.reset()
     for _ in range(100):
         action = env.action_space.sample()
         obs, reward, terminated, truncated, info = env.step(action)
@@ -60,27 +60,18 @@ def test_env_multiple_steps(env: AttackSimulationEnv) -> None:
 
 
 def test_gnn(env: AttackSimulationEnv) -> None:
-    import torch
-    from torch import Tensor
+    obs, _ = env.reset()
+    gnn = GNNRLAgent(1, 1, 1)
 
-    obs = env.reset()
-    gnn = GNNRLAgent()
     for _ in range(100):
-        action = env.action_space.sample()
-        obs, reward, terminated, truncated, info = env.step(action)
+        obs = obs[AGENT_DEFENDER]
+        for key, value in obs.items():
+            obs[key] = torch.from_numpy(value).float()
+        action_dist, _ = gnn.compute_action(obs)
+        action = torch.argmax(action_dist)
+        obs, reward, terminated, truncated, info = env.step({AGENT_DEFENDER: action})
 
-        sim_state: Tensor = obs["ids_observation"].type(torch.FloatTensor)
-        action_mask: Tensor = obs["action_mask"].type(torch.FloatTensor)
-        edges = obs["edges"].type(torch.LongTensor)
-        defense_indices = obs["defense_indices"].type(torch.LongTensor)
-
-        edges = edges.transpose(1, -1)
-        sim_state = sim_state.unsqueeze(-1)
-
-        assert "attacker" in obs
-        assert "defender" in obs
-        if terminated["__all__"] or truncated["__all__"]:
-            break
+        
 
 
 @pytest.mark.parametrize("agent", ["attacker", "defender"])

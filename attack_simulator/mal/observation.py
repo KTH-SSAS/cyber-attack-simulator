@@ -28,6 +28,7 @@ class Info:
     perc_compromised_steps: np.double
     perc_defenses_activated: np.double
     num_observed_alerts: UINT
+    sum_ttc: UINT
 
 
 def obs_to_dict(obs: Observation) -> dict:

@@ -317,6 +317,7 @@ class AttackSimulationEnv(MultiAgentEnv):
                 "num_compromised_steps": info.num_compromised_steps,
                 "perc_compromised_steps": info.perc_compromised_steps,
                 "perc_compromised_flags": info.perc_compromised_flags,
+                "sum_ttc_remaining": info.sum_ttc,
             },
         }
 

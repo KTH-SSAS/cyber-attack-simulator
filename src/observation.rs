@@ -27,6 +27,8 @@ pub(crate) struct Info {
     #[pyo3(get)]
     pub time: u64,
     #[pyo3(get)]
+    pub sum_ttc: u64,
+    #[pyo3(get)]
     pub num_compromised_steps: usize,
     #[pyo3(get)]
     pub perc_compromised_steps: f64,

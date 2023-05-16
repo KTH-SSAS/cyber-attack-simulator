@@ -83,11 +83,19 @@ impl SimulatorState {
         })
     }
 
+    pub fn total_ttc_remaining(&self) -> TTCType {
+        return self
+            .remaining_ttc
+            .iter()
+            .map(|(_, &ttc)| ttc)
+            .sum();
+    }
+
     fn to_info(
         &self,
         num_attacks: usize,
         num_defenses: usize,
-        flag_status: HashMap<u64, bool>,
+        flag_status: HashMap<u64, bool>
     ) -> Info {
         let num_compromised_steps = self.compromised_steps.len();
         let num_enabled_defenses = self.enabled_defenses.len();
@@ -95,6 +103,7 @@ impl SimulatorState {
 
         Info {
             time: self.time,
+            sum_ttc: self.total_ttc_remaining(),
             num_compromised_steps,
             num_observed_alerts: self.num_observed_alerts,
             perc_compromised_steps: num_compromised_steps as f64 / num_attacks as f64,
@@ -228,7 +237,7 @@ impl SimulatorRuntime {
             new_state.to_info(
                 self.g.attack_steps.len(),
                 self.g.defense_steps.len(),
-                flag_status,
+                flag_status
             ),
         ));
         self.ttc_sum = new_state.remaining_ttc.iter().map(|(_, &ttc)| ttc).sum();
@@ -245,15 +254,6 @@ impl SimulatorRuntime {
             .collect();
     }
 
-    pub fn total_ttc_remaining(&self) -> TTCType {
-        return self
-            .state
-            .borrow()
-            .remaining_ttc
-            .iter()
-            .map(|(_, &ttc)| ttc)
-            .sum();
-    }
 
     pub fn enable_defense_step(
         &self,

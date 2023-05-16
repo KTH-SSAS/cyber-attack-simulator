@@ -51,11 +51,6 @@ impl RustAttackSimulator {
     pub(crate) fn reset(&mut self, seed: Option<u64>) -> PyResult<(Observation, Info)> {
         pyresult(self.runtime.reset(seed))
     }
-
-    #[getter]
-    fn ttc_total(&self) -> u64 {
-        self.runtime.total_ttc_remaining()
-    }
     
     pub(crate) fn step(
         &mut self,
