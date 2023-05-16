@@ -1,9 +1,43 @@
 import numpy as np
 from numpy.typing import NDArray
+from itertools import repeat
 
 FLOAT_TYPE = np.float64
 INT_TYPE = np.int32
 
+def scale_rewards(rewards, defense_costs, flag_costs):
+    episode_length = len(rewards)
+    num_defenses = len(defense_costs)
+
+    # Assume the worst case where the defender immediately
+    # enables the most expensive defenses first.
+    sorted_costs = sorted(defense_costs, reverse=True)
+    initial_cost = [sum(sorted_costs[:x]) for x in range(1, len(sorted_costs) + 1)]
+    # Rewards after all defenses are enabled
+    min_reward = [sum(sorted_costs)] * (episode_length - num_defenses)
+
+    # Defense costs for entire episode
+    min_reward = initial_cost + min_reward
+
+    # worst case flag cost
+    # worst case for a timestep is if the attacker grabs the most
+    # expensive flag in that
+    min_flag_cost = np.min(flag_costs)
+
+    # Calculate the minimum reward for each timestep as the
+    # worst case flag cost + the worst case defense cost
+    min_flag_rewards = repeat(min_flag_cost, episode_length)
+    total_min_reward_per_timestep = min_reward #map(sum, zip(min_reward, min_flag_rewards))
+
+    # Scale rewards to be between 0 and 1
+    scaled_rewards = map(
+        lambda x: normalize(
+            x[0], min_val=-x[1], max_val=0, low_bound=0, upper_bound=1
+        ),
+        zip(rewards, total_min_reward_per_timestep),
+    )
+    to_array = np.array(list(scaled_rewards))
+    return to_array
 
 def defender_min(
     avg_defense_cost: FLOAT_TYPE, num_defenses: INT_TYPE, episode_length: INT_TYPE
