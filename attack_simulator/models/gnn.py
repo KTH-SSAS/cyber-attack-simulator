@@ -82,14 +82,14 @@ class GNNRLAgent(nn.Module):
 
         batch: Batch = batch_to_gnn_batch(sim_state, edges)
 
-        action_dist, value_pred = self.forward(batch, defense_indices)
+        action_dist, value_pred = self.forward(batch, defense_indices, obs["nop_index"])
 
         action_dist = action_dist + inf_mask
 
         return action_dist, value_pred
     
 
-    def forward(self, batch: Batch, defense_indices: LongTensor):
+    def forward(self, batch: Batch, defense_indices: LongTensor, nop_index: int):
         # x has shape [B, N, in_channels]
         # N is the number of nodes
         # B is the batch size
@@ -119,7 +119,7 @@ class GNNRLAgent(nn.Module):
         # Compute policy and value outputs
         # policy_out has shape [B, num_outputs]
         # only compute policy func for defense nodes
-        wait_embeddings = defense_embeddings[:, 0, :]
+        wait_embeddings = defense_embeddings[:, nop_index, :]
 
         # pool_out = self.pool(embedded_graph, defense_edges)
         policy_out = self.policy_fn(defense_embeddings).squeeze()

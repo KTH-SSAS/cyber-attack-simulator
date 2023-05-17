@@ -99,12 +99,16 @@ def get_agent_obs(sim_obs: Observation, graph: AttackGraph) -> Dict[str, Any]:
         "action_mask": np.array(sim_obs.defender_action_mask, dtype=np.int8),
         "edges": new_edges.T,
         "defense_indices": defense_indices,
+        "nop_index": 0,
+        "action_offset": 1
     }
 
     attacker_obs = {
         "action_mask": np.array(sim_obs.attacker_action_mask, dtype=np.int8),
         "state": np.array(sim_obs.state, dtype=np.int8),
         "ttc_remaining": np.array(sim_obs.ttc_remaining, dtype=np.uint64),
+        "nop_index": 0,
+        "action_offset": 1
     }
 
     return {AGENT_DEFENDER: defender_obs, AGENT_ATTACKER: attacker_obs}
@@ -216,6 +220,8 @@ class AttackSimulationEnv(MultiAgentEnv):
                             shape=(graph.num_defenses + num_special_actions,),
                             dtype=np.int64,
                         ),
+                        "nop_index": spaces.Discrete(num_special_actions),
+                        "action_offset": spaces.Discrete(num_special_actions + 1),
                     }
                 ),
                 AGENT_ATTACKER: spaces.Dict(
@@ -235,6 +241,8 @@ class AttackSimulationEnv(MultiAgentEnv):
                         "state": spaces.Box(
                             0, 1, shape=(graph.num_defenses + graph.num_attacks,), dtype=np.int8
                         ),
+                        "nop_index": spaces.Discrete(num_special_actions),
+                        "action_offset": spaces.Discrete(num_special_actions + 1),
                     }
                 ),
             }

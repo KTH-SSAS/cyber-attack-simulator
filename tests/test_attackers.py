@@ -38,9 +38,6 @@ def test_attacker_actions(env: AttackSimulationEnv, attack_graph, attacker_class
     attacker: Agent = attacker_class(
         dict(
             attack_graph=attack_graph,
-            num_special_actions=num_special_actions,
-            terminate_action=ACTION_TERMINATE,
-            wait_action=ACTION_WAIT,
             seed=42,
         )
     )
