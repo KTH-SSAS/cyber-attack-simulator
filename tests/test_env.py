@@ -16,14 +16,21 @@ def test_env_reset(env: AttackSimulationEnv) -> None:
 def test_check_spaces(env: AttackSimulationEnv) -> None:
     obs, _ = env.reset()
 
+    def check_space(space, obs):
+        for k, v in obs.items():
+            assert k in space.spaces, f"{k} not in {space.spaces}"
+            assert space.spaces[k].contains(v), f"{k} {v} not in {space.spaces[k]}"
+
+        assert space.contains(obs)
+
     attacker_obs_space = env.observation_space.spaces[AGENT_ATTACKER]
     defender_obs_space = env.observation_space.spaces[AGENT_DEFENDER]
 
     attacker_obs = obs[AGENT_ATTACKER]
     defender_obs = obs[AGENT_DEFENDER]
 
-    assert attacker_obs_space.contains(attacker_obs)
-    assert defender_obs_space.contains(defender_obs)
+    check_space(attacker_obs_space, attacker_obs)
+    check_space(defender_obs_space, defender_obs)
 
     assert env.observation_space.contains(obs)
 
@@ -32,8 +39,8 @@ def test_check_spaces(env: AttackSimulationEnv) -> None:
     attacker_obs = obs[AGENT_ATTACKER]
     defender_obs = obs[AGENT_DEFENDER]
 
-    assert attacker_obs_space.contains(attacker_obs)
-    assert defender_obs_space.contains(defender_obs)
+    check_space(attacker_obs_space, attacker_obs)
+    check_space(defender_obs_space, defender_obs)
 
     assert env.observation_space.contains(obs)
 
@@ -66,7 +73,7 @@ def test_gnn(env: AttackSimulationEnv) -> None:
     for _ in range(100):
         obs = obs[AGENT_DEFENDER]
         for key, value in obs.items():
-            obs[key] = torch.from_numpy(value).float()
+            obs[key] = torch.from_numpy(value).float() if isinstance(value, np.ndarray) else value
         action_dist, _ = gnn.compute_action(obs)
         action = torch.argmax(action_dist)
         obs, reward, terminated, truncated, info = env.step({AGENT_DEFENDER: action})

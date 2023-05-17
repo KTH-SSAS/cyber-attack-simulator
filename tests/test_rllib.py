@@ -27,7 +27,7 @@ def test_ppo_trainer(env: AttackSimulationEnv):
         .callbacks(AttackSimCallback)
         .debugging(seed=seed)
         .rollouts(
-            num_envs_per_worker=5,
+            num_envs_per_worker=2,
         )
         .multi_agent(
             policies={
@@ -44,11 +44,6 @@ def test_ppo_trainer(env: AttackSimulationEnv):
                 ),
                 AGENT_ATTACKER: PolicySpec(
                     RandomPolicy,
-                    config={
-                        "num_special_actions": env.num_special_actions,
-                        "wait_action": env.sim.wait_action,
-                        "terminate_action": env.sim.terminate_action,
-                    },
                 ),
             },
             policy_mapping_fn=lambda agent_id, episode, worker, **kwargs: policy_ids[agent_id],

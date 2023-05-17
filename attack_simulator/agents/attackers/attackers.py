@@ -24,12 +24,12 @@ class RandomAttacker(Agent):
         self.rng, _ = get_rng(agent_config.get("seed"))
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions :]
+        attack_surface = observation["action_mask"].reshape(-1)[observation["action_offset"]:]
         surface_indexes = np.flatnonzero(attack_surface)
         return (
-            self.rng.choice(surface_indexes) + self.num_special_actions
+            self.rng.choice(surface_indexes) + observation["action_offset"]
             if len(surface_indexes) > 0
-            else self.wait_action
+            else observation["nop_index"]
         )
 
 
@@ -41,7 +41,7 @@ class RandomNoActionAttacker(Agent):
     def act(self, observation: np.ndarray) -> int:
         attack_surface = observation[0]
         valid_attacks = np.concatenate([[0], np.flatnonzero(attack_surface)])
-        return self.rng.choice(valid_attacks) + self.num_special_actions
+        return self.rng.choice(valid_attacks) + observation["action_offset"]
 
 
 class RoundRobinAttacker(Agent):
@@ -50,11 +50,11 @@ class RoundRobinAttacker(Agent):
         self.last = 0
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        attack_surface = observation["action_mask"].reshape(-1)[self.num_special_actions :]
+        attack_surface = observation["action_mask"].reshape(-1)[observation["action_offset"]:]
         valid = np.flatnonzero(attack_surface)
         above = valid[self.last < valid]
         self.last = valid[0] if 0 == above.size else above[0]
-        return self.last + self.num_special_actions
+        return self.last + observation["action_offset"]
 
 
 class RoundRobinNoActionAttacker(Agent):
@@ -66,7 +66,7 @@ class RoundRobinNoActionAttacker(Agent):
         valid = np.concatenate([[0], np.flatnonzero(observation) + 1])
         above = valid[self.last < valid]
         self.last = valid[0] if 0 == above.size else above[0]
-        return self.last + self.num_special_actions
+        return self.last + observation["action_offset"]
 
 
 class WellInformedAttacker(Agent):
