@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from attack_simulator.sim.graph import AttackGraph
+from attack_simulator.mal.graph import AttackGraph
 from attack_simulator.utils.config import GraphConfig
 
 seed = 22
