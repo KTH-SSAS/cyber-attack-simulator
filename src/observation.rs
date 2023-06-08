@@ -20,6 +20,8 @@ pub(crate) struct Observation {
     pub edges: Vec<(usize, usize)>,
     #[pyo3(get)]
     pub defense_indices: Vec<usize>,
+    #[pyo3(get)]
+    pub flags: Vec<usize>,
 }
 
 #[pyclass]

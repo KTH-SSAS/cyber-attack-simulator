@@ -84,18 +84,14 @@ impl SimulatorState {
     }
 
     pub fn total_ttc_remaining(&self) -> TTCType {
-        return self
-            .remaining_ttc
-            .iter()
-            .map(|(_, &ttc)| ttc)
-            .sum();
+        return self.remaining_ttc.iter().map(|(_, &ttc)| ttc).sum();
     }
 
     fn to_info(
         &self,
         num_attacks: usize,
         num_defenses: usize,
-        flag_status: HashMap<u64, bool>
+        flag_status: HashMap<u64, bool>,
     ) -> Info {
         let num_compromised_steps = self.compromised_steps.len();
         let num_enabled_defenses = self.enabled_defenses.len();
@@ -237,7 +233,7 @@ impl SimulatorRuntime {
             new_state.to_info(
                 self.g.attack_steps.len(),
                 self.g.defense_steps.len(),
-                flag_status
+                flag_status,
             ),
         ));
         self.ttc_sum = new_state.remaining_ttc.iter().map(|(_, &ttc)| ttc).sum();
@@ -254,6 +250,13 @@ impl SimulatorRuntime {
             .collect();
     }
 
+    pub fn flag_to_index(&self) -> Vec<usize> {
+        self.g
+            .flags
+            .iter()
+            .map(|id| self.id_to_index[id])
+            .collect::<Vec<usize>>()
+    }
 
     pub fn enable_defense_step(
         &self,
@@ -282,7 +285,10 @@ impl SimulatorRuntime {
         if state.enabled_defenses.contains(&defense_step_id) {
             // Already enabled
             // Do nothing
-            return Ok(ActionResult{enabled_defenses: HashSet::new(), ttc_diff: HashMap::new()});
+            return Ok(ActionResult {
+                enabled_defenses: HashSet::new(),
+                ttc_diff: HashMap::new(),
+            });
         }
 
         let (enabled_defenses, ttc_diff) = self.enable_defense_step(defense_step_id)?;
@@ -403,7 +409,10 @@ impl SimulatorRuntime {
             .cloned()
             .collect::<Vec<bool>>();
 
-        assert!(defender_action_mask.len() == self.defender_action_to_graph.len() + SPECIAL_ACTIONS.len());
+        assert!(
+            defender_action_mask.len()
+                == self.defender_action_to_graph.len() + SPECIAL_ACTIONS.len()
+        );
 
         let edges = &self.g.graph.edges;
 
@@ -423,6 +432,7 @@ impl SimulatorRuntime {
             state: step_state,
             edges: vector_edges,
             defense_indices: self.defender_action_to_state(),
+            flags: self.flag_to_index(),
         }
     }
 
