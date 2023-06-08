@@ -213,6 +213,10 @@ class AttackGraph:
     @property
     def num_services(self) -> UINT:
         return len(self.service_names)
+    
+    @property
+    def num_nodes(self) -> UINT:
+        return self.num_attacks + self.num_defenses
 
     def __str__(self) -> str:
         label = os.path.basename(self.config.filename)
