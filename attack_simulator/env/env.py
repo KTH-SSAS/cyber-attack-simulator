@@ -77,8 +77,8 @@ class EnvironmentState:
     def __init__(self):
         self.cumulative_rewards = {AGENT_DEFENDER: 0.0, AGENT_ATTACKER: 0.0}
         self.reward = {AGENT_ATTACKER: 0.0, AGENT_DEFENDER: 0.0}
-        self.terminated = {AGENT_DEFENDER: False, AGENT_ATTACKER: False}
-        self.truncated = {AGENT_DEFENDER: False, AGENT_ATTACKER: False}
+        self.terminated = {AGENT_DEFENDER: False, AGENT_ATTACKER: False, "__all__": False}
+        self.truncated = {AGENT_DEFENDER: False, AGENT_ATTACKER: False, "__all__": False}
 
 
 class AttackSimulationEnv(MultiAgentEnv):
