@@ -87,7 +87,7 @@ impl Node<AttackStep> {
         let attack_parents: HashSet<&u64> = self
             .parents
             .iter()
-            .filter(|&p| !defenses.contains(p))
+            .filter(|&p| !defenses.contains(p)) // Exclude defense parents
             .collect();
 
         if attack_parents.is_empty() {
