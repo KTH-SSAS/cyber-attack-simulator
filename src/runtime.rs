@@ -42,6 +42,17 @@ impl fmt::Display for SimError {
 pub struct ActionResult {
     pub ttc_diff: HashMap<NodeID, i32>,
     pub enabled_defenses: HashSet<NodeID>,
+    pub valid_action: bool,
+}
+
+impl Default for ActionResult {
+    fn default() -> Self { 
+        ActionResult {
+            ttc_diff: HashMap::new(),
+            enabled_defenses: HashSet::new(),
+            valid_action: false,
+        }
+     }
 }
 
 pub(crate) struct SimulatorState {
@@ -285,10 +296,7 @@ impl SimulatorRuntime {
         if state.enabled_defenses.contains(&defense_step_id) {
             // Already enabled
             // Do nothing
-            return Ok(ActionResult {
-                enabled_defenses: HashSet::new(),
-                ttc_diff: HashMap::new(),
-            });
+            return Ok(ActionResult::default());
         }
 
         let (enabled_defenses, ttc_diff) = self.enable_defense_step(defense_step_id)?;
@@ -296,6 +304,7 @@ impl SimulatorRuntime {
         let result = ActionResult {
             enabled_defenses,
             ttc_diff,
+            valid_action: true,
         };
 
         return Ok(result);
@@ -319,9 +328,15 @@ impl SimulatorRuntime {
             });
         }
 
+        // If the selected attack step is not in the attack surface, do nothing
+        if !state.attack_surface.contains(&attack_step_id) {
+            return Ok(ActionResult::default());
+        }
+
         let result = ActionResult {
             enabled_defenses: HashSet::new(),
             ttc_diff: SimulatorRuntime::work_on_attack_step(attack_step_id),
+            valid_action: true,
         };
 
         return Ok(result);
@@ -473,6 +488,7 @@ impl SimulatorRuntime {
             ActionResult {
                 ttc_diff: HashMap::new(),
                 enabled_defenses: old_state.enabled_defenses.clone(),
+                valid_action: true,
             },
             |mut total_result, (actor, action)| {
                 if *action < SPECIAL_ACTIONS.len() {
@@ -482,6 +498,8 @@ impl SimulatorRuntime {
                 let step_idx = *action - SPECIAL_ACTIONS.len();
                 let actor_id = self.actors[actor];
                 let result = actor_funcs[actor_id](&self, step_idx).unwrap();
+
+                total_result.valid_action &= result.valid_action;
 
                 for (step_id, ttc) in result.ttc_diff.iter() {
                     let current_ttc = total_result.ttc_diff.entry(*step_id).or_insert(0);
