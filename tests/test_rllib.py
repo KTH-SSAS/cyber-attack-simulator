@@ -1,4 +1,5 @@
 from dataclasses import asdict
+import ray
 
 from ray.rllib.agents import ppo
 from ray.rllib.policy.policy import PolicySpec
@@ -17,6 +18,8 @@ def test_ppo_trainer(env: AttackSimulationEnv):
     env_name = register_rllib_env()
     register_rllib_model()
 
+    ray.init(local_mode=True)
+
     policy_ids = {AGENT_DEFENDER: AGENT_DEFENDER, AGENT_ATTACKER: AGENT_ATTACKER}
 
     config = (
@@ -27,6 +30,7 @@ def test_ppo_trainer(env: AttackSimulationEnv):
         .callbacks(AttackSimCallback)
         .debugging(seed=seed)
         .rollouts(
+            num_rollout_workers=0,
             num_envs_per_worker=2,
         )
         .multi_agent(
@@ -52,6 +56,6 @@ def test_ppo_trainer(env: AttackSimulationEnv):
     )
 
     trainer = ppo.PPOTrainer(config=config)
-    for i in range(1):
+    for _ in range(1):
         result = trainer.train()
     assert result

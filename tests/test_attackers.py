@@ -44,6 +44,7 @@ def test_attacker_actions(env: AttackSimulationEnv, attack_graph, attacker_class
 
     last_ttc_remaining = total_ttc
     steps = 0
+    sum_rewards = 0
     while steps <= total_ttc and not done:
 
         action = attacker.compute_action_from_dict(obs[AGENT_ATTACKER])
@@ -55,14 +56,16 @@ def test_attacker_actions(env: AttackSimulationEnv, attack_graph, attacker_class
         valid_actions = np.flatnonzero(attack_surface)
         assert action - num_special_actions in valid_actions
 
-        obs, _, terminated, truncated, info  = env.step({AGENT_ATTACKER: action})
+        obs, rewards, terminated, truncated, info  = env.step({AGENT_ATTACKER: action})
+
+        sum_rewards += rewards[AGENT_ATTACKER]
 
         done = terminated[AGENT_ATTACKER] or truncated[AGENT_ATTACKER]
         # Check that the attacker is reducing overall time to compromise
         assert info[AGENT_ATTACKER]["sum_ttc_remaining"] < last_ttc_remaining
         last_ttc_remaining = info[AGENT_ATTACKER]["sum_ttc_remaining"]
         steps += 1
-
+    assert sum_rewards == sum(env.state.attack_step_rewards)
     assert done, "Attacker failed to explore all attack steps"
 
 # def test_agents_attackers_informed(simulator: AttackSimulator) -> None:
