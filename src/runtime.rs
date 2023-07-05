@@ -10,7 +10,7 @@ use itertools::Itertools;
 
 use crate::attackgraph::{AttackGraph, TTCType};
 use crate::config::SimulatorConfig;
-use crate::graph::NodeID;
+use crate::attackgraph::NodeID;
 use crate::observation::{Info, Observation};
 
 use rand::{Rng, SeedableRng};

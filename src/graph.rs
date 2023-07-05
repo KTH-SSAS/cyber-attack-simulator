@@ -1,23 +1,22 @@
 use std::collections::HashSet;
 use std::collections::HashMap;
+use std::hash::Hash;
 
-pub type NodeID = u64; // Global ID of a node
-
-pub struct Graph<T> {
-	pub nodes: HashMap<NodeID, Node<T>>,
-	pub edges: HashSet<(NodeID, NodeID)>,
+pub struct Graph<T, I> {
+	pub nodes: HashMap<I, Node<T, I>>,
+	pub edges: HashSet<(I, I)>,
 }
 
-impl<T> Graph<T> {
+impl<T, I:Eq + Hash> Graph<T, I> {
 	
-	pub fn get_data(&self, id: &NodeID) -> Option<&T> {
+	pub fn get_data(&self, id: &I) -> Option<&T> {
 		return match self.nodes.get(id) {
 			Some(node) => Some(&node.data),
 			None => None,
 		}
 	}
 
-	pub fn children(&self, id: &NodeID) -> Option<&HashSet<NodeID>> {
+	pub fn children(&self, id: &I) -> Option<&HashSet<I>> {
 		return match self.nodes.get(id) {
 			Some(node) => Some(&node.children),
 			None => None,
@@ -25,9 +24,9 @@ impl<T> Graph<T> {
 	}
 }
 
-pub struct Node<T> {
-	pub id: NodeID,
+pub struct Node<T, I> {
+	pub id: I,
 	pub data: T,
-	pub parents: HashSet<NodeID>,
-    pub children: HashSet<NodeID>,
+	pub parents: HashSet<I>,
+    pub children: HashSet<I>,
 }
