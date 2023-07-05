@@ -101,7 +101,7 @@ attack_graph:
   id: firewall-7-defend-28
   name: enable
   
-  step_type: or
+  step_type: defense
   ttc: 0
 - asset: firewall
   children:
@@ -111,7 +111,7 @@ attack_graph:
   id: firewall-12-defend-29
   name: enable
   
-  step_type: or
+  step_type: defense
   ttc: 0
 - asset: firewall
   children:
@@ -120,7 +120,7 @@ attack_graph:
   id: firewall-18-defend-30
   name: enable
   
-  step_type: or
+  step_type: defense
   ttc: 0
 - asset: firewall
   children:
@@ -130,7 +130,7 @@ attack_graph:
   id: firewall-20-defend-31
   name: enable
   
-  step_type: or
+  step_type: defense
   ttc: 0
 - asset: host
   children:

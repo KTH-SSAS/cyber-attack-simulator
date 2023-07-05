@@ -25,12 +25,12 @@ fn rusty_sim(_py: Python, m: &PyModule) -> PyResult<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::{cmp::max, collections::HashMap};
+    use std::{cmp::max, collections::HashMap, io::Write};
 
     use crate::{attackgraph, config::SimulatorConfig, runtime, observation::{Observation, Info}};
     use rand::seq::SliceRandom;
 
-    fn get_sim_from_filename(filename: &str) -> runtime::SimulatorRuntime {
+    fn get_sim_from_filename(filename: &str) -> runtime::SimulatorRuntime<u64> {
         let graph = attackgraph::load_graph_from_yaml(filename);
         let config = SimulatorConfig {
             seed: 0,
@@ -82,6 +82,10 @@ mod tests {
 
             let action_dict = HashMap::from([("attacker".to_string(), action)]);
             let (new_observation, new_info) = sim.step(action_dict).unwrap();
+
+            let graphviz = sim.to_graphviz();
+            let file = std::fs::File::create(format!("test_attacker_{}.dot", time)).unwrap();
+            std::io::Write::write_all(&mut std::io::BufWriter::new(file), graphviz.as_bytes()).unwrap();
 
             let step_idx = action - runtime::SPECIAL_ACTIONS.len();
             assert_eq!(new_observation.ttc_remaining[step_idx], max(observation.ttc_remaining[step_idx] as i64 - 1, 0) as u64);
