@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use serde::{Deserialize, Serialize};
 use serde_yaml::{self, Mapping};
 use std::fmt;
 use std::{
@@ -8,7 +9,7 @@ use std::{
 };
 
 type GraphResult<T> = std::result::Result<T, GraphError>;
-use crate::graph::{Graph, Node, NodeID};
+use crate::graph::{Graph, Node};
 
 #[derive(Debug, Clone)]
 pub struct GraphError {
@@ -70,6 +71,9 @@ impl SerializedAttackStep {
 }
 
 pub type TTCType = u64; // Time to compromise
+pub type NodeID = u64; // Global ID of a node
+
+
 
 pub(crate) struct AttackStep {
     pub name: String,
@@ -80,7 +84,7 @@ pub(crate) struct AttackStep {
     //pub compromised: bool,
 }
 
-impl Node<AttackStep> {
+impl Node<AttackStep, NodeID> {
     pub fn is_traversible(&self, compromised_steps: &HashSet<NodeID>) -> bool {
         let defenses = &self.data.defenses;
 
@@ -128,7 +132,7 @@ impl PartialEq for AttackStep {
 }
 
 pub(crate) struct AttackGraph {
-    pub graph: Graph<AttackStep>,
+    pub graph: Graph<AttackStep, NodeID>,
     pub attack_steps: HashSet<u64>,
     pub defense_steps: HashSet<u64>,
     pub flags: HashSet<u64>,
@@ -161,7 +165,7 @@ impl AttackGraph {
         flags: Vec<NodeID>,
         entry_points: Vec<NodeID>,
     ) -> AttackGraph {
-        let nodes: HashMap<NodeID, Node<AttackStep>> = nodes
+        let nodes: HashMap<NodeID, Node<AttackStep, NodeID>> = nodes
             .iter()
             .map(|s| {
                 let children = get_children(&s.id, &edges);
@@ -195,7 +199,6 @@ impl AttackGraph {
                 )
             })
             .collect();
-
 
         let graph = Graph {
             nodes,
@@ -239,7 +242,8 @@ impl AttackGraph {
 
     pub fn ttc_params(&self) -> Vec<(NodeID, TTCType)> {
         let ttc_params: Vec<(NodeID, TTCType)> = self
-            .graph.nodes
+            .graph
+            .nodes
             .values()
             .map(|x| (x.id, x.data.ttc))
             .map(|(id, ttc)| match self.entry_points.contains(&id) {
@@ -263,7 +267,7 @@ impl AttackGraph {
         // };
 
         let step = self.graph.nodes.get(step_id).unwrap();
-        let children: Vec<&Node<AttackStep>> = match step
+        let children: Vec<&Node<AttackStep, NodeID>> = match step
             .children
             .iter()
             .map(|id| self.graph.nodes.get(id))
@@ -314,7 +318,44 @@ impl AttackGraph {
 //     return visited;
 // }
 
-pub(crate) fn load_graph_from_yaml<'a: 'b, 'b>(filename: &str) -> AttackGraph {
+#[derive(Serialize, Deserialize)]
+pub struct TTC {
+    #[serde(rename = "type")]
+    ttc_type: String,
+    name: String,
+    arguments: Vec<f64>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct MALAttackStep {
+    id: String,
+    #[serde(rename = "type")]
+    node_type: String,
+    objclass: String,
+    objid: String,
+    atkname: String,
+    ttc: Option<TTC>,
+    links: Vec<String>,
+    is_reachable: bool,
+    defense_status: Option<String>,
+    graph_type: String,
+    is_traversable: bool,
+    required_steps: Option<Vec<String>>,
+    extra: Option<serde_json::Value>,
+}
+
+pub(crate) fn load_graph_from_json(filename: &str) -> Vec<MALAttackStep> {
+    let file = match File::open(filename) {
+        Ok(f) => f,
+        Err(e) => panic!("Could not open file: {}. {}", filename, e),
+    };
+
+    let reader = BufReader::new(file);
+    let steps: Vec<MALAttackStep> = serde_json::from_reader(reader).unwrap();
+    return steps;
+}
+
+pub(crate) fn load_graph_from_yaml(filename: &str) -> AttackGraph {
     let file = match File::open(filename) {
         Ok(f) => f,
         Err(e) => panic!("Could not open file: {}. {}", filename, e),
@@ -461,7 +502,11 @@ pub(crate) fn load_graph_from_yaml<'a: 'b, 'b>(filename: &str) -> AttackGraph {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use crate::attackgraph;
+
+    use super::MALAttackStep;
     #[test]
     fn load_graph_from_file() {
         let filename = "graphs/four_ways.yaml";
@@ -480,5 +525,49 @@ mod tests {
         assert_eq!(attackgraph.defense_steps.len(), 4);
         assert_eq!(attackgraph.graph.nodes.len(), 19);
         assert_eq!(attackgraph.flags.len(), 4);
+    }
+
+    #[test]
+    fn load_mal_graph() {
+        let filename = "mal/atkgraph_2app_2cr_1net_1swvuln.json";
+        let attack_steps = attackgraph::load_graph_from_json(filename);
+
+        // let edges: HashSet<(&String, &String)> = attack_steps
+        //     .iter()
+        //     .map(|step| {
+        //         step.links
+        //             .iter()
+        //             .map(|child| (&step.id, child))
+        //             .collect::<HashSet<(&String, &String)>>()
+        //     })
+        //     .flatten()
+        //     .collect();
+
+        // let entry_points = attack_steps
+        //     .iter()
+        //     .filter(|step| step.atkname == "physicalAccess")
+        //     .collect::<Vec<&MALAttackStep>>();
+
+        // let discovered_assets: HashSet<String> = entry_points
+        //     .iter()
+        //     .map(|step|format!("{}:{}", step.objclass, step.objid).to_string())
+        //     .collect::<HashSet<String>>();
+
+        // let compromised_steps: HashSet<&MALAttackStep> = HashSet::new();
+
+        // let not_done = true;
+        // let user_selection: i32;
+        // while not_done {
+        //     println!("Discovered assets: ");
+        //     println!("{:?}", discovered_assets);
+
+        //     println!("Select an asset to examine:");
+        //     discovered_assets.iter().enumerate().for_each(|(i, asset)| {
+        //         println!("{}: {}", i, asset);
+        //     });
+            
+        //     let mut line = String::new();
+        //     let selection = std::io::stdin().read_line(&mut line).unwrap();
+        // }
     }
 }
