@@ -16,7 +16,7 @@ fn pyresult_with<T, E: Display>(result: Result<T, E>, msg: &str) -> PyResult<T> 
 
 #[pyclass]
 pub(crate) struct RustAttackSimulator {
-    runtime: SimulatorRuntime,
+    runtime: SimulatorRuntime<u64>,
     #[pyo3(get)]
     config: SimulatorConfig,
     #[pyo3(get)]
