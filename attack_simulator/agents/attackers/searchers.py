@@ -13,6 +13,7 @@ def get_new_targets(attack_surface: Set[int], discovered_targets: Set[int]) -> L
     new_targets = attack_surface.difference(discovered_targets)
     return list(sorted(new_targets))
 
+
 class BreadthFirstAttacker(Agent):
     def __init__(self, agent_config: dict) -> None:
         super().__init__(agent_config)
@@ -81,14 +82,16 @@ class DepthFirstAttacker(Agent):
         for c in new_targets:
             self.targets.append(c)
 
-        self.current_target = self.select_next_target(self.current_target, self.targets, surface_indexes)
+        self.current_target = self.select_next_target(
+            self.current_target, self.targets, surface_indexes
+        )
 
         if self.current_target == STOP:
             return observation["nop_index"]
 
         # Offset the action by the number of special actions
         return self.current_target + observation["action_offset"]
-    
+
     @staticmethod
     def select_next_target(
         current_target: int, targets: Union[List[int], Deque[int]], attack_surface: Set[int]

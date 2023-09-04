@@ -5,6 +5,7 @@ from itertools import repeat
 FLOAT_TYPE = np.float64
 INT_TYPE = np.int32
 
+
 def scale_rewards(rewards, defense_costs, flag_costs):
     episode_length = len(rewards)
     num_defenses = len(defense_costs)
@@ -27,17 +28,16 @@ def scale_rewards(rewards, defense_costs, flag_costs):
     # Calculate the minimum reward for each timestep as the
     # worst case flag cost + the worst case defense cost
     min_flag_rewards = repeat(min_flag_cost, episode_length)
-    total_min_reward_per_timestep = min_reward #map(sum, zip(min_reward, min_flag_rewards))
+    total_min_reward_per_timestep = min_reward  # map(sum, zip(min_reward, min_flag_rewards))
 
     # Scale rewards to be between 0 and 1
     scaled_rewards = map(
-        lambda x: normalize(
-            x[0], min_val=-x[1], max_val=0, low_bound=0, upper_bound=1
-        ),
+        lambda x: normalize(x[0], min_val=-x[1], max_val=0, low_bound=0, upper_bound=1),
         zip(rewards, total_min_reward_per_timestep),
     )
     to_array = np.array(list(scaled_rewards))
     return to_array
+
 
 def defender_min(
     avg_defense_cost: FLOAT_TYPE, num_defenses: INT_TYPE, episode_length: INT_TYPE

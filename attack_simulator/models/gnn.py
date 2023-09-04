@@ -8,6 +8,7 @@ from torch_geometric.nn.models import GIN
 from torch_geometric.utils import add_self_loops, degree
 from torch import LongTensor, FloatTensor
 
+
 class GCNConv(MessagePassing):
     def __init__(self, in_channels, out_channels):
         super().__init__(aggr="add")  # "Add" aggregation (Step 5).
@@ -51,8 +52,10 @@ class GCNConv(MessagePassing):
         # Step 4: Normalize node features.
         return norm.view(-1, 1) * x_j
 
+
 FLOAT_MIN = -3.4e38
 FLOAT_MAX = 3.4e38
+
 
 class GNNRLAgent(nn.Module):
     def __init__(self, channels_in, num_layers, hidden_channels):
@@ -74,7 +77,9 @@ class GNNRLAgent(nn.Module):
         edges: LongTensor = obs["edges"].type(LongTensor)
         defense_indices: LongTensor = obs["defense_indices"].type(LongTensor)
 
-        defense_indices = defense_indices.unsqueeze(0) if len(defense_indices.shape) == 1 else defense_indices 
+        defense_indices = (
+            defense_indices.unsqueeze(0) if len(defense_indices.shape) == 1 else defense_indices
+        )
 
         sim_state = sim_state.unsqueeze(-1)
 
@@ -87,7 +92,6 @@ class GNNRLAgent(nn.Module):
         action_dist = action_dist + inf_mask
 
         return action_dist, value_pred
-    
 
     def forward(self, batch: Batch, defense_indices: LongTensor, nop_index: int):
         # x has shape [B, N, in_channels]

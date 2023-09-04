@@ -261,6 +261,31 @@ impl SimulatorRuntime {
             .collect();
     }
 
+    pub fn attacker_impact(&self) -> Vec<i64> {
+        
+        let mut impact = vec![0; self.id_to_index.len()];
+        
+        self.g.flags.iter().map(|id| self.id_to_index[id]).for_each(|index| {
+            impact[index] = 1;
+        });
+
+        return impact;
+    }
+
+    pub fn defender_impact(&self) -> Vec<i64> {
+        let mut impact = vec![0; self.id_to_index.len()];
+        
+        self.g.flags.iter().map(|id| self.id_to_index[id]).for_each(|index| {
+            impact[index] = -2//-(self.ttc_sum as i64);
+        });
+
+        self.g.defense_steps.iter().map(|id| self.id_to_index[id]).for_each(|index| {
+            impact[index] = -1;
+        });
+
+        return impact;
+    }
+
     pub fn flag_to_index(&self) -> Vec<usize> {
         self.g
             .flags
@@ -308,6 +333,14 @@ impl SimulatorRuntime {
         };
 
         return Ok(result);
+    }
+
+    pub fn num_attacks(&self) -> usize {
+        return self.g.attack_steps.len();
+    }
+
+    pub fn num_defenses(&self) -> usize {
+        return self.g.defense_steps.len();
     }
 
     pub fn work_on_attack_step(attack_step_id: NodeID) -> HashMap<NodeID, i32> {

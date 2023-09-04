@@ -118,13 +118,12 @@ class AttackSimulationRenderer:
 
     def __init__(
         self,
-        graph: AttackGraph,
         run_id: str,
         episode: int,
         save_graph: bool = False,
         save_logs: bool = False,
     ):
-        self.graph = graph
+        self.graph = AttackGraph(None)
         self.save_graph = save_graph
         self.save_logs = save_logs
         self.add_tooltips = False
@@ -140,14 +139,16 @@ class AttackSimulationRenderer:
         self.out_dir.mkdir(parents=True)
 
         if self.save_graph:
-            self.dag = graph.to_networkx(indices=True, system_state=np.ones(graph.num_defenses))
+            self.dag = self.graph.to_networkx(
+                indices=True, system_state=np.ones(self.graph.num_defenses)
+            )
             self.pos: Dict[int, Tuple[float, float]] = nx.nx_pydot.graphviz_layout(
-                self.dag, root=graph.root, prog="sfdp"
+                self.dag, root=self.graph.root, prog="sfdp"
             )
             self.and_edges = {
                 (i, j)
                 for i, j in self.dag.edges
-                if graph.attack_steps[graph.attack_names[j]].step_type == STEP.AND
+                if self.graph.attack_steps[self.graph.attack_names[j]].step_type == STEP.AND
             }
 
             height = 1500

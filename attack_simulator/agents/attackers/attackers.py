@@ -24,7 +24,7 @@ class RandomAttacker(Agent):
         self.rng, _ = get_rng(agent_config.get("seed"))
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        attack_surface = observation["action_mask"].reshape(-1)[observation["action_offset"]:]
+        attack_surface = observation["action_mask"].reshape(-1)[observation["action_offset"] :]
         surface_indexes = np.flatnonzero(attack_surface)
         return (
             self.rng.choice(surface_indexes) + observation["action_offset"]
@@ -50,7 +50,7 @@ class RoundRobinAttacker(Agent):
         self.last = 0
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        attack_surface = observation["action_mask"].reshape(-1)[observation["action_offset"]:]
+        attack_surface = observation["action_mask"].reshape(-1)[observation["action_offset"] :]
         valid = np.flatnonzero(attack_surface)
         above = valid[self.last < valid]
         self.last = valid[0] if 0 == above.size else above[0]
@@ -77,7 +77,7 @@ class WellInformedAttacker(Agent):
         graph: AttackGraph = agent_config["attack_graph"]
         steps = graph.attack_steps
         names = graph.attack_names
-        self._ttc = dict(zip(names, graph.ttc_params))
+        # self._ttc = dict(zip(names, graph.ttc_params))
         self._rewards = dict(zip(names, graph.reward_params))
         values: dict = {}
         """
@@ -87,7 +87,7 @@ class WellInformedAttacker(Agent):
         """
         total = self._value(steps, values, graph.root)
         logger.info("%s: total discounted value: %d", self.__class__.__name__, total)
-        del self._ttc
+        # del self._ttc
         del self._rewards
 
         self.attack_values = np.array([values[name] for name in names])
