@@ -13,6 +13,7 @@ from attack_simulator.agents import (  # InformedAttacker,; RandomNoActionAttack
 from attack_simulator.agents.attackers.searchers import BreadthFirstAttacker, DepthFirstAttacker
 from attack_simulator.env.env import AttackSimulationEnv
 
+
 @pytest.mark.parametrize(
     "attacker_class",
     [
@@ -26,18 +27,17 @@ from attack_simulator.env.env import AttackSimulationEnv
         DepthFirstAttacker,
     ],
 )
-def test_attacker_actions(env: AttackSimulationEnv, attack_graph, attacker_class) -> None:
+def test_attacker_actions(env: AttackSimulationEnv, attacker_class) -> None:
     done = False
 
     obs, info = env.reset()
-    
+
     total_ttc = info[AGENT_ATTACKER]["sum_ttc_remaining"]
 
     num_special_actions = env.num_special_actions
 
     attacker: Agent = attacker_class(
         dict(
-            attack_graph=attack_graph,
             seed=42,
         )
     )
@@ -52,11 +52,11 @@ def test_attacker_actions(env: AttackSimulationEnv, attack_graph, attacker_class
         assert action != ACTION_WAIT
 
         attack_surface = obs[AGENT_ATTACKER]["action_mask"].reshape(-1)[num_special_actions:]
-        #assert all(attack_surface == obs.attack_surface)
+        # assert all(attack_surface == obs.attack_surface)
         valid_actions = np.flatnonzero(attack_surface)
         assert action - num_special_actions in valid_actions
 
-        obs, rewards, terminated, truncated, info  = env.step({AGENT_ATTACKER: action})
+        obs, rewards, terminated, truncated, info = env.step({AGENT_ATTACKER: action})
 
         sum_rewards += rewards[AGENT_ATTACKER]
 
@@ -65,8 +65,9 @@ def test_attacker_actions(env: AttackSimulationEnv, attack_graph, attacker_class
         assert info[AGENT_ATTACKER]["sum_ttc_remaining"] < last_ttc_remaining
         last_ttc_remaining = info[AGENT_ATTACKER]["sum_ttc_remaining"]
         steps += 1
-    assert sum_rewards == sum(env.state.attack_step_rewards)
+    assert sum_rewards == env.state.cumulative_rewards[AGENT_ATTACKER]
     assert done, "Attacker failed to explore all attack steps"
+
 
 # def test_agents_attackers_informed(simulator: AttackSimulator) -> None:
 #     a = InformedAttacker(dict(attack_graph=simulator.g))

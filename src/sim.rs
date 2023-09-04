@@ -25,6 +25,14 @@ pub(crate) struct RustAttackSimulator {
     wait_action: usize,
     #[pyo3(get)]
     terminate_action: usize,
+    #[pyo3(get)]
+    num_attack_steps: usize,
+    #[pyo3(get)]
+    num_defense_steps: usize,
+    #[pyo3(get)]
+    attacker_impact: Vec<i64>,
+    #[pyo3(get)]
+    defender_impact: Vec<i64>,
 }
 
 #[pymethods]
@@ -40,6 +48,10 @@ impl RustAttackSimulator {
         let config = runtime.config.clone();
         let num_special_actions = SPECIAL_ACTIONS.len() as u64;
         Ok(RustAttackSimulator {
+            defender_impact: runtime.defender_impact(),
+            attacker_impact: runtime.attacker_impact(),
+            num_attack_steps: runtime.num_attacks(),
+            num_defense_steps: runtime.num_defenses(),
             runtime,
             config,
             num_special_actions,

@@ -9,6 +9,7 @@ from attack_simulator.models.gnn import GNNRLAgent
 from attack_simulator.renderer.renderer import AttackSimulationRenderer
 from attack_simulator.utils.config import EnvConfig
 
+
 def test_env_reset(env: AttackSimulationEnv) -> None:
     obs = np.array(env.reset())
 
@@ -77,8 +78,6 @@ def test_gnn(env: AttackSimulationEnv) -> None:
         action_dist, _ = gnn.compute_action(obs)
         action = torch.argmax(action_dist)
         obs, reward, terminated, truncated, info = env.step({AGENT_DEFENDER: action})
-
-        
 
 
 @pytest.mark.parametrize("agent", ["attacker", "defender"])

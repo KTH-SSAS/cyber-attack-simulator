@@ -108,7 +108,7 @@ class AttackSimCallback(DefaultCallbacks):
             episode.custom_metrics[key] = info[key]
 
         avg_defense_cost = np.mean(defense_costs)
-        num_defenses = defense_costs.shape[0]
+        num_defenses = len(defense_costs)
 
         attacker_reward = get_normalized_attacker_reward(
             flag_costs, info[f"{AGENT_ATTACKER}_cumulative_reward"]

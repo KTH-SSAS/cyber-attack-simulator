@@ -20,4 +20,6 @@ def test_sim_defender_actions(env: AttackSimulationEnv, defender_class) -> None:
     done = False
     obs, info = env.reset()
 
-    defender = defender_class(env.observation_space[AGENT_DEFENDER], env.action_space[AGENT_DEFENDER], {})
+    defender = defender_class(
+        env.observation_space[AGENT_DEFENDER], env.action_space[AGENT_DEFENDER], {}
+    )
