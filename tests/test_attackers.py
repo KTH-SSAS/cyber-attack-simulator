@@ -11,8 +11,7 @@ from attack_simulator.agents import (  # InformedAttacker,; RandomNoActionAttack
     RoundRobinAttacker,
 )
 from attack_simulator.agents.attackers.searchers import BreadthFirstAttacker, DepthFirstAttacker
-from attack_simulator.env.env import get_agent_obs
-from attack_simulator.mal.sim import Simulator
+from attack_simulator.env.env import AttackSimulationEnv
 
 
 @pytest.mark.parametrize(
@@ -28,41 +27,45 @@ from attack_simulator.mal.sim import Simulator
         DepthFirstAttacker,
     ],
 )
-def test_sim_attacker_actions(simulator: Simulator, attack_graph, attacker_class) -> None:
+def test_attacker_actions(env: AttackSimulationEnv, attacker_class) -> None:
     done = False
-    obs, info = simulator.reset()
 
-    total_ttc = simulator.ttc_total
+    obs, info = env.reset()
+
+    total_ttc = info[AGENT_ATTACKER]["sum_ttc_remaining"]
+
+    num_special_actions = env.num_special_actions
 
     attacker: Agent = attacker_class(
         dict(
-            attack_graph=attack_graph,
-            num_special_actions=2,
-            terminate_action=ACTION_TERMINATE,
-            wait_action=ACTION_WAIT,
             seed=42,
         )
     )
 
-    last_ttc_sum = simulator.ttc_total
-    while info.time <= total_ttc and not done:
+    last_ttc_remaining = total_ttc
+    steps = 0
+    sum_rewards = 0
+    while steps <= total_ttc and not done:
 
-        obs_dict = get_agent_obs(obs)[AGENT_ATTACKER]
-        action = attacker.compute_action_from_dict(obs_dict)
+        action = attacker.compute_action_from_dict(obs[AGENT_ATTACKER])
         assert action != ACTION_TERMINATE
         assert action != ACTION_WAIT
 
-        attack_surface = obs_dict["action_mask"].reshape(-1)[2:]
-        assert all(attack_surface == obs.attack_surface)
+        attack_surface = obs[AGENT_ATTACKER]["action_mask"].reshape(-1)[num_special_actions:]
+        # assert all(attack_surface == obs.attack_surface)
         valid_actions = np.flatnonzero(attack_surface)
-        assert action - 2 in valid_actions
+        assert action - num_special_actions in valid_actions
 
-        obs, info = simulator.step(OrderedDict([(AGENT_ATTACKER, action)]))
+        obs, rewards, terminated, truncated, info = env.step({AGENT_ATTACKER: action})
 
-        done = not any(obs.attack_surface)
-        assert simulator.ttc_total < last_ttc_sum
-        last_ttc_sum = simulator.ttc_total
+        sum_rewards += rewards[AGENT_ATTACKER]
 
+        done = terminated[AGENT_ATTACKER] or truncated[AGENT_ATTACKER]
+        # Check that the attacker is reducing overall time to compromise
+        assert info[AGENT_ATTACKER]["sum_ttc_remaining"] < last_ttc_remaining
+        last_ttc_remaining = info[AGENT_ATTACKER]["sum_ttc_remaining"]
+        steps += 1
+    assert sum_rewards == env.state.cumulative_rewards[AGENT_ATTACKER]
     assert done, "Attacker failed to explore all attack steps"
 
 
@@ -128,11 +131,3 @@ def test_sim_attacker_actions(simulator: Simulator, attack_graph, attacker_class
 #             last_action = action
 
 #     assert a.update(obs, 0, True) is None
-
-
-def test_attackers_breadth_first() -> None:
-    pass
-
-
-def test_attackers_depth_first() -> None:
-    pass

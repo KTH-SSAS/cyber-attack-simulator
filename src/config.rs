@@ -20,6 +20,7 @@ impl SimulatorConfig {
         return serde_json::from_str(json);
     }
 
+    #[allow(dead_code)]
     pub fn to_json(&self) -> Result<String, Error> {
         return serde_json::to_string_pretty(self);
     }

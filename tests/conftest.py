@@ -1,4 +1,5 @@
 import dataclasses
+import json
 import re
 from pathlib import Path
 from typing import Any, Dict, List
@@ -9,7 +10,13 @@ from attack_simulator.env.env import AttackSimulationEnv
 from attack_simulator.mal.graph import AttackGraph
 from attack_simulator.mal.sim import AttackSimulator
 from attack_simulator.utils.config import EnvConfig, GraphConfig
-from attack_simulator.utils.rust_wrapper import rust_sim_init
+
+from maturin import import_hook
+
+# install the import hook with default settings
+import_hook.install()
+
+from attack_simulator.rusty_sim import RustAttackSimulator
 
 
 @pytest.fixture(name="config_yaml", scope="session")
@@ -57,11 +64,6 @@ def fixture_graph_config(config_yaml: Path) -> GraphConfig:
     return config
 
 
-@pytest.fixture(name="attack_graph")
-def fixture_graph(graph_config: GraphConfig) -> AttackGraph:
-    return AttackGraph(graph_config)
-
-
 @pytest.fixture(scope="session", name="env_config")
 def fixture_env_config(config_yaml: Path) -> EnvConfig:
     config: EnvConfig = EnvConfig.from_yaml(config_yaml)
@@ -81,7 +83,7 @@ def fixture_env_config(config_yaml: Path) -> EnvConfig:
     scope="session",
     name="env",
     params=[
-        pytest.param("python", id="python"),
+        # pytest.param("python", id="python"),
         pytest.param("rust", id="rust"),
     ],
 )
@@ -94,15 +96,16 @@ def fixture_env(request) -> AttackSimulationEnv:
 @pytest.fixture(
     name="simulator",
     params=[
-        pytest.param(AttackSimulator, id="python"),
-        pytest.param(rust_sim_init, id="rust"),
+        # pytest.param(AttackSimulator, id="python"),
+        pytest.param(RustAttackSimulator, id="rust"),
     ],
 )
 def fixture_simulator(request) -> AttackSimulator:
     config_yaml = Path("config/test_config.yaml")
     config: EnvConfig = EnvConfig.from_yaml(config_yaml)
-    graph = AttackGraph(config.graph_config)
-    return request.param(config.sim_config, graph)
+    return RustAttackSimulator(
+        json.dumps(dataclasses.asdict(config.sim_config)), config.graph_config.filename
+    )
 
 
 @pytest.fixture(scope="session")

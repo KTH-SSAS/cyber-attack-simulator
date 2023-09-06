@@ -8,11 +8,11 @@ import cloudpickle
 import ray
 from tqdm import tqdm
 
-import attack_simulator.rllib.ids_model as ids_model
 from attack_simulator.env.env import register_rllib_env
 from attack_simulator.rllib.custom_callback import AttackSimCallback
+from attack_simulator.rllib.defender_policy import Defender
 
-trainers = {"PPO": ids_model.Defender}
+trainers = {"PPO": Defender}
 
 attackers = ["random", "pathplanner", "depth-first", "breadth-first", "mixed"]
 

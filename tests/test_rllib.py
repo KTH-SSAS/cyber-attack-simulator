@@ -1,36 +1,42 @@
 from dataclasses import asdict
+import ray
 
 from ray.rllib.agents import ppo
 from ray.rllib.policy.policy import PolicySpec
 
 from attack_simulator import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
-from attack_simulator.rllib import ids_model
 from attack_simulator.rllib.custom_callback import AttackSimCallback
+from attack_simulator.rllib.defender_policy import DefenderConfig, DefenderPolicy
 from attack_simulator.rllib.random_defender import RandomPolicy
 
 
 def test_ppo_trainer(env: AttackSimulationEnv):
-    seed = 0
+    from attack_simulator.rllib.defender_model import register_rllib_model
 
+    seed = 0
     env_name = register_rllib_env()
+    register_rllib_model()
+
+    ray.init(local_mode=True)
 
     policy_ids = {AGENT_DEFENDER: AGENT_DEFENDER, AGENT_ATTACKER: AGENT_ATTACKER}
 
     config = (
-        ids_model.DefenderConfig()
+        DefenderConfig()
         .training(scale_rewards=False)
         .framework("torch")
         .environment(env_name, env_config=asdict(env.config))
         .callbacks(AttackSimCallback)
         .debugging(seed=seed)
         .rollouts(
-            num_envs_per_worker=5,
+            num_rollout_workers=0,
+            num_envs_per_worker=2,
         )
         .multi_agent(
             policies={
                 AGENT_DEFENDER: PolicySpec(
-                    policy_class=ids_model.DefenderPolicy,
+                    policy_class=DefenderPolicy,
                     config={
                         "model": {
                             "custom_model": "DefenderModel",
@@ -42,11 +48,6 @@ def test_ppo_trainer(env: AttackSimulationEnv):
                 ),
                 AGENT_ATTACKER: PolicySpec(
                     RandomPolicy,
-                    config={
-                        "num_special_actions": env.num_special_actions,
-                        "wait_action": env.sim.wait_action,
-                        "terminate_action": env.sim.terminate_action,
-                    },
                 ),
             },
             policy_mapping_fn=lambda agent_id, episode, worker, **kwargs: policy_ids[agent_id],
@@ -55,6 +56,6 @@ def test_ppo_trainer(env: AttackSimulationEnv):
     )
 
     trainer = ppo.PPOTrainer(config=config)
-    for i in range(1):
+    for _ in range(1):
         result = trainer.train()
     assert result

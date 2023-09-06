@@ -16,7 +16,7 @@ fn pyresult_with<T, E: Display>(result: Result<T, E>, msg: &str) -> PyResult<T> 
 
 #[pyclass]
 pub(crate) struct RustAttackSimulator {
-    runtime: SimulatorRuntime,
+    runtime: SimulatorRuntime<u64>,
     #[pyo3(get)]
     config: SimulatorConfig,
     #[pyo3(get)]
@@ -25,6 +25,14 @@ pub(crate) struct RustAttackSimulator {
     wait_action: usize,
     #[pyo3(get)]
     terminate_action: usize,
+    #[pyo3(get)]
+    num_attack_steps: usize,
+    #[pyo3(get)]
+    num_defense_steps: usize,
+    #[pyo3(get)]
+    attacker_impact: Vec<i64>,
+    #[pyo3(get)]
+    defender_impact: Vec<i64>,
 }
 
 #[pymethods]
@@ -40,6 +48,10 @@ impl RustAttackSimulator {
         let config = runtime.config.clone();
         let num_special_actions = SPECIAL_ACTIONS.len() as u64;
         Ok(RustAttackSimulator {
+            defender_impact: runtime.defender_impact(),
+            attacker_impact: runtime.attacker_impact(),
+            num_attack_steps: runtime.num_attacks(),
+            num_defense_steps: runtime.num_defenses(),
             runtime,
             config,
             num_special_actions,
@@ -51,12 +63,7 @@ impl RustAttackSimulator {
     pub(crate) fn reset(&mut self, seed: Option<u64>) -> PyResult<(Observation, Info)> {
         pyresult(self.runtime.reset(seed))
     }
-
-    #[getter]
-    fn ttc_total(&self) -> u64 {
-        self.runtime.total_ttc_remaining()
-    }
-
+    
     pub(crate) fn step(
         &mut self,
         actions: HashMap<String, usize>,

@@ -18,11 +18,11 @@ from ..utils.config import GraphConfig
 class AttackStep:
     ttc: UINT
     id: str
+    asset: str
+    name: str
     parents: List[str] = field(default_factory=list)
     children: List[str] = field(default_factory=list)
     conditions: List[str] = field(default_factory=list)
-    asset: str = "asset"
-    name: str = "attack"
     step_type: STEP = STEP.OR
 
 
@@ -48,6 +48,23 @@ def replace_template(node: Dict, templates: Dict, key: str) -> dict:
     return attributes
 
 
+def handle_ttc_dict(node):
+    ttc = node["ttc"]
+    from scipy.stats import expon, geom
+    from functools import partial
+
+    mappings = {
+        "Bernoulli": lambda x: partial(geom.rvs, p=x[0]),
+        "Exponential": lambda x: partial(expon.rvs, scale=1 / x[0]),
+    }
+
+    dists = [mappings[dist["name"]](dist["arguments"]) for dist in ttc]
+
+    node["ttc"] = dists
+
+    return node
+
+
 class AttackGraph:
     """Attack Graph."""
 
@@ -66,7 +83,9 @@ class AttackGraph:
         self.root: str = data["entry_points"][0]
 
         nodes = (node | {"step_type": STEP(node["step_type"])} for node in data["attack_graph"])
-        nodes = (replace_all_templates(node, config) for node in nodes)
+        nodes = (handle_ttc_dict(node) for node in nodes)
+
+        # nodes = (replace_all_templates(node, config) for node in nodes)
 
         self.steps = [AttackStep(**node) for node in nodes]
 
@@ -77,7 +96,7 @@ class AttackGraph:
             step.id: step for step in self.steps if step.id not in self.defense_steps
         }
 
-        flags = {key: self.total_ttc * 1.5 for key in data["flags"]}  # * len(self.defense_steps)
+        flags = {key: 1 for key in data["flags"]}  # * len(self.defense_steps)
         self.flags = flags
 
         # Add parents for attack steps.
@@ -153,10 +172,10 @@ class AttackGraph:
             for attack_name in self.attack_names
         ]
 
-        self.ttc_params = np.array(
-            [self.attack_steps[attack_name].ttc for attack_name in self.attack_names],
-            dtype=np.int64,
-        )
+        # self.ttc_params = np.array(
+        #     [self.attack_steps[attack_name].ttc for attack_name in self.attack_names],
+        #     dtype=np.int64,
+        # )
 
         # Don't iterate over flags to ensure determinism
 
@@ -177,6 +196,27 @@ class AttackGraph:
             for attack_name in self.attack_names
         ]
 
+    def num_edges(self):
+        return self.get_edge_list().shape[0]
+
+    def get_edge_list(self) -> NDArray[np.int64]:
+        """Return the attack graph as an edge list."""
+        children = [
+            (self.attack_indices[step], self.attack_indices[child])
+            for step in self.attack_steps
+            for child in self.attack_steps[step].children
+        ]
+
+        defense_edges = [
+            (self.defense_indices[step], self.attack_indices[child])
+            for step in self.defense_steps
+            for child in self.defense_steps[step].children
+        ]
+
+        children.extend(defense_edges)
+
+        return np.array(children, dtype=np.int64)
+
     @property
     def total_ttc(self) -> UINT:
         return sum(step.ttc for step in self.attack_steps.values())
@@ -192,6 +232,10 @@ class AttackGraph:
     @property
     def num_services(self) -> UINT:
         return len(self.service_names)
+
+    @property
+    def num_nodes(self) -> UINT:
+        return self.num_attacks + self.num_defenses
 
     def __str__(self) -> str:
         label = os.path.basename(self.config.filename)
@@ -327,7 +371,9 @@ class AttackGraph:
         """Convert the AttackGraph to an NetworkX DiGraph."""
         dig = nx.DiGraph()
 
-        steps_to_graph = self.get_traversable_steps(self.attack_indices[self.root], system_state)
+        steps_to_graph = (
+            self.attack_indices.values()
+        )  # self.get_traversable_steps(self.attack_indices[self.root], system_state)
 
         current_index = 0
         for step_idx in steps_to_graph:
@@ -360,12 +406,19 @@ class AttackGraph:
 
             dig.add_edges_from(to_add)
 
+        added_defenses = set()
         if add_defenses:
             for defense, affected_step in zip(
                 self.defense_names, self.attack_steps_by_defense_step
             ):
                 defense_index = self.defense_indices[defense] + current_index
-                dig.add_node(defense_index if indices else defense)
+                added_defenses.add(defense_index)
+                defense_step = self.defense_steps[defense]
+                dict_t = asdict(defense_step)
+                del dict_t["children"]
+                del dict_t["id"]
+                del dict_t["name"]
+                dig.add_node(defense_index if indices else defense, **dict_t)
                 for attack in affected_step:
                     dig.add_edge(
                         defense_index if indices else defense,
@@ -392,7 +445,7 @@ class AttackGraph:
         attacks = observation[self.num_defenses :]  # type: ignore[misc]
         return self.interpret_defenses(defenses), self.interpret_attacks(attacks)
 
-    def draw(self, width=500, height=500, add_defense=True) -> None:
+    def draw(self, width: int = 500, height: int = 500, add_defense: bool = True) -> None:
         # Get the graph
         graph = self.to_networkx(False, np.ones(len(self.defense_names)), add_defense)
 
@@ -406,6 +459,16 @@ class AttackGraph:
 
         for defense in self.defense_steps:
             attack_node_colors_dict[defense] = GraphColors.DEFENSE.value
+
+        # save asset colors for later
+        with open("asset_colors.json", "r") as f:
+            import json
+
+            asset_colors = json.load(f)
+
+        node_edge_colors = [
+            plt.cm.Dark2(asset_colors[data["asset"]]) for node, data in graph.nodes(data=True)
+        ]
 
         dpi = 100
         fig = plt.figure(figsize=(width // dpi, height // dpi), dpi=dpi)
@@ -422,7 +485,7 @@ class AttackGraph:
             graph,
             pos=pos,
             node_color=[attack_node_colors_dict[step] for step in graph.nodes()],
-            edgecolors="black",
+            edgecolors=node_edge_colors,
             node_size=100,
         )
         nx.draw_networkx_edges(graph, edgelist=graph.edges - and_edges, pos=pos, edge_color="black")
@@ -430,11 +493,12 @@ class AttackGraph:
             graph, edgelist=and_edges, pos=pos, edge_color="black", style="dashed"
         )
 
-        labels = nx.get_node_attributes(graph, "ttc")
+        # labels = nx.get_node_attributes(graph, "ttc")
 
-        nx.draw_networkx_labels(graph, labels=labels, pos=pos, font_size=8)
+        # nx.draw_networkx_labels(graph, pos=pos, font_size=8)
 
         plt.axis("off")
+        plt.margins(0)
         plt.tight_layout()
 
         # Show the plot

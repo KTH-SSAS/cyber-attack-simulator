@@ -1,5 +1,5 @@
 [build-system]
-requires = ["maturin>=0.14,<0.15"]
+requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
 
 [tool.maturin]
@@ -25,9 +25,13 @@ authors = [{ name = "Jakob Nyberg", email = "jaknyb@kth.se" }]
 # Dependencies via Poetry
 
 [[tool.poetry.source]]
-name = "ray-wheels"
+name = "Ray"
 url = "https://s3-us-west-2.amazonaws.com/ray-wheels/latest/"
-secondary = true
+
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
 
 [tool.poetry.dependencies]
 python = "~3.10"
@@ -35,7 +39,7 @@ numpy = "^1.21.4"
 matplotlib = "^3.4.2"
 pyyaml = "^6.0"
 aiohttp = "^3.8"
-ray = {version = "^3.0.0.dev0", extras = ["default", "tune", "rllib", "k8s"], source="ray-wheels"}
+ray = {version = "^3.0.0.dev0", extras = ["default", "tune", "rllib", "k8s"], source="Ray"}
 networkx = "^2.6.3"
 seaborn = "^0.11.2"
 wandb = "^0.12.7"
