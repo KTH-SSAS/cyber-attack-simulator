@@ -5,6 +5,7 @@ pub mod config;
 pub mod graph;
 pub mod observation;
 mod loading;
+mod state;
 
 use pyo3::prelude::*;
 
@@ -27,11 +28,11 @@ fn rusty_sim(_py: Python, m: &PyModule) -> PyResult<()> {
 mod tests {
     use std::{cmp::max, collections::HashMap, io::Write};
 
-    use crate::{attackgraph, config::SimulatorConfig, runtime, observation::{Observation, Info}};
+    use crate::{attackgraph, config::SimulatorConfig, runtime, observation::{Observation, Info}, loading::load_graph_from_yaml};
     use rand::seq::SliceRandom;
 
     fn get_sim_from_filename(filename: &str) -> runtime::SimulatorRuntime<u64> {
-        let graph = attackgraph::load_graph_from_yaml(filename);
+        let graph = load_graph_from_yaml(filename);
         let config = SimulatorConfig {
             seed: 0,
             false_negative_rate: 0.0,

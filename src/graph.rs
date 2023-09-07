@@ -9,6 +9,13 @@ pub struct Graph<T, I> {
 	pub edges: HashSet<(I, I)>,
 }
 
+fn format_attributes(attributes: Option<&Vec<(String, String)>>) -> String {
+	match attributes {
+		Some(attributes) => return attributes.iter().map(|(key, value)| format!("{}=\"{}\"", key, value)).collect::<Vec<String>>().join(", "),
+		None => return "".to_string(),
+	} 
+}
+
 impl<T, I:Eq + Hash> Graph<T, I> where I : Display, T: std::fmt::Display {
 	
 	pub fn get_data(&self, id: &I) -> Option<&T> {
@@ -30,14 +37,19 @@ impl<T, I:Eq + Hash> Graph<T, I> where I : Display, T: std::fmt::Display {
 		self.edges.iter().map(|(parent, child)| format!("{} -> {}", parent, child)).collect::<Vec<String>>().join("\n")
 	}
 	
-	pub fn nodes_to_graphviz(&self) -> String {
-		self.nodes.iter().map(|(id, node)| format!("{} [label=\"{}\"]", id, node.data)).collect::<Vec<String>>().join("\n")
+	pub fn nodes_to_graphviz(&self, attributes: &HashMap<I, Vec<(String, String)>>) -> String {
+		self.nodes.iter().map(|(id, node)| format!("{} [label=\"{}\", {}]", id, node.data, format_attributes(attributes.get(id)))).collect::<Vec<String>>().join("\n")
 	}
 
-	pub fn to_graphviz(&self) -> String {
+	pub fn to_graphviz(&self, attributes: Option<&HashMap<I, Vec<(String, String)>>>) -> String {
+		let binding = HashMap::new();
+  		let attributes = match attributes {
+			Some(x) => x,
+			None => &binding,
+		};
 		return format!("{}\n{}\n{}\n{}",
 			"digraph {",
-			self.nodes_to_graphviz(),
+			self.nodes_to_graphviz(attributes),
 			self.edges_to_graphviz(),
 			"}"
 		);

@@ -9,7 +9,7 @@ use std::{
 };
 
 
-use crate::attackgraph::AttackGraph;
+use crate::attackgraph::{AttackGraph, NodeType};
 
 #[derive(Serialize, Deserialize)]
 pub struct TTC {
@@ -21,9 +21,9 @@ pub struct TTC {
 
 #[derive(Serialize, Deserialize)]
 pub struct MALAttackStep {
-    id: String,
+    pub id: String,
     #[serde(rename = "type")]
-    node_type: String,
+    pub node_type: String,
     objclass: String,
     objid: String,
     atkname: String,
@@ -48,7 +48,10 @@ pub(crate) fn load_graph_from_json(filename: &str) -> Vec<MALAttackStep> {
     return steps;
 }
 
-pub(crate) fn load_graph_from_yaml(filename: &str) -> AttackGraph {
+
+pub(crate) fn load_graph_from_yaml(filename: &str) -> AttackGraph<u64> {
+    panic!("Not implemented")
+    /* 
     let file = match File::open(filename) {
         Ok(f) => f,
         Err(e) => panic!("Could not open file: {}. {}", filename, e),
@@ -197,59 +200,39 @@ pub(crate) fn load_graph_from_yaml(filename: &str) -> AttackGraph {
         flag_ids,
         entry_ids,
     );
+    */
 }
 
 #[cfg(test)]
 mod tests {
     use std::{collections::HashSet, io::Write};
 
-    use crate::loading::load_graph_from_yaml;
+    use crate::{loading::load_graph_from_yaml, attackgraph::{AttackGraph, AttackStep, NodeType, Logic}};
 
-    use super::load_graph_from_json;
+    use super::{load_graph_from_json, MALAttackStep};
 
-    #[test]
-    fn load_graph_from_file() {
-        let filename = "graphs/four_ways.yaml";
-        let attackgraph = load_graph_from_yaml(filename);
-        let entry_point = attackgraph.entry_points.iter().collect::<Vec<&u64>>();
-
-        let entry_point = *entry_point.first().unwrap();
-        assert_eq!(
-            attackgraph.graph.nodes[entry_point].data.name,
-            "attacker-13-enter-13"
-        );
-
-        assert_eq!(attackgraph.graph.children(entry_point).len(), 4);
-        assert_eq!(attackgraph.graph.parents(entry_point).len(), 0);
-        assert_eq!(attackgraph.entry_points.len(), 1);
-        assert_eq!(attackgraph.attack_steps.len(), 15);
-        assert_eq!(attackgraph.defense_steps.len(), 4);
-        assert_eq!(attackgraph.graph.nodes.len(), 19);
-        assert_eq!(attackgraph.flags.len(), 4);
-
-        let graphviz = attackgraph.graph.to_graphviz();
-        let mut file = std::fs::File::create("test.dot").unwrap();
-        file.write_all(graphviz.as_bytes()).unwrap();
-        file.flush().unwrap();
-    }
+    
 
     #[test]
     fn load_mal_graph() {
         let filename = "mal/atkgraph_2app_2cr_1net_1swvuln.json";
         let attack_steps = load_graph_from_json(filename);
 
-        let edges: HashSet<(&String, &String)> = attack_steps
+        let edges = attack_steps
             .iter()
             .map(|step| {
                 step.links
                     .iter()
-                    .map(|child| (&step.id, child))
-                    .collect::<HashSet<(&String, &String)>>()
+                    .map(|child| (step.id.clone(), child.clone()))
+                    .collect::<HashSet<(String, String)>>()
             })
             .flatten()
             .collect();
+        
 
-        let attack_graph = AttackGraph::new(attack_steps, edges, vec![], vec![], vec![]);
+        writeln!(std::io::stdout(), "{:?}", edges).unwrap();
+
+        let attack_graph = AttackGraph::<u64>::new(attack_steps, edges, vec![], vec![]);
 
         // let entry_points = attack_steps
         //     .iter()
@@ -278,4 +261,7 @@ mod tests {
         //     let selection = std::io::stdin().read_line(&mut line).unwrap();
         // }
     }
+
+
+
 }

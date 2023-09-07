@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use crate::{
     config::SimulatorConfig,
-    runtime::{SimulatorRuntime, ACTION_NOP, ACTION_TERMINATE, SPECIAL_ACTIONS}, observation::{Observation, Info},
+    runtime::{SimulatorRuntime, ACTION_NOP, ACTION_TERMINATE, SPECIAL_ACTIONS}, observation::{Observation, Info}, loading::load_graph_from_yaml,
 };
 use pyo3::{exceptions::PyRuntimeError, pyclass, pymethods, PyErr, PyResult};
 
@@ -39,7 +39,11 @@ pub(crate) struct RustAttackSimulator {
 impl RustAttackSimulator {
     #[new]
     pub(crate) fn new(config_str: String, graph_filename: String) -> PyResult<RustAttackSimulator> {
-        let graph = crate::attackgraph::load_graph_from_yaml(&graph_filename);
+        let graph = load_graph_from_yaml(&graph_filename);
+        let num_attack_steps = graph.number_of_attacks();
+        let num_defense_steps = graph.number_of_defenses();
+
+        
         let config = SimulatorConfig::from_json(&config_str).unwrap();
         let runtime = match SimulatorRuntime::new(graph, config) {
             Ok(runtime) => runtime,
@@ -50,8 +54,8 @@ impl RustAttackSimulator {
         Ok(RustAttackSimulator {
             defender_impact: runtime.defender_impact(),
             attacker_impact: runtime.attacker_impact(),
-            num_attack_steps: runtime.num_attacks(),
-            num_defense_steps: runtime.num_defenses(),
+            num_attack_steps,
+            num_defense_steps,
             runtime,
             config,
             num_special_actions,
