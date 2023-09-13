@@ -1,15 +1,14 @@
-
-use rand_chacha::ChaChaRng;
-use rand_distr::Distribution;
-use std::cmp::max;
-use std::collections::{HashMap, HashSet};
-use std::fmt::Display;
-use std::hash::Hash;
 use crate::attackgraph::{AttackGraph, TTCType};
 use crate::observation::Info;
 use crate::runtime::{ActionResult, SimError, SimResult};
 use rand::SeedableRng;
+use rand_chacha::ChaChaRng;
+use rand_distr::Distribution;
 use rand_distr::Exp;
+use std::cmp::max;
+use std::collections::{HashMap, HashSet};
+use std::fmt::{Display, Debug};
+use std::hash::Hash;
 
 pub(crate) struct SimulatorState<I> {
     pub time: u64,
@@ -24,11 +23,29 @@ pub(crate) struct SimulatorState<I> {
     //actions: HashMap<String, usize>,
 }
 
+impl<I> Debug for SimulatorState<I> where I: Debug {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let mut s = format!("Time: {}\n", self.time);
+		s += &format!("Enabled defenses: {:?}\n", self.enabled_defenses);
+		s += &format!("Compromised steps: {:?}\n", self.compromised_steps);
+		s += &format!("Attack surface: {:?}\n", self.attack_surface);
+		s += &format!("Remaining TTC: {:?}\n", self.remaining_ttc);
+		s += &format!("Num observed alerts: {}\n", self.num_observed_alerts);
+		s += &format!("False alerts: {:?}\n", self.false_alerts);
+		s += &format!("Missed alerts: {:?}\n", self.missed_alerts);
+		write!(f, "{}", s)
+	}
+}
+
 impl<I> SimulatorState<I>
 where
     I: Eq + Hash + Ord + Display + Copy,
 {
-    pub fn new(graph: &AttackGraph<I>, seed: u64, randomize_ttc: bool) -> SimResult<SimulatorState<I>> {
+    pub fn new(
+        graph: &AttackGraph<I>,
+        seed: u64,
+        randomize_ttc: bool,
+    ) -> SimResult<SimulatorState<I>> {
         let mut rng = ChaChaRng::seed_from_u64(seed);
         let enabled_defenses = HashSet::new();
         let ttc_params = graph.ttc_params();
@@ -65,21 +82,24 @@ where
         return self.remaining_ttc.iter().map(|(_, &ttc)| ttc).sum();
     }
 
-	pub fn get_ids_obs(&self) -> HashSet<&I> {
-		self
-            .compromised_steps // true alerts
+    pub fn get_ids_obs(&self) -> HashSet<&I> {
+        self.compromised_steps // true alerts
             .union(&self.false_alerts) // add false alerts
             .filter_map(|x| match self.missed_alerts.contains(x) {
                 true => None, // remove missed alerts
                 false => Some(x),
             })
             .collect::<HashSet<&I>>()
-	}
+    }
 
-	pub fn attack_action(&self, step_id: I) -> SimResult<ActionResult<I>> {
-		let attack_surface_empty = self.attack_surface.is_empty();
+    pub fn attack_action(&self, step_id: &I) -> SimResult<ActionResult<I>> {
+        let attack_surface_empty = self.attack_surface.is_empty();
 
         if attack_surface_empty {
+            if cfg!(debug_assertions) {
+                panic!("Attack surface is empty.");
+            }
+
             return Err(SimError {
                 error: "Attack surface is empty.".to_string(),
             });
@@ -87,20 +107,24 @@ where
 
         // If the selected attack step is not in the attack surface, do nothing
         if !self.attack_surface.contains(&step_id) {
+            if cfg!(debug_assertions) {
+                panic!("Attack step {} is not in the attack surface.", step_id);
+            }
+
             return Ok(ActionResult::default());
         }
 
         let result = ActionResult {
             enabled_defenses: HashSet::new(),
-            ttc_diff: HashMap::from([(step_id, -1)]),
+            ttc_diff: HashMap::from([(*step_id, -1)]),
             valid_action: true,
         };
-		return Ok(result);
-	}
+        return Ok(result);
+    }
 
-	pub fn export_rng(&self) -> ChaChaRng {
-		self.rng.clone()
-	}
+    pub fn export_rng(&self) -> ChaChaRng {
+        self.rng.clone()
+    }
 
     pub fn to_info(
         &self,

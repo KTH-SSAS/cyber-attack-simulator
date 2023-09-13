@@ -1,15 +1,19 @@
-use std::{io::BufReader, fs::File};
+use std::{fs::File, io::BufReader};
 
 use itertools::Itertools;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_yaml::Mapping;
 
-use std::{
-    collections::{HashMap, HashSet},
-};
-
+use std::collections::{HashMap, HashSet};
 
 use crate::attackgraph::{AttackGraph, NodeType};
+
+pub type IOResult<T> = std::result::Result<T, IOError>;
+
+#[derive(Debug, Clone)]
+pub struct IOError {
+    error: String,
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct TTC {
@@ -19,6 +23,7 @@ pub struct TTC {
     arguments: Vec<f64>,
 }
 
+/*
 #[derive(Serialize, Deserialize)]
 pub struct MALAttackStep {
     pub id: String,
@@ -36,22 +41,112 @@ pub struct MALAttackStep {
     required_steps: Option<Vec<String>>,
     extra: Option<serde_json::Value>,
 }
+*/
 
-pub(crate) fn load_graph_from_json(filename: &str) -> Vec<MALAttackStep> {
+#[derive(Serialize, Deserialize)]
+pub struct MALAttackStep {
+    pub id: String,
+    #[serde(rename = "type")]
+    pub node_type: String,
+    name: String,
+    ttc: Option<TTC>,
+    children: Vec<String>,
+    parents: Vec<String>,
+    compromised_by: Vec<String>,
+    asset: String,
+    defense_status: Option<String>,
+    mitre_info: Option<String>,
+    existence_status: Option<String>,
+}
+
+pub(crate) fn load_graph_from_json(filename: &str) -> IOResult<AttackGraph<usize>> {
     let file = match File::open(filename) {
         Ok(f) => f,
-        Err(e) => panic!("Could not open file: {}. {}", filename, e),
+        Err(e) => {
+            return Err(IOError {
+                error: format!("Could not fi file: {}. {}", filename, e),
+            })
+        }
     };
 
     let reader = BufReader::new(file);
-    let steps: Vec<MALAttackStep> = serde_json::from_reader(reader).unwrap();
-    return steps;
-}
+    let attack_steps: Vec<MALAttackStep> = match serde_json::from_reader(reader) {
+        Ok(steps) => steps,
+        Err(e) => {
+            return Err(IOError {
+                error: format!("Could not parse json: {}", e),
+            })
+        }
+    };
 
+    let child_edges: HashSet<(String, String)> = attack_steps
+        .iter()
+        .map(|step| {
+            step.children
+                .iter()
+                .map(|child| (step.id.clone(), child.clone()))
+                .collect::<HashSet<(String, String)>>()
+        })
+        .flatten()
+        .collect();
+
+    let parent_edges: HashSet<(String, String)> = attack_steps
+        .iter()
+        .map(|step| {
+            step.parents
+                .iter()
+                .map(|parent| (parent.clone(), step.id.clone()))
+                .collect::<HashSet<(String, String)>>()
+        })
+        .flatten()
+        .collect();
+
+    let edges = child_edges
+        .union(&parent_edges)
+        .map(|(parent, child)| (parent.clone(), child.clone()))
+        .collect::<HashSet<(String, String)>>();
+
+    //writeln!(std::io::stdout(), "{:?}", edges).unwrap();
+
+    let nonexistant_nodes = attack_steps
+        .iter()
+        .filter_map(|step| match &step.existence_status {
+            Some(status) => match status.as_str() {
+                "False" => Some(step.id.clone()),
+                _ => None,
+            },
+            None => None,
+        })
+        .collect::<Vec<String>>();
+
+    let attack_steps = attack_steps
+        .into_iter()
+        .filter(|step| !nonexistant_nodes.contains(&step.id))
+        .collect::<Vec<MALAttackStep>>();
+
+    let edges = edges
+        .into_iter()
+        .filter(|(parent, child)| {
+            !nonexistant_nodes.contains(parent) && !nonexistant_nodes.contains(child)
+        })
+        .collect::<HashSet<(String, String)>>();
+
+    let entry_points = attack_steps
+        .iter()
+        .filter_map(|step| match step.name.as_str() {
+            "firstSteps" => Some(step.id.clone()),
+            _ => None,
+        })
+        .collect::<Vec<String>>();
+
+    let attack_graph = AttackGraph::<u64>::new(attack_steps, edges, vec![], entry_points);
+
+    return Ok(attack_graph);
+}
 
 pub(crate) fn load_graph_from_yaml(filename: &str) -> AttackGraph<u64> {
     panic!("Not implemented")
-    /* 
+    /*
     let file = match File::open(filename) {
         Ok(f) => f,
         Err(e) => panic!("Could not open file: {}. {}", filename, e),
@@ -128,8 +223,8 @@ pub(crate) fn load_graph_from_yaml(filename: &str) -> AttackGraph<u64> {
             let i = id;
             id = id + 1;
             SerializedAttackStep {
-                id: i, 
-                name: name.clone(), 
+                id: i,
+                name: name.clone(),
                 ttc,
                 step_type
             }
@@ -207,32 +302,23 @@ pub(crate) fn load_graph_from_yaml(filename: &str) -> AttackGraph<u64> {
 mod tests {
     use std::{collections::HashSet, io::Write};
 
-    use crate::{loading::load_graph_from_yaml, attackgraph::{AttackGraph, AttackStep, NodeType, Logic}};
+    use crate::{
+        attackgraph::{AttackGraph, AttackStep, Logic, NodeType},
+        loading::load_graph_from_yaml,
+    };
 
     use super::{load_graph_from_json, MALAttackStep};
 
-    
-
     #[test]
     fn load_mal_graph() {
-        let filename = "mal/atkgraph_2app_2cr_1net_1swvuln.json";
-        let attack_steps = load_graph_from_json(filename);
+        let filename = "mal/attackgraph.json";
+        let attack_graph = load_graph_from_json(filename).unwrap();
 
-        let edges = attack_steps
-            .iter()
-            .map(|step| {
-                step.links
-                    .iter()
-                    .map(|child| (step.id.clone(), child.clone()))
-                    .collect::<HashSet<(String, String)>>()
-            })
-            .flatten()
-            .collect();
-        
+        let graphviz = attack_graph.to_graphviz(None);
 
-        writeln!(std::io::stdout(), "{:?}", edges).unwrap();
-
-        let attack_graph = AttackGraph::<u64>::new(attack_steps, edges, vec![], vec![]);
+        let mut file = std::fs::File::create("mal/attackgraph.dot").unwrap();
+        file.write_all(graphviz.as_bytes()).unwrap();
+        file.flush().unwrap();
 
         // let entry_points = attack_steps
         //     .iter()
@@ -256,12 +342,9 @@ mod tests {
         //     discovered_assets.iter().enumerate().for_each(|(i, asset)| {
         //         println!("{}: {}", i, asset);
         //     });
-            
+
         //     let mut line = String::new();
         //     let selection = std::io::stdin().read_line(&mut line).unwrap();
         // }
     }
-
-
-
 }

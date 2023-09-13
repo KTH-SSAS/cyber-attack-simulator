@@ -5,7 +5,7 @@ use std::cmp::max;
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
-use std::fmt::Display;
+use std::fmt::{Display, Debug};
 use std::hash::Hash;
 use std::{fmt, vec};
 
@@ -21,7 +21,8 @@ use rand_distr::Exp;
 
 pub const ACTION_NOP: usize = 0; // No action
 pub const ACTION_TERMINATE: usize = 1; // Terminate the simulation
-pub const SPECIAL_ACTIONS: [usize; 1] = [ACTION_NOP];
+pub const ACTION_USE: usize = 2; // Use an attack or defense step
+pub const ACTIONS: [usize; 3] = [ACTION_NOP, ACTION_TERMINATE, ACTION_USE];
 
 pub const ATTACKER: usize = 0;
 pub const DEFENDER: usize = 1;
@@ -61,6 +62,8 @@ impl<I> Default for ActionResult<I> {
 //type ActionIndex = usize;
 type ActorIndex = usize;
 
+type ParameterAction = (usize, usize);
+
 pub(crate) struct SimulatorRuntime<I> {
     g: AttackGraph<I>,
     state: RefCell<SimulatorState<I>>,
@@ -72,8 +75,9 @@ pub(crate) struct SimulatorRuntime<I> {
     pub actors: HashMap<String, ActorIndex>,
 
     pub id_to_index: HashMap<I, usize>,
-    pub defender_action_to_graph: Vec<I>,
-    pub attacker_action_to_graph: Vec<I>,
+    pub index_to_id: Vec<I>,
+    //pub defender_action_to_graph: Vec<I>,
+    //pub attacker_action_to_graph: Vec<I>,
 }
 
 // def get_initial_attack_surface(self, attack_start_time: int) -> NDArray:
@@ -90,14 +94,14 @@ pub(crate) struct SimulatorRuntime<I> {
 
 impl<I> SimulatorRuntime<I>
 where
-    I: Eq + Hash + Ord + Display + Copy,
+    I: Eq + Hash + Ord + Display + Copy + Debug,
 {
     // Path: src/sim.rs
     pub fn new(graph: AttackGraph<I>, config: SimulatorConfig) -> SimResult<SimulatorRuntime<I>> {
         let index_to_id = graph
             .nodes()
             .iter()
-            .map(|(x, _)| *x)
+            .map(|(&x, _)| x)
             .sorted() // ensure deterministic order
             .collect::<Vec<I>>();
 
@@ -105,10 +109,12 @@ where
         let id_to_index: HashMap<I, usize> = index_to_id
             .iter()
             .enumerate()
-            .map(|(i, n)| (*n, i))
+            .map(|(i, n)| (n.clone(), i))
             .collect();
 
         // Maps the index of the action to the id of the node in the graph
+
+        /*
 
         let defender_action_to_graph = index_to_id
             .iter()
@@ -118,22 +124,27 @@ where
             })
             .collect::<Vec<I>>();
 
+        let attacker_action_to_graph = index_to_id.iter().filter_map(|id| {
+                match graph.has_attack(id) {
+                    true => Some(*id),
+                    false => None,
+                }
+            }).collect::<Vec<I>>();
+
+        */
+
         let initial_state = SimulatorState::new(&graph, config.seed, config.randomize_ttc)?;
 
         let fnr_fpr_per_step = index_to_id
             .iter()
             .map(|id| {
-                match graph.has_attack(id) {
-                    true => (
-                        *id,
-                        (config.false_negative_rate, config.false_positive_rate),
-                    ),
-                    false => (*id, (0.0, 0.0)), // No false negatives or positives for defense steps
+                match graph.has_attack(&id) {
+                    true => (id, (config.false_negative_rate, config.false_positive_rate)),
+                    false => (id, (0.0, 0.0)), // No false negatives or positives for defense steps
                 }
             })
+            .map(|(id, (fnr, fpr))| (id.clone(), (fnr, fpr)))
             .collect::<HashMap<I, (f64, f64)>>();
-
-        let attacker_action_to_graph = index_to_id;
 
         let sim = SimulatorRuntime {
             state: RefCell::new(initial_state),
@@ -142,8 +153,9 @@ where
             config,
             ttc_sum: 0,
             id_to_index,
-            attacker_action_to_graph,
-            defender_action_to_graph,
+            index_to_id,
+            //attacker_action_to_graph,
+            //defender_action_to_graph,
             history: Vec::new(),
             actors: HashMap::from_iter(vec![
                 ("defender".to_string(), DEFENDER),
@@ -154,6 +166,23 @@ where
         return Ok(sim);
     }
 
+    pub fn translate_node_vec(&self, node_vec: &Vec<I>) -> Vec<String> {
+        return node_vec
+            .iter()
+            .enumerate()
+            .map(|(i, _)| self.index_to_id[i])
+            .map(|id| self.g.name_of_step(&id))
+            .collect();
+    }
+
+    pub fn translate_index_vec(&self, index_vec: &Vec<usize>) -> Vec<String> {
+        return index_vec
+            .iter()
+            .map(|&i| self.index_to_id[i])
+            .map(|id| self.g.name_of_step(&id))
+            .collect();
+    }
+
     pub fn to_graphviz(&self) -> String {
         let attributes = self
             .g
@@ -161,12 +190,22 @@ where
             .iter()
             .map(|(id, node)| {
                 let mut attrs = Vec::new();
+                attrs.push(("style".to_string(), "filled".to_string()));
                 attrs.push((
-                    "color".to_string(),
+                    "fillcolor".to_string(),
                     match self.state.borrow().compromised_steps.contains(id) {
                         true => "red".to_string(),
-                        false => "black".to_string(),
+                        false => "white".to_string(),
                     },
+                ));
+                // Add TTC
+                attrs.push((
+                    "label".to_string(),
+                    format!(
+                        "{}\\nTTC={}",
+                        node.data,
+                        self.state.borrow().remaining_ttc[id]
+                    ),
                 ));
                 (*id, attrs)
             })
@@ -179,7 +218,8 @@ where
         let id_to_index = &self.id_to_index;
         let mut impact = vec![0; id_to_index.len()];
 
-        self.g.flags
+        self.g
+            .flags
             .iter()
             .map(|id| id_to_index[id])
             .for_each(|index| {
@@ -188,19 +228,21 @@ where
 
         return impact;
     }
-    
+
     pub fn defender_impact(&self) -> Vec<i64> {
         let id_to_index = &self.id_to_index;
         let mut impact = vec![0; id_to_index.len()];
 
-        self.g.flags
+        self.g
+            .flags
             .iter()
             .map(|id| id_to_index[id])
             .for_each(|index| {
                 impact[index] = -2 //-(self.ttc_sum as i64);
             });
 
-        self.g.defense_steps
+        self.g
+            .defense_steps
             .iter()
             .map(|id| id_to_index[id])
             .for_each(|index| {
@@ -227,12 +269,13 @@ where
                 flag_status,
             ),
         ));
-        self.ttc_sum = new_state.remaining_ttc.iter().map(|(_, &ttc)| ttc).sum();
+        self.ttc_sum = new_state.total_ttc_remaining();
         self.history.clear();
         self.state.replace(new_state);
         return result;
     }
 
+    /*
     pub fn defender_action_to_state(&self) -> Vec<usize> {
         return self
             .defender_action_to_graph
@@ -240,9 +283,9 @@ where
             .map(|id| self.id_to_index[id])
             .collect();
     }
+    */
 
-
-    pub fn enable_defense_step(&self, step_id: I) -> SimResult<(HashSet<I>, HashMap<I, i32>)> {
+    pub fn enable_defense_step(&self, step_id: &I) -> SimResult<(HashSet<I>, HashMap<I, i32>)> {
         let mut ttc_change = HashMap::new();
 
         let affected_attacks = self.g.children(&step_id);
@@ -251,16 +294,26 @@ where
             ttc_change.insert(x.id, 1000);
         });
 
-        return Ok((HashSet::from([step_id]), ttc_change));
+        return Ok((HashSet::from([*step_id]), ttc_change));
     }
 
-    pub fn defense_action(&self, action: usize) -> SimResult<ActionResult<I>> {
+    pub fn defense_action(&self, defense_step_id: &I) -> SimResult<ActionResult<I>> {
         let state = self.state.borrow();
-        let defense_step_id = self.defender_action_to_graph[action];
+        //let defense_step_id = self.defender_action_to_graph[action];
 
         if state.enabled_defenses.contains(&defense_step_id) {
             // Already enabled
             // Do nothing
+
+            if cfg!(debug_assertions) {
+                return Err(SimError {
+                    error: format!(
+                        "Defense step {}, id={}, is already enabled.",
+                        self.g.name_of_step(&defense_step_id), defense_step_id
+                    ),
+                });
+            }
+
             return Ok(ActionResult::default());
         }
 
@@ -279,13 +332,13 @@ where
         return HashMap::from([(attack_step_id, -1)]);
     }
 
-    pub fn attack_action(&self, attacker_action: usize) -> SimResult<ActionResult<I>> {
+    pub fn attack_action(&self, attacker_action: &I) -> SimResult<ActionResult<I>> {
         // Have the attacker perform an action.
 
-        let attack_step_id = self.attacker_action_to_graph[attacker_action];
+        //let attack_step_id = self.attacker_action_to_graph[attacker_action];
 
         let state = self.state.borrow();
-        let result = state.attack_action(attack_step_id);
+        let result = state.attack_action(attacker_action);
 
         return result;
     }
@@ -313,9 +366,7 @@ where
 
         let mut step_state = vec![false; self.id_to_index.len()];
 
-        let disabled_defenses = self
-            .g
-            .disabled_defenses(&state.enabled_defenses);
+        let disabled_defenses = self.g.disabled_defenses(&state.enabled_defenses);
 
         disabled_defenses
             .iter()
@@ -339,35 +390,38 @@ where
             ids_observed_vec[self.id_to_index[node_id]] = true;
         });
 
-        let mut action_mask = vec![false; SPECIAL_ACTIONS.len()];
-
-        action_mask[ACTION_NOP] = true;
+        //let mut action_mask = vec![false; SPECIAL_ACTIONS.len()];
+        //action_mask[ACTION_NOP] = true;
         //action_mask[ACTION_TERMINATE] = false;
 
-        let defense_state = self
-            .defender_action_to_graph
+        let mut defense_surface = vec![false; self.id_to_index.len()];
+        self.g
+            .disabled_defenses(&state.enabled_defenses)
             .iter()
-            .map(|f| self.id_to_index[&f])
-            .map(|x| step_state[x])
-            .collect::<Vec<bool>>();
+            .map(|node_id| self.id_to_index[&node_id])
+            .for_each(|index| {
+                defense_surface[index] = true;
+            });
 
-        assert!(defense_state.len() == self.defender_action_to_graph.len());
-
+        /*
         let defender_action_mask = action_mask
             .iter()
-            .chain(defense_state.iter())
+            .chain(defense_surface.iter())
             .cloned()
             .collect::<Vec<bool>>();
+
         let attacker_action_mask = action_mask
             .iter()
             .chain(attack_surface_vec.iter())
             .cloned()
             .collect::<Vec<bool>>();
 
-        assert!(
-            defender_action_mask.len()
-                == self.defender_action_to_graph.len() + SPECIAL_ACTIONS.len()
-        );
+        */
+
+        let action_mask = vec![true, false, true];
+
+        let defender_action_mask = action_mask.clone();
+        let attacker_action_mask = action_mask.clone();
 
         let edges = &self.g.edges();
 
@@ -379,19 +433,22 @@ where
 
         Observation {
             attack_surface: attack_surface_vec,
-            defense_surface: defense_state,
+            defense_surface,
             defender_action_mask,
             attacker_action_mask,
             ttc_remaining,
             ids_observation: ids_observed_vec,
             state: step_state,
             edges: vector_edges,
-            defense_indices: self.defender_action_to_state(),
+            //defense_indices: self.defender_action_to_state(),
             flags: self.g.flag_to_index(&self.id_to_index),
         }
     }
 
-    pub fn step(&mut self, action_dict: HashMap<String, usize>) -> SimResult<(Observation, Info)> {
+    pub fn step(
+        &mut self,
+        action_dict: HashMap<String, ParameterAction>,
+    ) -> SimResult<(Observation, Info)> {
         let new_state = self.calculate_next_state(action_dict)?;
 
         let flag_status = self.g.get_flag_status(&new_state.compromised_steps);
@@ -412,14 +469,14 @@ where
 
     fn calculate_next_state(
         &self,
-        action_dict: HashMap<String, usize>,
+        action_dict: HashMap<String, ParameterAction>,
     ) -> SimResult<SimulatorState<I>> {
         let old_state = self.state.borrow();
 
         // Attacker selects and attack step from the attack surface
         // Defender selects a defense step from the defense surface, which is the vector of all defense steps that are not disabled
 
-        let actor_funcs: Vec<fn(&SimulatorRuntime<I>, usize) -> SimResult<ActionResult<I>>> = vec![
+        let actor_funcs: Vec<fn(&SimulatorRuntime<I>, &I) -> SimResult<ActionResult<I>>> = vec![
             SimulatorRuntime::attack_action,
             SimulatorRuntime::defense_action,
         ];
@@ -430,14 +487,21 @@ where
                 enabled_defenses: old_state.enabled_defenses.clone(),
                 valid_action: true,
             },
-            |mut total_result, (actor, action)| {
-                if *action < SPECIAL_ACTIONS.len() {
+            |mut total_result, (actor, (action, step_idx))| {
+                if *action == ACTION_NOP || *action == ACTION_TERMINATE {
                     return total_result;
                 }
 
-                let step_idx = *action - SPECIAL_ACTIONS.len();
+                let step_idx = *step_idx;
+                let step_id = self.index_to_id[step_idx];
+
                 let actor_id = self.actors[actor];
-                let result = actor_funcs[actor_id](&self, step_idx).unwrap();
+                let result = match actor_funcs[actor_id](&self, &step_id) {
+                    Ok(result) => result,
+                    Err(e) => {
+                        panic!("Error: {} at state {:?}", e, old_state);
+                    }
+                };
 
                 total_result.valid_action &= result.valid_action;
 
@@ -465,8 +529,7 @@ where
 
         let compromised_steps = self.g.calculate_compromised_steps(&remaining_ttc);
 
-        let uncompromised_steps =
-            self.g.uncompromised_steps(&compromised_steps);
+        let uncompromised_steps = self.g.uncompromised_steps(&compromised_steps);
 
         let attack_surface = match self
             .g
@@ -515,28 +578,28 @@ where
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use crate::{
         attackgraph, config,
-        loading::load_graph_from_yaml,
+        loading::{load_graph_from_json, load_graph_from_yaml},
         observation::{Info, Observation},
-        runtime::{SimulatorRuntime, SPECIAL_ACTIONS},
+        runtime::{SimulatorRuntime, ACTIONS},
     };
 
     #[test]
     fn test_sim_init() {
-        let filename = "graphs/four_ways.yaml";
-        let graph = load_graph_from_yaml(filename);
+        let filename = "mal/attackgraph.json";
+        let graph = load_graph_from_json(filename).unwrap();
+        let num_defenses = graph.number_of_defenses();
+        let num_entrypoints = graph.entry_points().len();
         let config = config::SimulatorConfig::default();
         let sim = SimulatorRuntime::new(graph, config).unwrap();
 
         let initial_state = sim.state.borrow();
 
         assert_eq!(initial_state.enabled_defenses.len(), 0);
-        assert_eq!(initial_state.compromised_steps.len(), 1);
+        assert_eq!(initial_state.compromised_steps.len(), num_entrypoints);
         assert_eq!(initial_state.remaining_ttc.len(), sim.g.nodes().len());
         assert_eq!(
             initial_state
@@ -544,20 +607,24 @@ mod tests {
                 .iter()
                 .filter(|(_, &ttc)| ttc == 0)
                 .count(),
-            4 + 1 // 4 defense steps + 1 entrypoint
+            num_entrypoints
         );
-        assert_eq!(initial_state.attack_surface.len(), 4);
+        /*
         assert_eq!(
             sim.defender_action_to_graph.len(),
             sim.g.number_of_defenses()
         );
-        assert_eq!(sim.attacker_action_to_graph.len(), sim.g.nodes().len());
+        */
+        //assert_eq!(sim.attacker_action_to_graph.len(), sim.g.nodes().len());
     }
 
     #[test]
     fn test_sim_obs() {
-        let filename = "graphs/four_ways.yaml";
-        let graph = load_graph_from_yaml(filename);
+        let filename = "mal/attackgraph.json";
+        let graph = load_graph_from_json(filename).unwrap();
+        let num_attacks = graph.number_of_attacks();
+        let num_defenses = graph.number_of_defenses();
+        let num_entrypoints = graph.entry_points().len();
         let config = config::SimulatorConfig::default();
         let mut sim = SimulatorRuntime::new(graph, config).unwrap();
 
@@ -568,38 +635,57 @@ mod tests {
 
         assert_eq!(
             observation.defense_surface.iter().filter(|&x| *x).count(),
-            4
+            num_defenses
         );
-        assert_eq!(observation.attack_surface.iter().filter(|&x| *x).count(), 4);
-        assert_eq!(
-            observation.defender_action_mask.len(),
-            4 + SPECIAL_ACTIONS.len()
-        ); // count defenses + special actions
-        assert_eq!(
-            observation.attacker_action_mask.len(),
-            sim.g.nodes().len() + SPECIAL_ACTIONS.len()
-        );
+
+        //println!("AS: {:?}", observation.attack_surface);
+
+        let steps = observation
+            .attack_surface
+            .iter()
+            .enumerate()
+            .filter_map(|(i, x)| match x {
+                true => Some(i),
+                false => None,
+            })
+            .collect::<Vec<usize>>();
+        //let strings = sim.translate_index_vec(&steps);
+        //println!("AS: {:?}", strings);
+
+        
+
+        assert_eq!(observation.attacker_action_mask.len(), ACTIONS.len());
+
         assert_eq!(
             observation
-                .defender_action_mask
+                .defense_surface
                 .iter()
                 .filter(|&x| *x)
                 .count(),
-            4 + 1
-        ); // count available defenses + available special actions
-        assert_eq!(
-            observation
-                .attacker_action_mask
-                .iter()
-                .filter(|&x| *x)
-                .count(),
-            4 + 1
-        );
-        assert_eq!(observation.state.iter().filter(|&x| *x).count(), 4 + 1); // 4 available defenses + 1 compromised attack step
+            num_defenses
+        ); 
+
+        
+
         assert_eq!(observation.state.len(), sim.g.nodes().len());
+        assert_eq!(
+            observation.state.iter().filter(|&x| *x).count(),
+            num_defenses + num_entrypoints
+        ); // 4 available defenses + 1 compromised attack step
 
         //check that all defense steps are disabled
-        for i in observation.defense_indices.iter() {
+
+        let defense_indices = observation
+            .defense_surface
+            .iter()
+            .enumerate()
+            .filter_map(|(i, x)| match x {
+                true => Some(i),
+                false => None,
+            })
+            .collect::<Vec<usize>>();
+
+        for i in defense_indices.iter() {
             assert_eq!(observation.state[*i], true);
         }
 
@@ -610,26 +696,27 @@ mod tests {
         let entrypoint_index = sim
             .id_to_index
             .iter()
-            .find_map(|(id, index)| match entrypoints.contains(&id) {
-                true => Some(index),
-                false => None,
-            })
-            .unwrap();
-
-        let indices_from_entrypoint = edges
-            .iter()
-            .filter_map(|(from, to)| match from == entrypoint_index {
-                true => Some(to),
-                false => None,
+            .filter_map(|(id, index)| match entrypoints.get(&id) {
+                Some(i) => Some(i),
+                None => None,
             })
             .collect::<Vec<&usize>>();
 
-        // There should be four edges from the entrypoint
-        assert_eq!(indices_from_entrypoint.len(), 4);
+        for index in entrypoint_index {
+            let indices_from_entrypoint = edges
+                .iter()
+                .filter_map(|(from, to)| match from == index {
+                    true => Some(to),
+                    false => None,
+                })
+                .collect::<Vec<&usize>>();
 
-        // All the outgoing edges should be in the attack surface
-        for index in indices_from_entrypoint {
-            assert_eq!(observation.attack_surface[*index], true);
+            //assert_eq!(indices_from_entrypoint.len(), graph.children(&sim.index_to_id[*index]).len());
+
+            // All the outgoing edges should be in the attack surface
+            for index in indices_from_entrypoint {
+                assert_eq!(observation.attack_surface[*index], true);
+            }
         }
     }
 }

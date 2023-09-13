@@ -8,9 +8,9 @@ pub(crate) struct SimulatorConfig {
     #[pyo3(get)]
     pub seed: u64,
     #[pyo3(get)]
-	pub false_negative_rate: f64,
+    pub false_negative_rate: f64,
     #[pyo3(get)]
-	pub false_positive_rate: f64,
+    pub false_positive_rate: f64,
     #[pyo3(get)]
     pub randomize_ttc: bool,
 }
@@ -30,8 +30,8 @@ impl Default for SimulatorConfig {
     fn default() -> Self {
         SimulatorConfig {
             seed: Default::default(),
-			false_negative_rate: Default::default(),
-			false_positive_rate: Default::default(),
+            false_negative_rate: Default::default(),
+            false_positive_rate: Default::default(),
             randomize_ttc: Default::default(),
         }
     }

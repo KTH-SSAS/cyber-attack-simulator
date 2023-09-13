@@ -2,7 +2,9 @@ use std::{collections::HashMap, fmt::Display};
 
 use crate::{
     config::SimulatorConfig,
-    runtime::{SimulatorRuntime, ACTION_NOP, ACTION_TERMINATE, SPECIAL_ACTIONS}, observation::{Observation, Info}, loading::load_graph_from_yaml,
+    loading::load_graph_from_yaml,
+    observation::{Info, Observation},
+    runtime::{SimulatorRuntime, ACTIONS, ACTION_NOP, ACTION_TERMINATE, ACTION_USE},
 };
 use pyo3::{exceptions::PyRuntimeError, pyclass, pymethods, PyErr, PyResult};
 
@@ -20,7 +22,7 @@ pub(crate) struct RustAttackSimulator {
     #[pyo3(get)]
     config: SimulatorConfig,
     #[pyo3(get)]
-    num_special_actions: u64,
+    num_actions: u64,
     #[pyo3(get)]
     wait_action: usize,
     #[pyo3(get)]
@@ -43,14 +45,13 @@ impl RustAttackSimulator {
         let num_attack_steps = graph.number_of_attacks();
         let num_defense_steps = graph.number_of_defenses();
 
-        
         let config = SimulatorConfig::from_json(&config_str).unwrap();
         let runtime = match SimulatorRuntime::new(graph, config) {
             Ok(runtime) => runtime,
             Err(e) => return pyresult_with(Err(e), "Error in rust_sim"),
         };
         let config = runtime.config.clone();
-        let num_special_actions = SPECIAL_ACTIONS.len() as u64;
+        let num_actions = ACTIONS.len() as u64;
         Ok(RustAttackSimulator {
             defender_impact: runtime.defender_impact(),
             attacker_impact: runtime.attacker_impact(),
@@ -58,7 +59,7 @@ impl RustAttackSimulator {
             num_defense_steps,
             runtime,
             config,
-            num_special_actions,
+            num_actions,
             wait_action: ACTION_NOP,
             terminate_action: ACTION_TERMINATE,
         })
@@ -67,10 +68,10 @@ impl RustAttackSimulator {
     pub(crate) fn reset(&mut self, seed: Option<u64>) -> PyResult<(Observation, Info)> {
         pyresult(self.runtime.reset(seed))
     }
-    
+
     pub(crate) fn step(
         &mut self,
-        actions: HashMap<String, usize>,
+        actions: HashMap<String, (usize, usize)>,
     ) -> PyResult<(Observation, Info)> {
         pyresult(self.runtime.step(actions))
     }

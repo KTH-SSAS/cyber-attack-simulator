@@ -18,8 +18,8 @@ pub(crate) struct Observation {
     pub ttc_remaining: Vec<u64>,
     #[pyo3(get)]
     pub edges: Vec<(usize, usize)>,
-    #[pyo3(get)]
-    pub defense_indices: Vec<usize>,
+    //#[pyo3(get)]
+    //pub defense_indices: Vec<usize>,
     #[pyo3(get)]
     pub flags: Vec<usize>,
 }
