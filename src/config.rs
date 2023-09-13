@@ -4,7 +4,7 @@ use serde_json::Error;
 
 #[derive(Serialize, Deserialize, Clone)]
 #[pyclass]
-pub(crate) struct SimulatorConfig {
+pub struct SimulatorConfig {
     #[pyo3(get)]
     pub seed: u64,
     #[pyo3(get)]

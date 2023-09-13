@@ -1,7 +1,7 @@
 use pyo3::pyclass;
 
 #[pyclass]
-pub(crate) struct Observation {
+pub struct Observation {
     #[pyo3(get)]
     pub attack_surface: Vec<bool>, // Attack surface of the attacker, all attackable nodes
     #[pyo3(get)]
@@ -25,7 +25,7 @@ pub(crate) struct Observation {
 }
 
 #[pyclass]
-pub(crate) struct Info {
+pub struct Info {
     #[pyo3(get)]
     pub time: u64,
     #[pyo3(get)]

@@ -4,7 +4,7 @@ use crate::{
     config::SimulatorConfig,
     loading::load_graph_from_yaml,
     observation::{Info, Observation},
-    runtime::{SimulatorRuntime, ACTIONS, ACTION_NOP, ACTION_TERMINATE, ACTION_USE},
+    runtime::{SimulatorRuntime, ACTIONS, ACTION_NOP, ACTION_TERMINATE},
 };
 use pyo3::{exceptions::PyRuntimeError, pyclass, pymethods, PyErr, PyResult};
 

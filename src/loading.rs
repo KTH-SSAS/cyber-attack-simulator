@@ -1,18 +1,23 @@
 use std::{fs::File, io::BufReader};
 
-use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use serde_yaml::Mapping;
 
-use std::collections::{HashMap, HashSet};
 
-use crate::attackgraph::{AttackGraph, NodeType};
+use std::collections::HashSet;
+
+use crate::attackgraph::AttackGraph;
 
 pub type IOResult<T> = std::result::Result<T, IOError>;
 
 #[derive(Debug, Clone)]
 pub struct IOError {
     error: String,
+}
+
+impl std::fmt::Display for IOError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.error)
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -144,7 +149,7 @@ pub(crate) fn load_graph_from_json(filename: &str) -> IOResult<AttackGraph<usize
     return Ok(attack_graph);
 }
 
-pub(crate) fn load_graph_from_yaml(filename: &str) -> AttackGraph<u64> {
+pub(crate) fn load_graph_from_yaml(_filename: &str) -> AttackGraph<u64> {
     panic!("Not implemented")
     /*
     let file = match File::open(filename) {
@@ -300,14 +305,11 @@ pub(crate) fn load_graph_from_yaml(filename: &str) -> AttackGraph<u64> {
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashSet, io::Write};
+    use std::io::Write;
 
-    use crate::{
-        attackgraph::{AttackGraph, AttackStep, Logic, NodeType},
-        loading::load_graph_from_yaml,
-    };
+    
 
-    use super::{load_graph_from_json, MALAttackStep};
+    use super::load_graph_from_json;
 
     #[test]
     fn load_mal_graph() {

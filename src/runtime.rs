@@ -1,6 +1,4 @@
 use core::panic;
-use rand_chacha::ChaChaRng;
-use rand_distr::Distribution;
 use std::cmp::max;
 
 use std::cell::RefCell;
@@ -16,8 +14,8 @@ use crate::config::SimulatorConfig;
 use crate::observation::{Info, Observation};
 use crate::state::SimulatorState;
 
-use rand::{Rng, SeedableRng};
-use rand_distr::Exp;
+use rand::Rng;
+
 
 pub const ACTION_NOP: usize = 0; // No action
 pub const ACTION_TERMINATE: usize = 1; // Terminate the simulation
@@ -26,9 +24,6 @@ pub const ACTIONS: [usize; 3] = [ACTION_NOP, ACTION_TERMINATE, ACTION_USE];
 
 pub const ATTACKER: usize = 0;
 pub const DEFENDER: usize = 1;
-
-pub const DEFENSE_ENABLED: bool = false;
-pub const DEFENSE_DISABLED: bool = true;
 
 pub type SimResult<T> = std::result::Result<T, SimError>;
 
@@ -166,6 +161,7 @@ where
         return Ok(sim);
     }
 
+    #[allow(dead_code)]
     pub fn translate_node_vec(&self, node_vec: &Vec<I>) -> Vec<String> {
         return node_vec
             .iter()
@@ -175,6 +171,7 @@ where
             .collect();
     }
 
+    #[allow(dead_code)]
     pub fn translate_index_vec(&self, index_vec: &Vec<usize>) -> Vec<String> {
         return index_vec
             .iter()
@@ -326,10 +323,6 @@ where
         };
 
         return Ok(result);
-    }
-
-    pub fn work_on_attack_step(attack_step_id: I) -> HashMap<I, i32> {
-        return HashMap::from([(attack_step_id, -1)]);
     }
 
     pub fn attack_action(&self, attacker_action: &I) -> SimResult<ActionResult<I>> {
@@ -581,8 +574,8 @@ where
 #[cfg(test)]
 mod tests {
     use crate::{
-        attackgraph, config,
-        loading::{load_graph_from_json, load_graph_from_yaml},
+        config,
+        loading::load_graph_from_json,
         observation::{Info, Observation},
         runtime::{SimulatorRuntime, ACTIONS},
     };
@@ -591,7 +584,7 @@ mod tests {
     fn test_sim_init() {
         let filename = "mal/attackgraph.json";
         let graph = load_graph_from_json(filename).unwrap();
-        let num_defenses = graph.number_of_defenses();
+        //let num_defenses = graph.number_of_defenses();
         let num_entrypoints = graph.entry_points().len();
         let config = config::SimulatorConfig::default();
         let sim = SimulatorRuntime::new(graph, config).unwrap();
@@ -622,7 +615,7 @@ mod tests {
     fn test_sim_obs() {
         let filename = "mal/attackgraph.json";
         let graph = load_graph_from_json(filename).unwrap();
-        let num_attacks = graph.number_of_attacks();
+        //let num_attacks = graph.number_of_attacks();
         let num_defenses = graph.number_of_defenses();
         let num_entrypoints = graph.entry_points().len();
         let config = config::SimulatorConfig::default();
@@ -640,7 +633,7 @@ mod tests {
 
         //println!("AS: {:?}", observation.attack_surface);
 
-        let steps = observation
+        let _steps = observation
             .attack_surface
             .iter()
             .enumerate()
@@ -664,8 +657,6 @@ mod tests {
                 .count(),
             num_defenses
         ); 
-
-        
 
         assert_eq!(observation.state.len(), sim.g.nodes().len());
         assert_eq!(
@@ -696,7 +687,7 @@ mod tests {
         let entrypoint_index = sim
             .id_to_index
             .iter()
-            .filter_map(|(id, index)| match entrypoints.get(&id) {
+            .filter_map(|(id, _)| match entrypoints.get(&id) {
                 Some(i) => Some(i),
                 None => None,
             })

@@ -1,21 +1,16 @@
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use serde_yaml::{self, Mapping};
 use std::fmt::{self, Display};
 use std::hash::Hash;
-use std::{
-    collections::{HashMap, HashSet},
-    fs::File,
-    io::BufReader,
-};
+use std::collections::{HashMap, HashSet};
 
 type GraphResult<T> = std::result::Result<T, GraphError>;
 use crate::graph::{Graph, Node};
 use crate::loading::MALAttackStep;
 
 #[derive(Debug, Clone)]
-pub struct GraphError {
-    pub message: String,
+pub(crate) struct GraphError {
+    message: String,
 }
 
 impl fmt::Display for GraphError {
@@ -77,13 +72,13 @@ impl From<&NodeType> for Logic {
     }
 }
 
-pub type TTCType = u64; // Time to compromise
+pub(crate) type TTCType = u64; // Time to compromise
 
 pub(crate) struct AttackStep {
-    pub name: String,
-    pub ttc: TTCType,
-    pub logic: Logic,
-    pub step_type: NodeType,
+    name: String,
+    ttc: TTCType,
+    logic: Logic,
+    step_type: NodeType,
     //pub compromised: bool,
 }
 
@@ -109,7 +104,7 @@ impl<I> AttackGraph<I>
 where
     I: Eq + Hash + Ord + Display + Copy,
 {
-    pub fn new(
+    pub(crate) fn new(
         nodes: Vec<MALAttackStep>,
         edges: HashSet<(String, String)>,
         flags: Vec<String>,
@@ -199,8 +194,8 @@ impl PartialEq for AttackStep {
 pub(crate) struct AttackGraph<I> {
     graph: Graph<AttackStep, I>,
     attack_steps: HashSet<I>,
-    pub defense_steps: HashSet<I>,
-    pub flags: HashSet<I>,
+    pub(crate) defense_steps: HashSet<I>,
+    pub(crate) flags: HashSet<I>,
     entry_points: HashSet<I>,
 }
 
@@ -228,52 +223,54 @@ impl<I> AttackGraph<I>
 where
     I: Eq + Hash + Ord + Display + Copy,
 {
-    pub fn nodes(&self) -> &HashMap<I, Node<AttackStep, I>> {
+    pub(crate) fn nodes(&self) -> &HashMap<I, Node<AttackStep, I>> {
         return &self.graph.nodes;
     }
 
-    pub fn edges(&self) -> &HashSet<(I, I)> {
+    pub(crate) fn edges(&self) -> &HashSet<(I, I)> {
         return &self.graph.edges;
     }
 
-    pub fn name_of_step(&self, id: &I) -> String {
+    pub(crate) fn name_of_step(&self, id: &I) -> String {
         return self.graph.nodes[id].data.name.clone();
     }
 
-    pub fn has_defense(&self, id: &I) -> bool {
+    /* 
+    pub(crate) fn has_defense(&self, id: &I) -> bool {
         self.defense_steps.contains(id)
     }
+    */
 
-    pub fn has_attack(&self, id: &I) -> bool {
+    pub(crate) fn has_attack(&self, id: &I) -> bool {
         self.attack_steps.contains(id)
     }
 
-    pub fn entry_points(&self) -> HashSet<I> {
+    pub(crate) fn entry_points(&self) -> HashSet<I> {
         return self.entry_points.iter().map(|&i| i).collect();
     }
 
-    pub fn uncompromised_steps<'a>(&self, compromised_steps: &'a HashSet<I>) -> HashSet<I> {
+    pub(crate) fn uncompromised_steps<'a>(&self, compromised_steps: &'a HashSet<I>) -> HashSet<I> {
         self.attack_steps
             .difference(&compromised_steps)
             .map(|&x| x)
             .collect()
     }
 
-    pub fn disabled_defenses<'a>(&self, enabled_defenses: &'a HashSet<I>) -> HashSet<I> {
+    pub(crate) fn disabled_defenses<'a>(&self, enabled_defenses: &'a HashSet<I>) -> HashSet<I> {
         self.defense_steps
             .difference(enabled_defenses)
             .map(|x| *x)
             .collect()
     }
 
-    pub fn flag_to_index(&self, id_to_index: &HashMap<I, usize>) -> Vec<usize> {
+    pub(crate) fn flag_to_index(&self, id_to_index: &HashMap<I, usize>) -> Vec<usize> {
         self.flags
             .iter()
             .map(|id| id_to_index[id])
             .collect::<Vec<usize>>()
     }
 
-    pub fn get_flag_status(&self, compromised_steps: &HashSet<I>) -> HashMap<I, bool> {
+    pub(crate) fn get_flag_status(&self, compromised_steps: &HashSet<I>) -> HashMap<I, bool> {
         return self
             .flags
             .iter()
@@ -281,52 +278,19 @@ where
             .collect();
     }
 
-    pub fn defender_impact(&self, id_to_index: &HashMap<I, usize>) -> Vec<i64> {
-        let mut impact = vec![0; id_to_index.len()];
-
-        self.flags
-            .iter()
-            .map(|id| id_to_index[id])
-            .for_each(|index| {
-                impact[index] = -2 //-(self.ttc_sum as i64);
-            });
-
-        self.defense_steps
-            .iter()
-            .map(|id| id_to_index[id])
-            .for_each(|index| {
-                impact[index] = -1;
-            });
-
-        return impact;
-    }
-
-    pub fn attacker_impact(&self, id_to_index: &HashMap<I, usize>) -> Vec<i64> {
-        let mut impact = vec![0; id_to_index.len()];
-
-        self.flags
-            .iter()
-            .map(|id| id_to_index[id])
-            .for_each(|index| {
-                impact[index] = 1;
-            });
-
-        return impact;
-    }
-
-    pub fn number_of_defenses(&self) -> usize {
+    pub(crate) fn number_of_defenses(&self) -> usize {
         self.defense_steps.len()
     }
 
-    pub fn number_of_attacks(&self) -> usize {
+    pub(crate) fn number_of_attacks(&self) -> usize {
         self.attack_steps.len()
     }
 
-    pub fn children(&self, id: &I) -> Vec<&Node<AttackStep, I>> {
+    pub(crate) fn children(&self, id: &I) -> Vec<&Node<AttackStep, I>> {
         return self.graph.children(id);
     }
 
-    pub fn calculate_compromised_steps(&self, remaining_ttc: &HashMap<I, u64>) -> HashSet<I> {
+    pub(crate) fn calculate_compromised_steps(&self, remaining_ttc: &HashMap<I, u64>) -> HashSet<I> {
         let steps_with_zero_ttc: HashSet<I> = remaining_ttc
             .iter()
             .filter_map(|(step, ttc)| match ttc {
@@ -346,11 +310,11 @@ where
             .collect()
     }
 
-    pub fn to_graphviz(&self, attributes: Option<&HashMap<I, Vec<(String, String)>>>) -> String {
+    pub(crate) fn to_graphviz(&self, attributes: Option<&HashMap<I, Vec<(String, String)>>>) -> String {
         return self.graph.to_graphviz(attributes);
     }
 
-    pub fn calculate_attack_surface(
+    pub(crate) fn calculate_attack_surface(
         &self,
         compromised_steps: &HashSet<I>,
         defense_state: &HashSet<I>,
@@ -376,7 +340,7 @@ where
         return Ok(attack_surface);
     }
 
-    pub fn ttc_params(&self) -> Vec<(I, TTCType)> {
+    pub(crate) fn ttc_params(&self) -> Vec<(I, TTCType)> {
         let ttc_params: Vec<(I, TTCType)> = self
             .graph
             .nodes
@@ -391,11 +355,11 @@ where
         return ttc_params;
     }
 
-    pub fn is_entry(&self, id: &I) -> bool {
+    pub(crate) fn is_entry(&self, id: &I) -> bool {
         return self.entry_points.contains(id);
     }
 
-    pub fn is_traversible(&self, node_id: &I, compromised_steps: &HashSet<I>) -> bool {
+    pub(crate) fn is_traversible(&self, node_id: &I, compromised_steps: &HashSet<I>) -> bool {
         let node = self.graph.nodes.get(node_id).unwrap();
         let parents = self.graph.parents(node_id);
 
@@ -422,7 +386,7 @@ where
         };
     }
 
-    pub fn is_vulnerable(
+    pub(crate) fn is_vulnerable(
         &self,
         node_id: &I,
         compromised_steps: &HashSet<I>,
@@ -437,7 +401,7 @@ where
         return Ok(!compromised && traversable && !defended);
     }
 
-    pub fn get_vulnerable_children(
+    pub(crate) fn get_vulnerable_children(
         &self,
         step_id: &I,
         compromised_steps: &HashSet<I>,
@@ -448,7 +412,7 @@ where
         //     Err(e) => return Err(e),
         // };
 
-        let step = self.graph.nodes.get(step_id).unwrap();
+        let _step = self.graph.nodes.get(step_id).unwrap();
         let children: Vec<&Node<AttackStep, I>> = self.graph.children(step_id);
 
         let vulnerables: Vec<bool> = match children
@@ -498,9 +462,9 @@ pub struct TTC {
 
 #[cfg(test)]
 mod tests {
-    use std::io::Write;
+    
 
-    use crate::loading;
+    
     /* 
     #[test]
     fn load_graph_from_file() {

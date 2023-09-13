@@ -27,12 +27,14 @@ where
     I: Display,
     T: std::fmt::Display,
 {
+	/* 
     pub fn get_data(&self, id: &I) -> Option<&T> {
         return match self.nodes.get(id) {
             Some(node) => Some(&node.data),
             None => None,
         };
     }
+	*/
 
     pub fn children(&self, id: &I) -> Vec<&Node<T, I>> {
         return self
@@ -63,7 +65,7 @@ where
     pub fn nodes_to_graphviz(&self, attributes: &HashMap<I, Vec<(String, String)>>) -> String {
         self.nodes
             .iter()
-            .map(|(id, node)| format!("{} [{}]", id, format_attributes(attributes.get(id))))
+            .map(|(id, _node)| format!("{} [{}]", id, format_attributes(attributes.get(id))))
             .collect::<Vec<String>>()
             .join("\n")
     }

@@ -1,16 +1,24 @@
-pub mod attackgraph;
+mod attackgraph;
 pub mod config;
-pub mod graph;
+mod graph;
 mod loading;
-pub mod observation;
-pub mod runtime;
-pub mod sim;
+mod observation;
+mod runtime;
+mod pysim;
 mod state;
 
+
+use config::SimulatorConfig;
+
+use loading::load_graph_from_json;
 use pyo3::prelude::*;
 
 use observation::{Info, Observation};
-use sim::RustAttackSimulator;
+use pysim::RustAttackSimulator;
+
+use std::collections::HashMap;
+
+use crate::runtime::{SimulatorRuntime, ACTIONS, ACTION_NOP, ACTION_TERMINATE};
 
 /// A Python module implemented in Rust.
 #[pymodule]
@@ -21,14 +29,97 @@ fn rusty_sim(_py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
+#[derive(Debug)]
+pub struct AttackSimError {
+    pub msg: String,
+}
+pub type AttackSimResult<T> = Result<T, AttackSimError>;
+
+pub struct AttackSimulator<T> {
+    runtime: SimulatorRuntime<T>,
+    pub config: SimulatorConfig,
+    pub num_actions: u64,
+    pub wait_action: usize,
+    pub terminate_action: usize,
+    pub num_attack_steps: usize,
+    pub num_defense_steps: usize,
+    pub attacker_impact: Vec<i64>,
+    pub defender_impact: Vec<i64>,
+}
+
+impl AttackSimulator<usize> {
+    pub fn new(
+        config: SimulatorConfig,
+        graph_filename: String,
+    ) -> AttackSimResult<AttackSimulator<usize>> {
+        let graph = match load_graph_from_json(&graph_filename) {
+            Ok(graph) => graph,
+            Err(e) => {
+                return Err(AttackSimError {
+                    msg: format!("Error in rust_sim: {}", e),
+                })
+            }
+        };
+        let num_attack_steps = graph.number_of_attacks();
+        let num_defense_steps = graph.number_of_defenses();
+
+        let runtime = match SimulatorRuntime::new(graph, config) {
+            Ok(runtime) => runtime,
+            Err(e) => {
+                return Err(AttackSimError {
+                    msg: format!("Error in rust_sim: {}", e),
+                })
+            }
+        };
+        let config = runtime.config.clone();
+        let num_actions = ACTIONS.len() as u64;
+        Ok(AttackSimulator {
+            defender_impact: runtime.defender_impact(),
+            attacker_impact: runtime.attacker_impact(),
+            num_attack_steps,
+            num_defense_steps,
+            runtime,
+            config,
+            num_actions,
+            wait_action: ACTION_NOP,
+            terminate_action: ACTION_TERMINATE,
+        })
+    }
+
+    pub fn reset(&mut self, seed: Option<u64>) -> AttackSimResult<(Observation, Info)> {
+        match self.runtime.reset(seed) {
+            Ok((obs, info)) => Ok((obs, info)),
+            Err(e) => Err(AttackSimError {
+                msg: format!("Error in rust_sim: {}", e),
+            }),
+        }
+    }
+
+    pub fn step(
+        &mut self,
+        actions: HashMap<String, (usize, usize)>,
+    ) -> AttackSimResult<(Observation, Info)> {
+        match self.runtime.step(actions) {
+            Ok((obs, info)) => Ok((obs, info)),
+            Err(e) => Err(AttackSimError {
+                msg: format!("Error in rust_sim: {}", e),
+            }),
+        }
+    }
+
+    pub fn render(&self) -> String {
+        self.runtime.to_graphviz()
+    }
+
+}
+
 #[cfg(test)]
 mod tests {
-    use std::{cmp::max, collections::HashMap, io::Write};
+    use std::{cmp::max, collections::HashMap};
 
     use crate::{
-        attackgraph,
         config::SimulatorConfig,
-        loading::{load_graph_from_json, load_graph_from_yaml},
+        loading::load_graph_from_json,
         observation::{Info, Observation},
         runtime,
     };
