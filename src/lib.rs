@@ -126,7 +126,7 @@ mod tests {
     use rand::{seq::SliceRandom, SeedableRng};
     use rand_chacha::ChaChaRng;
 
-    const TEST_FILENAME: &str = "mal/attackgraph.json";
+    const TEST_FILENAME: &str = "graphs/four_ways_mod.json";
 
     fn get_sim_from_filename(filename: &str) -> runtime::SimulatorRuntime<usize> {
         let graph = load_graph_from_json(filename).unwrap();

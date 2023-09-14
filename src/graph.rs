@@ -62,7 +62,7 @@ where
             .join("\n")
     }
 
-    pub fn nodes_to_graphviz(&self, attributes: &HashMap<I, Vec<(String, String)>>) -> String {
+    pub fn nodes_to_graphviz(&self, attributes: &HashMap<&I, Vec<(String, String)>>) -> String {
         self.nodes
             .iter()
             .map(|(id, _node)| format!("{} [{}]", id, format_attributes(attributes.get(id))))
@@ -70,8 +70,8 @@ where
             .join("\n")
     }
 
-    pub fn to_graphviz(&self, attributes: Option<&HashMap<I, Vec<(String, String)>>>) -> String {
-        let binding = HashMap::new();
+    pub fn to_graphviz(&self, attributes: Option<&HashMap<&I, Vec<(String, String)>>>) -> String {
+        let binding = self.nodes.iter().map(|(id, n)| (id, vec![("label".to_owned(), n.data.to_string())])).collect();
         let attributes = match attributes {
             Some(x) => x,
             None => &binding,

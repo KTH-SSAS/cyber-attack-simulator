@@ -56,7 +56,7 @@ pub struct MALAttackStep {
     name: String,
     ttc: Option<TTC>,
     children: Vec<String>,
-    parents: Vec<String>,
+    parents: Option<Vec<String>>,
     compromised_by: Vec<String>,
     asset: String,
     defense_status: Option<String>,
@@ -97,10 +97,14 @@ pub(crate) fn load_graph_from_json(filename: &str) -> IOResult<AttackGraph<usize
 
     let parent_edges: HashSet<(String, String)> = attack_steps
         .iter()
-        .map(|step| {
-            step.parents
+        .filter_map(|step| match &step.parents {
+            Some(parents) => Some((step.id.clone(), parents.clone())),
+            None => None,
+        })
+        .map(|(id, parents)| {
+            parents
                 .iter()
-                .map(|parent| (parent.clone(), step.id.clone()))
+                .map(|parent| (parent.clone(), id.clone()))
                 .collect::<HashSet<(String, String)>>()
         })
         .flatten()
@@ -313,7 +317,7 @@ mod tests {
 
     #[test]
     fn load_mal_graph() {
-        let filename = "mal/attackgraph.json";
+        let filename = "graphs/four_ways_mod.json";
         let attack_graph = load_graph_from_json(filename).unwrap();
 
         let graphviz = attack_graph.to_graphviz(None);
@@ -321,6 +325,15 @@ mod tests {
         let mut file = std::fs::File::create("mal/attackgraph.dot").unwrap();
         file.write_all(graphviz.as_bytes()).unwrap();
         file.flush().unwrap();
+
+        // run dot
+        let output = std::process::Command::new("dot")
+            .arg("-Tpng")
+            .arg("mal/attackgraph.dot")
+            .arg("-o")
+            .arg("mal/attackgraph.png")
+            .output()
+            .expect("failed to execute process");
 
         // let entry_points = attack_steps
         //     .iter()

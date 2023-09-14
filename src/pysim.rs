@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use crate::{
     config::SimulatorConfig,
-    loading::load_graph_from_yaml,
+    loading::{load_graph_from_yaml, load_graph_from_json},
     observation::{Info, Observation},
     runtime::{SimulatorRuntime, ACTIONS, ACTION_NOP, ACTION_TERMINATE},
 };
@@ -18,7 +18,7 @@ fn pyresult_with<T, E: Display>(result: Result<T, E>, msg: &str) -> PyResult<T> 
 
 #[pyclass]
 pub(crate) struct RustAttackSimulator {
-    runtime: SimulatorRuntime<u64>,
+    runtime: SimulatorRuntime<usize>,
     #[pyo3(get)]
     config: SimulatorConfig,
     #[pyo3(get)]
@@ -41,7 +41,10 @@ pub(crate) struct RustAttackSimulator {
 impl RustAttackSimulator {
     #[new]
     pub(crate) fn new(config_str: String, graph_filename: String) -> PyResult<RustAttackSimulator> {
-        let graph = load_graph_from_yaml(&graph_filename);
+        let graph = match load_graph_from_json(&graph_filename) {
+            Ok(graph) => graph,
+            Err(e) => return pyresult_with(Err(e), "Error in rust_sim"),
+        };
         let num_attack_steps = graph.number_of_attacks();
         let num_defense_steps = graph.number_of_defenses();
 

@@ -204,7 +204,7 @@ where
                         self.state.borrow().remaining_ttc[id]
                     ),
                 ));
-                (*id, attrs)
+                (id, attrs)
             })
             .collect();
 

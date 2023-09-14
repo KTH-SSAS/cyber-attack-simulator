@@ -310,7 +310,7 @@ where
             .collect()
     }
 
-    pub(crate) fn to_graphviz(&self, attributes: Option<&HashMap<I, Vec<(String, String)>>>) -> String {
+    pub(crate) fn to_graphviz(&self, attributes: Option<&HashMap<&I, Vec<(String, String)>>>) -> String {
         return self.graph.to_graphviz(attributes);
     }
 
