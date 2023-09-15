@@ -2,9 +2,9 @@ use std::{collections::HashMap, fmt::Display};
 
 use crate::{
     config::SimulatorConfig,
-    loading::{load_graph_from_yaml, load_graph_from_json},
+    loading::load_graph_from_json,
     observation::{Info, Observation},
-    runtime::{SimulatorRuntime, ACTIONS, ACTION_NOP, ACTION_TERMINATE},
+    runtime::SimulatorRuntime,
 };
 use pyo3::{exceptions::PyRuntimeError, pyclass, pymethods, PyErr, PyResult};
 
@@ -22,11 +22,9 @@ pub(crate) struct RustAttackSimulator {
     #[pyo3(get)]
     config: SimulatorConfig,
     #[pyo3(get)]
-    num_actions: u64,
+    actions: HashMap<String, usize>,
     #[pyo3(get)]
-    wait_action: usize,
-    #[pyo3(get)]
-    terminate_action: usize,
+    actors: HashMap<String, usize>,
     #[pyo3(get)]
     num_attack_steps: usize,
     #[pyo3(get)]
@@ -54,17 +52,15 @@ impl RustAttackSimulator {
             Err(e) => return pyresult_with(Err(e), "Error in rust_sim"),
         };
         let config = runtime.config.clone();
-        let num_actions = ACTIONS.len() as u64;
         Ok(RustAttackSimulator {
             defender_impact: runtime.defender_impact(),
             attacker_impact: runtime.attacker_impact(),
             num_attack_steps,
             num_defense_steps,
-            runtime,
             config,
-            num_actions,
-            wait_action: ACTION_NOP,
-            terminate_action: ACTION_TERMINATE,
+            actions: runtime.actions.clone(),
+            actors: runtime.actors.clone(),
+            runtime,
         })
     }
 
@@ -78,4 +74,9 @@ impl RustAttackSimulator {
     ) -> PyResult<(Observation, Info)> {
         pyresult(self.runtime.step(actions))
     }
+
+    pub fn render(&self) -> String {
+        self.runtime.to_graphviz()
+    }
+
 }

@@ -16,8 +16,21 @@ class Observation:
     defender_action_mask: NDArray[np.int8]
     attacker_action_mask: NDArray[np.int8]
     edges: NDArray[UINT]
-    defense_indices: NDArray[UINT]
     flags: NDArray[UINT]
+
+    @classmethod
+    def from_rust(cls, obs):
+        return Observation(
+            ids_observation=np.array(obs.ids_observation),
+            attack_surface=np.array(obs.attack_surface),
+            defense_surface=np.array(obs.defense_surface),
+            state=np.array(obs.state),
+            ttc_remaining=np.array(obs.ttc_remaining),
+            defender_action_mask=np.array(obs.defender_action_mask),
+            attacker_action_mask=np.array(obs.attacker_action_mask),
+            edges=np.array(obs.edges),
+            flags=np.array(obs.flags),
+        )
 
 
 @dataclass

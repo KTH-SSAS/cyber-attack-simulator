@@ -18,7 +18,7 @@ use pysim::RustAttackSimulator;
 
 use std::collections::HashMap;
 
-use crate::runtime::{SimulatorRuntime, ACTIONS, ACTION_NOP, ACTION_TERMINATE};
+use crate::runtime::SimulatorRuntime;
 
 /// A Python module implemented in Rust.
 #[pymodule]
@@ -38,9 +38,8 @@ pub type AttackSimResult<T> = Result<T, AttackSimError>;
 pub struct AttackSimulator<T> {
     runtime: SimulatorRuntime<T>,
     pub config: SimulatorConfig,
-    pub num_actions: u64,
-    pub wait_action: usize,
-    pub terminate_action: usize,
+    pub actions: HashMap<String, usize>,
+    pub actors: HashMap<String, usize>,
     pub num_attack_steps: usize,
     pub num_defense_steps: usize,
     pub attacker_impact: Vec<i64>,
@@ -72,17 +71,15 @@ impl AttackSimulator<usize> {
             }
         };
         let config = runtime.config.clone();
-        let num_actions = ACTIONS.len() as u64;
         Ok(AttackSimulator {
             defender_impact: runtime.defender_impact(),
             attacker_impact: runtime.attacker_impact(),
             num_attack_steps,
             num_defense_steps,
-            runtime,
             config,
-            num_actions,
-            wait_action: ACTION_NOP,
-            terminate_action: ACTION_TERMINATE,
+            actions: runtime.actions.clone(),
+            actors: runtime.actors.clone(),
+            runtime,
         })
     }
 
@@ -174,15 +171,15 @@ mod tests {
         (observation, info) = sim.reset(None).unwrap();
 
         let mut rng = ChaChaRng::seed_from_u64(0);
-        let action = runtime::ACTION_USE;
+        let action = sim.actions["use"];
         let mut time = info.time;
         let mut attack_surface = observation.attack_surface.clone();
         let mut available_steps = available_actions(&attack_surface);
         while available_steps.len() > 0 && time < sim.ttc_sum {
             let step = random_step(&attack_surface, &mut rng).unwrap();
 
-            assert!(action != runtime::ACTION_TERMINATE); // We should never terminate, for now
-            assert!(action != runtime::ACTION_NOP); // We should never NOP, for now
+            assert!(action != sim.actions["terminate"]); // We should never terminate, for now
+            assert!(action != sim.actions["wait"]); // We should never NOP, for now
 
             let action_dict = HashMap::from([("attacker".to_string(), (action, step))]);
             let (new_observation, new_info) = sim.step(action_dict).unwrap();
@@ -218,7 +215,7 @@ mod tests {
         let mut rng = ChaChaRng::seed_from_u64(0);
         let mut observation: Observation;
         let mut info: Info;
-        let action = runtime::ACTION_USE;
+        let action = sim.actions["use"];
         (observation, info) = sim.reset(None).unwrap();
         let mut defense_surface = observation.defense_surface.clone();
         let mut available_defenses = available_actions(&defense_surface);

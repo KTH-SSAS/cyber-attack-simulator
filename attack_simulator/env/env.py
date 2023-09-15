@@ -8,22 +8,23 @@ from gymnasium import spaces
 from numpy.typing import NDArray
 from ray.rllib.env.multi_agent_env import MultiAgentEnv
 from ray.tune.registry import register_env
+from maturin import import_hook
+
+from attack_simulator.env.roles import Defender, Attacker
 
 from .. import AGENT_ATTACKER, AGENT_DEFENDER
 from ..agents import ATTACKERS
 from ..mal.observation import Info, Observation
-from ..mal.sim import AttackSimulator, Simulator
+from ..mal.sim import Simulator
 from ..renderer.renderer import AttackSimulationRenderer
 from ..utils.config import EnvConfig, GraphConfig, SimulatorConfig
 from ..utils.rng import get_rng
 
 
-from maturin import import_hook
-
 # install the import hook with default settings
-import_hook.install()
+import_hook.install(bindings="pyo3")
 
-from ..rusty_sim import RustAttackSimulator
+from ..rusty_sim import RustAttackSimulator  # noqa: E402
 
 logger = logging.getLogger("simulator")
 
@@ -61,57 +62,9 @@ def select_random_attacker(rng: np.random.Generator):
 
 
 def get_agent_obs(sim_obs: Observation) -> Dict[str, Any]:
-    state = np.array(sim_obs.state, dtype=np.int8)
-    edges = np.array(sim_obs.edges, dtype=np.int8)
-    defense_indices = np.array(sim_obs.defense_indices, dtype=np.int64)
 
-    wait_index = len(state)
-    new_state = np.concatenate([state, np.array([1], dtype=np.int8)])
-    # Add edges for wait action
-
-    wait_edges = [[i, wait_index] for i in defense_indices]
-
-    defense_indices = np.concatenate([np.array([wait_index], dtype=np.int64), defense_indices])
-
-    # Flip the edges for defense steps
-    flipped_edges = [edge[::-1] for edge in edges if edge[0] in defense_indices]
-
-    # remove old edges
-    edges_without_defense = [edge for edge in edges if edge[0] not in defense_indices]
-
-    new_edges = np.concatenate([edges_without_defense, wait_edges, flipped_edges], axis=0)
-
-    # import networkx as nx
-    # G = nx.DiGraph()
-
-    # for i, node in enumerate(state):
-    #     G.add_node(i, label=node)
-
-    # G.add_edges_from(new_edges)
-    # node_colors = ["red" if node in defense_indices else "blue" for node in G.nodes()]
-    # pos = nx.nx_pydot.graphviz_layout(G, prog="dot")
-    # nx.draw_networkx_nodes(G, pos=pos, node_color=node_colors)
-    # nx.draw_networkx_edges(G, pos=pos)
-    # nx.draw_networkx_labels(G, pos=pos, labels=dict(zip(range(len(state)), state)))
-    # import matplotlib.pyplot as plt
-    # plt.show()
-
-    defender_obs = {
-        "ids_observation": new_state,
-        "action_mask": np.array(sim_obs.defender_action_mask, dtype=np.int8),
-        "edges": new_edges.T,
-        "defense_indices": defense_indices,
-        "nop_index": 0,
-        "action_offset": 1,
-    }
-
-    attacker_obs = {
-        "action_mask": np.array(sim_obs.attacker_action_mask, dtype=np.int8),
-        "state": np.array(sim_obs.state, dtype=np.int8),
-        "ttc_remaining": np.array(sim_obs.ttc_remaining, dtype=np.uint64),
-        "nop_index": 0,
-        "action_offset": 1,
-    }
+    defender_obs = Defender.get_obs(sim_obs)
+    attacker_obs = Attacker.get_obs(sim_obs)
 
     return {AGENT_DEFENDER: defender_obs, AGENT_ATTACKER: attacker_obs}
 
@@ -157,26 +110,26 @@ class AttackSimulationEnv(MultiAgentEnv):
         self.config = config
 
         x: Tuple[Observation, Info] = self.sim.reset()
-        obs: Observation = x[0]
+        obs: Observation = Observation.from_rust(x[0])
         info: Info = x[1]
 
-        self.num_special_actions = self.sim.num_special_actions
-
-        self.terminate_action_idx = self.sim.terminate_action
-        self.wait_action_idx = self.sim.wait_action
+        actions = self.sim.actions
+        num_actions = len(actions)
+        # terminate_action_idx = actions["terminate"]
+        wait_action_idx = actions["wait"]
 
         num_defenses = self.sim.num_defense_steps
         num_attacks = self.sim.num_attack_steps
         num_nodes = len(obs.state)
         num_edges = len(obs.edges)
 
-        self.defense_costs = np.array([self.sim.defender_impact[i] for i in obs.defense_indices])
+        self.defense_costs = self.sim.defender_impact
 
         self.observation_space: spaces.Dict = self.define_observation_space(
-            num_defenses, num_nodes, num_edges, self.num_special_actions
+            num_defenses, num_nodes, num_edges, num_actions
         )
         self.action_space: spaces.Dict = self.define_action_space(
-            num_defenses, num_attacks, self.num_special_actions
+            num_defenses, num_attacks, num_actions
         )
 
         self.state = EnvironmentState()
@@ -194,67 +147,29 @@ class AttackSimulationEnv(MultiAgentEnv):
         self.render_env = config.save_graphs or config.save_logs
         self.renderer: Optional[AttackSimulationRenderer] = None
         self.reset_render = True
+        self.n_nodes = num_nodes
+        self.n_actions = num_actions
+        # self.terminate_action_idx = terminate_action_idx
+        self.wait_action_idx = wait_action_idx
         super().__init__()
 
     @staticmethod
-    def define_action_space(num_defenses, num_attacks, num_special_actions) -> spaces.Discrete:
+    def define_action_space(num_defenses, num_attacks, num_actions) -> spaces.Discrete:
         return spaces.Dict(
             {
-                AGENT_DEFENDER: spaces.Discrete(num_defenses + num_special_actions),
-                AGENT_ATTACKER: spaces.Discrete(num_attacks + num_special_actions),
+                AGENT_DEFENDER: spaces.MultiDiscrete([num_actions, num_defenses + num_attacks]),
+                AGENT_ATTACKER: spaces.MultiDiscrete([num_actions, num_defenses + num_attacks]),
             }
         )
 
     @staticmethod
     def define_observation_space(
-        num_defenses, n_nodes: int, n_edges, num_special_actions: int
+        num_defenses, n_nodes: int, n_edges, num_actions: int
     ) -> spaces.Dict:
-        dim_observations = n_nodes + num_special_actions
         return spaces.Dict(
             {
-                AGENT_DEFENDER: spaces.Dict(
-                    {
-                        "action_mask": spaces.Box(
-                            0, 1, shape=(num_defenses + num_special_actions,), dtype=np.int8
-                        ),
-                        "ids_observation": spaces.Box(
-                            0, 1, shape=(dim_observations,), dtype=np.int8
-                        ),
-                        "edges": spaces.Box(
-                            0,
-                            np.inf,
-                            shape=(2, n_edges + num_defenses * num_special_actions),
-                            dtype=np.int64,
-                        ),
-                        "defense_indices": spaces.Box(
-                            0,
-                            dim_observations,
-                            shape=(num_defenses + num_special_actions,),
-                            dtype=np.int64,
-                        ),
-                        "nop_index": spaces.Discrete(num_special_actions),
-                        "action_offset": spaces.Discrete(num_special_actions + 1),
-                    }
-                ),
-                AGENT_ATTACKER: spaces.Dict(
-                    {
-                        "action_mask": spaces.Box(
-                            0,
-                            1,
-                            shape=(n_nodes + num_special_actions,),
-                            dtype=np.int8,
-                        ),
-                        "ttc_remaining": spaces.Box(
-                            0,
-                            np.iinfo(np.uint64).max,
-                            shape=(n_nodes,),
-                            dtype=np.uint64,
-                        ),
-                        "state": spaces.Box(0, 1, shape=(n_nodes,), dtype=np.int8),
-                        "nop_index": spaces.Discrete(num_special_actions),
-                        "action_offset": spaces.Discrete(num_special_actions + 1),
-                    }
-                ),
+                AGENT_DEFENDER: Defender.obs_space(num_actions, n_nodes, n_edges),
+                AGENT_ATTACKER: Attacker.obs_space(num_actions, n_nodes),
             }
         )
 
@@ -283,6 +198,7 @@ class AttackSimulationEnv(MultiAgentEnv):
 
         rng, env_seed = get_rng(seed)
         sim_obs, info = self.sim.reset(env_seed + episode_count)
+        sim_obs = Observation.from_rust(sim_obs)
 
         self.episode_count = episode_count
         self.reset_render = True
@@ -303,16 +219,16 @@ class AttackSimulationEnv(MultiAgentEnv):
         return agent_obs, agent_info
 
     def observation_space_sample(self, agent_ids: list = None):
-        return {
-            AGENT_DEFENDER: self.observation_space[AGENT_DEFENDER].sample(),
-            AGENT_ATTACKER: self.observation_space[AGENT_ATTACKER].sample(),
-        }
+
+        agent_ids = self._agent_ids if agent_ids is None else agent_ids
+
+        return {agent_id: self.observation_space[agent_id].sample() for agent_id in agent_ids}
 
     def action_space_sample(self, agent_ids: list = None):
-        return {
-            AGENT_DEFENDER: self.action_space[AGENT_DEFENDER].sample(),
-            AGENT_ATTACKER: self.action_space[AGENT_ATTACKER].sample(),
-        }
+
+        agent_ids = self._agent_ids if agent_ids is None else agent_ids
+
+        return {agent_id: self.action_space[agent_id].sample() for agent_id in agent_ids}
 
     def action_space_contains(self, x) -> bool:
         return all(self.action_space[agent_id].contains(x[agent_id]) for agent_id in x)
@@ -322,31 +238,25 @@ class AttackSimulationEnv(MultiAgentEnv):
 
     def get_agent_info(self, info: Info) -> Dict[str, Any]:
         infos = {
-            AGENT_DEFENDER: {
-                "perc_defenses_activated": info.perc_defenses_activated,
-                "num_observed_alerts": info.num_observed_alerts,
-                "defense_costs": self.sim.defender_impact,
-                "flag_costs": self.sim.attacker_impact,
-            },
-            AGENT_ATTACKER: {
-                "num_compromised_steps": info.num_compromised_steps,
-                "perc_compromised_steps": info.perc_compromised_steps,
-                "perc_compromised_flags": info.perc_compromised_flags,
-                "sum_ttc_remaining": info.sum_ttc,
-            },
+            AGENT_DEFENDER: Defender.get_info(info),
+            AGENT_ATTACKER: Attacker.get_info(info),
         }
 
         for key, entry in infos.items():
             entry[f"{key}_cumulative_reward"] = self.state.cumulative_rewards[key]
 
+        infos["Simulator"] = {
+            "defense_costs": self.sim.defender_impact,
+            "flag_costs": self.sim.attacker_impact,
+        }
+
         return infos
 
     def step(self, action_dict) -> Tuple[Dict, float, bool, dict]:
-        truncated = {
-            AGENT_DEFENDER: False,
-            AGENT_ATTACKER: False,
-            "__all__": False,
-        }
+
+        truncated = {agent_id: False for agent_id in self._agent_ids}
+
+        truncated["__all__"] = False
 
         defender_action = action_dict.get(AGENT_DEFENDER, self.wait_action_idx)
         attacker_action = action_dict.get(AGENT_ATTACKER, self.wait_action_idx)
@@ -358,34 +268,27 @@ class AttackSimulationEnv(MultiAgentEnv):
 
         sim_obs, info = self.sim.step(action_dict)
 
-        attack_surface = sim_obs.attack_surface
-
         new_compromised_steps = (
             np.array(sim_obs.state, dtype=np.int8) - np.array(old_attack_state, dtype=np.int8)
         ).clip(0, 1)
 
-        attacker_done = not any(attack_surface) or attacker_action == self.terminate_action_idx
-
-        attacker_reward = np.sum(self.attacker_action_rewards[new_compromised_steps])
+        rewards = {}
+        rewards[AGENT_ATTACKER] = np.sum(self.attacker_action_rewards[new_compromised_steps])
 
         defense_state = sim_obs.defense_surface
 
-        defender_penalty = self.reward_function(
+        rewards[AGENT_DEFENDER] = self.reward_function(
             defender_action,
             defense_costs=self.defense_costs,
             defense_state=defense_state,
         )
 
-        defender_reward = defender_penalty - attacker_reward
-
         obs = get_agent_obs(sim_obs)
         infos = self.get_agent_info(info)
 
-        rewards = {AGENT_DEFENDER: defender_reward, AGENT_ATTACKER: attacker_reward}
-
         terminated = self.state.terminated
-        terminated[AGENT_ATTACKER] = attacker_done
-        terminated["__all__"] = attacker_done
+        terminated[AGENT_ATTACKER] = Attacker.done(sim_obs)
+        terminated["__all__"] = Attacker.done(sim_obs)
 
         self.state.reward = rewards
         for key, value in rewards.items():
@@ -400,19 +303,20 @@ class AttackSimulationEnv(MultiAgentEnv):
     def done(self):
         return self.state.terminated["__all__"] or self.state.truncated["__all__"]
 
-    def render(self) -> bool:
-        """Render a frame of the environment."""
-        if not self.render_env:
-            return True
+    def render(self) -> bytes:
 
-        if self.reset_render:
-            self.renderer = self.create_renderer(self.episode_count, self.config)
-            self.reset_render = False
+        # """Render a frame of the environment."""
+        # if not self.render_env:
+        #     return True
 
-        if isinstance(self.renderer, AttackSimulationRenderer):
-            self.renderer.render(self.last_obs, self.state.reward[AGENT_DEFENDER], self.done)
+        # if self.reset_render:
+        #     self.renderer = self.create_renderer(self.episode_count, self.config)
+        #     self.reset_render = False
 
-        return True
+        # if isinstance(self.renderer, AttackSimulationRenderer):
+        #     self.renderer.render(self.last_obs, self.state.reward[AGENT_DEFENDER], self.done)
+
+        return self.sim.render()
 
     def interpret_action_probabilities(
         self, defense_names, action_probabilities: np.ndarray

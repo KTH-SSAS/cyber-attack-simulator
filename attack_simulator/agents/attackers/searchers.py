@@ -6,8 +6,6 @@ import numpy as np
 from ... import UINT
 from ..agent import Agent
 
-STOP = -1
-
 
 def get_new_targets(attack_surface: Set[int], discovered_targets: Set[int]) -> List[int]:
     new_targets = attack_surface.difference(discovered_targets)
@@ -17,14 +15,13 @@ def get_new_targets(attack_surface: Set[int], discovered_targets: Set[int]) -> L
 class BreadthFirstAttacker(Agent):
     def __init__(self, agent_config: dict) -> None:
         super().__init__(agent_config)
-        self.current_target = STOP
         self.targets: Deque[int] = deque([])
-
+        self.current_target: int = -1
         seed = agent_config["seed"] if "seed" in agent_config else np.random.SeedSequence().entropy
         self.rng = np.random.default_rng(seed)
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        attack_surface = observation["action_mask"].reshape(-1)[observation["action_offset"] :]
+        attack_surface = observation["attack_surface"]
         surface_indexes = set(np.flatnonzero(attack_surface))
         new_targets = [idx for idx in surface_indexes if idx not in self.targets]
 
@@ -37,11 +34,10 @@ class BreadthFirstAttacker(Agent):
             self.current_target, self.targets, surface_indexes
         )
 
-        if done:
-            return observation["nop_index"]
+        action = observation["nop_index"] if done else 2
 
         # Offset the action by the number of special actions
-        return self.current_target + observation["action_offset"]
+        return (action, self.current_target)
 
     @staticmethod
     def select_next_target(

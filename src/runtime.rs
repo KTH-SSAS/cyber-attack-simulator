@@ -3,7 +3,7 @@ use std::cmp::max;
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
-use std::fmt::{Display, Debug};
+use std::fmt::{Debug, Display};
 use std::hash::Hash;
 use std::{fmt, vec};
 
@@ -16,17 +16,7 @@ use crate::state::SimulatorState;
 
 use rand::Rng;
 
-
-pub const ACTION_NOP: usize = 0; // No action
-pub const ACTION_TERMINATE: usize = 1; // Terminate the simulation
-pub const ACTION_USE: usize = 2; // Use an attack or defense step
-pub const ACTIONS: [usize; 3] = [ACTION_NOP, ACTION_TERMINATE, ACTION_USE];
-
-pub const ATTACKER: usize = 0;
-pub const DEFENDER: usize = 1;
-
 pub type SimResult<T> = std::result::Result<T, SimError>;
-
 #[derive(Debug, Clone)]
 pub struct SimError {
     pub error: String,
@@ -67,7 +57,8 @@ pub(crate) struct SimulatorRuntime<I> {
     pub confusion_per_step: HashMap<I, (f64, f64)>,
     pub ttc_sum: TTCType,
 
-    pub actors: HashMap<String, ActorIndex>,
+    pub actions: HashMap<String, usize>,
+    pub actors : HashMap<String, usize>,
 
     pub id_to_index: HashMap<I, usize>,
     pub index_to_id: Vec<I>,
@@ -87,10 +78,20 @@ pub(crate) struct SimulatorRuntime<I> {
 
 // return attack_surface
 
+type ActorFunc<I> = fn(&SimulatorRuntime<I>, &I) -> SimResult<ActionResult<I>>;
+
 impl<I> SimulatorRuntime<I>
 where
     I: Eq + Hash + Ord + Display + Copy + Debug,
 {
+    fn actor_funcs(&self, actor: &String) -> ActorFunc<I> {
+        match actor.as_str() {
+            "attacker" => SimulatorRuntime::attack_action,
+            "defender" => SimulatorRuntime::defense_action,
+            _ => panic!("Unknown actor {}", actor),
+        }
+    }
+
     // Path: src/sim.rs
     pub fn new(graph: AttackGraph<I>, config: SimulatorConfig) -> SimResult<SimulatorRuntime<I>> {
         let index_to_id = graph
@@ -141,6 +142,15 @@ where
             .map(|(id, (fnr, fpr))| (id.clone(), (fnr, fpr)))
             .collect::<HashMap<I, (f64, f64)>>();
 
+        let attacker_string = "attacker".to_string();
+        let defender_string = "defender".to_string();
+        let roles = [attacker_string, defender_string];
+        let actions = ["wait", "use"];
+
+        let actors = HashMap::from_iter(roles.into_iter().enumerate().map(|(i, x)| (x, i)));
+        let actions =
+            HashMap::from_iter(actions.iter().enumerate().map(|(i, &x)| (x.to_string(), i)));
+
         let sim = SimulatorRuntime {
             state: RefCell::new(initial_state),
             g: graph,
@@ -149,13 +159,9 @@ where
             ttc_sum: 0,
             id_to_index,
             index_to_id,
-            //attacker_action_to_graph,
-            //defender_action_to_graph,
             history: Vec::new(),
-            actors: HashMap::from_iter(vec![
-                ("defender".to_string(), DEFENDER),
-                ("attacker".to_string(), ATTACKER),
-            ]),
+            actions,
+            actors,
         };
 
         return Ok(sim);
@@ -306,7 +312,8 @@ where
                 return Err(SimError {
                     error: format!(
                         "Defense step {}, id={}, is already enabled.",
-                        self.g.name_of_step(&defense_step_id), defense_step_id
+                        self.g.name_of_step(&defense_step_id),
+                        defense_step_id
                     ),
                 });
             }
@@ -460,6 +467,16 @@ where
         return result;
     }
 
+    fn wait_idx(&self) -> usize {
+        return self.actions["wait"];
+    }
+
+    /*
+    fn terminate_idx(&self) -> usize {
+        return self.actions["terminate"];
+    }
+    */
+
     fn calculate_next_state(
         &self,
         action_dict: HashMap<String, ParameterAction>,
@@ -469,11 +486,6 @@ where
         // Attacker selects and attack step from the attack surface
         // Defender selects a defense step from the defense surface, which is the vector of all defense steps that are not disabled
 
-        let actor_funcs: Vec<fn(&SimulatorRuntime<I>, &I) -> SimResult<ActionResult<I>>> = vec![
-            SimulatorRuntime::attack_action,
-            SimulatorRuntime::defense_action,
-        ];
-
         let total_result: ActionResult<I> = action_dict.iter().fold(
             ActionResult {
                 ttc_diff: HashMap::new(),
@@ -481,15 +493,14 @@ where
                 valid_action: true,
             },
             |mut total_result, (actor, (action, step_idx))| {
-                if *action == ACTION_NOP || *action == ACTION_TERMINATE {
+                if *action == self.wait_idx() {
                     return total_result;
                 }
 
                 let step_idx = *step_idx;
                 let step_id = self.index_to_id[step_idx];
 
-                let actor_id = self.actors[actor];
-                let result = match actor_funcs[actor_id](&self, &step_id) {
+                let result = match self.actor_funcs(actor)(&self, &step_id) {
                     Ok(result) => result,
                     Err(e) => {
                         panic!("Error: {} at state {:?}", e, old_state);
@@ -577,7 +588,7 @@ mod tests {
         config,
         loading::load_graph_from_json,
         observation::{Info, Observation},
-        runtime::{SimulatorRuntime, ACTIONS},
+        runtime::SimulatorRuntime,
     };
 
     #[test]
@@ -645,18 +656,12 @@ mod tests {
         //let strings = sim.translate_index_vec(&steps);
         //println!("AS: {:?}", strings);
 
-        
-
-        assert_eq!(observation.attacker_action_mask.len(), ACTIONS.len());
+        assert_eq!(observation.attacker_action_mask.len(), sim.actions.len());
 
         assert_eq!(
-            observation
-                .defense_surface
-                .iter()
-                .filter(|&x| *x)
-                .count(),
+            observation.defense_surface.iter().filter(|&x| *x).count(),
             num_defenses
-        ); 
+        );
 
         assert_eq!(observation.state.len(), sim.g.nodes().len());
         assert_eq!(
