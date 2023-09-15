@@ -327,6 +327,7 @@ mod tests {
         file.flush().unwrap();
 
         // run dot
+        /* 
         let output = std::process::Command::new("dot")
             .arg("-Tpng")
             .arg("mal/attackgraph.dot")
@@ -334,6 +335,7 @@ mod tests {
             .arg("mal/attackgraph.png")
             .output()
             .expect("failed to execute process");
+        */
 
         // let entry_points = attack_steps
         //     .iter()
