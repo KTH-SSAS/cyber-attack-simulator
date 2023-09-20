@@ -45,7 +45,7 @@ impl<I> Default for ActionResult<I> {
 }
 
 //type ActionIndex = usize;
-type ActorIndex = usize;
+// type ActorIndex = usize;
 
 type ParameterAction = (usize, usize);
 
@@ -58,7 +58,7 @@ pub(crate) struct SimulatorRuntime<I> {
     pub ttc_sum: TTCType,
 
     pub actions: HashMap<String, usize>,
-    pub actors : HashMap<String, usize>,
+    pub actors: HashMap<String, usize>,
 
     pub id_to_index: HashMap<I, usize>,
     pub index_to_id: Vec<I>,
@@ -304,6 +304,24 @@ where
         let state = self.state.borrow();
         //let defense_step_id = self.defender_action_to_graph[action];
 
+        if !self.g.defense_steps.contains(&defense_step_id) {
+            // Not a defense step
+            // Do nothing
+
+            if cfg!(debug_assertions) {
+                return Err(SimError {
+                    error: format!(
+                        "Defense step {}, id={}, is not a defense step. Valid defense steps are: {:?}",
+                        self.g.name_of_step(&defense_step_id),
+                        defense_step_id,
+                        self.g.defense_steps
+                    ),
+                });
+            }
+
+            return Ok(ActionResult::default());
+        }
+
         if state.enabled_defenses.contains(&defense_step_id) {
             // Already enabled
             // Do nothing
@@ -366,9 +384,19 @@ where
 
         let mut step_state = vec![false; self.id_to_index.len()];
 
+        /*
         let disabled_defenses = self.g.disabled_defenses(&state.enabled_defenses);
 
         disabled_defenses
+            .iter()
+            .map(|&node_id| self.id_to_index[&node_id])
+            .for_each(|index| {
+                step_state[index] = true;
+            });
+        */
+
+        state
+            .enabled_defenses
             .iter()
             .map(|&node_id| self.id_to_index[&node_id])
             .for_each(|index| {
@@ -388,6 +416,10 @@ where
         let mut ids_observed_vec = vec![false; self.id_to_index.len()];
         ids_observed.iter().for_each(|node_id| {
             ids_observed_vec[self.id_to_index[node_id]] = true;
+        });
+
+        state.enabled_defenses.iter().for_each(|&node_id| {
+            ids_observed_vec[self.id_to_index[&node_id]] = true;
         });
 
         //let mut action_mask = vec![false; SPECIAL_ACTIONS.len()];
@@ -418,10 +450,11 @@ where
 
         */
 
-        let action_mask = vec![true, false, true];
-
-        let defender_action_mask = action_mask.clone();
-        let attacker_action_mask = action_mask.clone();
+        let defender_action_mask = vec![
+            true,                                                        // wait
+            self.g.disabled_defenses(&state.enabled_defenses).len() > 0, // can use as long as there are disabled defenses
+        ];
+        let attacker_action_mask = vec![false, state.attack_surface.len() > 0];
 
         let edges = &self.g.edges();
 
@@ -498,7 +531,12 @@ where
                 }
 
                 let step_idx = *step_idx;
-                let step_id = self.index_to_id[step_idx];
+                let step_id = match self.index_to_id.get(step_idx) {
+                    Some(id) => id,
+                    None => {
+                        panic!("Invalid step index {}", step_idx);
+                    }
+                };
 
                 let result = match self.actor_funcs(actor)(&self, &step_id) {
                     Ok(result) => result,
@@ -666,7 +704,7 @@ mod tests {
         assert_eq!(observation.state.len(), sim.g.nodes().len());
         assert_eq!(
             observation.state.iter().filter(|&x| *x).count(),
-            num_defenses + num_entrypoints
+            num_entrypoints
         ); // 4 available defenses + 1 compromised attack step
 
         //check that all defense steps are disabled
@@ -682,7 +720,7 @@ mod tests {
             .collect::<Vec<usize>>();
 
         for i in defense_indices.iter() {
-            assert_eq!(observation.state[*i], true);
+            assert_eq!(observation.state[*i], false); // Defense steps should be disabled
         }
 
         assert!(observation.ttc_remaining.iter().sum::<u64>() > 0);

@@ -178,7 +178,7 @@ mod tests {
         while available_steps.len() > 0 && time < sim.ttc_sum {
             let step = random_step(&attack_surface, &mut rng).unwrap();
 
-            assert!(action != sim.actions["terminate"]); // We should never terminate, for now
+            //assert!(action != sim.actions["terminate"]); // We should never terminate, for now
             assert!(action != sim.actions["wait"]); // We should never NOP, for now
 
             let action_dict = HashMap::from([("attacker".to_string(), (action, step))]);
@@ -218,6 +218,8 @@ mod tests {
         let action = sim.actions["use"];
         (observation, info) = sim.reset(None).unwrap();
         let mut defense_surface = observation.defense_surface.clone();
+        let num_entrypoints = observation.state.iter().filter(|&x| *x).count();
+        let num_defense = defense_surface.iter().filter(|&x| *x).count();
         let mut available_defenses = available_actions(&defense_surface);
         let mut time = info.time;
         while available_defenses.len() > 0 && time < sim.ttc_sum {
@@ -230,5 +232,6 @@ mod tests {
         }
 
         assert_eq!(observation.defense_surface.iter().filter(|&x| *x).count(), 0);
+        assert_eq!(observation.state.iter().filter(|&x| *x).count(), num_defense + num_entrypoints);
     }
 }

@@ -148,163 +148,23 @@ pub(crate) fn load_graph_from_json(filename: &str) -> IOResult<AttackGraph<usize
         })
         .collect::<Vec<String>>();
 
-    let attack_graph = AttackGraph::<u64>::new(attack_steps, edges, vec![], entry_points);
+    let flags = attack_steps
+        .iter()
+        .filter_map(|step| match step.name.as_str() {
+            "gather" => Some(step.id.clone()),
+            _ => None,
+        })
+        .collect::<Vec<String>>();
+
+    if entry_points.len() == 0 {
+        return Err(IOError {
+            error: "The graph does not seem to have any entry points.".to_string(),
+        });
+    }
+
+    let attack_graph = AttackGraph::<u64>::new(attack_steps, edges, flags, entry_points);
 
     return Ok(attack_graph);
-}
-
-pub(crate) fn load_graph_from_yaml(_filename: &str) -> AttackGraph<u64> {
-    panic!("Not implemented")
-    /*
-    let file = match File::open(filename) {
-        Ok(f) => f,
-        Err(e) => panic!("Could not open file: {}. {}", filename, e),
-    };
-    let reader = BufReader::new(file);
-    let mapping: Mapping = serde_yaml::from_reader(reader).unwrap();
-
-    // mapping.into_keys().for_each(|key| {
-    //  	println!("{:?}", key);
-    //  });
-
-    let defenses = mapping
-        .get(String::from("defenses"))
-        .unwrap()
-        .as_sequence()
-        .unwrap()
-        .iter()
-        .map(|s| s.as_str().unwrap().to_string())
-        .sorted()
-        .collect::<Vec<String>>();
-
-    let flags: Vec<String> = mapping
-        .get(String::from("flags"))
-        .unwrap()
-        .as_mapping()
-        .unwrap()
-        .iter()
-        .map(|(k, _)| k.as_str().unwrap().to_string())
-        .collect();
-
-    let entry_points = mapping
-        .get(String::from("entry_points"))
-        .unwrap()
-        .as_sequence()
-        .unwrap()
-        .iter()
-        .map(|s| s.as_str().unwrap().to_string())
-        .collect::<Vec<String>>();
-
-    let attack_graph = mapping
-        .get(String::from("attack_graph"))
-        .unwrap()
-        .as_sequence()
-        .unwrap();
-
-    let mut id = 0;
-
-    let step_names = attack_graph
-        .iter()
-        .map(|s| s.get("id").unwrap().as_str().unwrap().to_string())
-        .sorted()
-        .collect::<Vec<String>>();
-
-    let attack_steps = step_names
-        .iter()
-        .map(|name| {
-            let attack_step = attack_graph
-                .iter()
-                .find(|s| s.get("id").unwrap().as_str().unwrap() == name)
-                .unwrap();
-            //let id = attack_step.get(String::from("id")).unwrap().as_str().unwrap().to_string();
-            let name = attack_step.get("id").unwrap().as_str().unwrap().to_string();
-            let ttc = attack_step.get("ttc").unwrap().as_u64().unwrap();
-            let step_type = match attack_step.get("step_type").unwrap().as_str().unwrap() {
-                "and" => NodeType::And,
-                "or" => NodeType::Or,
-                "defense" => NodeType::Defense,
-                _ => panic!("Invalid logic"),
-            };
-            // let children = attack_step.get(String::from("children")).unwrap().as_sequence().unwrap();
-            // let children = children.iter().map(|child| {
-            //     child.as_str().unwrap().to_string()
-            // }).collect::<Vec<String>>();
-            let i = id;
-            id = id + 1;
-            SerializedAttackStep {
-                id: i,
-                name: name.clone(),
-                ttc,
-                step_type
-            }
-        })
-        .collect::<Vec<SerializedAttackStep>>();
-
-    let name2index = attack_steps
-        .iter()
-        .map(|s| (s.name.clone(), s.id))
-        .collect::<HashMap<String, u64>>();
-
-    let edges = attack_graph.iter().fold(HashSet::new(), |mut edges, step| {
-        let name = step.get("id").unwrap().as_str().unwrap().to_string();
-        let children = match step.get("children") {
-            Some(c) => c.as_sequence().unwrap(),
-            None => panic!("No 'children' field for {}", name),
-        };
-
-        for child in children.iter() {
-            let child_id = *name2index
-                .get(&child.as_str().unwrap().to_string())
-                .unwrap();
-            let edge = (name2index[&name], child_id);
-            edges.insert(edge);
-        }
-        edges
-    });
-
-    // for step in attack_steps.iter() {
-    //     let parents = attack_steps.iter().filter(|attack_step| {
-    //         attack_step.children.contains(&step)
-    //     }).collect::<Vec<&AttackStep>>();
-    //     step.parents = parents;
-    // }
-
-    // attack_graph.clone().into_keys().for_each(|key| {
-    //      println!("{:?}", key);
-    // });
-
-    let defense_ids = attack_steps
-        .iter()
-        .filter_map(|step| match defenses.contains(&step.name) {
-            true => Some(step.id),
-            false => None,
-        })
-        .collect::<Vec<u64>>();
-
-    let flag_ids = attack_steps
-        .iter()
-        .filter_map(|step| match flags.contains(&step.name) {
-            true => Some(step.id),
-            false => None,
-        })
-        .collect::<Vec<u64>>();
-
-    let entry_ids = attack_steps
-        .iter()
-        .filter_map(|step| match entry_points.contains(&step.name) {
-            true => Some(step.id),
-            false => None,
-        })
-        .collect::<Vec<u64>>();
-
-    return AttackGraph::new(
-        attack_steps,
-        edges.into_iter().collect(),
-        defense_ids,
-        flag_ids,
-        entry_ids,
-    );
-    */
 }
 
 #[cfg(test)]

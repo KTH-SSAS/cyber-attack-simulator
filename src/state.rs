@@ -39,7 +39,7 @@ impl<I> Debug for SimulatorState<I> where I: Debug {
 
 impl<I> SimulatorState<I>
 where
-    I: Eq + Hash + Ord + Display + Copy,
+    I: Eq + Hash + Ord + Display + Copy + Debug,
 {
     pub fn new(
         graph: &AttackGraph<I>,
@@ -108,7 +108,7 @@ where
         // If the selected attack step is not in the attack surface, do nothing
         if !self.attack_surface.contains(&step_id) {
             if cfg!(debug_assertions) {
-                panic!("Attack step {} is not in the attack surface.", step_id);
+                panic!("Attack step {} is not in the attack surface. Attack surface is: {:?}", step_id, self.attack_surface);
             }
 
             return Ok(ActionResult::default());
