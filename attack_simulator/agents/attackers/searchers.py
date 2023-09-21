@@ -16,7 +16,7 @@ class BreadthFirstAttacker(Agent):
     def __init__(self, agent_config: dict) -> None:
         super().__init__(agent_config)
         self.targets: Deque[int] = deque([])
-        self.current_target: int = -1
+        self.current_target: int = None
         seed = agent_config["seed"] if "seed" in agent_config else np.random.SeedSequence().entropy
         self.rng = np.random.default_rng(seed)
 
@@ -34,7 +34,8 @@ class BreadthFirstAttacker(Agent):
             self.current_target, self.targets, surface_indexes
         )
 
-        action = observation["nop_index"] if done else 2
+        action = observation["nop_index"] if done else 1
+        self.current_target = None if done else self.current_target
 
         # Offset the action by the number of special actions
         return (action, self.current_target)
@@ -49,11 +50,10 @@ class BreadthFirstAttacker(Agent):
         if current_target in attack_surface:
             targets.appendleft(current_target)
             current_target = targets.pop()
-            return current_target, False
 
         while current_target not in attack_surface:
             if len(targets) == 0:
-                return STOP, True
+                return None, True
 
             current_target = targets.pop()
 
