@@ -12,10 +12,6 @@ from ..agents.attackers.searchers import BreadthFirstAttacker, DepthFirstAttacke
 
 
 class NonLearningAttackerPolicy(Policy):
-    def __init__(self, obs_space, action_space, config):
-        super().__init__(obs_space, action_space, config)
-        self.num_outputs = action_space.n
-        self.observation_space = obs_space
 
     def compute_actions(
         self,
