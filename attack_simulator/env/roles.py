@@ -9,11 +9,12 @@ class Defender:
         return spaces.Dict(
             {
                 "action_mask": spaces.Box(0, 1, shape=(n_actions,), dtype=np.int8),
+                "defense_surface": spaces.Box(0, 1, shape=(n_objects,), dtype=np.int8),
                 "ids_observation": spaces.Box(0, 1, shape=(n_objects,), dtype=np.int8),
                 "edges": spaces.Box(
                     0,
                     np.inf,
-                    shape=(2, n_edges + n_objects * n_actions),
+                    shape=(2, n_edges),
                     dtype=np.int64,
                 ),
             }
@@ -30,7 +31,7 @@ class Defender:
     def get_obs(obs: Observation):
         state = np.array(obs.state, dtype=np.int8)
         edges = np.array(obs.edges, dtype=np.int8)
-        defense_indices = np.flatnonzero(obs.defense_surface)
+        # defense_indices = np.flatnonzero(obs.defense_surface)
 
         # wait_index = len(state)
         # new_state = np.concatenate([state, np.array([1], dtype=np.int8)])
@@ -41,12 +42,12 @@ class Defender:
         # defense_indices = np.concatenate([np.array([wait_index], dtype=np.int64), defense_indices])
 
         # Flip the edges for defense steps
-        flipped_edges = [edge[::-1] for edge in edges if edge[0] in defense_indices]
+        #flipped_edges = [edge[::-1] for edge in edges if edge[0] in defense_indices]
 
         # remove old edges
-        edges_without_defense = [edge for edge in edges if edge[0] not in defense_indices]
+        #edges_without_defense = [edge for edge in edges if edge[0] not in defense_indices]
 
-        new_edges = np.concatenate([edges_without_defense, flipped_edges], axis=0)
+        #new_edges = np.concatenate([edges_without_defense, flipped_edges], axis=0)
         # new_edges = np.concatenate([edges_without_defense, wait_edges, flipped_edges], axis=0)
 
         # import networkx as nx
@@ -65,11 +66,10 @@ class Defender:
         # plt.show()
 
         return {
-            "ids_observation": state,
             "action_mask": np.array(obs.defender_action_mask, dtype=np.int8),
-            "edges": new_edges.T,
-            "defense_indices": defense_indices,
-            "nop_index": 0,
+            "defense_surface": np.array(obs.defense_surface, dtype=np.int8),
+            "ids_observation": state,
+            "edges": edges.T,
         }
 
 
@@ -91,6 +91,12 @@ class Attacker:
                     0,
                     1,
                     shape=(n_actions,),
+                    dtype=np.int8,
+                ),
+                "attack_surface": spaces.Box(
+                    0,
+                    1,
+                    shape=(n_nodes,),
                     dtype=np.int8,
                 ),
                 "ttc_remaining": spaces.Box(

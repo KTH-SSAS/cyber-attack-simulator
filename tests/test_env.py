@@ -15,7 +15,8 @@ def test_env_reset(env: AttackSimulationEnv) -> None:
 
 
 def test_check_spaces(env: AttackSimulationEnv) -> None:
-    obs, _ = env.reset()
+    attacker_obs_space = env.observation_space.spaces[AGENT_ATTACKER]
+    defender_obs_space = env.observation_space.spaces[AGENT_DEFENDER]
 
     def check_space(space, obs):
         for k, v in obs.items():
@@ -23,9 +24,9 @@ def test_check_spaces(env: AttackSimulationEnv) -> None:
             assert space.spaces[k].contains(v), f"{k} {v} not in {space.spaces[k]}"
 
         assert space.contains(obs)
-
-    attacker_obs_space = env.observation_space.spaces[AGENT_ATTACKER]
-    defender_obs_space = env.observation_space.spaces[AGENT_DEFENDER]
+    
+    # check that the observation space is valid
+    obs, _ = env.reset()
 
     attacker_obs = obs[AGENT_ATTACKER]
     defender_obs = obs[AGENT_DEFENDER]
@@ -35,8 +36,9 @@ def test_check_spaces(env: AttackSimulationEnv) -> None:
 
     assert env.observation_space.contains(obs)
 
-    obs, *_ = env.step({AGENT_ATTACKER: 0, AGENT_DEFENDER: 0})
+    obs, *_ = env.step({AGENT_ATTACKER: (0, 0), AGENT_DEFENDER: (0, 0)})
 
+    # check that the observation space is still valid after a step
     attacker_obs = obs[AGENT_ATTACKER]
     defender_obs = obs[AGENT_DEFENDER]
 

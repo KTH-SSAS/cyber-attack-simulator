@@ -9,7 +9,7 @@ from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 from ray.rllib.utils.torch_utils import FLOAT_MAX, FLOAT_MIN
 from torch import Tensor
 
-from ..models.dense import MLPRLAgent
+from ..models.dense import HierarchicalMLPRLAgent, MLPRLAgent
 
 
 class DefenderModel(TorchModelV2, nn.Module):
@@ -29,8 +29,8 @@ class DefenderModel(TorchModelV2, nn.Module):
         self.num_outputs = num_outputs
 
         input_size = sim_space.shape[0]
-        self.model = MLPRLAgent(
-            input_size, model_config["fcnet_hiddens"], num_outputs, model_config["vf_share_layers"]
+        self.model = HierarchicalMLPRLAgent(
+            input_size, model_config["fcnet_hiddens"], action_space[0].n, action_space[1].n, model_config["vf_share_layers"]
         )
 
     def forward(self, input_dict, state, seq_lens):
@@ -38,12 +38,15 @@ class DefenderModel(TorchModelV2, nn.Module):
 
         sim_state: Tensor = obs["ids_observation"].type(torch.FloatTensor)
         action_mask: Tensor = obs["action_mask"].type(torch.FloatTensor)
+        node_mask: Tensor = obs["defense_surface"].type(torch.FloatTensor)
+
+        policy_mask = torch.cat([action_mask, node_mask], dim=-1)
 
         policy_out, value_out = self.model(sim_state)
 
         self._value_out = value_out
 
-        inf_mask = torch.clamp(torch.log(action_mask), FLOAT_MIN, FLOAT_MAX)
+        inf_mask = torch.clamp(torch.log(policy_mask), FLOAT_MIN, FLOAT_MAX)
 
         return policy_out + inf_mask, state
 

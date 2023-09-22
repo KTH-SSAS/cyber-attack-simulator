@@ -8,6 +8,8 @@ from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 from ray.rllib.utils.torch_utils import FLOAT_MAX, FLOAT_MIN
 from torch import Tensor
 
+from attack_simulator.models.sr_drl_rllib import SRDRLAGENT
+
 from ..models.gnn import GNNRLAgent
 
 
@@ -26,16 +28,16 @@ class GNNDefenderModel(TorchModelV2, nn.Module):
         self.action_space = action_space
         self.num_outputs = num_outputs
 
-        fc_hidden = model_config["fcnet_hiddens"]
-        layers = len(fc_hidden)
-        hidden_size = fc_hidden[0]
+        #fc_hidden = model_config["fcnet_hiddens"]
+        #layers = len(fc_hidden)
+        #hidden_size = fc_hidden[0]
 
-        self.model = GNNRLAgent(1, layers, hidden_size)
+        self.model = SRDRLAGENT() #GNNRLAgent(1, layers, hidden_size)
 
     def forward(self, input_dict, state, seq_lens):
         obs = input_dict["obs"]
 
-        policy_out, value_out = self.model.compute_action(obs)
+        policy_out, value_out = self.model.forward(obs)
 
         self._value_out = value_out
 

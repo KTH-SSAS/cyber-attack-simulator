@@ -23,4 +23,4 @@ graph_config:
     default: 0.0
     defense_default: 5.0
 
-  filename: graphs/test_graph.yaml
+  filename: graphs/test_graph.json

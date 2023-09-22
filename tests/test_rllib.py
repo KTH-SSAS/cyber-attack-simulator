@@ -27,7 +27,7 @@ def test_ppo_trainer(env: AttackSimulationEnv):
         .training(scale_rewards=False)
         .framework("torch")
         .environment(env_name, env_config=asdict(env.config))
-        .callbacks(AttackSimCallback)
+        #.callbacks(AttackSimCallback)
         .debugging(seed=seed)
         .rollouts(
             num_rollout_workers=0,

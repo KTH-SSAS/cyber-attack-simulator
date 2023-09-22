@@ -9,14 +9,14 @@ import attack_simulator.rllib.defender_model as defender_model
 import attack_simulator.rllib.gnn_model as gnn_defender
 from attack_simulator import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
-from attack_simulator.rllib.attackers_policies import RandomPolicy
+from attack_simulator.rllib.attackers_policies import BreadthFirstPolicy, RandomPolicy
 from attack_simulator.rllib.custom_callback import AttackSimCallback
 from attack_simulator.rllib.defender_policy import DefenderConfig, DefenderPolicy
 from attack_simulator.utils.config import EnvConfig
 
 if __name__ == "__main__":
 
-    ray.init(local_mode=True)
+    ray.init()
 
     env_name = register_rllib_env()
     # Register the model with the registry.
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         # "root": "asset:0:0",
         # "root": "internet.connect",
         # "filename": "graphs/big.yaml",
-        "filename": "graphs/four_ways.yaml",
+        "filename": "graphs/four_ways_mod.json",
     }
 
     env_config = {
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         .training(scale_rewards=False)
         .framework("torch")
         .environment(env_name, env_config=env_config)
-        .callbacks(AttackSimCallback)
+        #.callbacks(AttackSimCallback)
         .debugging(seed=seed)
         .rollouts(
             num_rollout_workers=0,
@@ -92,11 +92,8 @@ if __name__ == "__main__":
                     },
                 ),
                 AGENT_ATTACKER: PolicySpec(
-                    RandomPolicy,
+                    BreadthFirstPolicy,
                     config={
-                        "num_special_actions": dummy_env.num_special_actions,
-                        "wait_action": dummy_env.sim.wait_action,
-                        "terminate_action": dummy_env.sim.terminate_action,
                     },
                 ),
             },

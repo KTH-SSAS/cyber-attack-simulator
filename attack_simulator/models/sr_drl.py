@@ -5,7 +5,7 @@ import numpy as np
 import torch_geometric
 
 from torch.nn import Module, Sequential, Linear, LeakyReLU, Sigmoid, ModuleList
-from torch_geometric.nn import MessagePassing, GlobalAttention
+from torch_geometric.nn import MessagePassing, AttentionalAggregation
 from torch_geometric.data import Data, Batch
 
 # reward(s,a), value(s), value(s_), pi(a|s)
@@ -92,7 +92,7 @@ def segmented_sample(probs, splits):
     probs_split = torch.split(probs, splits)
     # print(probs_split)
 
-    samples = [torch.multinomial(x, 1) for x in probs_split]
+    samples = [torch.multinomial(x, 1) if x.sum() > 0 else torch.zeros(1) for x in probs_split]
 
     return torch.cat(samples)
 
@@ -131,15 +131,15 @@ def segmented_gather(src, indices, start_indices):
     return src[real_indices]
 
 
-EMB_SIZE = 32
+EMB_SIZE = 8
 
 
 class Net(Module):
     def __init__(
         self,
-        q_range,
+        q_range=None,
         multi=False,
-        mp_iterations=5,
+        mp_iterations=1,
         opt_lr=12 - 3,
         opt_l2=1.0e-4,
         device="cpu",
@@ -158,7 +158,7 @@ class Net(Module):
             )  # Bernoulli trial for each node
 
         else:
-            self.a_0_sel = Linear(EMB_SIZE, 2)  # select, no-op
+            self.a_0_sel = Linear(EMB_SIZE, 2)  # select, no-op #TODO change to not be hardcoded
             self.a_1_sel = Linear(EMB_SIZE, 1)  # node features -> node probability
 
         self.value_function = Linear(EMB_SIZE, 1)  # global features -> state value
@@ -176,6 +176,7 @@ class Net(Module):
         self.gamma = 0.99
         self.alpha_v = 0.1
         self.q_range = q_range
+        self.opt_max_norm = 3.0
 
     def save(self, file="model.pt"):
         torch.save(self.state_dict(), file)
@@ -201,12 +202,14 @@ class Net(Module):
 
             params_self[i].data.copy_(val_new)
 
-    def forward(self, s_batch, only_v=False, complete=False):
+    def forward(self, s_batch, action_mask, node_mask, only_v=False, complete=False):
         node_feats, edge_attr, edge_index = zip(*s_batch)
 
         node_feats = [torch.tensor(x, dtype=torch.float32, device=self.device) for x in node_feats]
         edge_attr  = [torch.empty(0, dtype=torch.float32, device=self.device) for x in edge_attr]
         edge_index = [torch.tensor(x, dtype=torch.int64, device=self.device) for x in edge_index]
+        node_mask  = torch.tensor(node_mask, dtype=torch.bool, device=self.device)
+        action_mask = torch.tensor(action_mask, dtype=torch.bool, device=self.device)
 
         # create batch
         def convert_batch(feats, edge_attr, edge_index):
@@ -266,13 +269,16 @@ class Net(Module):
         else:
             # choose a_0
             a0_activation = self.a_0_sel(xg)
-            a0_softmax = torch.distributions.Categorical(torch.softmax(a0_activation, dim=1))
+            a0_softmax = torch.softmax(a0_activation, dim=1)
+            a0_softmax = torch.mul(a0_softmax, action_mask)
+            a0_softmax = torch.distributions.Categorical(a0_softmax)
             a0_selection = a0_softmax.sample()  # 0 = select; 1 = noop
-            a0_selection_tensor = a0_selection.type(torch.uint8).detach()
+            a0_selection_tensor = a0_selection.type(torch.bool).detach()
 
             # select node
             a1_activation = self.a_1_sel(x)
             a1_softmax = torch_geometric.utils.softmax(a1_activation.flatten(), batch_ind)
+            a1_softmax = torch.mul(a1_softmax, node_mask)
             a1_selection = segmented_sample(a1_softmax, data_splits)
             a1_probs = segmented_gather(a1_softmax, a1_selection, data_starts)
 
@@ -282,23 +288,24 @@ class Net(Module):
             a0_cpu = a0_selection.cpu().numpy()
             a1_cpu = a1_selection.cpu().numpy()
 
-            af_selection = [[] if x else [a1_cpu[i].item()] for i, x in enumerate(a0_cpu)]
+            wait = 0
+            af_selection = [[] if x==wait else [a1_cpu[i].item()] for i, x in enumerate(a0_cpu)]
             af_probs = torch.where(
                 a0_selection_tensor, a0_softmax.probs[:, 1], a0_softmax.probs[:, 0] * a1_probs
-            )
+            ) # TODO: Hardcoded 2 actions
 
             node_probs = a1_softmax
 
         return af_selection, value, af_probs, node_probs  # todo, add noop prob
 
-    def update(self, r, v, pi, s_, num_obj, done, target_net=None):
+    def update(self, r, v, pi, s_, num_obj, done, target_net=None, node_mask=None):
         done = torch.tensor(done, dtype=torch.float32, device=self.device).view(-1, 1)
         r = torch.tensor(r, dtype=torch.float32, device=self.device).view(-1, 1)
 
         if target_net is None:
             target_net = self
 
-        v_ = target_net(s_, only_v=True) * (1.0 - done)
+        v_ = target_net(s_, node_mask, only_v=True) * (1.0 - done)
 
         # if self.multi:
         #     log_num_actions = torch.tensor(num_obj, dtype=torch.float32, device=self.device) * 0.693147 # log(2)
@@ -385,7 +392,7 @@ class GlobalNode(Module):
         att_mask = Linear(node_size, 1)
         att_feat = Sequential(Linear(node_size, node_size), LeakyReLU())
 
-        self.glob = GlobalAttention(att_mask, att_feat)
+        self.glob = AttentionalAggregation(att_mask, att_feat)
         self.tranform = Sequential(Linear(global_size * 2, global_size), LeakyReLU())
 
     def forward(self, xg_old, x, batch):

@@ -40,7 +40,7 @@ def downtime_penalty(
     _defender_action, defense_state: NDArray[np.int8], defense_costs: NDArray[np.int8]
 ) -> float:
     # Defender is penalized each timestep for each defense that has been used
-    return sum(defense_costs * (np.logical_not(defense_state)))
+    return sum(defense_costs * defense_state)
 
 
 def defense_penalty(
@@ -123,7 +123,8 @@ class AttackSimulationEnv(MultiAgentEnv):
         num_nodes = len(obs.state)
         num_edges = len(obs.edges)
 
-        self.defense_costs = self.sim.defender_impact
+        self.d_impact = np.array(self.sim.defender_impact)
+        self.a_impact = np.array(self.sim.attacker_impact)
 
         self.observation_space: spaces.Dict = self.define_observation_space(
             num_defenses, num_nodes, num_edges, num_actions
@@ -137,10 +138,6 @@ class AttackSimulationEnv(MultiAgentEnv):
         self._action_space_in_preferred_format = True
         self._observation_space_in_preferred_format = True
         self._obs_space_in_preferred_format = True
-        # Include reward for wait action (-1)
-        self.attacker_action_rewards = np.concatenate(
-            (np.array(self.sim.attacker_impact), np.zeros(1))
-        )
         self.episode_count = (
             -1
         )  # Start episode count at -1 since it will be incremented the first time reset is called.
@@ -245,10 +242,6 @@ class AttackSimulationEnv(MultiAgentEnv):
         for key, entry in infos.items():
             entry[f"{key}_cumulative_reward"] = self.state.cumulative_rewards[key]
 
-        infos["Simulator"] = {
-            "defense_costs": self.sim.defender_impact,
-            "flag_costs": self.sim.attacker_impact,
-        }
 
         return infos
 
@@ -258,30 +251,17 @@ class AttackSimulationEnv(MultiAgentEnv):
 
         truncated["__all__"] = False
 
-        defender_action = action_dict.get(AGENT_DEFENDER, self.wait_action_idx)
-        attacker_action = action_dict.get(AGENT_ATTACKER, self.wait_action_idx)
-
-        old_attack_state = self.last_obs.state
-
+        # Convert numpy arrays to python tuples
+        action_dict = {agent_id: tuple(action) for agent_id, action in action_dict.items()}
         # terminated = {key: value == self.terminate_action_idx for key, value in action_dict.items()}
         # terminated["__all__"] = all(terminated.values())
 
         sim_obs, info = self.sim.step(action_dict)
 
-        new_compromised_steps = (
-            np.array(sim_obs.state, dtype=np.int8) - np.array(old_attack_state, dtype=np.int8)
-        ).clip(0, 1)
 
         rewards = {}
-        rewards[AGENT_ATTACKER] = np.sum(self.attacker_action_rewards[new_compromised_steps])
-
-        defense_state = sim_obs.defense_surface
-
-        rewards[AGENT_DEFENDER] = self.reward_function(
-            defender_action,
-            defense_costs=self.defense_costs,
-            defense_state=defense_state,
-        )
+        rewards[AGENT_ATTACKER] = np.sum(self.a_impact[sim_obs.state])
+        rewards[AGENT_DEFENDER] = np.sum(self.d_impact[sim_obs.state])
 
         obs = get_agent_obs(sim_obs)
         infos = self.get_agent_info(info)
