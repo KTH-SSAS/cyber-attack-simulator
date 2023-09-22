@@ -201,9 +201,6 @@ def main(
                 AGENT_ATTACKER: PolicySpec(
                     attacker_policy_class,
                     config={
-                        "num_special_actions": dummy_env.num_special_actions,
-                        "wait_action": dummy_env.sim.wait_action,
-                        "terminate_action": dummy_env.sim.terminate_action,
                     },
                 ),
             },
@@ -216,7 +213,6 @@ def main(
         Defender,
         tune_config=tune.TuneConfig(
             reuse_actors=False,
-            scheduler=pbt,
             num_samples=2,
             # metric=criteria,
             # mode="max",
@@ -236,15 +232,9 @@ def main(
     results = tuner.fit()
 
     best_result = results.get_best_result(metric="episode_reward_mean", mode="max")
-    import matplotlib.pyplot as plt
 
-    # Print `log_dir` where checkpoints are stored
-    print("Best result logdir:", best_result.log_dir)
 
-    # Print the best trial `config` reported at the last iteration
-    # NOTE: This config is just what the trial ended up with at the last iteration.
-    # See the next section for replaying the entire history of configs.
-    print("Best final iteration hyperparameter config:\n", best_result.config)
+
 
     # Plot the learning curve for the best trial
     df = best_result.metrics_dataframe
