@@ -218,7 +218,7 @@ mod tests {
         let action = sim.actions["use"];
         (observation, info) = sim.reset(None).unwrap();
         let mut defense_surface = observation.defense_surface.clone();
-        let num_entrypoints = observation.state.iter().filter(|&(x, _, _, _)| *x).count();
+        let num_entrypoints = observation.nodes.iter().filter(|&(x, _, _, _)| *x).count();
         let num_defense = defense_surface.iter().filter(|&x| *x).count();
         let mut available_defenses = available_actions(&defense_surface);
         let mut time = info.time;
@@ -232,6 +232,6 @@ mod tests {
         }
 
         assert_eq!(observation.defense_surface.iter().filter(|&x| *x).count(), 0);
-        assert_eq!(observation.state.iter().filter(|&(x, _, _, _)| *x).count(), num_defense + num_entrypoints);
+        assert_eq!(observation.nodes.iter().filter(|&(x, _, _, _)| *x).count(), num_defense + num_entrypoints);
     }
 }

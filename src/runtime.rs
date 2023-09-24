@@ -494,7 +494,7 @@ where
             attacker_action_mask,
             ttc_remaining,
             ids_observation: ids_observed_vec,
-            state: step_state,
+            nodes: step_state,
             edges: vector_edges,
             //defense_indices: self.defender_action_to_state(),
             flags: self.g.flag_to_index(&self.id_to_index),
@@ -724,9 +724,9 @@ mod tests {
             num_defenses
         );
 
-        assert_eq!(observation.state.len(), sim.g.nodes().len());
+        assert_eq!(observation.nodes.len(), sim.g.nodes().len());
         assert_eq!(
-            observation.state.iter().filter(|&(x, _, _,_ )| *x).count(),
+            observation.nodes.iter().filter(|&(x, _, _,_ )| *x).count(),
             num_entrypoints
         ); // 4 available defenses + 1 compromised attack step
 
@@ -743,7 +743,7 @@ mod tests {
             .collect::<Vec<usize>>();
 
         for i in defense_indices.iter() {
-            assert_eq!(observation.state[*i].0, false); // Defense steps should be disabled
+            assert_eq!(observation.nodes[*i].0, false); // Defense steps should be disabled
         }
 
         assert!(observation.ttc_remaining.iter().sum::<u64>() > 0);
