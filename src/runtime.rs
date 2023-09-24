@@ -11,7 +11,7 @@ use itertools::Itertools;
 
 use crate::attackgraph::{AttackGraph, TTCType};
 use crate::config::SimulatorConfig;
-use crate::observation::{Info, Observation};
+use crate::observation::{Info, Observation, StateTuple};
 use crate::state::SimulatorState;
 
 use rand::Rng;
@@ -62,6 +62,7 @@ pub(crate) struct SimulatorRuntime<I> {
 
     pub id_to_index: HashMap<I, usize>,
     pub index_to_id: Vec<I>,
+    vocab : HashMap<String, usize>,
     //pub defender_action_to_graph: Vec<I>,
     //pub attacker_action_to_graph: Vec<I>,
 }
@@ -77,6 +78,13 @@ pub(crate) struct SimulatorRuntime<I> {
 //     attack_surface[self.entry_attack_index] = 1
 
 // return attack_surface
+fn load_vocab_from_json() -> HashMap<String, usize> {
+    let filename = "corelang_vocab_merged.json";
+    let contents = std::fs::read_to_string(filename).unwrap();
+    let vocab: Vec<String> = serde_json::from_str(&contents).unwrap();
+    let vocab: HashMap<String, usize> = vocab.iter().enumerate().map(|(i, x)| (x.clone(), i)).collect();
+    return vocab;
+}
 
 type ActorFunc<I> = fn(&SimulatorRuntime<I>, &I) -> SimResult<ActionResult<I>>;
 
@@ -92,8 +100,20 @@ where
         }
     }
 
+    fn word2idx(&self, word: String) -> usize {
+        let word = match self.vocab.get(&word) {
+            Some(idx) => *idx,
+            None => panic!("No index for word '{}'", word),
+        };
+        return word;
+    }
+
     // Path: src/sim.rs
     pub fn new(graph: AttackGraph<I>, config: SimulatorConfig) -> SimResult<SimulatorRuntime<I>> {
+
+
+        let vocab = load_vocab_from_json();
+
         let index_to_id = graph
             .nodes()
             .iter()
@@ -162,9 +182,21 @@ where
             history: Vec::new(),
             actions,
             actors,
+            vocab,
         };
 
         return Ok(sim);
+    }
+
+    fn name_to_state_tuple(&self, enabled: bool, name: String) -> StateTuple {
+        //split name by colon
+        let parts = name.split(":").collect::<Vec<&str>>();
+        return (
+            enabled,
+            self.word2idx(parts[0].to_string()),
+            parts[1].parse::<usize>().unwrap(),
+            self.word2idx(parts[2].to_string()),
+        );
     }
 
     #[allow(dead_code)]
@@ -395,21 +427,12 @@ where
             });
         */
 
-        state
-            .enabled_defenses
-            .iter()
-            .map(|&node_id| self.id_to_index[&node_id])
-            .for_each(|index| {
-                step_state[index] = true;
-            });
-
-        state
-            .compromised_steps
-            .iter()
-            .map(|node_id| self.id_to_index[&node_id])
-            .for_each(|index| {
-                step_state[index] = true;
-            });
+        let step_state = self.index_to_id.iter().map(|id| {
+            let name = self.g.name_of_step(id);
+            let enabled = state.enabled_defenses.contains(id) || state.compromised_steps.contains(id);
+            let state_tuple = self.name_to_state_tuple(enabled, name);
+            state_tuple
+        }).collect::<Vec<StateTuple>>();
 
         let ids_observed = state.get_ids_obs();
 
@@ -703,7 +726,7 @@ mod tests {
 
         assert_eq!(observation.state.len(), sim.g.nodes().len());
         assert_eq!(
-            observation.state.iter().filter(|&x| *x).count(),
+            observation.state.iter().filter(|&(x, _, _,_ )| *x).count(),
             num_entrypoints
         ); // 4 available defenses + 1 compromised attack step
 
@@ -720,7 +743,7 @@ mod tests {
             .collect::<Vec<usize>>();
 
         for i in defense_indices.iter() {
-            assert_eq!(observation.state[*i], false); // Defense steps should be disabled
+            assert_eq!(observation.state[*i].0, false); // Defense steps should be disabled
         }
 
         assert!(observation.ttc_remaining.iter().sum::<u64>() > 0);

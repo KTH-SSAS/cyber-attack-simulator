@@ -1,5 +1,6 @@
 use pyo3::pyclass;
 
+pub(crate) type StateTuple = (bool, usize, usize, usize);
 #[pyclass]
 pub struct Observation {
     #[pyo3(get)]
@@ -11,7 +12,7 @@ pub struct Observation {
     #[pyo3(get)]
     pub defender_action_mask: Vec<bool>, // All available actions for the defender
     #[pyo3(get)]
-    pub state: Vec<bool>,
+    pub nodes: Vec<StateTuple>,
     #[pyo3(get)]
     pub ids_observation: Vec<bool>,
     #[pyo3(get)]

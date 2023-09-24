@@ -123,7 +123,7 @@ mod tests {
     use rand::{seq::SliceRandom, SeedableRng};
     use rand_chacha::ChaChaRng;
 
-    const TEST_FILENAME: &str = "graphs/four_ways_mod.json";
+    const TEST_FILENAME: &str = "mal/attackgraph.json"; //"graphs/four_ways_mod.json";
 
     fn get_sim_from_filename(filename: &str) -> runtime::SimulatorRuntime<usize> {
         let graph = load_graph_from_json(filename).unwrap();
@@ -218,7 +218,7 @@ mod tests {
         let action = sim.actions["use"];
         (observation, info) = sim.reset(None).unwrap();
         let mut defense_surface = observation.defense_surface.clone();
-        let num_entrypoints = observation.state.iter().filter(|&x| *x).count();
+        let num_entrypoints = observation.state.iter().filter(|&(x, _, _, _)| *x).count();
         let num_defense = defense_surface.iter().filter(|&x| *x).count();
         let mut available_defenses = available_actions(&defense_surface);
         let mut time = info.time;
@@ -232,6 +232,6 @@ mod tests {
         }
 
         assert_eq!(observation.defense_surface.iter().filter(|&x| *x).count(), 0);
-        assert_eq!(observation.state.iter().filter(|&x| *x).count(), num_defense + num_entrypoints);
+        assert_eq!(observation.state.iter().filter(|&(x, _, _, _)| *x).count(), num_defense + num_entrypoints);
     }
 }
