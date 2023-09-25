@@ -1,5 +1,5 @@
 [build-system]
-requires = ["maturin>==1.0,<2.0"]
+requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
 
 [tool.maturin]
@@ -19,7 +19,7 @@ authors = [
 name = "attack-simulator"
 version = "2.0"
 description = "A MAL based attack simulator"
-requires-python = ">==3.10"
+requires-python = ">=3.10"
 authors = [{ name = "Jakob Nyberg", email = "jaknyb@kth.se" }]
 
 # Dependencies via Poetry
@@ -59,13 +59,12 @@ lz4 = ">=4.3.2"
 maturin = ">=0.14.13"
 pandas = ">=1.5.3"
 opencv-python = ">=4.7.0.68"
-torch = ">=1.13.1"
-torchvision = ">=0.14.1"
 tensorboardx = ">=2.6"
 pip = ">=23.0.1"
 torch-geometric = ">=2.3.0"
 einops = ">=0.6.0"
 bayesian-optimization = ">=1.4.2"
+pettingzoo = "^1.24.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = ">=0.0.257"
