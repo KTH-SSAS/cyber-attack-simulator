@@ -25,6 +25,7 @@ class GraphConfig(Config):
     """Config class for attack graph."""
 
     filename: str
+    vocab_filename: str = None
     root: str = "notused"
     prune: List[str] = field(default_factory=list)
     rewards: Dict[str, float] = field(default_factory=dict)
@@ -85,6 +86,7 @@ class SimulatorConfig(Config):
     attack_start_time: int
     seed: int
     randomize_ttc: bool = True
+    log: bool = False
 
     @classmethod
     def from_yaml(cls, filename: str) -> SimulatorConfig:

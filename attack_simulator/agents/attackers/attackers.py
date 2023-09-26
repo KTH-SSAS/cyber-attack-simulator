@@ -10,7 +10,7 @@ from typing import Any, Dict
 
 import numpy as np
 
-from ... import UINT
+from ...constants import UINT
 from ...mal.graph import AttackGraph
 from ...utils.rng import get_rng
 from ..agent import Agent

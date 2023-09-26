@@ -8,6 +8,7 @@ from torch.nn import Module, Sequential, Linear, LeakyReLU, Sigmoid, ModuleList
 from torch_geometric.nn import MessagePassing, AttentionalAggregation
 from torch_geometric.data import Data, Batch
 
+
 # reward(s,a), value(s), value(s_), pi(a|s)
 def a2c(r, v, v_, pi, gamma, alpha_v, alpha_h, q_range=None, log_num_actions=None):
     # make sure all dimensions are correct
@@ -92,7 +93,10 @@ def segmented_sample(probs, splits):
     probs_split = torch.split(probs, splits)
     # print(probs_split)
 
-    samples = [torch.multinomial(x, 1) if x.sum() > 0 else torch.zeros(1) for x in probs_split]
+    samples = [
+        torch.multinomial(x, 1) if x.sum() > 0 else torch.zeros(1, dtype=torch.int8)
+        for x in probs_split
+    ]
 
     return torch.cat(samples)
 
@@ -206,9 +210,9 @@ class Net(Module):
         node_feats, edge_attr, edge_index = zip(*s_batch)
 
         node_feats = [torch.tensor(x, dtype=torch.float32, device=self.device) for x in node_feats]
-        edge_attr  = [torch.empty(0, dtype=torch.float32, device=self.device) for x in edge_attr]
+        edge_attr = [torch.empty(0, dtype=torch.float32, device=self.device) for x in edge_attr]
         edge_index = [torch.tensor(x, dtype=torch.int64, device=self.device) for x in edge_index]
-        node_mask  = torch.tensor(node_mask, dtype=torch.bool, device=self.device)
+        node_mask = torch.tensor(node_mask, dtype=torch.bool, device=self.device)
         action_mask = torch.tensor(action_mask, dtype=torch.bool, device=self.device)
 
         # create batch
@@ -289,10 +293,10 @@ class Net(Module):
             a1_cpu = a1_selection.cpu().numpy()
 
             wait = 0
-            af_selection = [[] if x==wait else [a1_cpu[i].item()] for i, x in enumerate(a0_cpu)]
+            af_selection = [[] if x == wait else [a1_cpu[i].item()] for i, x in enumerate(a0_cpu)]
             af_probs = torch.where(
                 a0_selection_tensor, a0_softmax.probs[:, 1], a0_softmax.probs[:, 0] * a1_probs
-            ) # TODO: Hardcoded 2 actions
+            )  # TODO: Hardcoded 2 actions
 
             node_probs = a1_softmax
 

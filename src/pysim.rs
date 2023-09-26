@@ -38,8 +38,8 @@ pub(crate) struct RustAttackSimulator {
 #[pymethods]
 impl RustAttackSimulator {
     #[new]
-    pub(crate) fn new(config_str: String, graph_filename: String) -> PyResult<RustAttackSimulator> {
-        let graph = match load_graph_from_json(&graph_filename) {
+    pub(crate) fn new(config_str: String, graph_filename: String, vocab_filename: Option<&str>) -> PyResult<RustAttackSimulator> {
+        let graph = match load_graph_from_json(&graph_filename, vocab_filename) {
             Ok(graph) => graph,
             Err(e) => return pyresult_with(Err(e), "Error in rust_sim"),
         };

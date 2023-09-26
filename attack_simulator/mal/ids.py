@@ -4,7 +4,7 @@ from typing import Tuple
 import numpy as np
 from numpy.typing import NDArray
 
-from .. import UINT
+from ..constants import UINT
 
 
 # TODO: Move functionality from simulator to this class.

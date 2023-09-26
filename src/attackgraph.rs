@@ -75,6 +75,9 @@ impl From<&NodeType> for Logic {
 pub(crate) type TTCType = u64; // Time to compromise
 
 pub(crate) struct AttackStep {
+    id: String,
+    asset: String,
+    asset_id: usize,
     name: String,
     ttc: TTCType,
     logic: Logic,
@@ -91,8 +94,15 @@ impl Display for AttackStep {
 impl From<&MALAttackStep> for AttackStep {
     fn from(s: &MALAttackStep) -> AttackStep {
         let node_type = NodeType::from(s.node_type.as_str());
+        let (asset, asset_id) = match s.asset.split_once(":") {
+            Some((asset, asset_id)) => (asset.to_string(), asset_id.parse::<usize>().unwrap()),
+            None => (s.asset.clone(), 0),
+        };
         AttackStep {
-            name: s.id.clone(),
+            id: s.id.clone(),
+            name: s.name.clone(),
+            asset,
+            asset_id,
             ttc: 1,
             logic: Logic::from(&node_type),
             step_type: node_type,
@@ -100,16 +110,40 @@ impl From<&MALAttackStep> for AttackStep {
     }
 }
 
+impl AttackStep {
+    pub(crate) fn to_state_tuple(&self, enabled: bool) -> (bool, String, usize, String) {
+        //split name by colon
+        return (
+            enabled,
+            self.asset.clone(),
+            self.asset_id,
+            self.name.clone(),
+        );
+    }
+}
+
 impl<I> AttackGraph<I>
 where
     I: Eq + Hash + Ord + Display + Copy,
 {
+
+    pub(crate) fn word2idx(&self, word: String) -> usize {
+        let word = match self.vocab.get(&word) {
+            Some(idx) => *idx,
+            None => panic!("No index for word '{}'", word),
+        };
+        return word;
+    }
+
     pub(crate) fn new(
         nodes: Vec<MALAttackStep>,
         edges: HashSet<(String, String)>,
         flags: Vec<String>,
         entry_points: Vec<String>,
+        vocab: HashMap<String, usize>,
     ) -> AttackGraph<usize> {
+        
+        // Hash the node names to numerical indexes
         let numerical_indexes = nodes
             .iter()
             .enumerate()
@@ -149,7 +183,7 @@ where
             .values()
             .filter_map(|n| match &n.data.step_type {
                 NodeType::Defense => None,
-                _ => Some(numerical_indexes[&n.data.name]),
+                _ => Some(numerical_indexes[&n.data.id]),
             })
             .collect();
 
@@ -157,7 +191,7 @@ where
             .nodes
             .values()
             .filter_map(|n| match &n.data.step_type {
-                NodeType::Defense => Some(numerical_indexes[&n.data.name]),
+                NodeType::Defense => Some(numerical_indexes[&n.data.id]),
                 _ => None,
             })
             .collect();
@@ -177,6 +211,7 @@ where
         //     .collect::<Vec<String>>();
 
         let graph = AttackGraph {
+            vocab,
             graph,
             attack_steps,
             flags,
@@ -200,6 +235,7 @@ pub(crate) struct AttackGraph<I> {
     pub(crate) defense_steps: HashSet<I>,
     pub(crate) flags: HashSet<I>,
     entry_points: HashSet<I>,
+    vocab: HashMap<String, usize>,
 }
 
 /*
@@ -232,6 +268,15 @@ where
 
     pub(crate) fn edges(&self) -> &HashSet<(I, I)> {
         return &self.graph.edges;
+    }
+
+    pub(crate) fn get_step(&self, id: &I) -> GraphResult<&AttackStep> {
+        match self.graph.nodes.get(id) {
+            Some(step) => Ok(&step.data),
+            None => Err(GraphError {
+                message: format!("No such step: {}", id),
+            }),
+        }
     }
 
     pub(crate) fn name_of_step(&self, id: &I) -> String {

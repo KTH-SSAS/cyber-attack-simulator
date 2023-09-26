@@ -3,7 +3,6 @@ use std::cmp::max;
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
-use std::f32::consts::E;
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
 use std::{fmt, vec};
@@ -27,11 +26,7 @@ pub type SimResult<T> = std::result::Result<T, SimError>;
 pub struct SimError {
     pub error: String,
 }
-impl SimError {
-    fn IoError(error: std::io::Error) -> SimError {
-        todo!()
-    }
-}
+
 
 impl fmt::Display for SimError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -39,11 +34,6 @@ impl fmt::Display for SimError {
     }
 }
 
-impl From<std::io::Error> for SimError {
-    fn from(error: std::io::Error) -> Self {
-        SimError::IoError(error)
-    }
-}
 
 pub struct ActionResult<I> {
     pub ttc_diff: HashMap<I, i32>,
@@ -79,7 +69,6 @@ pub(crate) struct SimulatorRuntime<I> {
 
     pub id_to_index: HashMap<I, usize>,
     pub index_to_id: Vec<I>,
-    vocab: HashMap<String, usize>,
     //pub defender_action_to_graph: Vec<I>,
     //pub attacker_action_to_graph: Vec<I>,
 }
@@ -95,17 +84,7 @@ pub(crate) struct SimulatorRuntime<I> {
 //     attack_surface[self.entry_attack_index] = 1
 
 // return attack_surface
-fn load_vocab_from_json() -> HashMap<String, usize> {
-    let filename = "corelang_vocab_merged.json";
-    let contents = std::fs::read_to_string(filename).unwrap();
-    let vocab: Vec<String> = serde_json::from_str(&contents).unwrap();
-    let vocab: HashMap<String, usize> = vocab
-        .iter()
-        .enumerate()
-        .map(|(i, x)| (x.clone(), i))
-        .collect();
-    return vocab;
-}
+
 
 type ActorFunc<I> = fn(&SimulatorRuntime<I>, &I) -> SimResult<ActionResult<I>>;
 
@@ -119,14 +98,6 @@ where
             "defender" => SimulatorRuntime::defense_action,
             _ => panic!("Unknown actor {}", actor),
         }
-    }
-
-    fn word2idx(&self, word: String) -> usize {
-        let word = match self.vocab.get(&word) {
-            Some(idx) => *idx,
-            None => panic!("No index for word '{}'", word),
-        };
-        return word;
     }
 
     // Path: src/sim.rs
@@ -152,8 +123,6 @@ where
         }
 
         log::info!("Simulator initiated.");
-
-        let vocab = load_vocab_from_json();
 
         let index_to_id = graph
             .nodes()
@@ -223,21 +192,9 @@ where
             history: Vec::new(),
             actions,
             actors,
-            vocab,
         };
 
         return Ok(sim);
-    }
-
-    fn name_to_state_tuple(&self, enabled: bool, name: String) -> StateTuple {
-        //split name by colon
-        let parts = name.split(":").collect::<Vec<&str>>();
-        return (
-            enabled,
-            self.word2idx(parts[0].to_string()),
-            parts[1].parse::<usize>().unwrap(),
-            self.word2idx(parts[2].to_string()),
-        );
     }
 
     #[allow(dead_code)]
@@ -470,8 +427,6 @@ where
                 ttc_remaining[index] = ttc;
             });
 
-        let mut step_state = vec![false; self.id_to_index.len()];
-
         /*
         let disabled_defenses = self.g.disabled_defenses(&state.enabled_defenses);
 
@@ -487,12 +442,16 @@ where
             .index_to_id
             .iter()
             .map(|id| {
-                let name = self.g.name_of_step(id);
+                let step = self.g.get_step(id).unwrap();
                 let enabled =
                     state.enabled_defenses.contains(id) || state.compromised_steps.contains(id);
-                let state_tuple = self.name_to_state_tuple(enabled, name);
+                let state_tuple = step.to_state_tuple(enabled);
                 state_tuple
             })
+            .map(
+                |x|
+                (x.0, self.g.word2idx(x.1), x.2, self.g.word2idx(x.3))
+            )
             .collect::<Vec<StateTuple>>();
 
         let ids_observed = state.get_ids_obs();
@@ -711,6 +670,8 @@ where
 
 #[cfg(test)]
 mod tests {
+
+
     use crate::{
         config,
         loading::load_graph_from_json,
@@ -721,7 +682,7 @@ mod tests {
     #[test]
     fn test_sim_init() {
         let filename = "mal/attackgraph.json";
-        let graph = load_graph_from_json(filename).unwrap();
+        let graph = load_graph_from_json(filename, None).unwrap();
         //let num_defenses = graph.number_of_defenses();
         let num_entrypoints = graph.entry_points().len();
         let config = config::SimulatorConfig::default();
@@ -752,7 +713,7 @@ mod tests {
     #[test]
     fn test_sim_obs() {
         let filename = "mal/attackgraph.json";
-        let graph = load_graph_from_json(filename).unwrap();
+        let graph = load_graph_from_json(filename, None).unwrap();
         //let num_attacks = graph.number_of_attacks();
         let num_defenses = graph.number_of_defenses();
         let num_entrypoints = graph.entry_points().len();

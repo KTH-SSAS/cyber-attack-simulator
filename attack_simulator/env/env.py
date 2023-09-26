@@ -10,9 +10,8 @@ from ray.rllib.env.multi_agent_env import MultiAgentEnv
 from ray.tune.registry import register_env
 from maturin import import_hook
 
-from attack_simulator.env.roles import Defender, Attacker
-
-from .. import AGENT_ATTACKER, AGENT_DEFENDER
+from .roles import Defender, Attacker
+from ..constants import AGENT_ATTACKER, AGENT_DEFENDER
 from ..agents import ATTACKERS
 from ..mal.observation import Info, Observation
 from ..mal.sim import Simulator
@@ -104,7 +103,7 @@ class AttackSimulationEnv(MultiAgentEnv):
 
         self.reward_function = reward_funcs[config.reward_mode]
         self.sim = RustAttackSimulator(
-            json.dumps(sim_config.to_dict()), graph_config.filename
+            json.dumps(sim_config.to_dict()), graph_config.filename, graph_config.vocab_filename
         )  # noqa: F821
         self.rng, self.env_seed = get_rng(config.seed)
         self.config = config
@@ -120,7 +119,7 @@ class AttackSimulationEnv(MultiAgentEnv):
 
         num_defenses = self.sim.num_defense_steps
         num_attacks = self.sim.num_attack_steps
-        num_nodes = len(obs.state)
+        num_nodes = len(obs.nodes)
         num_edges = len(obs.edges)
 
         self.d_impact = np.array(self.sim.defender_impact)
@@ -257,14 +256,15 @@ class AttackSimulationEnv(MultiAgentEnv):
         # terminated["__all__"] = all(terminated.values())
 
         sim_obs, info = self.sim.step(action_dict)
-
-
-        rewards = {}
-        rewards[AGENT_ATTACKER] = np.sum(self.a_impact[sim_obs.state])
-        rewards[AGENT_DEFENDER] = np.sum(self.d_impact[sim_obs.state])
+        sim_obs = Observation.from_rust(sim_obs)
 
         obs = get_agent_obs(sim_obs)
         infos = self.get_agent_info(info)
+        rewards = {}
+        state = sim_obs.nodes
+        rewards[AGENT_ATTACKER] = np.sum(self.a_impact[state])
+        rewards[AGENT_DEFENDER] = np.sum(self.d_impact[state])
+
 
         terminated = self.state.terminated
         terminated[AGENT_ATTACKER] = Attacker.done(sim_obs)

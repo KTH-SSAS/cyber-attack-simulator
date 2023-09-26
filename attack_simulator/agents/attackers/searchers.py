@@ -3,7 +3,7 @@ from typing import Any, Deque, Dict, List, Set, Union
 
 import numpy as np
 
-from ... import UINT
+from ...constants import UINT
 from ..agent import Agent
 
 

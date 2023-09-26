@@ -1,9 +1,2 @@
-import numpy as np
-
-AGENT_DEFENDER = "defender"
-AGENT_ATTACKER = "attacker"
-
-ACTION_TERMINATE = "terminate"
-ACTION_WAIT = "wait"
-
-UINT = np.uintp
+from attack_simulator.env.attacksimulator import env, raw_env, parallel_env
+from attack_simulator.utils.config import EnvConfig

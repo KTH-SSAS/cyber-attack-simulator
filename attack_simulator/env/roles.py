@@ -1,4 +1,4 @@
-from attack_simulator.mal.observation import Info, Observation
+from ..mal.observation import Info, Observation
 import numpy as np
 from gymnasium import spaces
 
@@ -29,7 +29,7 @@ class Defender:
 
     @staticmethod
     def get_obs(obs: Observation):
-        state = np.array(obs.state, dtype=np.int8)
+        state = np.array(obs.nodes, dtype=np.int8)
         edges = np.array(obs.edges, dtype=np.int8)
         # defense_indices = np.flatnonzero(obs.defense_surface)
 
@@ -115,7 +115,7 @@ class Attacker:
         return {
             "action_mask": np.array(obs.attacker_action_mask, dtype=np.int8),
             "attack_surface": np.array(obs.attack_surface, dtype=np.int8),
-            "state": np.array(obs.state, dtype=np.int8),
+            "state": np.array(obs.nodes, dtype=np.int8),
             "ttc_remaining": np.array(obs.ttc_remaining, dtype=np.uint64),
             "nop_index": 0,
         }

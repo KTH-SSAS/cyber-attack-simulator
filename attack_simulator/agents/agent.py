@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
-from .. import UINT
+from ..constants import UINT
 
 
 class Agent(ABC):

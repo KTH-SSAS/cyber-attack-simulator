@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
-from .. import UINT
+from ..constants import UINT
 
 
 @dataclass
@@ -11,7 +11,7 @@ class Observation:
     ids_observation: NDArray[np.int8]
     attack_surface: NDArray[np.int8]
     defense_surface: NDArray[np.int8]
-    state: NDArray[np.int8]
+    nodes: NDArray[np.int8]
     ttc_remaining: NDArray[UINT]
     defender_action_mask: NDArray[np.int8]
     attacker_action_mask: NDArray[np.int8]
@@ -24,7 +24,7 @@ class Observation:
             ids_observation=np.array(obs.ids_observation),
             attack_surface=np.array(obs.attack_surface),
             defense_surface=np.array(obs.defense_surface),
-            state=np.array(obs.state),
+            nodes=np.array([x for x, _, _, _ in obs.nodes]),
             ttc_remaining=np.array(obs.ttc_remaining),
             defender_action_mask=np.array(obs.defender_action_mask),
             attacker_action_mask=np.array(obs.attacker_action_mask),

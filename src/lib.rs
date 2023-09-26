@@ -50,8 +50,10 @@ impl AttackSimulator<usize> {
     pub fn new(
         config: SimulatorConfig,
         graph_filename: String,
+        vocab_filename: Option<&str>,
     ) -> AttackSimResult<AttackSimulator<usize>> {
-        let graph = match load_graph_from_json(&graph_filename) {
+
+        let graph = match load_graph_from_json(&graph_filename, vocab_filename) {
             Ok(graph) => graph,
             Err(e) => {
                 return Err(AttackSimError {
@@ -124,9 +126,10 @@ mod tests {
     use rand_chacha::ChaChaRng;
 
     const TEST_FILENAME: &str = "mal/attackgraph.json"; //"graphs/four_ways_mod.json";
+    const TEST_VOCAB: &str = "mal/corelang_vocab_merged.json";
 
     fn get_sim_from_filename(filename: &str) -> runtime::SimulatorRuntime<usize> {
-        let graph = load_graph_from_json(filename).unwrap();
+        let graph = load_graph_from_json(filename, Some(TEST_VOCAB)).unwrap();
         let config = SimulatorConfig {
             seed: 0,
             false_negative_rate: 0.0,

@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional, Set, Tuple
 import numpy as np
 from numpy.typing import NDArray
 
-from .. import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER, AGENT_DEFENDER, UINT
+from ..constants import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER, AGENT_DEFENDER, UINT
 from ..utils.config import SimulatorConfig
 from ..utils.rng import get_rng
 from .graph import AttackGraph

@@ -1,5 +1,7 @@
-use std::{fs::File, io::BufReader};
+use core::panic;
+use std::{fs::File, io::BufReader, collections::HashMap};
 
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 
@@ -53,23 +55,59 @@ pub struct MALAttackStep {
     pub id: String,
     #[serde(rename = "type")]
     pub node_type: String,
-    name: String,
+    pub name: String,
     ttc: Option<TTC>,
     children: Vec<String>,
     parents: Option<Vec<String>>,
     compromised_by: Vec<String>,
-    asset: String,
+    pub asset: String,
     defense_status: Option<String>,
     mitre_info: Option<String>,
     existence_status: Option<String>,
 }
 
-pub(crate) fn load_graph_from_json(filename: &str) -> IOResult<AttackGraph<usize>> {
+fn load_vocab_from_json(filename: &str) -> HashMap<String, usize> {
+    let contents = std::fs::read_to_string(filename).unwrap();
+    let vocab: Vec<String> = serde_json::from_str(&contents).unwrap();
+    let vocab: HashMap<String, usize> = vocab
+        .iter()
+        .enumerate()
+        .map(|(i, x)| (x.clone(), i))
+        .collect();
+    return vocab;
+}
+
+fn create_vocab_from_steps(steps: &Vec<MALAttackStep>) -> HashMap<String, usize> {
+    let mut unique_words = HashSet::new();
+    for step in steps {
+        let (asset, _) = match step.asset.split_once(":") {
+            Some((asset, _)) => (asset, ""),
+            None => (step.asset.as_str(), ""),
+        };
+        unique_words.insert(asset.to_string().clone());
+        unique_words.insert(step.name.clone());
+    }
+
+    let unique_words: Vec<&String> = unique_words.iter().sorted().collect();
+
+    let vocab: HashMap<String, usize> = unique_words
+        .iter()
+        .enumerate()
+        .map(|(i, &x)| (x.clone(), i))
+        .collect();
+
+    return vocab;
+}
+
+pub(crate) fn load_graph_from_json(filename: &str, vocab_filename: Option<&str>) -> IOResult<AttackGraph<usize>> {
+    
+
+    
     let file = match File::open(filename) {
         Ok(f) => f,
         Err(e) => {
             return Err(IOError {
-                error: format!("Could not fi file: {}. {}", filename, e),
+                error: format!("Could not find file: {}. {}", filename, e),
             })
         }
     };
@@ -162,7 +200,12 @@ pub(crate) fn load_graph_from_json(filename: &str) -> IOResult<AttackGraph<usize
         });
     }
 
-    let attack_graph = AttackGraph::<u64>::new(attack_steps, edges, flags, entry_points);
+    let vocab = match vocab_filename {
+        None => create_vocab_from_steps(&attack_steps),
+        Some(f) => load_vocab_from_json(f),
+    };   
+    
+    let attack_graph = AttackGraph::<u64>::new(attack_steps, edges, flags, entry_points, vocab);
 
     return Ok(attack_graph);
 }
@@ -178,7 +221,8 @@ mod tests {
     #[test]
     fn load_mal_graph() {
         let filename = "graphs/four_ways_mod.json";
-        let attack_graph = load_graph_from_json(filename).unwrap();
+        let vocab_filename = "mal/corelang_vocab_merged.json";
+        let attack_graph = load_graph_from_json(filename, Some(vocab_filename)).unwrap();
 
         let graphviz = attack_graph.to_graphviz(None);
 

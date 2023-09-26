@@ -10,7 +10,7 @@ from agraphlib import STEP, GraphColors
 from numpy.typing import NDArray
 from yaml import safe_load
 
-from .. import UINT
+from ..constants import UINT
 from ..utils.config import GraphConfig
 
 
