@@ -132,6 +132,7 @@ mod tests {
             false_negative_rate: 0.0,
             false_positive_rate: 0.0,
             randomize_ttc: false,
+            log: false,
         };
         let sim = runtime::SimulatorRuntime::new(graph, config).unwrap();
         return sim;
@@ -184,10 +185,10 @@ mod tests {
             let action_dict = HashMap::from([("attacker".to_string(), (action, step))]);
             let (new_observation, new_info) = sim.step(action_dict).unwrap();
 
-            let graphviz = sim.to_graphviz();
-            let file = std::fs::File::create(format!("test_attacker_{:0>2}.dot", time)).unwrap();
-            std::io::Write::write_all(&mut std::io::BufWriter::new(file), graphviz.as_bytes())
-                .unwrap();
+            //let graphviz = sim.to_graphviz();
+            //let file = std::fs::File::create(format!("test_attacker_{:0>2}.dot", time)).unwrap();
+            //std::io::Write::write_all(&mut std::io::BufWriter::new(file), graphviz.as_bytes())
+            //    .unwrap();
 
             let a = new_observation.ttc_remaining[step];
             let b = observation.ttc_remaining[step];

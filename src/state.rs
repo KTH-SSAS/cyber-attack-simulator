@@ -98,6 +98,8 @@ where
         if attack_surface_empty {
             if cfg!(debug_assertions) {
                 panic!("Attack surface is empty.");
+            } else {
+                log::warn!("Attack surface is empty.");
             }
 
             return Err(SimError {
@@ -109,6 +111,9 @@ where
         if !self.attack_surface.contains(&step_id) {
             if cfg!(debug_assertions) {
                 panic!("Attack step {} is not in the attack surface. Attack surface is: {:?}", step_id, self.attack_surface);
+            }
+            else {
+                log::warn!("Attack step {} is not in the attack surface. Attack surface is: {:?}", step_id, self.attack_surface);
             }
 
             return Ok(ActionResult::default());

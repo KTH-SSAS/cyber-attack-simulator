@@ -3,11 +3,17 @@ use std::cmp::max;
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+use std::f32::consts::E;
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
 use std::{fmt, vec};
 
 use itertools::Itertools;
+use log::LevelFilter;
+use log4rs::append::file::FileAppender;
+use log4rs::config::{Appender, Root};
+use log4rs::encode::pattern::PatternEncoder;
+use log4rs::Config;
 
 use crate::attackgraph::{AttackGraph, TTCType};
 use crate::config::SimulatorConfig;
@@ -21,10 +27,21 @@ pub type SimResult<T> = std::result::Result<T, SimError>;
 pub struct SimError {
     pub error: String,
 }
+impl SimError {
+    fn IoError(error: std::io::Error) -> SimError {
+        todo!()
+    }
+}
 
 impl fmt::Display for SimError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "SimError: {}", self.error)
+    }
+}
+
+impl From<std::io::Error> for SimError {
+    fn from(error: std::io::Error) -> Self {
+        SimError::IoError(error)
     }
 }
 
@@ -62,7 +79,7 @@ pub(crate) struct SimulatorRuntime<I> {
 
     pub id_to_index: HashMap<I, usize>,
     pub index_to_id: Vec<I>,
-    vocab : HashMap<String, usize>,
+    vocab: HashMap<String, usize>,
     //pub defender_action_to_graph: Vec<I>,
     //pub attacker_action_to_graph: Vec<I>,
 }
@@ -82,7 +99,11 @@ fn load_vocab_from_json() -> HashMap<String, usize> {
     let filename = "corelang_vocab_merged.json";
     let contents = std::fs::read_to_string(filename).unwrap();
     let vocab: Vec<String> = serde_json::from_str(&contents).unwrap();
-    let vocab: HashMap<String, usize> = vocab.iter().enumerate().map(|(i, x)| (x.clone(), i)).collect();
+    let vocab: HashMap<String, usize> = vocab
+        .iter()
+        .enumerate()
+        .map(|(i, x)| (x.clone(), i))
+        .collect();
     return vocab;
 }
 
@@ -110,7 +131,27 @@ where
 
     // Path: src/sim.rs
     pub fn new(graph: AttackGraph<I>, config: SimulatorConfig) -> SimResult<SimulatorRuntime<I>> {
+        
+        if config.log {
+            // clear log
 
+
+            let _ = std::fs::remove_file("log/output.log");
+            
+            let logfile = FileAppender::builder()
+                .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
+                .build("log/output.log")
+                .unwrap();
+
+            let log_config = Config::builder()
+                .appender(Appender::builder().build("logfile", Box::new(logfile)))
+                .build(Root::builder().appender("logfile").build(LevelFilter::Info))
+                .unwrap();
+
+            log4rs::init_config(log_config).unwrap();
+        }
+
+        log::info!("Simulator initiated.");
 
         let vocab = load_vocab_from_json();
 
@@ -294,6 +335,9 @@ where
 
         let new_state = SimulatorState::new(&self.g, self.config.seed, self.config.randomize_ttc)?;
 
+        log::info!("Resetting simulator with seed {}", self.config.seed);
+        log::info!("Initial state:\n {:?}", new_state);
+
         let flag_status = self.g.get_flag_status(&new_state.compromised_steps);
 
         let result = Ok((
@@ -340,15 +384,21 @@ where
             // Not a defense step
             // Do nothing
 
+            let text = format!(
+                "Defense step {}, id={}, is not a defense step. Valid defense steps are: {:?}",
+                self.g.name_of_step(&defense_step_id),
+                defense_step_id,
+                self.g.defense_steps
+            );
+
             if cfg!(debug_assertions) {
                 return Err(SimError {
-                    error: format!(
-                        "Defense step {}, id={}, is not a defense step. Valid defense steps are: {:?}",
-                        self.g.name_of_step(&defense_step_id),
-                        defense_step_id,
-                        self.g.defense_steps
-                    ),
+                    error: text,
                 });
+            } else {
+                log::warn!(
+                    "{}", text
+                );
             }
 
             return Ok(ActionResult::default());
@@ -358,14 +408,20 @@ where
             // Already enabled
             // Do nothing
 
+            let text = format!(
+                "Defense step {}, id={}, is already enabled.",
+                self.g.name_of_step(&defense_step_id),
+                defense_step_id
+            );
+
             if cfg!(debug_assertions) {
                 return Err(SimError {
-                    error: format!(
-                        "Defense step {}, id={}, is already enabled.",
-                        self.g.name_of_step(&defense_step_id),
-                        defense_step_id
-                    ),
+                    error: text,
                 });
+            } else {
+                log::warn!(
+                    "{}", text
+                );
             }
 
             return Ok(ActionResult::default());
@@ -427,12 +483,17 @@ where
             });
         */
 
-        let step_state = self.index_to_id.iter().map(|id| {
-            let name = self.g.name_of_step(id);
-            let enabled = state.enabled_defenses.contains(id) || state.compromised_steps.contains(id);
-            let state_tuple = self.name_to_state_tuple(enabled, name);
-            state_tuple
-        }).collect::<Vec<StateTuple>>();
+        let step_state = self
+            .index_to_id
+            .iter()
+            .map(|id| {
+                let name = self.g.name_of_step(id);
+                let enabled =
+                    state.enabled_defenses.contains(id) || state.compromised_steps.contains(id);
+                let state_tuple = self.name_to_state_tuple(enabled, name);
+                state_tuple
+            })
+            .collect::<Vec<StateTuple>>();
 
         let ids_observed = state.get_ids_obs();
 
@@ -505,7 +566,12 @@ where
         &mut self,
         action_dict: HashMap<String, ParameterAction>,
     ) -> SimResult<(Observation, Info)> {
+
+        log::info!("Step with action dict {:?}", action_dict);
+
         let new_state = self.calculate_next_state(action_dict)?;
+
+        log::info!("New state:\n{:?}", new_state);
 
         let flag_status = self.g.get_flag_status(&new_state.compromised_steps);
 
@@ -726,7 +792,7 @@ mod tests {
 
         assert_eq!(observation.nodes.len(), sim.g.nodes().len());
         assert_eq!(
-            observation.nodes.iter().filter(|&(x, _, _,_ )| *x).count(),
+            observation.nodes.iter().filter(|&(x, _, _, _)| *x).count(),
             num_entrypoints
         ); // 4 available defenses + 1 compromised attack step
 
