@@ -134,7 +134,10 @@ where
             .iter()
             .map(|(parent, child)| {
                 let parent = numerical_indexes[parent];
-                let child = numerical_indexes[child];
+                let child = match numerical_indexes.get(child) {
+                    Some(child) => *child,
+                    None => panic!("No such child node for {}: {}", parent, child),
+                };
                 (parent, child)
             })
             .collect();
