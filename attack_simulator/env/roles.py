@@ -30,7 +30,7 @@ class Defender:
     @staticmethod
     def get_obs(obs: Observation):
         state = np.array(obs.nodes, dtype=np.int8)
-        edges = np.array(obs.edges, dtype=np.int8)
+        edges = np.array(obs.edges, dtype=np.int64)
         # defense_indices = np.flatnonzero(obs.defense_surface)
 
         # wait_index = len(state)

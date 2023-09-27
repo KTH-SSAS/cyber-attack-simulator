@@ -1,9 +1,6 @@
 import torch
-import numpy as np
-import torch_geometric
 
-from torch.nn import Module, Sequential, Linear, LeakyReLU, Sigmoid, ModuleList
-from torch_geometric.nn import MessagePassing, AttentionalAggregation
+from torch.nn import Module, Sequential, Linear, LeakyReLU, Sigmoid
 from torch_geometric.data import Data, Batch
 
 from attack_simulator.models.sr_drl import MultiMessagePassing
@@ -27,59 +24,6 @@ class SRDRLAGENT(Module):
         return torch.cat([action_probs, node_probs], dim=-1), value
     
 
-def get_start_indices(splits):
-    splits = torch.roll(splits, 1)
-    splits[0] = 0
-
-    start_indices = torch.cumsum(splits, 0)
-    return start_indices
-
-
-# TODO: update to data_starts
-def masked_segmented_softmax(energies, mask, start_indices, batch_ind):
-    mask = mask + start_indices
-    mask_bool = torch.ones_like(energies, dtype=torch.bool)  # inverse mask matrix
-    mask_bool[mask] = False
-
-    energies[mask_bool] = -np.inf
-    probs = torch_geometric.utils.softmax(energies, batch_ind)  # to probs ; per graph
-
-    return probs
-
-
-def segmented_sample(probs, splits):
-    probs_split = torch.split(probs, splits)
-    # print(probs_split)
-
-    samples = [torch.multinomial(x, 1) for x in probs_split]
-
-    return torch.cat(samples)
-
-
-def segmented_prod(tnsr, splits):
-    x_split = torch.split(tnsr, splits)
-    x_prods = [torch.prod(x) for x in x_split]
-    x_mul = torch.stack(x_prods)
-
-    return x_mul
-
-
-def segmented_nonzero(tnsr, splits):
-    x_split = torch.split(tnsr, splits)
-    x_nonzero = [torch.nonzero(x, as_tuple=False).flatten().cpu().tolist() for x in x_split]
-
-    return x_nonzero
-
-
-def segmented_scatter_(dest, indices, start_indices, values):
-    real_indices = start_indices + indices
-    dest[real_indices] = values
-    return dest
-
-
-def segmented_gather(src, indices, start_indices):
-    real_indices = start_indices + indices
-    return src[real_indices]
 
 
 EMB_SIZE = 8

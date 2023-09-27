@@ -55,8 +55,8 @@ class parallel_env(ParallelEnv):
         self.agent_name_mapping = dict(
             zip(self.possible_agents, list(range(len(self.possible_agents))))
         )
+        self.simulator = AttackSimulationEnv(config, render_mode)
         self.render_mode = render_mode
-        self.simulator = AttackSimulationEnv(config)
         self.agents = self.simulator._agent_ids
 
     # Observation space should be defined here.
@@ -78,8 +78,7 @@ class parallel_env(ParallelEnv):
         Renders the environment. In human mode, it can print to terminal, open
         up a graphical window, or open up some other display that a human can see and understand.
         """
-        if self.render_mode == "human":
-            print(self.simulator.render())
+        return self.simulator.render()
 
     def close(self):
         """

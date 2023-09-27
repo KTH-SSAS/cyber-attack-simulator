@@ -85,7 +85,7 @@ class AttackSimulationEnv(MultiAgentEnv):
     sim: Simulator
     last_obs: Observation
 
-    def __init__(self, config: EnvConfig):
+    def __init__(self, config: EnvConfig, render_mode: str | None = None):
         graph_config = (
             config.graph_config
             if isinstance(config.graph_config, GraphConfig)
@@ -107,6 +107,7 @@ class AttackSimulationEnv(MultiAgentEnv):
         )  # noqa: F821
         self.rng, self.env_seed = get_rng(config.seed)
         self.config = config
+        self.render_mode = render_mode
 
         x: Tuple[Observation, Info] = self.sim.reset()
         obs: Observation = Observation.from_rust(x[0])
@@ -147,6 +148,11 @@ class AttackSimulationEnv(MultiAgentEnv):
         self.n_actions = num_actions
         # self.terminate_action_idx = terminate_action_idx
         self.wait_action_idx = wait_action_idx
+        self.screen = None
+        self.vocab = self.sim.vocab
+        self.reverse_vocab = [None] * len(self.vocab)
+        for key, value in self.vocab.items():
+            self.reverse_vocab[value] = key
         super().__init__()
 
     @staticmethod
@@ -294,9 +300,55 @@ class AttackSimulationEnv(MultiAgentEnv):
         #     self.reset_render = False
 
         # if isinstance(self.renderer, AttackSimulationRenderer):
-        #     self.renderer.render(self.last_obs, self.state.reward[AGENT_DEFENDER], self.done)
+        #     self.renderer.render(self.last_obs,
+        #     self.state.reward[AGENT_DEFENDER], self.done)
 
-        return self.sim.render()
+        screen_width = 1000
+        screen_height = 1000
+
+        try:
+            import pygame
+            import graphviz
+            import PIL.Image
+            import io
+        except ImportError as e:
+            raise RuntimeError(
+                "Missing render dependency"
+            ) from e
+        
+        if self.screen is None:
+            pygame.init()
+            if self.render_mode == "human":
+                pygame.display.init()
+                self.screen = pygame.display.set_mode(
+                    (screen_width, screen_height)
+                )
+            else:  # mode == "rgb_array"
+                self.screen = pygame.Surface((screen_width, screen_height))
+
+
+        self.screen.fill((255, 255, 255))
+        pygame.display.set_caption("Attack Simulation")
+        ## Render the graph
+        graphviz_code = self.sim.render()
+        graphviz_graph = graphviz.Source(graphviz_code)
+        graphviz_graph.format = "png"
+        #graphviz_graph.render("graphviz_graph")
+        graphviz_graph = PIL.Image.open(io.BytesIO(graphviz_graph.pipe()))
+        graphviz_graph = graphviz_graph.resize((screen_width, screen_height))
+        graphviz_graph = pygame.image.fromstring(
+            graphviz_graph.tobytes(), graphviz_graph.size, graphviz_graph.mode
+        )
+        
+        self.screen.blit(graphviz_graph, (0, 0))
+
+        if self.render_mode == "human":
+            pygame.event.pump()
+            pygame.display.flip()
+        elif self.render_mode == "rgb_array":
+            return np.transpose(
+                np.array(pygame.surfarray.pixels3d(self.screen)), axes=(1, 0, 2)
+            ) 
 
     def interpret_action_probabilities(
         self, defense_names, action_probabilities: np.ndarray

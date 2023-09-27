@@ -1,8 +1,8 @@
 [
     {
-        "id": "firewall:7:connect",
+        "id": "firewall:1:connect",
         "type": "and",
-        "asset": "firewall",
+        "asset": "firewall:1",
         "name": "connect",
         "ttc": {
             "type": "function",
@@ -11,7 +11,7 @@
         },
         "defense_status": null,
         "children": [
-            "flag:11:take"
+            "flag:1:take"
         ],
         "parents": null,
         "existence_status": null,
@@ -22,9 +22,9 @@
         "mitre_info": null
     },
     {
-        "id": "flag:8:take",
+        "id": "flag:4:take",
         "type": "and",
-        "asset": "flag",
+        "asset": "flag:4",
         "name": "gather",
         "ttc": {
             "type": "function",
@@ -44,7 +44,7 @@
     {
         "id": "host:9:connect",
         "type": "and",
-        "asset": "host",
+        "asset": "host:9",
         "name": "connect",
         "ttc": {
             "type": "function",
@@ -53,7 +53,7 @@
         },
         "defense_status": null,
         "children": [
-            "flag:8:take"
+            "flag:4:take"
         ],
         "parents": null,
         "existence_status": null,
@@ -64,9 +64,9 @@
         "mitre_info": null
     },
     {
-        "id": "flag:11:take",
+        "id": "flag:1:take",
         "type": "and",
-        "asset": "flag",
+        "asset": "flag:1",
         "name": "gather",
         "ttc": {
             "type": "function",
@@ -84,9 +84,9 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:12:connect",
+        "id": "firewall:2:connect",
         "type": "or",
-        "asset": "firewall",
+        "asset": "firewall:2",
         "name": "connect",
         "ttc": {
             "type": "function",
@@ -106,9 +106,9 @@
         "mitre_info": null
     },
     {
-        "id": "attacker:13:enter",
+        "id": "attacker:1:enter",
         "type": "or",
-        "asset": "attacker",
+        "asset": "attacker:1",
         "name": "firstSteps",
         "ttc": {
             "type": "function",
@@ -133,7 +133,7 @@
     {
         "id": "host:16:connect",
         "type": "or",
-        "asset": "host",
+        "asset": "host:16",
         "name": "connect",
         "ttc": {
             "type": "function",
@@ -142,7 +142,7 @@
         },
         "defense_status": null,
         "children": [
-            "firewall:20:connect"
+            "firewall:3:connect"
         ],
         "parents": null,
         "existence_status": null,
@@ -155,7 +155,7 @@
     {
         "id": "host:17:connect",
         "type": "or",
-        "asset": "host",
+        "asset": "host:17",
         "name": "connect",
         "ttc": {
             "type": "function",
@@ -164,7 +164,7 @@
         },
         "defense_status": null,
         "children": [
-            "firewall:18:connect"
+            "firewall:4:connect"
         ],
         "parents": null,
         "existence_status": null,
@@ -175,9 +175,9 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:18:connect",
+        "id": "firewall:4:connect",
         "type": "and",
-        "asset": "firewall",
+        "asset": "firewall:4",
         "name": "connect",
         "ttc": {
             "type": "function",
@@ -186,7 +186,7 @@
         },
         "defense_status": null,
         "children": [
-            "flag:19:take"
+            "flag:3:take"
         ],
         "parents": null,
         "existence_status": null,
@@ -197,9 +197,9 @@
         "mitre_info": null
     },
     {
-        "id": "flag:19:take",
+        "id": "flag:3:take",
         "type": "and",
-        "asset": "flag",
+        "asset": "flag:3",
         "name": "gather",
         "ttc": {
             "type": "function",
@@ -217,9 +217,9 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:20:connect",
+        "id": "firewall:3:connect",
         "type": "or",
-        "asset": "firewall",
+        "asset": "firewall:3",
         "name": "connect",
         "ttc": {
             "type": "function",
@@ -239,9 +239,9 @@
         "mitre_info": null
     },
     {
-        "id": "flag:23:take",
+        "id": "flag:2:take",
         "type": "and",
-        "asset": "flag",
+        "asset": "flag:2",
         "name": "gather",
         "ttc": {
             "type": "function",
@@ -259,9 +259,9 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:7:defend",
+        "id": "firewall:1:defend",
         "type": "defense",
-        "asset": "firewall",
+        "asset": "firewall:1",
         "name": "enable",
         "ttc": {
             "type": "function",
@@ -270,8 +270,8 @@
         },
         "defense_status": null,
         "children": [
-            "firewall:7:connect",
-            "flag:11:take"
+            "firewall:1:connect",
+            "flag:1:take"
         ],
         "parents": null,
         "existence_status": null,
@@ -282,9 +282,9 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:12:defend",
+        "id": "firewall:2:defend",
         "type": "defense",
-        "asset": "firewall",
+        "asset": "firewall:2",
         "name": "enable",
         "ttc": {
             "type": "function",
@@ -293,7 +293,7 @@
         },
         "defense_status": null,
         "children": [
-            "flag:8:take",
+            "flag:4:take",
             "host:9:connect"
         ],
         "parents": null,
@@ -305,9 +305,9 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:18:defend",
+        "id": "firewall:4:defend",
         "type": "defense",
-        "asset": "firewall",
+        "asset": "firewall:4",
         "name": "enable",
         "ttc": {
             "type": "function",
@@ -316,8 +316,8 @@
         },
         "defense_status": null,
         "children": [
-            "firewall:18:connect",
-            "flag:19:take"
+            "firewall:4:connect",
+            "flag:3:take"
         ],
         "parents": null,
         "existence_status": null,
@@ -328,9 +328,9 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:20:defend",
+        "id": "firewall:3:defend",
         "type": "defense",
-        "asset": "firewall",
+        "asset": "firewall:3",
         "name": "enable",
         "ttc": {
             "type": "function",
@@ -340,7 +340,7 @@
         "defense_status": null,
         "children": [
             "host:33:connect",
-            "flag:23:take"
+            "flag:2:take"
         ],
         "parents": null,
         "existence_status": null,
@@ -353,7 +353,7 @@
     {
         "id": "host:33:connect",
         "type": "and",
-        "asset": "host",
+        "asset": "host:33",
         "name": "connect",
         "ttc": {
             "type": "function",
@@ -362,7 +362,7 @@
         },
         "defense_status": null,
         "children": [
-            "flag:23:take"
+            "flag:2:take"
         ],
         "parents": null,
         "existence_status": null,
@@ -375,7 +375,7 @@
     {
         "id": "host:34:connect",
         "type": "or",
-        "asset": "host",
+        "asset": "host:34",
         "name": "connect",
         "ttc": {
             "type": "function",
@@ -384,7 +384,7 @@
         },
         "defense_status": null,
         "children": [
-            "firewall:12:connect"
+            "firewall:2:connect"
         ],
         "parents": null,
         "existence_status": null,
@@ -397,7 +397,7 @@
     {
         "id": "host:32:connect",
         "type": "or",
-        "asset": "host",
+        "asset": "host:32",
         "name": "connect",
         "ttc": {
             "type": "function",
@@ -406,7 +406,7 @@
         },
         "defense_status": null,
         "children": [
-            "firewall:7:connect"
+            "firewall:1:connect"
         ],
         "parents": null,
         "existence_status": null,
