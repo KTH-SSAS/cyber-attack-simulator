@@ -66,6 +66,7 @@ einops = ">=0.6.0"
 bayesian-optimization = ">=1.4.2"
 pettingzoo = "^1.24.1"
 pyrsistent = "^0.19.3"
+pygame = "^2.5.2"
 
 [tool.poetry.group.dev.dependencies]
 ruff = ">=0.0.257"
