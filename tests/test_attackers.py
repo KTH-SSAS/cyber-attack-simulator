@@ -3,7 +3,7 @@ from collections import OrderedDict
 import numpy as np
 import pytest
 
-from attack_simulator import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER
+from attack_simulator.constants import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER
 from attack_simulator.agents import (  # InformedAttacker,; RandomNoActionAttacker,; RoundRobinNoActionAttacker,
     Agent,
     PathFinderAttacker,

@@ -4,7 +4,7 @@ from typing import Sequence
 import numpy as np
 import pytest
 
-from attack_simulator import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER, AGENT_DEFENDER
+from attack_simulator.constants import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.agents.agent import Agent
 from attack_simulator.agents.attackers.searchers import BreadthFirstAttacker
 from attack_simulator.mal.graph import AttackGraph

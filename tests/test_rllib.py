@@ -4,7 +4,7 @@ import ray
 from ray.rllib.agents import ppo
 from ray.rllib.policy.policy import PolicySpec
 
-from attack_simulator import AGENT_ATTACKER, AGENT_DEFENDER
+from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
 from attack_simulator.rllib.custom_callback import AttackSimCallback
 from attack_simulator.rllib.defender_policy import DefenderConfig, DefenderPolicy

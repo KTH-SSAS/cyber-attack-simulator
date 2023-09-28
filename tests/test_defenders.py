@@ -1,5 +1,5 @@
 import pytest
-from attack_simulator import AGENT_DEFENDER
+from attack_simulator.constants import AGENT_DEFENDER
 from attack_simulator.env.env import AttackSimulationEnv
 
 from attack_simulator.mal.sim import Simulator
