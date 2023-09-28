@@ -18,7 +18,7 @@ class BreadthFirstAttacker(Agent):
         self.targets: Deque[int] = deque([])
         self.current_target: int = None
         seed = agent_config["seed"] if "seed" in agent_config else np.random.SeedSequence().entropy
-        self.rng = np.random.default_rng(seed)
+        self.rng = np.random.default_rng(seed) if agent_config.get("randomize", False) else None
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
         attack_surface = observation["attack_surface"]
@@ -26,7 +26,9 @@ class BreadthFirstAttacker(Agent):
         new_targets = [idx for idx in surface_indexes if idx not in self.targets]
 
         # Add new targets to the back of the queue
-        self.rng.shuffle(new_targets)
+        # if desired, shuffle the new targets to make the attacker more unpredictable
+        if self.rng:
+            self.rng.shuffle(new_targets)
         for c in new_targets:
             self.targets.appendleft(c)
 
