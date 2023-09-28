@@ -42,8 +42,6 @@ attacker = BreadthFirstAttacker({})#KeyboardAgent(env.simulator.reverse_vocab)
 obs, info = env.reset()
 done = False
 
-env.render()
-
 obs_log = open("obs_log.jsonl", "w")
 
 class NumpyArrayEncoder(JSONEncoder):
@@ -91,8 +89,9 @@ with torch.no_grad():
         action_dict = {AGENT_ATTACKER: attacker_action, AGENT_DEFENDER: (action, node_selection)}
         if action == 1:
             assert defender_node_mask[node_selection] == 1
-        obs, rewards, terminated, truncated, infos = env.step(action_dict)
         env.render()
+        input()
+        obs, rewards, terminated, truncated, infos = env.step(action_dict)
 
         # dists = {AGENT_DEFENDER: defender_action_dist.numpy().tolist()}
 
