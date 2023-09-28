@@ -289,6 +289,14 @@ class AttackSimulationEnv(MultiAgentEnv):
     def done(self):
         return self.state.terminated["__all__"] or self.state.truncated["__all__"]
 
+    def close(self):
+        if self.screen is not None:
+            import pygame
+
+            pygame.display.quit()
+            pygame.quit()
+            self.isopen = False
+
     def render(self) -> bytes:
 
         # """Render a frame of the environment."""
