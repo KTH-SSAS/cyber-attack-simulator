@@ -6,13 +6,10 @@ from typing import Any, Dict, Optional, Tuple
 import numpy as np
 from gymnasium import spaces
 from numpy.typing import NDArray
-from ray.rllib.env.multi_agent_env import MultiAgentEnv
-from ray.tune.registry import register_env
 from maturin import import_hook
 
 from .roles import Defender, Attacker
 from ..constants import AGENT_ATTACKER, AGENT_DEFENDER
-from ..agents import ATTACKERS
 from ..mal.observation import Info, Observation
 from ..mal.sim import Simulator
 from ..renderer.renderer import AttackSimulationRenderer
@@ -55,11 +52,6 @@ reward_funcs = {
     "defense-penalty": defense_penalty,
 }
 
-
-def select_random_attacker(rng: np.random.Generator):
-    return list(ATTACKERS.values())[rng.integers(0, len(ATTACKERS))]
-
-
 def get_agent_obs(sim_obs: Observation) -> Dict[str, Any]:
 
     defender_obs = Defender.get_obs(sim_obs)
@@ -76,7 +68,7 @@ class EnvironmentState:
         self.truncated = {AGENT_DEFENDER: False, AGENT_ATTACKER: False, "__all__": False}
 
 
-class AttackSimulationEnv(MultiAgentEnv):
+class AttackSimulationEnv():
     """Handles reinforcement learning matters."""
 
     NO_ACTION = "no action"
@@ -364,13 +356,3 @@ class AttackSimulationEnv(MultiAgentEnv):
         keys = [self.NO_ACTION] + defense_names
         return {key: value for key, value in zip(keys, action_probabilities)}
 
-
-def register_rllib_env() -> str:
-    name = "AttackSimulationEnv"
-    # Register the environment in the registry
-    def env_creator(env_config: Dict) -> AttackSimulationEnv:
-        config_data: EnvConfig = EnvConfig(**env_config)
-        return AttackSimulationEnv(config_data)
-
-    register_env(name, env_creator)
-    return name
