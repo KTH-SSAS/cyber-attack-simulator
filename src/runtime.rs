@@ -17,7 +17,7 @@ use log4rs::Config;
 use crate::attackgraph::{AttackGraph, TTCType};
 use crate::config::SimulatorConfig;
 use crate::observation::{Info, Observation, StateTuple};
-use crate::state::{SimulatorState, self};
+use crate::state::SimulatorState;
 
 use rand::Rng;
 
