@@ -49,7 +49,6 @@ python-telegram-bot = {version = ">=13.9", optional = true}
 pydot = ">=1.4.2"
 docformatter = ">=1.4"
 poetry = ">=1.1.13"
-agraphlib = { path = "../agraphlib/", develop = true }
 gymnasium = ">=0.28.0"
 scipy = ">=1.10.0"
 dm-tree = ">=0.1.8"
