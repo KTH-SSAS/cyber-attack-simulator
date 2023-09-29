@@ -11,14 +11,14 @@ class Defender:
                 "action_mask": spaces.Box(0, 1, shape=(n_actions,), dtype=np.int8),
                 "node_surface": spaces.Box(0, 1, shape=(n_objects,), dtype=np.int8),
                 "ids_observation": spaces.Box(0, 1, shape=(n_objects,), dtype=np.int8),
-                "asset": spaces.Box(0, np.inf, shape=(n_objects,), dtype=np.int64),
-                "asset_id": spaces.Box(0, np.inf, shape=(n_objects,), dtype=np.int64),
-                "step_name": spaces.Box(0, np.inf, shape=(n_objects,), dtype=np.int64),
+                "asset": spaces.Box(0, np.iinfo(np.uint64).max, shape=(n_objects,), dtype=np.uint64),
+                "asset_id": spaces.Box(0, np.iinfo(np.uint64).max, shape=(n_objects,), dtype=np.uint64),
+                "step_name": spaces.Box(0, np.iinfo(np.uint64).max, shape=(n_objects,), dtype=np.uint64),
                 "edges": spaces.Box(
                     0,
-                    np.inf,
+                    np.iinfo(np.uint64).max,
                     shape=(2, n_edges),
-                    dtype=np.int64,
+                    dtype=np.uint64,
                 ),
             }
         )
@@ -69,12 +69,12 @@ class Defender:
         # plt.show()
 
         return {
-            "action_mask": np.array(obs.defender_action_mask, dtype=np.int8),
-            "node_surface": np.array(obs.defense_surface, dtype=np.int8),
+            "action_mask": obs.defender_action_mask,
+            "node_surface": obs.defense_surface,
             "ids_observation": obs.state,
-            "assets": obs.assets,
-            "asset_ids": obs.asset_ids,
-            "step_names": obs.names,
+            "asset": obs.assets,
+            "asset_id": obs.asset_ids,
+            "step_name": obs.names,
             "edges": obs.edges.T,
         }
 
@@ -112,9 +112,9 @@ class Attacker:
                     dtype=np.uint64,
                 ),
                 "state": spaces.Box(0, 1, shape=(n_nodes,), dtype=np.int8),
-                "assets": spaces.Box(0, np.inf, shape=(n_nodes,), dtype=np.int64),
-                "asset_ids": spaces.Box(0, np.inf, shape=(n_nodes,), dtype=np.int64),
-                "step_names": spaces.Box(0, np.inf, shape=(n_nodes,), dtype=np.int64),
+                "asset": spaces.Box(0, np.iinfo(np.int64).max, shape=(n_nodes,), dtype=np.uint64),
+                "asset_id": spaces.Box(0, np.iinfo(np.int64).max, shape=(n_nodes,), dtype=np.uint64),
+                "step_name": spaces.Box(0, np.iinfo(np.int64).max, shape=(n_nodes,), dtype=np.uint64),
                 "nop_index": spaces.Discrete(n_actions),
             }
         )
@@ -122,13 +122,13 @@ class Attacker:
     @staticmethod
     def get_obs(obs: Observation):
         return {
-            "action_mask": np.array(obs.attacker_action_mask, dtype=np.int8),
-            "node_surface": np.array(obs.attack_surface, dtype=np.int8),
-            "state": np.array(obs.state, dtype=np.int8),
+            "action_mask": obs.attacker_action_mask,
+            "node_surface": obs.attack_surface,
+            "state": obs.state,
             "asset": obs.assets,
             "asset_id": obs.asset_ids,
             "step_name": obs.names,
-            "ttc_remaining": np.array(obs.ttc_remaining, dtype=np.uint64),
+            "ttc_remaining": obs.ttc_remaining,
             "nop_index": 0,
         }
 

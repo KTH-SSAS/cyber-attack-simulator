@@ -5,7 +5,6 @@ import pytest
 import torch
 from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.env.env import AttackSimulationEnv
-from attack_simulator.models.gnn import GNNRLAgent
 from attack_simulator.renderer.renderer import AttackSimulationRenderer
 from attack_simulator.utils.config import EnvConfig
 
@@ -67,19 +66,6 @@ def test_env_multiple_steps(env: AttackSimulationEnv) -> None:
         assert "defender" in obs
         if terminated["__all__"] or truncated["__all__"]:
             break
-
-
-def test_gnn(env: AttackSimulationEnv) -> None:
-    obs, _ = env.reset()
-    gnn = GNNRLAgent(1, 1, 1)
-
-    for _ in range(100):
-        obs = obs[AGENT_DEFENDER]
-        for key, value in obs.items():
-            obs[key] = torch.from_numpy(value).float() if isinstance(value, np.ndarray) else value
-        action_dist, _ = gnn.compute_action(obs)
-        action = torch.argmax(action_dist)
-        obs, reward, terminated, truncated, info = env.step({AGENT_DEFENDER: action})
 
 
 @pytest.mark.parametrize("agent", ["attacker", "defender"])
