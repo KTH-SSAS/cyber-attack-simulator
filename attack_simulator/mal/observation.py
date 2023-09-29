@@ -11,7 +11,10 @@ class Observation:
     ids_observation: NDArray[np.int8]
     attack_surface: NDArray[np.int8]
     defense_surface: NDArray[np.int8]
-    nodes: NDArray[np.int8]
+    state: NDArray[np.int8]
+    assets: NDArray[UINT]
+    asset_ids: NDArray[UINT]
+    names: NDArray[UINT]
     ttc_remaining: NDArray[UINT]
     defender_action_mask: NDArray[np.int8]
     attacker_action_mask: NDArray[np.int8]
@@ -20,11 +23,15 @@ class Observation:
 
     @classmethod
     def from_rust(cls, obs):
+        state, assets, asset_ids, names = zip(*obs.nodes)
         return Observation(
             ids_observation=np.array(obs.ids_observation),
             attack_surface=np.array(obs.attack_surface),
             defense_surface=np.array(obs.defense_surface),
-            nodes=np.array([x for x, _, _, _ in obs.nodes]),
+            state=np.array(state),
+            assets=np.array(assets),
+            asset_ids=np.array(asset_ids),
+            names=np.array(names),
             ttc_remaining=np.array(obs.ttc_remaining),
             defender_action_mask=np.array(obs.defender_action_mask),
             attacker_action_mask=np.array(obs.attacker_action_mask),
@@ -48,7 +55,7 @@ class Info:
 def obs_to_dict(obs: Observation) -> dict:
     return {
         "ids_observation": np.array(obs.ids_observation),
-        "attack_surface": np.array(obs.attack_surface),
+        "node_surface": np.array(obs.attack_surface),
         "defense_state": np.array(obs.defense_state),
         "ttc_remaining": np.array(obs.ttc_remaining),
         "attack_state": np.array(obs.attack_state),

@@ -33,6 +33,8 @@ pub(crate) struct RustAttackSimulator {
     attacker_impact: Vec<i64>,
     #[pyo3(get)]
     defender_impact: Vec<i64>,
+    #[pyo3(get)]
+    vocab: HashMap<String, usize>,
 }
 
 #[pymethods]
@@ -60,6 +62,7 @@ impl RustAttackSimulator {
             config,
             actions: runtime.actions.clone(),
             actors: runtime.actors.clone(),
+            vocab: runtime.vocab(),
             runtime,
         })
     }

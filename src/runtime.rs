@@ -17,7 +17,7 @@ use log4rs::Config;
 use crate::attackgraph::{AttackGraph, TTCType};
 use crate::config::SimulatorConfig;
 use crate::observation::{Info, Observation, StateTuple};
-use crate::state::SimulatorState;
+use crate::state::{SimulatorState, self};
 
 use rand::Rng;
 
@@ -98,6 +98,10 @@ where
             "defender" => SimulatorRuntime::defense_action,
             _ => panic!("Unknown actor {}", actor),
         }
+    }
+
+    pub fn vocab(&self) -> HashMap<String, usize> {
+        return self.g.vocab.clone();
     }
 
     // Path: src/sim.rs
@@ -216,6 +220,18 @@ where
             .collect();
     }
 
+    fn get_color(&self, id: &I, state: &SimulatorState<I>) -> String {
+        match id {
+            id if self.g.entry_points().contains(id) => "crimson".to_string(), // entry points
+            id if self.g.disabled_defenses(&state.enabled_defenses).contains(id) => "chartreuse4".to_string(), // disabled defenses
+            id if state.enabled_defenses.contains(id) => "chartreuse".to_string(), // enabled defenses
+            id if state.attack_surface.contains(id) => "gold".to_string(), // attack surface
+            id if state.compromised_steps.contains(id) => "firebrick1".to_string(), // compromised steps
+            id if self.g.flags.contains(id) => "darkmagenta".to_string(), // flags
+            _ => "white".to_string(),
+        }
+    }
+
     pub fn to_graphviz(&self) -> String {
         let attributes = self
             .g
@@ -226,10 +242,7 @@ where
                 attrs.push(("style".to_string(), "filled".to_string()));
                 attrs.push((
                     "fillcolor".to_string(),
-                    match self.state.borrow().compromised_steps.contains(id) {
-                        true => "red".to_string(),
-                        false => "white".to_string(),
-                    },
+                    self.get_color(id, &self.state.borrow()),
                 ));
                 // Add TTC
                 attrs.push((

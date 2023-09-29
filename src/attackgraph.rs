@@ -87,7 +87,7 @@ pub(crate) struct AttackStep {
 
 impl Display for AttackStep {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.name)
+        write!(f, "{}/{}/{}", self.asset, self.asset_id, self.name)
     }
 }
 
@@ -235,7 +235,7 @@ pub(crate) struct AttackGraph<I> {
     pub(crate) defense_steps: HashSet<I>,
     pub(crate) flags: HashSet<I>,
     entry_points: HashSet<I>,
-    vocab: HashMap<String, usize>,
+    pub(crate) vocab: HashMap<String, usize>,
 }
 
 /*
@@ -280,7 +280,7 @@ where
     }
 
     pub(crate) fn name_of_step(&self, id: &I) -> String {
-        return self.graph.nodes[id].data.name.clone();
+        return format!("{}", self.graph.nodes[id].data);
     }
 
     /* 

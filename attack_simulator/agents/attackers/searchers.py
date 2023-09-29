@@ -21,7 +21,7 @@ class BreadthFirstAttacker(Agent):
         self.rng = np.random.default_rng(seed) if agent_config.get("randomize", False) else None
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        attack_surface = observation["attack_surface"]
+        attack_surface = observation["node_surface"]
         surface_indexes = set(np.flatnonzero(attack_surface))
         new_targets = [idx for idx in surface_indexes if idx not in self.targets]
 

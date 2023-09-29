@@ -58,6 +58,8 @@ class parallel_env(ParallelEnv):
         self.simulator = AttackSimulationEnv(config, render_mode)
         self.render_mode = render_mode
         self.agents = self.simulator._agent_ids
+        self.vocab = self.simulator.vocab
+        self.reverse_vocab = self.simulator.reverse_vocab
 
     # Observation space should be defined here.
     # lru_cache allows observation and action spaces to be memoized, reducing clock cycles required to get each agent's space.

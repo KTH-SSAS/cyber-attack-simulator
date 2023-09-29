@@ -120,7 +120,7 @@ class AttackSimulationEnv(MultiAgentEnv):
 
         num_defenses = self.sim.num_defense_steps
         num_attacks = self.sim.num_attack_steps
-        num_nodes = len(obs.nodes)
+        num_nodes = len(obs.state)
         num_edges = len(obs.edges)
 
         self.d_impact = np.array(self.sim.defender_impact)
@@ -267,7 +267,7 @@ class AttackSimulationEnv(MultiAgentEnv):
         obs = get_agent_obs(sim_obs)
         infos = self.get_agent_info(info)
         rewards = {}
-        state = sim_obs.nodes
+        state = sim_obs.state
         rewards[AGENT_ATTACKER] = np.sum(self.a_impact[state])
         rewards[AGENT_DEFENDER] = np.sum(self.d_impact[state])
 

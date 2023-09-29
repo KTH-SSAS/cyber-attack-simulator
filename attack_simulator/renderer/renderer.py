@@ -78,7 +78,7 @@ def _generate_logs(
     time = state["time"]
     attacker_action = state["attacker_action"]
     defender_action = state["defender_action"]
-    attack_surface = state["attack_surface"]
+    attack_surface = state["node_surface"]
     defense_state = state["defense_state"]
     ttc_remaining = state["ttc_remaining"]
     attack_surface_empty = np.all(attack_surface == 0)
@@ -213,7 +213,7 @@ class AttackSimulationRenderer:
         false_alerts = state["false_positives"]
         missed_alerts = state["false_negatives"]
         defense_state = state["defense_state"]
-        attack_surface = state["attack_surface"]
+        attack_surface = state["node_surface"]
         ttc_remaining = state["ttc_remaining"]
         attacker_action = state["attacker_action"]
 

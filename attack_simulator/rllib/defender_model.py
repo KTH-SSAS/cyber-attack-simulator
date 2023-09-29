@@ -38,7 +38,7 @@ class DefenderModel(TorchModelV2, nn.Module):
 
         sim_state: Tensor = obs["ids_observation"].type(torch.FloatTensor)
         action_mask: Tensor = obs["action_mask"].type(torch.FloatTensor)
-        node_mask: Tensor = obs["defense_surface"].type(torch.FloatTensor)
+        node_mask: Tensor = obs["node_surface"].type(torch.FloatTensor)
 
         policy_mask = torch.cat([action_mask, node_mask], dim=-1)
 
