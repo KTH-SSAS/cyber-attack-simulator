@@ -4,26 +4,16 @@ from pathlib import Path
 import ray
 from ray.rllib.agents import ppo
 from ray.rllib.policy.policy import PolicySpec
-
-import attack_simulator.rllib.defender_model as defender_model
-import attack_simulator.rllib.gnn_model as gnn_defender
-from attack_simulator import AGENT_ATTACKER, AGENT_DEFENDER
-from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
-from attack_simulator.rllib.attackers_policies import BreadthFirstPolicy, RandomPolicy
-from attack_simulator.rllib.custom_callback import AttackSimCallback
+import attack_simulator
+from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
+from attack_simulator.rllib.attackers_policies import BreadthFirstPolicy
 from attack_simulator.rllib.defender_policy import DefenderConfig, DefenderPolicy
-from attack_simulator.utils.config import EnvConfig
 
 if __name__ == "__main__":
 
     ray.init()
-
-    env_name = register_rllib_env()
-    # Register the model with the registry.
-    defender_model.register_rllib_model()
-    gnn_defender.register_rllib_model()
-    # optimal_defender.register_rllib_model()
-    # random_defender.register_rllib_model()
+    # Register everything with the rrlib registry.
+    attack_simulator.register_rllib()
 
     seed = 0
 
@@ -59,7 +49,7 @@ if __name__ == "__main__":
         "graph_config": graph_config,
     }
 
-    dummy_env = AttackSimulationEnv(EnvConfig(**env_config))
+    #dummy_env = AttackSimulationEnv(EnvConfig(**env_config))
 
     render_path = Path("render/simple")
     if render_path.is_dir():
@@ -71,7 +61,7 @@ if __name__ == "__main__":
         DefenderConfig()
         .training(scale_rewards=False)
         .framework("torch")
-        .environment(env_name, env_config=env_config)
+        .environment("AttackSimulationEnv", env_config=env_config)
         #.callbacks(AttackSimCallback)
         .debugging(seed=seed)
         .rollouts(
