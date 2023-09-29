@@ -1,0 +1,256 @@
+attack_graph:
+- asset: attacker
+  children:
+  - host-1-connect-1
+  id: attacker-0-enter-0
+  name: enter
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - host-4-connect-4
+  - host-5-connect-5
+  - firewall-6-connect-6
+  id: host-1-connect-1
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - host-3-connect-3
+  id: host-2-connect-2
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - host-9-connect-9
+  id: host-3-connect-3
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - host-2-connect-2
+  id: host-4-connect-4
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - host-10-connect-10
+  id: host-5-connect-5
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: firewall
+  children:
+  - host-36-connect-36
+  id: firewall-6-connect-6
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - host-12-connect-12
+  id: host-9-connect-9
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - firewall-13-connect-13
+  id: host-10-connect-10
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - firewall-16-connect-16
+  - host-17-connect-17
+  id: host-12-connect-12
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: firewall
+  children:
+  - host-35-connect-35
+  id: firewall-13-connect-13
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: flag
+  children: []
+  id: flag-15-take-15
+  name: gather
+  step_type: or
+  ttc: 1
+- asset: firewall
+  children:
+  - flag-15-take-15
+  id: firewall-16-connect-16
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - firewall-23-connect-23
+  id: host-17-connect-17
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - firewall-25-connect-25
+  id: host-19-connect-19
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: firewall
+  children:
+  - host-21-connect-21
+  id: firewall-20-connect-20
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: host
+  children:
+  - flag-22-take-22
+  id: host-21-connect-21
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: flag
+  children: []
+  id: flag-22-take-22
+  name: gather
+  step_type: or
+  ttc: 1
+- asset: firewall
+  children:
+  - flag-26-take-26
+  id: firewall-23-connect-23
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: firewall
+  children:
+  - flag-28-take-28
+  id: firewall-25-connect-25
+  name: connect
+  step_type: or
+  ttc: 1
+- asset: flag
+  children: []
+  id: flag-26-take-26
+  name: gather
+  step_type: or
+  ttc: 1
+- asset: flag
+  children: []
+  id: flag-27-take-27
+  name: gather
+  step_type: or
+  ttc: 1
+- asset: flag
+  children: []
+  id: flag-28-take-28
+  name: gather
+  step_type: or
+  ttc: 1
+- asset: firewall
+  children:
+  - firewall-6-connect-6
+  - host-36-connect-36
+  - host-19-connect-19
+  - firewall-20-connect-20
+  - host-21-connect-21
+  - flag-22-take-22
+  - firewall-25-connect-25
+  - flag-28-take-28
+  id: firewall-6-defend-29
+  name: enable
+  step_type: or
+  ttc: 0
+- asset: firewall
+  children:
+  - firewall-13-connect-13
+  - flag-27-take-27
+  - host-35-connect-35
+  id: firewall-13-defend-30
+  name: enable
+  step_type: or
+  ttc: 0
+- asset: firewall
+  children:
+  - firewall-16-connect-16
+  - flag-15-take-15
+  id: firewall-16-defend-31
+  name: enable
+  step_type: or
+  ttc: 0
+- asset: firewall
+  children:
+  - firewall-20-connect-20
+  - host-21-connect-21
+  - flag-22-take-22
+  id: firewall-20-defend-32
+  name: enable
+  step_type: or
+  ttc: 0
+- asset: firewall
+  children:
+  - firewall-23-connect-23
+  - flag-26-take-26
+  id: firewall-23-defend-33
+  name: enable
+  step_type: or
+  ttc: 0
+- asset: firewall
+  children:
+  - firewall-25-connect-25
+  - flag-28-take-28
+  id: firewall-25-defend-34
+  name: enable
+  step_type: or
+  ttc: 0
+- asset: host
+  children:
+  - flag-27-take-27
+  id: host-35-connect-35
+  name: connect
+  step_type: or
+  ttc: 2
+- asset: host
+  children:
+  - firewall-20-connect-20
+  - host-19-connect-19
+  id: host-36-connect-36
+  name: connect
+  step_type: or
+  ttc: 4
+defenses:
+- firewall-6-defend-29
+- firewall-13-defend-30
+- firewall-16-defend-31
+- firewall-20-defend-32
+- firewall-23-defend-33
+- firewall-25-defend-34
+flags:
+  firewall-13-defend-30: default
+  firewall-16-defend-31: default
+  firewall-20-defend-32: default
+  firewall-23-defend-33: default
+  firewall-25-defend-34: default
+  firewall-6-defend-29: default
+  flag-15-take-15: default
+  flag-22-take-22: default
+  flag-26-take-26: default
+  flag-27-take-27: default
+  flag-28-take-28: default
+
+instance_model:
+- dependents: []
+  id: 1
+
+entry_points: [attacker-0-enter-0]

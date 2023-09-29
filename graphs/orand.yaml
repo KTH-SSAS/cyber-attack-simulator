@@ -1,0 +1,123 @@
+# Simple attack graph with 7 attack steps, 1 flag and 2 defense steps.
+# attacker starts at a.attack, and can choose to attack b or c.
+# Using defense step c.defend will disable c, making c and d inaccessible.
+# Using defense step b.defend will disable b, making b and d inaccessible.
+# b and d have flags.
+# d is an AND-step
+#            a.attack
+#           / \
+# b.defend―b   c―c.defend
+#           \ /
+#            d-d.defend
+#           /  \
+#         /      \
+#        /        \         
+#       f-f.defend-f
+#        \        /
+#         \      /
+#          f.flag
+attack_graph:
+
+  # asset a
+  - asset: a
+    children:
+      - b.attack
+      - c.attack
+    id: a.attack
+    name: attack
+    ttc: 1
+    step_type: or
+
+  # asset b
+  - asset: b
+    children:
+      - d.attack
+    id: b.attack
+    name: attack
+    ttc: 1
+    step_type: and
+
+  - asset: b
+    children:
+      - b.attack
+    id: b.defend
+    name: defend
+    step_type: defense
+    ttc: 1
+
+  # asset c
+  - asset: c
+    children:
+      - d.attack
+    id: c.attack
+    name: attack
+    ttc: 1
+    step_type: and
+
+  - asset: c
+    children:
+      - c.attack
+    id: c.defend
+    name: defend
+    ttc: 1
+    step_type: or
+
+  # asset d
+  - asset: d
+    children:
+      - f.attack
+      - f.elevate
+    id: d.attack
+    name: attack
+    step_type: and
+    ttc: 5
+
+  - asset: d
+    children:
+      - d.attack
+    id: d.defend
+    name: defend
+    step_type: or
+    ttc: 1
+
+  # asset f
+  - asset: f
+    name: attack
+    id: f.attack
+    children:
+      - f.flag
+    step_type: or
+    ttc: 1
+  
+  - asset: f
+    name: elevate
+    id: f.elevate
+    children: 
+      - f.flag
+    ttc: 1
+    step_type: or
+
+  - asset: f
+    children: []
+    id: f.flag
+    name: flag
+    ttc: 1
+    step_type: and
+
+  - asset: f
+    name: defend
+    id: f.defend
+    children:
+      - f.attack
+      - f.elevate
+    step_type: defense
+    ttc: 1
+
+flags: 
+  f.flag: low_flag
+
+instance_model: []
+
+entry_points: [a.attack]
+
+defenses: [c.defend, b.defend]

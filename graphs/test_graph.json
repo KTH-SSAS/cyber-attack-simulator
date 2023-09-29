@@ -1,0 +1,145 @@
+[
+    {
+        "id": "a.attack",
+        "type": "or",
+        "asset": "a",
+        "name": "firstSteps",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "b.attack",
+            "c.attack"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "b.attack",
+        "type": "and",
+        "asset": "b",
+        "name": "attack",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "b.capture",
+            "d.attack"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "b.capture",
+        "type": "or",
+        "asset": "b",
+        "name": "capture",
+        "ttc": null,
+        "defense_status": null,
+        "children": [],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "c.attack",
+        "type": "and",
+        "asset": "c",
+        "name": "attack",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "d.attack"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "d.attack",
+        "type": "and",
+        "asset": "d",
+        "name": "attack",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "d.capture"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "d.capture",
+        "type": "or",
+        "asset": "d",
+        "name": "capture",
+        "ttc": null,
+        "defense_status": null,
+        "children": [],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "c.defend",
+        "type": "defense",
+        "asset": "c",
+        "name": "defend",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "c.attack"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "b.defend",
+        "type": "defense",
+        "asset": "b",
+        "name": "defend",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "b.attack",
+            "b.capture"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    }
+]
