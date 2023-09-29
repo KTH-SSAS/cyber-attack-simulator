@@ -61,6 +61,9 @@ class parallel_env(ParallelEnv):
         self.vocab = self.simulator.vocab
         self.reverse_vocab = self.simulator.reverse_vocab
 
+        self.observation_spaces = self.simulator.observation_space
+        self.action_spaces = self.simulator.action_space
+
     # Observation space should be defined here.
     # lru_cache allows observation and action spaces to be memoized, reducing clock cycles required to get each agent's space.
     # If your spaces change over time, remove this line (disable caching).
