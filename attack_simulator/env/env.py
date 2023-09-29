@@ -188,7 +188,6 @@ class AttackSimulationEnv():
             seed = self.config.seed
 
         episode_count = self.episode_count + 1
-        super().reset(seed=seed)
 
         rng, env_seed = get_rng(seed)
         sim_obs, info = self.sim.reset(env_seed + episode_count)
