@@ -3,7 +3,7 @@
 import sys
 from pathlib import Path
 
-from scripts.run_rllib import main
+from scripts.tune_run import main
 
 
 def run(config_file: Path, num_workers: int, debug: bool = False) -> None:
@@ -27,6 +27,6 @@ def run(config_file: Path, num_workers: int, debug: bool = False) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: debug.py <config_file>")
+        print("Usage: run.py <config_file>")
         sys.exit()
     run(Path(sys.argv[1]), num_workers=1)
