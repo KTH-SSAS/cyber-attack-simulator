@@ -6,13 +6,28 @@ from typing import Dict, List, Tuple
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-from agraphlib import STEP, GraphColors
 from numpy.typing import NDArray
 from yaml import safe_load
-
+from enum import Enum
 from ..constants import UINT
 from ..utils.config import GraphConfig
 
+class STEP(Enum):
+    AND = "and"
+    OR = "or"
+
+DPI = 100
+NODE_SIZE = 100
+
+class GraphColors(Enum):
+	NODE = "#ffffff"
+	EDGE = "#000000"
+	NODE_TEXT = "#000000"
+	EDGE_TEXT = "#000000"
+	FLAG = "#00ff00"
+	DEFENSE = "#cbc3e3"
+	DEFENSE_ACTIVATE = "#800080"
+	ENTRY = "#ff0000"
 
 @dataclass
 class AttackStep:

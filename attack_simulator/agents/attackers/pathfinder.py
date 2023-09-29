@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Tuple, Union
 
 import networkx as nx
 import numpy as np
-from agraphlib import STEP
 from networkx.algorithms.shortest_paths.generic import shortest_path
 from numpy.typing import NDArray
 

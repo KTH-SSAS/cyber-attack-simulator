@@ -1,7 +1,6 @@
 [MASTER]
 max-line-length=120
 variable-naming-style=any
-init-hook='import sys; sys.path.append("/home/jakob/sentience/agraphlib")'
 generated-members=
 			numpy.*,
 			torch.*,

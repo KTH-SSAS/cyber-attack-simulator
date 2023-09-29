@@ -5,7 +5,6 @@ from typing import Any, Dict, Optional, Set, Tuple
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-from agraphlib import STEP
 from matplotlib.animation import HTMLWriter
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
