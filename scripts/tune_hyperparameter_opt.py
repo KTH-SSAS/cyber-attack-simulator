@@ -14,97 +14,17 @@ from ray.tune.schedulers.pb2 import PB2
 from ray.tune.search import ConcurrencyLimiter
 from ray.tune.search.bayesopt import BayesOptSearch
 from ray.tune.stopper import MaximumIterationStopper
+from ray.rllib.algorithms.impala import ImpalaTorchPolicy, ImpalaConfig, Impala
+from ray.rllib.algorithms.ppo import PPO
 
-import attack_simulator.rllib.gnn_model as gnn_defender
-from attack_simulator import AGENT_ATTACKER, AGENT_DEFENDER
-from attack_simulator.env.env import AttackSimulationEnv, register_rllib_env
-from attack_simulator.rllib.attackers_policies import DepthFirstPolicy
+import attack_simulator
+
+from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
+from attack_simulator.rllib.attackers_policies import BreadthFirstPolicy, DepthFirstPolicy
 from attack_simulator.rllib.custom_callback import AttackSimCallback
-from attack_simulator.rllib.defender_policy import Defender, DefenderConfig, DefenderPolicy
 from attack_simulator.utils.config import EnvConfig
 
-
-def make_graph_filename_absolute(env_config: EnvConfig):
-    cwd = os.getcwd()
-    absolute_graph_pathname = Path.absolute(Path(cwd, env_config.graph_config.filename))
-    env_config = dataclasses.replace(
-        env_config,
-        graph_config=dataclasses.replace(
-            env_config.graph_config, filename=str(absolute_graph_pathname)
-        ),
-    )
-    return env_config
-
-
-def get_config(config_file, gpu_count):
-    env_name = register_rllib_env()
-    gnn_defender.register_rllib_model()
-    global_seed = 22
-    id_string = f"{datetime.now().strftime(r'%m-%d_%H:%M:%S')}@{socket.gethostname()}"
-    attacker_policy_class = DepthFirstPolicy
-    num_workers = 0
-
-    # Allocate GPU power to workers
-    num_gpus = 0.0001 if gpu_count > 0 else 0  # Driver GPU
-    num_gpus_per_worker = (
-        (gpu_count - num_gpus) / num_workers if num_workers > 0 and gpu_count > 0 else 0
-    )
-
-    env_config = EnvConfig.from_yaml(config_file)
-    env_config = make_graph_filename_absolute(env_config)
-    env_config = dataclasses.replace(env_config, run_id=id_string)
-    env_config = dataclasses.replace(env_config, backend="rust")
-
-    dummy_env = AttackSimulationEnv(env_config)
-    defender_config = {
-        "model": {
-            "custom_model": "GNNDefenderModel",
-            "fcnet_hiddens": [8],
-            "vf_share_layers": True,
-            "custom_model_config": {},
-        }
-    }
-    attacker_config = {
-        "num_special_actions": dummy_env.num_special_actions,
-        "wait_action": dummy_env.sim.wait_action,
-        "terminate_action": dummy_env.sim.terminate_action,
-    }
-
-    config = (
-        DefenderConfig()
-        .training(
-            sgd_minibatch_size=128,
-            train_batch_size=128,
-            vf_clip_param=1000,
-            gamma=1.0,
-            use_critic=True,
-            use_gae=True,
-            scale_rewards=False,
-        )
-        .framework("torch")
-        .environment(env_name, env_config=asdict(env_config))
-        # .debugging(seed=global_seed)
-        .resources(num_gpus=num_gpus, num_gpus_per_worker=num_gpus_per_worker)
-        .callbacks(AttackSimCallback)
-        .rollouts(
-            num_rollout_workers=1,
-            num_envs_per_worker=1,
-            batch_mode="complete_episodes",
-        )
-        .multi_agent(
-            policies={
-                AGENT_DEFENDER: PolicySpec(policy_class=DefenderPolicy, config=defender_config),
-                AGENT_ATTACKER: PolicySpec(
-                    attacker_policy_class,
-                    config=attacker_config,
-                ),
-            },
-            policy_mapping_fn=lambda agent_id, episode, worker, **kwargs: agent_id,
-            policies_to_train=[AGENT_DEFENDER],
-        )
-    )
-    return config
-
+from rllib_common import get_config, setup_wandb
 
 def main(
     config_file: str,
@@ -117,6 +37,9 @@ def main(
     ray.init(dashboard_host=dashboard_host)
 
     callbacks = []
+    wandb = setup_wandb(True)
+    if wandb is not None:
+        callbacks.append(wandb)
 
     config = get_config(config_file, gpu_count=0)
 
@@ -126,7 +49,7 @@ def main(
     perturb = 0.25
     max_iteration = 100
     perturbation_interval = 10
-    num_samples = 3
+    num_samples = 1
     hyperparam_bounds = {
         "lr": [1e-4, 1e-1],
         "vf_clip_param": [1e-3, 1e3],
@@ -137,7 +60,7 @@ def main(
         "lambda": [0.9, 1],
     }
 
-    if method == "pbt":
+    if method == "pbt2":
         scheduler = PB2(
             time_attr="training_iteration",
             metric=metric,
@@ -156,7 +79,7 @@ def main(
 
     tuner = (
         tune.Tuner(
-            Defender,
+            Impala,
             tune_config=tune.TuneConfig(
                 reuse_actors=False,
                 scheduler=scheduler,
@@ -180,11 +103,15 @@ def main(
             param_space=config,
         )
         if not restore
-        else tune.Tuner.restore(path="~/ray_results/Defender_2023-05-05_11-29-26/")
+        else tune.Tuner.restore(path="~/ray_results/Impala_2023-09-28_10-58-56/")
     )
 
     results = tuner.fit()
-    result_dfs = [result.metrics_dataframe for result in results]
+    result_dfs = [result.metrics_dataframe for result in results if result.metrics_dataframe is not None]
+    
+    if not result_dfs:
+        return
+
     import matplotlib.pyplot as plt
 
     plt.figure(figsize=(7, 4))
@@ -194,6 +121,7 @@ def main(
     plt.title(f"{metric}")
     plt.xlabel("Training Iterations")
     plt.ylabel(f"{metric}")
+    #plt.savefig(f"{metric}.png")
     plt.show()
 
     plt.figure(figsize=(7, 4))
@@ -203,6 +131,7 @@ def main(
     plt.title("Reward During Training")
     plt.xlabel("Training Iterations")
     plt.ylabel("Reward")
+    #plt.savefig("reward.png")
     plt.show()
 
     best_result = results.get_best_result(metric=metric, mode=mode)
