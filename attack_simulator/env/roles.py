@@ -2,6 +2,7 @@ from ..mal.observation import Info, Observation
 import numpy as np
 from gymnasium import spaces
 
+BIG_INT = 2 ** 63 - 2
 
 class Defender:
     @staticmethod
@@ -11,12 +12,12 @@ class Defender:
                 "action_mask": spaces.Box(0, 1, shape=(n_actions,), dtype=np.int8),
                 "node_surface": spaces.Box(0, 1, shape=(n_objects,), dtype=np.int8),
                 "ids_observation": spaces.Box(0, 1, shape=(n_objects,), dtype=np.int8),
-                "asset": spaces.Box(0, np.iinfo(np.int64).max, shape=(n_objects,), dtype=np.int64),
-                "asset_id": spaces.Box(0, np.iinfo(np.int64).max, shape=(n_objects,), dtype=np.int64),
-                "step_name": spaces.Box(0, np.iinfo(np.int64).max, shape=(n_objects,), dtype=np.int64),
+                "asset": spaces.Box(0, BIG_INT, shape=(n_objects,), dtype=np.int64),
+                "asset_id": spaces.Box(0, BIG_INT, shape=(n_objects,), dtype=np.int64),
+                "step_name": spaces.Box(0, BIG_INT, shape=(n_objects,), dtype=np.int64),
                 "edges": spaces.Box(
                     0,
-                    np.iinfo(np.int64).max,
+                    BIG_INT,
                     shape=(2, n_edges),
                     dtype=np.int64,
                 ),
@@ -107,14 +108,14 @@ class Attacker:
                 ),
                 "ttc_remaining": spaces.Box(
                     0,
-                    np.iinfo(np.int64).max,
+                    BIG_INT,
                     shape=(n_nodes,),
                     dtype=np.int64,
                 ),
                 "state": spaces.Box(0, 1, shape=(n_nodes,), dtype=np.int8),
-                "asset": spaces.Box(0, np.iinfo(np.int64).max, shape=(n_nodes,), dtype=np.int64),
-                "asset_id": spaces.Box(0, np.iinfo(np.int64).max, shape=(n_nodes,), dtype=np.int64),
-                "step_name": spaces.Box(0, np.iinfo(np.int64).max, shape=(n_nodes,), dtype=np.int64),
+                "asset": spaces.Box(0, BIG_INT, shape=(n_nodes,), dtype=np.int64),
+                "asset_id": spaces.Box(0, BIG_INT, shape=(n_nodes,), dtype=np.int64),
+                "step_name": spaces.Box(0, BIG_INT, shape=(n_nodes,), dtype=np.int64),
                 "nop_index": spaces.Discrete(n_actions),
             }
         )

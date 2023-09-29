@@ -46,6 +46,10 @@ def test_check_spaces(env: AttackSimulationEnv) -> None:
 
     assert env.observation_space.contains(obs)
 
+    defender_obs_space.sample()
+    attacker_obs_space.sample()
+    
+
 
 def test_env_step(env: AttackSimulationEnv) -> None:
     obs = env.reset()
