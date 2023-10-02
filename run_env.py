@@ -1,63 +1,11 @@
-import pygame
 import torch
 from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.agents.attackers.searchers import BreadthFirstAttacker
-#from attack_simulator.models.sr_drl import Net
 import attack_simulator
 import json
 from json import JSONEncoder
 import numpy as np
 
-
-class KeyboardAgent:
-    def __init__(self, vocab):
-        self.vocab = vocab
-
-    def compute_action_from_dict(self, obs):
-        assets = obs["asset"]
-        asset_ids = obs["asset_id"]
-        step_names = obs["step_name"]
-        available_actions = np.flatnonzero(obs["node_surface"])
-        assets = [self.vocab[i] for i in assets[available_actions]]
-        asset_ids = asset_ids[available_actions]
-        step_names = [self.vocab[i] for i in step_names[available_actions]]
-        action_strings = [f"{a}:{i}:{s}" for a, i, s in zip(assets, asset_ids, step_names)]
-        action_strings = [f"{i}. {a}" for i, a in enumerate(action_strings)]
-        print("Available actions:")
-        print("\n".join(action_strings))
-
-        node = -1
-        while node >= len(available_actions) or node < 0:
-            print("Enter action:")
-            node = int(input())
-            if node >= len(available_actions) or node < 0:
-                print("Invalid action.")
-
-        print(f"Selected action: {action_strings[node]}")
-
-        print(available_actions[node])
-
-        return (1, available_actions[node])
-
-
-env_config = attack_simulator.EnvConfig.from_yaml("config/maze_env_config.yaml")
-env = attack_simulator.parallel_env(env_config, render_mode="human")
-
-layers = 4
-hidden_size = 4
-# defender = FixedActionGNNRLAgent(1, layers, hidden_size, num_actions)
-# defender = GNNRLAgent(1, layers, hidden_size)
-#q_range = (-100.0, 200.0 * env.n_nodes)
-defender = KeyboardAgent(env.reverse_vocab)
-#target_net = Net(q_range)
-#attacker = BreadthFirstAttacker({})
-attacker = KeyboardAgent(env.reverse_vocab)
-
-
-obs, info = env.reset()
-done = False
-
-obs_log = open("obs_log.jsonl", "w")
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):
@@ -70,48 +18,95 @@ class NumpyArrayEncoder(JSONEncoder):
         return JSONEncoder.default(self, obj)
 
 
-# plt.show(block=False)
+class KeyboardAgent:
+    def __init__(self, vocab):
+        self.vocab = vocab
+
+    def compute_action_from_dict(self, obs):
+        def valid_action(user_input):
+            if user_input == '':
+                return False
+            
+            try:
+                node = int(user_input)
+            except ValueError:
+                return False
+
+            try:
+                a = associated_action[action_strings[node]]
+            except IndexError:
+                return False
+            
+            if a == 0:
+                return True # wait is always valid
+            return node < len(available_objects) and node >= 0
+
+        def get_action_object(user_input):
+            node = int(user_input)
+            action = associated_action[action_strings[node]]
+            return node, action
+
+
+        assets = obs["asset"]
+        asset_ids = obs["asset_id"]
+        step_names = obs["step_name"]
+        available_objects = np.flatnonzero(obs["node_surface"])
+        assets = [self.vocab[i] for i in assets[available_objects]]
+        asset_ids = asset_ids[available_objects]
+        step_names = [self.vocab[i] for i in step_names[available_objects]]
+
+        action_strings = [f"{a}:{i}:{s}" for a, i, s in zip(assets, asset_ids, step_names)]
+        associated_action = {i: 1 for i in action_strings}
+        action_strings += ["wait"]
+        associated_action["wait"] = 0
+
+        user_input = ''
+        while not valid_action(user_input):
+            print("Available actions:")
+            print("\n".join([f"{i}. {a}" for i, a in enumerate(action_strings)]))
+            print("Enter action:")
+            user_input = input()
+            
+            if not valid_action(user_input):
+                print("Invalid action.")
+
+        node, a = get_action_object(user_input)
+        print(f"Selected action: {action_strings[node]}")
+       
+        return (a, available_objects[node] if a != 0 else 0)
+
+
+env_config = attack_simulator.EnvConfig.from_yaml("config/maze_env_config.yaml")
+env = attack_simulator.parallel_env(env_config, render_mode="human")
+
+control_attacker = False
+
+defender = KeyboardAgent(env.reverse_vocab)
+attacker = KeyboardAgent(env.reverse_vocab) if control_attacker else BreadthFirstAttacker({})
+
+obs, info = env.reset()
+done = False
+
+with open("sim_obs_log.jsonl", "w") as f:
+    f.write("Game Start!\n")
+
+total_reward_defender = 0
+total_reward_attacker = 0
 
 with torch.no_grad():
     while not done:
-        # defender_action_dist, value = defender.compute_action_from_dict(obs["defender"])
-        # print(defender_action_diST.numpy())
-        # defender_action_dist = F.softmax(defender_action_dist, dim=0)
-
-        #        render = env.render()
-        #        graph = pgv.AGraph(render)
-        #        graph.layout(prog="dot")
-        #        bytes = graph.draw(format="png")
-        #        img = Image.open(io.BytesIO(bytes))
-        #        plt.imshow(img)
-        #        plt.draw()
-        #        plt.pause(0.01)
-
         env.render()
-        node_feats, edge_attr, edge_index = (
-            obs["defender"]["ids_observation"].reshape(-1, 1),
-            None,
-            obs["defender"]["edges"],
-        )
-
-        s_batch = [(node_feats, edge_attr, edge_index)]
-        defender_action_mask = obs["defender"]["action_mask"]
-        defender_node_mask = obs["defender"]["node_surface"]
-        defender_action = defender(s_batch, defender_action_mask, defender_node_mask)
-        node_selection, value, action_probs, node_probs = defender_action
-        action = 0 if len(node_selection[0]) == 0 else 1
-        node_selection = 0 if len(node_selection[0]) == 0 else node_selection[0][0]
+        defender_action = defender.compute_action_from_dict(obs["defender"])
         attacker_action = attacker.compute_action_from_dict(obs["attacker"])
-        action_dict = {AGENT_ATTACKER: attacker_action, AGENT_DEFENDER: (action, node_selection)}
-        if action == 1:
-            assert defender_node_mask[node_selection] == 1
-        print("Press Enter to continue.")
-        #input()
+        action_dict = {AGENT_ATTACKER: attacker_action, AGENT_DEFENDER: defender_action}
         obs, rewards, terminated, truncated, infos = env.step(action_dict)
+        print("Attacker Reward: ", rewards[AGENT_ATTACKER])
+        print("Defender Reward: ", rewards[AGENT_DEFENDER])
+        total_reward_defender += rewards[AGENT_DEFENDER]
+        total_reward_attacker += rewards[AGENT_ATTACKER]
+        print("Press Enter to continue.")
 
-        # dists = {AGENT_DEFENDER: defender_action_dist.numpy().tolist()}
-
-        done = terminated[AGENT_ATTACKER]
+        done = terminated["__all__"]
 
         log = {
             "obs": obs,
@@ -120,14 +115,17 @@ with torch.no_grad():
             "info": infos,
             "terminated": terminated,
             "truncated": truncated,
-            # "action_distributions": dists,
         }
 
-        obs_log.write(f"{json.dumps(log, cls=NumpyArrayEncoder)}\n")
+        with open("sim_log.jsonl", "a", encoding="utf8") as f:
+            f.write(f"{json.dumps(log, cls=NumpyArrayEncoder)}\n")
+
+        print("---\n")
 
 env.render()
-print("Done. Press Enter to exit.")
+print("Game Over.")
+print("Total Defender Reward: ", total_reward_defender)
+print("Total Attacker Reward: ", total_reward_attacker)
+print("Press Enter to exit.")
 input()
 env.close()
-
-obs_log.close()

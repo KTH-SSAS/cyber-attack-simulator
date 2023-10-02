@@ -23,6 +23,10 @@ pub struct Observation {
     //pub defense_indices: Vec<usize>,
     #[pyo3(get)]
     pub flags: Vec<usize>,
+    #[pyo3(get)]
+    pub defender_reward: i64,
+    #[pyo3(get)]
+    pub attacker_reward: i64,
 }
 
 #[pyclass]

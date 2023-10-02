@@ -260,44 +260,6 @@ where
         return self.g.to_graphviz(Some(&attributes));
     }
 
-    pub fn attacker_impact(&self) -> Vec<i64> {
-        let id_to_index = &self.id_to_index;
-        let mut impact = vec![0; id_to_index.len()];
-
-        self.g
-            .flags
-            .iter()
-            .map(|id| id_to_index[id])
-            .for_each(|index| {
-                impact[index] = 1;
-            });
-
-        return impact;
-    }
-
-    pub fn defender_impact(&self) -> Vec<i64> {
-        let id_to_index = &self.id_to_index;
-        let mut impact = vec![0; id_to_index.len()];
-
-        self.g
-            .flags
-            .iter()
-            .map(|id| id_to_index[id])
-            .for_each(|index| {
-                impact[index] = -2 //-(self.ttc_sum as i64);
-            });
-
-        self.g
-            .defense_steps
-            .iter()
-            .map(|id| id_to_index[id])
-            .for_each(|index| {
-                impact[index] = -1;
-            });
-
-        return impact;
-    }
-
     pub fn reset(&mut self, seed: Option<u64>) -> SimResult<(Observation, Info)> {
         if let Some(seed) = seed {
             self.config.seed = seed;
@@ -520,6 +482,9 @@ where
             .map(|(from, to)| (self.id_to_index[from], self.id_to_index[to]))
             .collect::<Vec<(usize, usize)>>();
 
+        let attacker_reward = state.attacker_reward(&self.g);
+        let defender_reward = state.defender_reward(&self.g);
+
         Observation {
             attack_surface: attack_surface_vec,
             defense_surface,
@@ -531,6 +496,8 @@ where
             edges: vector_edges,
             //defense_indices: self.defender_action_to_state(),
             flags: self.g.flag_to_index(&self.id_to_index),
+            attacker_reward,
+            defender_reward,
         }
     }
 

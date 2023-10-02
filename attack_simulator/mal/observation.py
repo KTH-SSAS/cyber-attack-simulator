@@ -20,6 +20,8 @@ class Observation:
     attacker_action_mask: NDArray[np.int8]
     edges: NDArray[UINT]
     flags: NDArray[UINT]
+    attacker_reward: int
+    defender_reward: int
 
     @classmethod
     def from_rust(cls, obs):
@@ -37,6 +39,8 @@ class Observation:
             attacker_action_mask=np.array(obs.attacker_action_mask, dtype=np.int8),
             edges=np.array(obs.edges, dtype=np.int64),
             flags=np.array(obs.flags, dtype=np.int64),
+            attacker_reward=obs.attacker_reward,
+            defender_reward=obs.defender_reward,
         )
 
 

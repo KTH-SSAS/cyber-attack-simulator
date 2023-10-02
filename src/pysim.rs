@@ -30,10 +30,6 @@ pub(crate) struct RustAttackSimulator {
     #[pyo3(get)]
     num_defense_steps: usize,
     #[pyo3(get)]
-    attacker_impact: Vec<i64>,
-    #[pyo3(get)]
-    defender_impact: Vec<i64>,
-    #[pyo3(get)]
     vocab: HashMap<String, usize>,
 }
 
@@ -55,8 +51,6 @@ impl RustAttackSimulator {
         };
         let config = runtime.config.clone();
         Ok(RustAttackSimulator {
-            defender_impact: runtime.defender_impact(),
-            attacker_impact: runtime.attacker_impact(),
             num_attack_steps,
             num_defense_steps,
             config,

@@ -115,9 +115,6 @@ class AttackSimulationEnv():
         num_nodes = len(obs.state)
         num_edges = len(obs.edges)
 
-        self.d_impact = np.array(self.sim.defender_impact)
-        self.a_impact = np.array(self.sim.attacker_impact)
-
         self.observation_space: spaces.Dict = self.define_observation_space(
             num_defenses, num_nodes, num_edges, num_actions
         )
@@ -258,9 +255,8 @@ class AttackSimulationEnv():
         obs = get_agent_obs(sim_obs)
         infos = self.get_agent_info(info)
         rewards = {}
-        state = sim_obs.state
-        rewards[AGENT_ATTACKER] = np.sum(self.a_impact[state])
-        rewards[AGENT_DEFENDER] = np.sum(self.d_impact[state])
+        rewards[AGENT_ATTACKER] = np.sum(sim_obs.attacker_reward)
+        rewards[AGENT_DEFENDER] = np.sum(sim_obs.defender_reward)
 
 
         terminated = self.state.terminated

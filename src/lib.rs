@@ -42,8 +42,6 @@ pub struct AttackSimulator<T> {
     pub actors: HashMap<String, usize>,
     pub num_attack_steps: usize,
     pub num_defense_steps: usize,
-    pub attacker_impact: Vec<i64>,
-    pub defender_impact: Vec<i64>,
 }
 
 impl AttackSimulator<usize> {
@@ -74,8 +72,6 @@ impl AttackSimulator<usize> {
         };
         let config = runtime.config.clone();
         Ok(AttackSimulator {
-            defender_impact: runtime.defender_impact(),
-            attacker_impact: runtime.attacker_impact(),
             num_attack_steps,
             num_defense_steps,
             config,

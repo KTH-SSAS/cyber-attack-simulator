@@ -7,7 +7,7 @@ use rand_distr::Distribution;
 use rand_distr::Exp;
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
-use std::fmt::{Display, Debug};
+use std::fmt::{Debug, Display};
 use std::hash::Hash;
 
 pub(crate) struct SimulatorState<I> {
@@ -23,18 +23,21 @@ pub(crate) struct SimulatorState<I> {
     //actions: HashMap<String, usize>,
 }
 
-impl<I> Debug for SimulatorState<I> where I: Debug {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		let mut s = format!("Time: {}\n", self.time);
-		s += &format!("Enabled defenses: {:?}\n", self.enabled_defenses);
-		s += &format!("Compromised steps: {:?}\n", self.compromised_steps);
-		s += &format!("Attack surface: {:?}\n", self.attack_surface);
-		s += &format!("Remaining TTC: {:?}\n", self.remaining_ttc);
-		s += &format!("Num observed alerts: {}\n", self.num_observed_alerts);
-		s += &format!("False alerts: {:?}\n", self.false_alerts);
-		s += &format!("Missed alerts: {:?}\n", self.missed_alerts);
-		write!(f, "{}", s)
-	}
+impl<I> Debug for SimulatorState<I>
+where
+    I: Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut s = format!("Time: {}\n", self.time);
+        s += &format!("Enabled defenses: {:?}\n", self.enabled_defenses);
+        s += &format!("Compromised steps: {:?}\n", self.compromised_steps);
+        s += &format!("Attack surface: {:?}\n", self.attack_surface);
+        s += &format!("Remaining TTC: {:?}\n", self.remaining_ttc);
+        s += &format!("Num observed alerts: {}\n", self.num_observed_alerts);
+        s += &format!("False alerts: {:?}\n", self.false_alerts);
+        s += &format!("Missed alerts: {:?}\n", self.missed_alerts);
+        write!(f, "{}", s)
+    }
 }
 
 impl<I> SimulatorState<I>
@@ -110,10 +113,16 @@ where
         // If the selected attack step is not in the attack surface, do nothing
         if !self.attack_surface.contains(&step_id) {
             if cfg!(debug_assertions) {
-                panic!("Attack step {} is not in the attack surface. Attack surface is: {:?}", step_id, self.attack_surface);
-            }
-            else {
-                log::warn!("Attack step {} is not in the attack surface. Attack surface is: {:?}", step_id, self.attack_surface);
+                panic!(
+                    "Attack step {} is not in the attack surface. Attack surface is: {:?}",
+                    step_id, self.attack_surface
+                );
+            } else {
+                log::warn!(
+                    "Attack step {} is not in the attack surface. Attack surface is: {:?}",
+                    step_id,
+                    self.attack_surface
+                );
             }
 
             return Ok(ActionResult::default());
@@ -167,5 +176,37 @@ where
             }
         });
         return ttc_remaining.collect();
+    }
+
+    pub fn attacker_reward(&self, graph: &AttackGraph<I>) -> i64 {
+        let flag_value = 1;
+        self.compromised_steps
+            .iter()
+            .filter_map(|x| match graph.flags.contains(&x) {
+                true => Some(flag_value),
+                false => None,
+            })
+            .sum()
+    }
+
+    pub fn defender_reward(&self, graph: &AttackGraph<I>) -> i64 {
+        let flag_value = -2;
+        let downtime_value = -1;
+        let r1: i64 = self
+            .compromised_steps
+            .iter()
+            .filter_map(|x| match graph.flags.contains(&x) {
+                true => Some(flag_value),
+                false => None,
+            })
+            .sum();
+        let r2: i64 = self
+            .enabled_defenses
+            .iter()
+            .map(|_| {
+                return downtime_value;
+            })
+            .sum();
+        return r1 + r2;
     }
 }
