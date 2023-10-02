@@ -85,7 +85,7 @@ class SimulatorConfig(Config):
     false_positive_rate: float
     attack_start_time: int
     seed: int
-    randomize_ttc: bool = True
+    randomize_ttc: bool = False
     log: bool = False
 
     @classmethod
