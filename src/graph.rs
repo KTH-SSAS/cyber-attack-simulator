@@ -36,7 +36,7 @@ where
     }
 	*/
 
-    pub fn children(&self, id: &I) -> Vec<&Node<T, I>> {
+    pub fn children(&self, id: &I) -> HashSet<&Node<T, I>> {
         return self
             .edges
             .iter()
@@ -45,7 +45,7 @@ where
             .collect();
     }
 
-    pub fn parents(&self, id: &I) -> Vec<&Node<T, I>> {
+    pub fn parents(&self, id: &I) -> HashSet<&Node<T, I>> {
         return self
             .edges
             .iter()
@@ -107,4 +107,11 @@ where
     fn eq(&self, other: &Self) -> bool {
         self.id.eq(&other.id)
     }
+}
+
+impl<T, I> Eq for Node<T, I>
+where
+    I: Eq,
+{
+    
 }

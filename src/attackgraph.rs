@@ -332,7 +332,7 @@ where
         self.attack_steps.len()
     }
 
-    pub(crate) fn children(&self, id: &I) -> Vec<&Node<AttackStep, I>> {
+    pub(crate) fn children(&self, id: &I) -> HashSet<&Node<AttackStep, I>> {
         return self.graph.children(id);
     }
 
