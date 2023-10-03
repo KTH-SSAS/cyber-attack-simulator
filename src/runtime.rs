@@ -205,13 +205,7 @@ where
     fn get_color(&self, id: &I, state: &SimulatorState<I>) -> String {
         match id {
             id if self.g.entry_points().contains(id) => "crimson".to_string(), // entry points
-            id if self
-                .g
-                .disabled_defenses(&state.enabled_defenses)
-                .contains(id) =>
-            {
-                "chartreuse4".to_string()
-            } // disabled defenses
+            id if state.defense_surface.contains(id) => "chartreuse4".to_string(), // disabled defenses
             id if state.enabled_defenses.contains(id) => "chartreuse".to_string(), // enabled defenses
             id if state.attack_surface.contains(id) => "gold".to_string(),         // attack surface
             id if state.compromised_steps.contains(id) => "firebrick1".to_string(), // compromised steps
@@ -478,7 +472,11 @@ where
 
         Ok((
             SimulatorState {
-                attack_surface: old_state.attack_surface(&self.g, defender_action.1, attacker_action.1),
+                attack_surface: old_state.attack_surface(
+                    &self.g,
+                    defender_action.1,
+                    attacker_action.1,
+                ),
                 defense_surface: old_state.defense_surface(&self.g, defender_action.1),
                 enabled_defenses: old_state.enabled_defenses(&self.g, defender_action.1),
                 remaining_ttc: old_state.remaining_ttc(

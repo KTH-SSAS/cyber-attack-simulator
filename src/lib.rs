@@ -3,10 +3,9 @@ pub mod config;
 mod graph;
 mod loading;
 mod observation;
-mod runtime;
 mod pysim;
+mod runtime;
 mod state;
-
 
 use config::SimulatorConfig;
 
@@ -50,7 +49,6 @@ impl AttackSimulator<usize> {
         graph_filename: String,
         vocab_filename: Option<&str>,
     ) -> AttackSimResult<AttackSimulator<usize>> {
-
         let graph = match load_graph_from_json(&graph_filename, vocab_filename) {
             Ok(graph) => graph,
             Err(e) => {
@@ -105,7 +103,6 @@ impl AttackSimulator<usize> {
     pub fn render(&self) -> String {
         self.runtime.to_graphviz()
     }
-
 }
 
 #[cfg(test)]
@@ -113,10 +110,7 @@ mod tests {
     use std::{cmp::max, collections::HashMap};
 
     use crate::{
-        config::SimulatorConfig,
-        loading::load_graph_from_json,
-        observation::Observation,
-        runtime,
+        config::SimulatorConfig, loading::load_graph_from_json, observation::Observation, runtime,
     };
     use rand::{seq::SliceRandom, SeedableRng};
     use rand_chacha::ChaChaRng;
@@ -228,7 +222,13 @@ mod tests {
             available_defenses = available_actions(&defense_surface);
         }
 
-        assert_eq!(observation.defense_surface.iter().filter(|&x| *x).count(), 0);
-        assert_eq!(observation.nodes.iter().filter(|&(x, _, _, _)| *x).count(), num_defense + num_entrypoints);
+        assert_eq!(
+            observation.defense_surface.iter().filter(|&x| *x).count(),
+            0
+        );
+        assert_eq!(
+            observation.nodes.iter().filter(|&(x, _, _, _)| *x).count(),
+            num_defense + num_entrypoints
+        );
     }
 }

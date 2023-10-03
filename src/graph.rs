@@ -27,14 +27,14 @@ where
     I: Display,
     T: std::fmt::Display,
 {
-	/* 
+    /*
     pub fn get_data(&self, id: &I) -> Option<&T> {
         return match self.nodes.get(id) {
             Some(node) => Some(&node.data),
             None => None,
         };
     }
-	*/
+    */
 
     pub fn children(&self, id: &I) -> HashSet<&Node<T, I>> {
         return self
@@ -71,7 +71,11 @@ where
     }
 
     pub fn to_graphviz(&self, attributes: Option<&HashMap<&I, Vec<(String, String)>>>) -> String {
-        let binding = self.nodes.iter().map(|(id, n)| (id, vec![("label".to_owned(), n.data.to_string())])).collect();
+        let binding = self
+            .nodes
+            .iter()
+            .map(|(id, n)| (id, vec![("label".to_owned(), n.data.to_string())]))
+            .collect();
         let attributes = match attributes {
             Some(x) => x,
             None => &binding,
@@ -109,9 +113,4 @@ where
     }
 }
 
-impl<T, I> Eq for Node<T, I>
-where
-    I: Eq,
-{
-    
-}
+impl<T, I> Eq for Node<T, I> where I: Eq {}

@@ -84,6 +84,7 @@ where
             attack_surface: Self::_attack_surface(
                 graph,
                 &compromised_steps,
+                &remaining_ttc,
                 &enabled_defenses,
                 None,
                 None,
@@ -228,11 +229,12 @@ where
         &self,
         graph: &AttackGraph<I>,
         defender_action: Option<&I>,
-        attacker_action: Option<&I>
+        attacker_action: Option<&I>,
     ) -> HashSet<I> {
         return Self::_attack_surface(
             graph,
             &self.compromised_steps,
+            &self.remaining_ttc,
             &self.enabled_defenses,
             defender_action,
             attacker_action,
@@ -242,80 +244,63 @@ where
     fn _attack_surface(
         graph: &AttackGraph<I>,
         compromised_steps: &HashSet<I>,
+        ttc_remaining: &HashMap<I, TTCType>,
         enabled_defenses: &HashSet<I>,
         defender_action: Option<&I>,
         attacker_action: Option<&I>,
     ) -> HashSet<I> {
-        let attack_surface: HashSet<I> =
-            graph
-                .attack_steps
-                .iter()
-                .fold(HashSet::new(), |mut acc, step| {
-                    acc.extend(Self::get_vulnerable_children(
-                        graph,
-                        compromised_steps,
-                        enabled_defenses,
-                        step,
-                        defender_action,
-                        attacker_action,
-                    ));
-                    acc
-                });
+        let attack_surface: HashSet<I> = graph
+            .attack_steps
+            .iter()
+            .filter_map(|n| {
+                match Self::is_in_attack_surface(
+                    graph,
+                    compromised_steps,
+                    ttc_remaining,
+                    enabled_defenses,
+                    n,
+                    defender_action,
+                    attacker_action,
+                ) {
+                    true => Some(n),
+                    false => None,
+                }
+            })
+            .map(|n| *n)
+            .collect();
 
         return attack_surface;
     }
 
-    fn get_vulnerable_children(
+    pub(crate) fn can_step_be_compromised(
         graph: &AttackGraph<I>,
         compromised_steps: &HashSet<I>,
-        enabled_defenses: &HashSet<I>,
-        step_id: &I,
-        defender_action: Option<&I>,
-        attacker_action: Option<&I>,
-    ) -> HashSet<I> {
-        return graph
-            .children(step_id)
-            .iter()
-            .filter_map(|c| {
-                match Self::is_vulnerable(
-                    graph,
-                    compromised_steps,
-                    enabled_defenses,
-                    &c.id,
-                    defender_action,
-                    attacker_action,
-                ) {
-                    true => Some(c.id),
-                    false => None,
-                }
-            })
-            .collect();
-    }
-
-    pub(crate) fn will_step_be_compromised(
-        graph: &AttackGraph<I>,
+        ttc_remaining: &HashMap<I, TTCType>,
         step: &I,
-        ttc: u64,
         attack_step: Option<&I>,
         defense_step: Option<&I>,
     ) -> bool {
+        let parent_conditions_fulfilled =
+            Self::parent_conditions_fulfilled(graph, compromised_steps, step);
+
         match (attack_step, defense_step) {
-            (Some(a), Some(d)) => a == step && ttc == 0 && !graph.step_is_defended_by(a, d),
-            (Some(a), None) => a == step && ttc == 0,
+            (Some(a), Some(d)) => {
+                parent_conditions_fulfilled
+                    && a == step
+                    && ttc_remaining[a] == 0
+                    && !graph.step_is_defended_by(a, d)
+            }
+            (Some(a), None) => parent_conditions_fulfilled && a == step && ttc_remaining[a] == 0,
             (None, _) => false,
         }
     }
 
     pub(crate) fn defense_surface(
-        &self, 
+        &self,
         graph: &AttackGraph<I>,
         defender_action: Option<&I>,
     ) -> HashSet<I> {
-        Self::_defense_surface(
-            graph,
-            &self.enabled_defenses,
-            defender_action,
-        )
+        Self::_defense_surface(graph, &self.enabled_defenses, defender_action)
     }
 
     fn defense_available(
@@ -323,10 +308,11 @@ where
         enabled_defenses: &HashSet<I>,
         defender_action: Option<&I>,
     ) -> bool {
-        !enabled_defenses.contains(step) && match defender_action {
-            Some(d) => d != step,
-            None => true,
-        }
+        !enabled_defenses.contains(step)
+            && match defender_action {
+                Some(d) => d != step,
+                None => true,
+            }
     }
 
     fn _defense_surface(
@@ -334,16 +320,16 @@ where
         enabled_defenses: &HashSet<I>,
         defender_action: Option<&I>,
     ) -> HashSet<I> {
-        graph.defense_steps.iter().filter_map(|d| {
-            match Self::defense_available(
-                d,
-                enabled_defenses,
-                defender_action,
-            ) {
-                true => Some(*d),
-                false => None,
-            }
-        }).collect()
+        graph
+            .defense_steps
+            .iter()
+            .filter_map(
+                |d| match Self::defense_available(d, enabled_defenses, defender_action) {
+                    true => Some(*d),
+                    false => None,
+                },
+            )
+            .collect()
     }
 
     pub(crate) fn compromised_steps(
@@ -368,26 +354,17 @@ where
         attacker_action: Option<&I>,
         defender_action: Option<&I>,
     ) -> HashSet<I> {
-        remaining_ttc
+        graph
+            .attack_steps
             .iter()
-            .filter_map(|(step, ttc)| match *ttc == 0 {
-                true => Some((step, ttc)),
-                false => None,
-            }) // Only consider steps with ttc == 0
-            .filter(|(step, _)| {
-                Self::is_traversible(
-                    graph,
-                    &compromised_steps,
-                    step,
-                )
-            }) 
-            .filter_map(|(step, ttc)| {
+            .filter_map(|step| {
                 let already_compromised = compromised_steps.contains(step);
                 match already_compromised
-                    || Self::will_step_be_compromised(
+                    || Self::can_step_be_compromised(
                         graph,
+                        compromised_steps,
+                        remaining_ttc,
                         step,
-                        *ttc,
                         attacker_action,
                         defender_action,
                     ) {
@@ -398,9 +375,10 @@ where
             .collect()
     }
 
-    fn is_vulnerable(
+    fn is_in_attack_surface(
         graph: &AttackGraph<I>,
         compromised_steps: &HashSet<I>,
+        ttc_remaining: &HashMap<I, TTCType>,
         enabled_defenses: &HashSet<I>,
         node_id: &I,
         defender_action: Option<&I>,
@@ -408,29 +386,59 @@ where
     ) -> bool {
         // Returns true if a node can be attacked given the current state of the
         // graph meaning that the
-        match attacker_action {
-            Some(a) => {
-                if a == node_id {
-                    return false;
-                }
-            }
-            None => (),
-        }
-        
-        let traversable = Self::is_traversible(graph, compromised_steps, node_id);
+        let parent_states: Vec<bool> = graph
+            .get_attack_parents(node_id)
+            .iter()
+            .map(|&p| {
+                compromised_steps.contains(p)
+                    || match attacker_action {
+                        Some(a) => {
+                            a == p
+                                && Self::can_step_be_compromised(
+                                    graph,
+                                    compromised_steps,
+                                    ttc_remaining,
+                                    a,
+                                    attacker_action,
+                                    defender_action,
+                                )
+                        }
+                        None => false,
+                    }
+            })
+            .collect();
+
+        let parent_conditions_fulfilled = graph
+            .get_step(node_id)
+            .unwrap()
+            .can_be_compromised(&parent_states);
+
         let compromised = compromised_steps.contains(node_id);
         let defense_parents = graph.get_defense_parents(node_id);
-        let defended = defense_parents.iter().any(|d| {
-            enabled_defenses.contains(&d)    
-        });
-        traversable && !(compromised || defended || match defender_action {
+
+        let defended = defense_parents
+            .iter()
+            .any(|d| enabled_defenses.contains(&d));
+
+        let will_be_defended = match defender_action {
             Some(d) => graph.step_is_defended_by(node_id, d),
             None => false,
-        })
+        };
+
+        let will_be_attacked = match attacker_action {
+            Some(a) => a == node_id,
+            None => false,
+        };
+
+        return parent_conditions_fulfilled
+            && !(compromised || defended || will_be_defended || will_be_attacked);
     }
 
-    fn is_traversible(graph: &AttackGraph<I>, compromised_steps: &HashSet<I>, node_id: &I) -> bool {
-        let node = graph.nodes().get(node_id).unwrap();
+    fn parent_conditions_fulfilled(
+        graph: &AttackGraph<I>,
+        compromised_steps: &HashSet<I>,
+        node_id: &I,
+    ) -> bool {
         let attack_parents: HashSet<&I> = graph.get_attack_parents(node_id);
 
         if attack_parents.is_empty() {
@@ -442,7 +450,10 @@ where
             .map(|&p| compromised_steps.contains(p))
             .collect();
 
-        return node.data.can_be_compromised(&parent_states);
+        return graph
+            .get_step(node_id)
+            .unwrap()
+            .can_be_compromised(&parent_states);
     }
 
     pub fn to_info(

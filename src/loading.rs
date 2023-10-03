@@ -1,8 +1,7 @@
-use std::{fs::File, io::BufReader, collections::HashMap};
+use std::{collections::HashMap, fs::File, io::BufReader};
 
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-
 
 use std::collections::HashSet;
 
@@ -98,10 +97,10 @@ fn create_vocab_from_steps(steps: &Vec<MALAttackStep>) -> HashMap<String, usize>
     return vocab;
 }
 
-pub(crate) fn load_graph_from_json(filename: &str, vocab_filename: Option<&str>) -> IOResult<AttackGraph<usize>> {
-    
-
-    
+pub(crate) fn load_graph_from_json(
+    filename: &str,
+    vocab_filename: Option<&str>,
+) -> IOResult<AttackGraph<usize>> {
     let file = match File::open(filename) {
         Ok(f) => f,
         Err(e) => {
@@ -202,8 +201,8 @@ pub(crate) fn load_graph_from_json(filename: &str, vocab_filename: Option<&str>)
     let vocab = match vocab_filename {
         None => create_vocab_from_steps(&attack_steps),
         Some(f) => load_vocab_from_json(f),
-    };   
-    
+    };
+
     let attack_graph = AttackGraph::<u64>::new(attack_steps, edges, flags, entry_points, vocab);
 
     return Ok(attack_graph);
@@ -212,8 +211,6 @@ pub(crate) fn load_graph_from_json(filename: &str, vocab_filename: Option<&str>)
 #[cfg(test)]
 mod tests {
     use std::io::Write;
-
-    
 
     use super::load_graph_from_json;
 
@@ -230,7 +227,7 @@ mod tests {
         file.flush().unwrap();
 
         // run dot
-        /* 
+        /*
         let output = std::process::Command::new("dot")
             .arg("-Tpng")
             .arg("mal/attackgraph.dot")
