@@ -96,6 +96,7 @@ where
                 graph,
                 &remaining_ttc,
                 &compromised_steps,
+                &enabled_defenses,
                 None,
                 None,
             ),
@@ -342,15 +343,24 @@ where
             graph,
             &self.remaining_ttc,
             &self.compromised_steps,
+            &self.enabled_defenses,
             attacker_action,
             defender_action,
         )
+    }
+
+    fn is_defended(graph: &AttackGraph<I>, node: &I, enabled_defenses: &HashSet<I>) -> bool {
+        graph
+            .get_defense_parents(node)
+            .iter()
+            .any(|d| enabled_defenses.contains(d))
     }
 
     fn _compromised_steps(
         graph: &AttackGraph<I>,
         remaining_ttc: &HashMap<I, TTCType>,
         compromised_steps: &HashSet<I>,
+        enabled_defenses: &HashSet<I>,
         attacker_action: Option<&I>,
         defender_action: Option<&I>,
     ) -> HashSet<I> {
@@ -359,7 +369,12 @@ where
             .iter()
             .filter_map(|step| {
                 let already_compromised = compromised_steps.contains(step);
-                match already_compromised
+                let defended = Self::is_defended(graph, step, enabled_defenses);
+                let will_be_defended = match defender_action {
+                    Some(d) => graph.step_is_defended_by(step, d),
+                    None => false,
+                };
+                match !(defended || will_be_defended) && already_compromised
                     || Self::can_step_be_compromised(
                         graph,
                         compromised_steps,
@@ -414,11 +429,8 @@ where
             .can_be_compromised(&parent_states);
 
         let compromised = compromised_steps.contains(node_id);
-        let defense_parents = graph.get_defense_parents(node_id);
 
-        let defended = defense_parents
-            .iter()
-            .any(|d| enabled_defenses.contains(&d));
+        let defended = Self::is_defended(graph, node_id, enabled_defenses);
 
         let will_be_defended = match defender_action {
             Some(d) => graph.step_is_defended_by(node_id, d),
@@ -507,8 +519,8 @@ where
 
     pub fn defender_reward(&self, graph: &AttackGraph<I>, defense_step: Option<&I>) -> i64 {
         let downtime_value = -1;
-        let restoration_cost = -1;
-        let flag_value = -2;
+        let restoration_cost = -2;
+        let flag_value = -3;
 
         // If a flag is compromised, it costs to keep it compromised
         let r1: i64 = self
