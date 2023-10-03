@@ -1,14 +1,31 @@
 use crate::attackgraph::{AttackGraph, TTCType};
 use crate::observation::Info;
-use crate::runtime::{ActionResult, SimError, SimResult};
+use crate::runtime::SimResult;
 use rand::SeedableRng;
 use rand_chacha::ChaChaRng;
 use rand_distr::Distribution;
 use rand_distr::Exp;
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
+use std::fmt;
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
+#[derive(Debug, Clone)]
+pub(crate) struct StateError {
+    message: String,
+}
+
+impl fmt::Display for StateError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "StateError: {}", self.message)
+    }
+}
+
+impl std::error::Error for StateError {
+    fn description(&self) -> &str {
+        &self.message
+    }
+}
 
 pub(crate) struct SimulatorState<I> {
     pub time: u64,
@@ -16,6 +33,7 @@ pub(crate) struct SimulatorState<I> {
     pub enabled_defenses: HashSet<I>,
     pub compromised_steps: HashSet<I>,
     pub attack_surface: HashSet<I>,
+    pub defense_surface: HashSet<I>,
     pub remaining_ttc: HashMap<I, TTCType>,
     pub num_observed_alerts: usize,
     pub false_alerts: HashSet<I>,
@@ -50,31 +68,36 @@ where
         randomize_ttc: bool,
     ) -> SimResult<SimulatorState<I>> {
         let mut rng = ChaChaRng::seed_from_u64(seed);
-        let enabled_defenses = HashSet::new();
         let ttc_params = graph.ttc_params();
         let remaining_ttc = match randomize_ttc {
             true => Self::get_initial_ttc_vals(&mut rng, &ttc_params),
             false => HashMap::from_iter(ttc_params),
         };
+
+        let enabled_defenses = HashSet::new();
         let compromised_steps = graph.entry_points();
-        let attack_surface =
-            match graph.calculate_attack_surface(&compromised_steps, &HashSet::new()) {
-                Ok(attack_surface) => attack_surface,
-                Err(e) => {
-                    return Err(SimError {
-                        error: e.to_string(),
-                    })
-                }
-            };
 
         Ok(SimulatorState {
             time: 0,
             rng,
-            enabled_defenses,
-            attack_surface,
-            remaining_ttc,
+            defense_surface: Self::_defense_surface(graph, &enabled_defenses, None),
+            attack_surface: Self::_attack_surface(
+                graph,
+                &compromised_steps,
+                &enabled_defenses,
+                None,
+                None,
+            ),
+            enabled_defenses: Self::_enabled_defenses(graph, &enabled_defenses, None),
+            remaining_ttc: Self::_remaining_ttc(graph, &remaining_ttc, None, None),
             num_observed_alerts: 0,
-            compromised_steps,
+            compromised_steps: Self::_compromised_steps(
+                graph,
+                &remaining_ttc,
+                &compromised_steps,
+                None,
+                None,
+            ),
             //actions: HashMap::new(),
             false_alerts: HashSet::new(),
             missed_alerts: HashSet::new(),
@@ -95,49 +118,331 @@ where
             .collect::<HashSet<&I>>()
     }
 
-    pub fn attack_action(&self, step_id: &I) -> SimResult<ActionResult<I>> {
-        let attack_surface_empty = self.attack_surface.is_empty();
-
-        if attack_surface_empty {
-            if cfg!(debug_assertions) {
-                panic!("Attack surface is empty.");
-            } else {
-                log::warn!("Attack surface is empty.");
-            }
-
-            return Err(SimError {
-                error: "Attack surface is empty.".to_string(),
-            });
-        }
-
-        // If the selected attack step is not in the attack surface, do nothing
-        if !self.attack_surface.contains(&step_id) {
-            if cfg!(debug_assertions) {
-                panic!(
-                    "Attack step {} is not in the attack surface. Attack surface is: {:?}",
-                    step_id, self.attack_surface
-                );
-            } else {
-                log::warn!(
-                    "Attack step {} is not in the attack surface. Attack surface is: {:?}",
-                    step_id,
-                    self.attack_surface
-                );
-            }
-
-            return Ok(ActionResult::default());
-        }
-
-        let result = ActionResult {
-            enabled_defenses: HashSet::new(),
-            ttc_diff: HashMap::from([(*step_id, -1)]),
-            valid_action: true,
-        };
-        return Ok(result);
-    }
-
     pub fn export_rng(&self) -> ChaChaRng {
         self.rng.clone()
+    }
+
+    fn should_defense_be_enabled(
+        enabled_defenses: HashSet<&I>,
+        node: &I,
+        selected_node: Option<&I>,
+    ) -> bool {
+        enabled_defenses.contains(node)
+            || match selected_node {
+                Some(selected_node) => node == selected_node,
+                None => false,
+            }
+    }
+
+    pub(crate) fn enabled_defenses(
+        &self,
+        graph: &AttackGraph<I>,
+        selected_defense: Option<&I>,
+    ) -> HashSet<I> {
+        Self::_enabled_defenses(graph, &self.enabled_defenses, selected_defense)
+    }
+
+    fn _enabled_defenses(
+        graph: &AttackGraph<I>,
+        enabled_defenses: &HashSet<I>,
+        selected_defense: Option<&I>,
+    ) -> HashSet<I> {
+        graph
+            .defense_steps
+            .iter()
+            .filter_map(|x| {
+                match Self::should_defense_be_enabled(
+                    enabled_defenses.iter().collect(),
+                    x,
+                    selected_defense,
+                ) {
+                    true => Some(x.clone()),
+                    false => None,
+                }
+            })
+            .collect::<HashSet<I>>()
+    }
+
+    fn should_ttc_be_decreased(
+        graph: &AttackGraph<I>,
+        node: &I,
+        ttc: u64,
+        selected_attack: Option<&I>,
+        selected_defense: Option<&I>,
+    ) -> bool {
+        match (selected_attack, selected_defense) {
+            (Some(a), Some(d)) => a == node && ttc > 0 && !graph.step_is_defended_by(node, d),
+            (Some(a), None) => a == node && ttc > 0,
+            (None, Some(_)) => false,
+            (None, None) => false,
+        }
+    }
+
+    pub(crate) fn remaining_ttc(
+        &self,
+        graph: &AttackGraph<I>,
+        selected_attack: Option<&I>,
+        selected_defense: Option<&I>,
+    ) -> HashMap<I, TTCType> {
+        Self::_remaining_ttc(
+            graph,
+            &self.remaining_ttc,
+            selected_attack,
+            selected_defense,
+        )
+    }
+
+    fn _remaining_ttc(
+        graph: &AttackGraph<I>,
+        remaining_ttc: &HashMap<I, TTCType>,
+        selected_attack: Option<&I>,
+        selected_defense: Option<&I>,
+    ) -> HashMap<I, TTCType> {
+        remaining_ttc
+            .iter()
+            .map(|(id, ttc)| {
+                let ttc = match Self::should_ttc_be_decreased(
+                    graph,
+                    id,
+                    *ttc,
+                    selected_attack,
+                    selected_defense,
+                ) {
+                    true => *ttc - 1,
+                    false => *ttc,
+                };
+                (*id, ttc)
+            })
+            .collect::<HashMap<I, TTCType>>()
+    }
+
+    pub(crate) fn uncompromised_steps(&self, graph: &AttackGraph<I>) -> HashSet<I> {
+        graph
+            .attack_steps
+            .difference(&self.compromised_steps)
+            .map(|&x| x)
+            .collect()
+    }
+
+    pub(crate) fn attack_surface(
+        &self,
+        graph: &AttackGraph<I>,
+        defender_action: Option<&I>,
+        attacker_action: Option<&I>
+    ) -> HashSet<I> {
+        return Self::_attack_surface(
+            graph,
+            &self.compromised_steps,
+            &self.enabled_defenses,
+            defender_action,
+            attacker_action,
+        );
+    }
+
+    fn _attack_surface(
+        graph: &AttackGraph<I>,
+        compromised_steps: &HashSet<I>,
+        enabled_defenses: &HashSet<I>,
+        defender_action: Option<&I>,
+        attacker_action: Option<&I>,
+    ) -> HashSet<I> {
+        let attack_surface: HashSet<I> =
+            graph
+                .attack_steps
+                .iter()
+                .fold(HashSet::new(), |mut acc, step| {
+                    acc.extend(Self::get_vulnerable_children(
+                        graph,
+                        compromised_steps,
+                        enabled_defenses,
+                        step,
+                        defender_action,
+                        attacker_action,
+                    ));
+                    acc
+                });
+
+        return attack_surface;
+    }
+
+    fn get_vulnerable_children(
+        graph: &AttackGraph<I>,
+        compromised_steps: &HashSet<I>,
+        enabled_defenses: &HashSet<I>,
+        step_id: &I,
+        defender_action: Option<&I>,
+        attacker_action: Option<&I>,
+    ) -> HashSet<I> {
+        return graph
+            .children(step_id)
+            .iter()
+            .filter_map(|c| {
+                match Self::is_vulnerable(
+                    graph,
+                    compromised_steps,
+                    enabled_defenses,
+                    &c.id,
+                    defender_action,
+                    attacker_action,
+                ) {
+                    true => Some(c.id),
+                    false => None,
+                }
+            })
+            .collect();
+    }
+
+    pub(crate) fn will_step_be_compromised(
+        graph: &AttackGraph<I>,
+        step: &I,
+        ttc: u64,
+        attack_step: Option<&I>,
+        defense_step: Option<&I>,
+    ) -> bool {
+        match (attack_step, defense_step) {
+            (Some(a), Some(d)) => a == step && ttc == 0 && !graph.step_is_defended_by(a, d),
+            (Some(a), None) => a == step && ttc == 0,
+            (None, _) => false,
+        }
+    }
+
+    pub(crate) fn defense_surface(
+        &self, 
+        graph: &AttackGraph<I>,
+        defender_action: Option<&I>,
+    ) -> HashSet<I> {
+        Self::_defense_surface(
+            graph,
+            &self.enabled_defenses,
+            defender_action,
+        )
+    }
+
+    fn defense_available(
+        step: &I,
+        enabled_defenses: &HashSet<I>,
+        defender_action: Option<&I>,
+    ) -> bool {
+        !enabled_defenses.contains(step) && match defender_action {
+            Some(d) => d != step,
+            None => true,
+        }
+    }
+
+    fn _defense_surface(
+        graph: &AttackGraph<I>,
+        enabled_defenses: &HashSet<I>,
+        defender_action: Option<&I>,
+    ) -> HashSet<I> {
+        graph.defense_steps.iter().filter_map(|d| {
+            match Self::defense_available(
+                d,
+                enabled_defenses,
+                defender_action,
+            ) {
+                true => Some(*d),
+                false => None,
+            }
+        }).collect()
+    }
+
+    pub(crate) fn compromised_steps(
+        &self,
+        graph: &AttackGraph<I>,
+        attacker_action: Option<&I>,
+        defender_action: Option<&I>,
+    ) -> HashSet<I> {
+        Self::_compromised_steps(
+            graph,
+            &self.remaining_ttc,
+            &self.compromised_steps,
+            attacker_action,
+            defender_action,
+        )
+    }
+
+    fn _compromised_steps(
+        graph: &AttackGraph<I>,
+        remaining_ttc: &HashMap<I, TTCType>,
+        compromised_steps: &HashSet<I>,
+        attacker_action: Option<&I>,
+        defender_action: Option<&I>,
+    ) -> HashSet<I> {
+        remaining_ttc
+            .iter()
+            .filter_map(|(step, ttc)| match *ttc == 0 {
+                true => Some((step, ttc)),
+                false => None,
+            }) // Only consider steps with ttc == 0
+            .filter(|(step, _)| {
+                Self::is_traversible(
+                    graph,
+                    &compromised_steps,
+                    step,
+                )
+            }) 
+            .filter_map(|(step, ttc)| {
+                let already_compromised = compromised_steps.contains(step);
+                match already_compromised
+                    || Self::will_step_be_compromised(
+                        graph,
+                        step,
+                        *ttc,
+                        attacker_action,
+                        defender_action,
+                    ) {
+                    true => Some(*step),
+                    false => None,
+                }
+            })
+            .collect()
+    }
+
+    fn is_vulnerable(
+        graph: &AttackGraph<I>,
+        compromised_steps: &HashSet<I>,
+        enabled_defenses: &HashSet<I>,
+        node_id: &I,
+        defender_action: Option<&I>,
+        attacker_action: Option<&I>,
+    ) -> bool {
+        // Returns true if a node can be attacked given the current state of the
+        // graph meaning that the
+        match attacker_action {
+            Some(a) => {
+                if a == node_id {
+                    return false;
+                }
+            }
+            None => (),
+        }
+        
+        let traversable = Self::is_traversible(graph, compromised_steps, node_id);
+        let compromised = compromised_steps.contains(node_id);
+        let defense_parents = graph.get_defense_parents(node_id);
+        let defended = defense_parents.iter().any(|d| {
+            enabled_defenses.contains(&d)    
+        });
+        traversable && !(compromised || defended || match defender_action {
+            Some(d) => graph.step_is_defended_by(node_id, d),
+            None => false,
+        })
+    }
+
+    fn is_traversible(graph: &AttackGraph<I>, compromised_steps: &HashSet<I>, node_id: &I) -> bool {
+        let node = graph.nodes().get(node_id).unwrap();
+        let attack_parents: HashSet<&I> = graph.get_attack_parents(node_id);
+
+        if attack_parents.is_empty() {
+            return graph.is_entry(node_id);
+        }
+
+        let parent_states: Vec<bool> = attack_parents
+            .iter()
+            .map(|&p| compromised_steps.contains(p))
+            .collect();
+
+        return node.data.can_be_compromised(&parent_states);
     }
 
     pub fn to_info(
@@ -189,9 +494,12 @@ where
             .sum()
     }
 
-    pub fn defender_reward(&self, graph: &AttackGraph<I>) -> i64 {
-        let flag_value = -2;
+    pub fn defender_reward(&self, graph: &AttackGraph<I>, defense_step: Option<&I>) -> i64 {
         let downtime_value = -1;
+        let restoration_cost = -1;
+        let flag_value = -2;
+
+        // If a flag is compromised, it costs to keep it compromised
         let r1: i64 = self
             .compromised_steps
             .iter()
@@ -200,6 +508,8 @@ where
                 false => None,
             })
             .sum();
+
+        // If a defense is enabled, it costs to keep it enabled
         let r2: i64 = self
             .enabled_defenses
             .iter()
@@ -207,6 +517,20 @@ where
                 return downtime_value;
             })
             .sum();
-        return r1 + r2;
+
+        // If a step is compromised, it costs more to enable a defense for it
+        let r3: i64 = match defense_step {
+            Some(step) => graph
+                .children(step)
+                .iter()
+                .filter_map(|x| match self.compromised_steps.contains(&x.id) {
+                    true => Some(restoration_cost),
+                    false => None,
+                })
+                .sum(),
+            None => 0,
+        };
+
+        return r1 + r2 + r3;
     }
 }

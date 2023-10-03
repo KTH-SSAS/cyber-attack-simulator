@@ -1,8 +1,8 @@
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 use std::fmt::{self, Display};
 use std::hash::Hash;
-use std::collections::{HashMap, HashSet};
 
 type GraphResult<T> = std::result::Result<T, GraphError>;
 use crate::graph::{Graph, Node};
@@ -103,7 +103,7 @@ impl From<&MALAttackStep> for AttackStep {
             name: s.name.clone(),
             asset,
             asset_id,
-            ttc: 1,
+            ttc: 0,
             logic: Logic::from(&node_type),
             step_type: node_type,
         }
@@ -120,13 +120,19 @@ impl AttackStep {
             self.name.clone(),
         );
     }
+
+    pub(crate) fn can_be_compromised(&self, parent_states: &Vec<bool>) -> bool {
+        match self.logic {
+            Logic::And => parent_states.iter().all(|x| *x),
+            Logic::Or => parent_states.iter().any(|x| *x),
+        }
+    }
 }
 
 impl<I> AttackGraph<I>
 where
     I: Eq + Hash + Ord + Display + Copy,
 {
-
     pub(crate) fn word2idx(&self, word: String) -> usize {
         let word = match self.vocab.get(&word) {
             Some(idx) => *idx,
@@ -142,7 +148,6 @@ where
         entry_points: Vec<String>,
         vocab: HashMap<String, usize>,
     ) -> AttackGraph<usize> {
-        
         // Hash the node names to numerical indexes
         let numerical_indexes = nodes
             .iter()
@@ -231,7 +236,7 @@ impl PartialEq for AttackStep {
 
 pub(crate) struct AttackGraph<I> {
     graph: Graph<AttackStep, I>,
-    attack_steps: HashSet<I>,
+    pub(crate) attack_steps: HashSet<I>,
     pub(crate) defense_steps: HashSet<I>,
     pub(crate) flags: HashSet<I>,
     entry_points: HashSet<I>,
@@ -283,7 +288,7 @@ where
         return format!("{}", self.graph.nodes[id].data);
     }
 
-    /* 
+    /*
     pub(crate) fn has_defense(&self, id: &I) -> bool {
         self.defense_steps.contains(id)
     }
@@ -295,13 +300,6 @@ where
 
     pub(crate) fn entry_points(&self) -> HashSet<I> {
         return self.entry_points.iter().map(|&i| i).collect();
-    }
-
-    pub(crate) fn uncompromised_steps<'a>(&self, compromised_steps: &'a HashSet<I>) -> HashSet<I> {
-        self.attack_steps
-            .difference(&compromised_steps)
-            .map(|&x| x)
-            .collect()
     }
 
     pub(crate) fn disabled_defenses<'a>(&self, enabled_defenses: &'a HashSet<I>) -> HashSet<I> {
@@ -338,54 +336,44 @@ where
         return self.graph.children(id);
     }
 
-    pub(crate) fn calculate_compromised_steps(&self, remaining_ttc: &HashMap<I, u64>) -> HashSet<I> {
-        let steps_with_zero_ttc: HashSet<I> = remaining_ttc
-            .iter()
-            .filter_map(|(step, ttc)| match ttc {
-                0 => Some(*step),
-                _ => None,
-            })
-            .collect();
-
-        steps_with_zero_ttc
-            .iter()
-            .filter_map(|step| match self.graph.nodes.get(step) {
-                Some(step) => Some(step),
-                None => None,
-            })
-            .filter(|step| self.is_traversible(&step.id, &steps_with_zero_ttc))
-            .map(|step| step.id)
-            .collect()
-    }
-
-    pub(crate) fn to_graphviz(&self, attributes: Option<&HashMap<&I, Vec<(String, String)>>>) -> String {
+    pub(crate) fn to_graphviz(
+        &self,
+        attributes: Option<&HashMap<&I, Vec<(String, String)>>>,
+    ) -> String {
         return self.graph.to_graphviz(attributes);
     }
 
-    pub(crate) fn calculate_attack_surface(
-        &self,
-        compromised_steps: &HashSet<I>,
-        defense_state: &HashSet<I>,
-    ) -> GraphResult<HashSet<I>> {
-        let attack_surface: HashSet<I> =
-            compromised_steps
-                .iter()
-                .fold(HashSet::new(), |mut acc, step| {
-                    let vulnerable_children = match self.get_vulnerable_children(
-                        step,
-                        &compromised_steps,
-                        &defense_state,
-                    ) {
-                        Ok(v) => v,
-                        Err(e) => {
-                            panic!("Error in get_vulnerable_children: {} for step {}", e, step)
-                        }
-                    };
-                    acc.extend(vulnerable_children);
-                    acc
-                });
+    pub(crate) fn get_attack_parents(&self, id: &I) -> HashSet<&I> {
+        self.graph
+            .parents(id)
+            .iter()
+            .filter_map(|&p| match (&p.data.step_type, NodeType::Defense) {
+                (NodeType::Defense, NodeType::Defense) => None,
+                _ => Some(&p.id),
+            }) // Exclude defense parents
+            .collect()
+    }
 
-        return Ok(attack_surface);
+    pub(crate) fn get_defense_parents(&self, id: &I) -> HashSet<&I> {
+        self.graph
+            .parents(id)
+            .iter()
+            .filter_map(|&p| match (&p.data.step_type, NodeType::Defense) {
+                (NodeType::Defense, NodeType::Defense) => Some(&p.id),
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub(crate) fn step_is_defended_by(&self, step_id: &I, defense_id: &I) -> bool {
+        let parents = self.graph.parents(step_id);
+        return parents
+            .iter()
+            .filter_map(|f| match f.data.step_type {
+                NodeType::Defense => Some(f.id),
+                _ => None,
+            })
+            .any(|p| p == *defense_id);
     }
 
     pub(crate) fn ttc_params(&self) -> Vec<(I, TTCType)> {
@@ -405,80 +393,6 @@ where
 
     pub(crate) fn is_entry(&self, id: &I) -> bool {
         return self.entry_points.contains(id);
-    }
-
-    pub(crate) fn is_traversible(&self, node_id: &I, compromised_steps: &HashSet<I>) -> bool {
-        let node = self.graph.nodes.get(node_id).unwrap();
-        let parents = self.graph.parents(node_id);
-
-        let attack_parents: HashSet<&I> = parents
-            .iter()
-            .filter_map(|&p| match (&p.data.step_type, NodeType::Defense) {
-                (NodeType::Defense, NodeType::Defense) => None,
-                _ => Some(&p.id),
-            }) // Exclude defense parents
-            .collect();
-
-        if attack_parents.is_empty() {
-            return self.is_entry(node_id);
-        }
-
-        let parent_states: Vec<bool> = attack_parents
-            .iter()
-            .map(|&p| compromised_steps.contains(p))
-            .collect();
-
-        return match node.data.logic {
-            Logic::And => parent_states.iter().all(|x| *x),
-            Logic::Or => parent_states.iter().any(|x| *x),
-        };
-    }
-
-    pub(crate) fn is_vulnerable(
-        &self,
-        node_id: &I,
-        compromised_steps: &HashSet<I>,
-        enabled_defenses: &HashSet<I>,
-    ) -> GraphResult<bool> {
-        // Returns true if a node can be attacked given the current state of the
-        // graph meaning that the
-        let traversable = self.is_traversible(node_id, compromised_steps);
-        let compromised = compromised_steps.contains(node_id);
-        let parents = self.graph.parents(node_id);
-        let defended = parents.iter().any(|d| enabled_defenses.contains(&d.id));
-        return Ok(!compromised && traversable && !defended);
-    }
-
-    pub(crate) fn get_vulnerable_children(
-        &self,
-        step_id: &I,
-        compromised_steps: &HashSet<I>,
-        enabled_defenses: &HashSet<I>,
-    ) -> GraphResult<HashSet<I>> {
-        // let step = match self.get_step(attack_step) {
-        //     Ok(c) => c,
-        //     Err(e) => return Err(e),
-        // };
-
-        let _step = self.graph.nodes.get(step_id).unwrap();
-        let children: Vec<&Node<AttackStep, I>> = self.graph.children(step_id);
-
-        let vulnerables: Vec<bool> = match children
-            .iter()
-            .map(|c| self.is_vulnerable(&c.id, compromised_steps, enabled_defenses))
-            .collect()
-        {
-            Ok(c) => c,
-            Err(e) => return Err(e),
-        };
-
-        let vulnerable_children: HashSet<I> = children
-            .iter()
-            .zip(vulnerables.iter())
-            .filter(|(_, c)| **c)
-            .map(|(c, _)| c.id)
-            .collect();
-        return Ok(vulnerable_children);
     }
 }
 
@@ -510,10 +424,8 @@ pub struct TTC {
 
 #[cfg(test)]
 mod tests {
-    
 
-    
-    /* 
+    /*
     #[test]
     fn load_graph_from_file() {
         let filename = "graphs/four_ways.yaml";

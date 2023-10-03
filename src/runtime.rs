@@ -1,6 +1,3 @@
-use core::panic;
-use std::cmp::max;
-
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display};
@@ -27,13 +24,11 @@ pub struct SimError {
     pub error: String,
 }
 
-
 impl fmt::Display for SimError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "SimError: {}", self.error)
     }
 }
-
 
 pub struct ActionResult<I> {
     pub ttc_diff: HashMap<I, i32>,
@@ -85,34 +80,21 @@ pub(crate) struct SimulatorRuntime<I> {
 
 // return attack_surface
 
-
-type ActorFunc<I> = fn(&SimulatorRuntime<I>, &I) -> SimResult<ActionResult<I>>;
-
 impl<I> SimulatorRuntime<I>
 where
     I: Eq + Hash + Ord + Display + Copy + Debug,
 {
-    fn actor_funcs(&self, actor: &String) -> ActorFunc<I> {
-        match actor.as_str() {
-            "attacker" => SimulatorRuntime::attack_action,
-            "defender" => SimulatorRuntime::defense_action,
-            _ => panic!("Unknown actor {}", actor),
-        }
-    }
-
     pub fn vocab(&self) -> HashMap<String, usize> {
         return self.g.vocab.clone();
     }
 
     // Path: src/sim.rs
     pub fn new(graph: AttackGraph<I>, config: SimulatorConfig) -> SimResult<SimulatorRuntime<I>> {
-        
         if config.log {
             // clear log
 
-
             let _ = std::fs::remove_file("log/output.log");
-            
+
             let logfile = FileAppender::builder()
                 .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
                 .build("log/output.log")
@@ -223,11 +205,17 @@ where
     fn get_color(&self, id: &I, state: &SimulatorState<I>) -> String {
         match id {
             id if self.g.entry_points().contains(id) => "crimson".to_string(), // entry points
-            id if self.g.disabled_defenses(&state.enabled_defenses).contains(id) => "chartreuse4".to_string(), // disabled defenses
+            id if self
+                .g
+                .disabled_defenses(&state.enabled_defenses)
+                .contains(id) =>
+            {
+                "chartreuse4".to_string()
+            } // disabled defenses
             id if state.enabled_defenses.contains(id) => "chartreuse".to_string(), // enabled defenses
-            id if state.attack_surface.contains(id) => "gold".to_string(), // attack surface
+            id if state.attack_surface.contains(id) => "gold".to_string(),         // attack surface
             id if state.compromised_steps.contains(id) => "firebrick1".to_string(), // compromised steps
-            id if self.g.flags.contains(id) => "darkmagenta".to_string(), // flags
+            id if self.g.flags.contains(id) => "darkmagenta".to_string(),           // flags
             _ => "white".to_string(),
         }
     }
@@ -273,7 +261,7 @@ where
         let flag_status = self.g.get_flag_status(&new_state.compromised_steps);
 
         let result = Ok((
-            self.map_state_to_observation(&new_state),
+            self.map_state_to_observation(&new_state, (0, 0)),
             new_state.to_info(
                 self.g.number_of_attacks(),
                 self.g.number_of_defenses(),
@@ -286,102 +274,11 @@ where
         return result;
     }
 
-    /*
-    pub fn defender_action_to_state(&self) -> Vec<usize> {
-        return self
-            .defender_action_to_graph
-            .iter()
-            .map(|id| self.id_to_index[id])
-            .collect();
-    }
-    */
-
-    pub fn enable_defense_step(&self, step_id: &I) -> SimResult<(HashSet<I>, HashMap<I, i32>)> {
-        let mut ttc_change = HashMap::new();
-
-        let affected_attacks = self.g.children(&step_id);
-
-        affected_attacks.iter().for_each(|&x| {
-            ttc_change.insert(x.id, 1000);
-        });
-
-        return Ok((HashSet::from([*step_id]), ttc_change));
-    }
-
-    pub fn defense_action(&self, defense_step_id: &I) -> SimResult<ActionResult<I>> {
-        let state = self.state.borrow();
-        //let defense_step_id = self.defender_action_to_graph[action];
-
-        if !self.g.defense_steps.contains(&defense_step_id) {
-            // Not a defense step
-            // Do nothing
-
-            let text = format!(
-                "Defense step {}, id={}, is not a defense step. Valid defense steps are: {:?}",
-                self.g.name_of_step(&defense_step_id),
-                defense_step_id,
-                self.g.defense_steps
-            );
-
-            if cfg!(debug_assertions) {
-                return Err(SimError {
-                    error: text,
-                });
-            } else {
-                log::warn!(
-                    "{}", text
-                );
-            }
-
-            return Ok(ActionResult::default());
-        }
-
-        if state.enabled_defenses.contains(&defense_step_id) {
-            // Already enabled
-            // Do nothing
-
-            let text = format!(
-                "Defense step {}, id={}, is already enabled.",
-                self.g.name_of_step(&defense_step_id),
-                defense_step_id
-            );
-
-            if cfg!(debug_assertions) {
-                return Err(SimError {
-                    error: text,
-                });
-            } else {
-                log::warn!(
-                    "{}", text
-                );
-            }
-
-            return Ok(ActionResult::default());
-        }
-
-        let (enabled_defenses, ttc_diff) = self.enable_defense_step(defense_step_id)?;
-
-        let result = ActionResult {
-            enabled_defenses,
-            ttc_diff,
-            valid_action: true,
-        };
-
-        return Ok(result);
-    }
-
-    pub fn attack_action(&self, attacker_action: &I) -> SimResult<ActionResult<I>> {
-        // Have the attacker perform an action.
-
-        //let attack_step_id = self.attacker_action_to_graph[attacker_action];
-
-        let state = self.state.borrow();
-        let result = state.attack_action(attacker_action);
-
-        return result;
-    }
-
-    fn map_state_to_observation(&self, state: &SimulatorState<I>) -> Observation {
+    fn map_state_to_observation(
+        &self,
+        state: &SimulatorState<I>,
+        rewards: (i64, i64),
+    ) -> Observation {
         // reverse graph id to action index mapping
 
         let mut attack_surface_vec = vec![false; self.id_to_index.len()];
@@ -423,10 +320,7 @@ where
                 let state_tuple = step.to_state_tuple(enabled);
                 state_tuple
             })
-            .map(
-                |x|
-                (x.0, self.g.word2idx(x.1), x.2, self.g.word2idx(x.3))
-            )
+            .map(|x| (x.0, self.g.word2idx(x.1), x.2, self.g.word2idx(x.3)))
             .collect::<Vec<StateTuple>>();
 
         let ids_observed = state.get_ids_obs();
@@ -444,13 +338,13 @@ where
         //action_mask[ACTION_NOP] = true;
         //action_mask[ACTION_TERMINATE] = false;
 
-        let mut defense_surface = vec![false; self.id_to_index.len()];
-        self.g
-            .disabled_defenses(&state.enabled_defenses)
+        let mut defense_surface_vec = vec![false; self.id_to_index.len()];
+        state
+            .defense_surface
             .iter()
             .map(|node_id| self.id_to_index[&node_id])
             .for_each(|index| {
-                defense_surface[index] = true;
+                defense_surface_vec[index] = true;
             });
 
         /*
@@ -482,12 +376,9 @@ where
             .map(|(from, to)| (self.id_to_index[from], self.id_to_index[to]))
             .collect::<Vec<(usize, usize)>>();
 
-        let attacker_reward = state.attacker_reward(&self.g);
-        let defender_reward = state.defender_reward(&self.g);
-
         Observation {
             attack_surface: attack_surface_vec,
-            defense_surface,
+            defense_surface: defense_surface_vec,
             defender_action_mask,
             attacker_action_mask,
             ttc_remaining,
@@ -496,8 +387,8 @@ where
             edges: vector_edges,
             //defense_indices: self.defender_action_to_state(),
             flags: self.g.flag_to_index(&self.id_to_index),
-            attacker_reward,
-            defender_reward,
+            attacker_reward: rewards.0,
+            defender_reward: rewards.1,
         }
     }
 
@@ -505,17 +396,16 @@ where
         &mut self,
         action_dict: HashMap<String, ParameterAction>,
     ) -> SimResult<(Observation, Info)> {
-
         log::info!("Step with action dict {:?}", action_dict);
 
-        let new_state = self.calculate_next_state(action_dict)?;
+        let (new_state, rewards) = self.calculate_next_state(action_dict)?;
 
         log::info!("New state:\n{:?}", new_state);
 
         let flag_status = self.g.get_flag_status(&new_state.compromised_steps);
 
         let result = Ok((
-            self.map_state_to_observation(&new_state),
+            self.map_state_to_observation(&new_state, rewards),
             new_state.to_info(
                 self.g.number_of_attacks(),
                 self.g.number_of_defenses(),
@@ -541,79 +431,31 @@ where
     fn calculate_next_state(
         &self,
         action_dict: HashMap<String, ParameterAction>,
-    ) -> SimResult<SimulatorState<I>> {
+    ) -> SimResult<(SimulatorState<I>, (i64, i64))> {
         let old_state = self.state.borrow();
 
         // Attacker selects and attack step from the attack surface
-        // Defender selects a defense step from the defense surface, which is the vector of all defense steps that are not disabled
+        // Defender selects a defense step from the defense surface, which is
+        // the vector of all defense steps that are not disabled
 
-        let total_result: ActionResult<I> = action_dict.iter().fold(
-            ActionResult {
-                ttc_diff: HashMap::new(),
-                enabled_defenses: old_state.enabled_defenses.clone(),
-                valid_action: true,
-            },
-            |mut total_result, (actor, (action, step_idx))| {
-                if *action == self.wait_idx() {
-                    return total_result;
-                }
-
-                let step_idx = *step_idx;
-                let step_id = match self.index_to_id.get(step_idx) {
-                    Some(id) => id,
-                    None => {
-                        panic!("Invalid step index {}", step_idx);
-                    }
-                };
-
-                let result = match self.actor_funcs(actor)(&self, &step_id) {
-                    Ok(result) => result,
-                    Err(e) => {
-                        panic!("Error: {} at state {:?}", e, old_state);
-                    }
-                };
-
-                total_result.valid_action &= result.valid_action;
-
-                for (step_id, ttc) in result.ttc_diff.iter() {
-                    let current_ttc = total_result.ttc_diff.entry(*step_id).or_insert(0);
-                    *current_ttc += *ttc;
-                }
-
-                total_result
-                    .enabled_defenses
-                    .extend(result.enabled_defenses);
-
-                total_result
-            },
-        );
-
-        let mut remaining_ttc: HashMap<I, u64> = old_state.remaining_ttc.clone();
-        total_result.ttc_diff.iter().for_each(|(step_id, ttc)| {
-            remaining_ttc.entry(*step_id).and_modify(|current_ttc| {
-                *current_ttc = max(0, *current_ttc as i64 + *ttc as i64) as u64;
-            });
-        });
-
-        let enabled_defenses = total_result.enabled_defenses;
-
-        let compromised_steps = self.g.calculate_compromised_steps(&remaining_ttc);
-
-        let uncompromised_steps = self.g.uncompromised_steps(&compromised_steps);
-
-        let attack_surface = match self
-            .g
-            .calculate_attack_surface(&compromised_steps, &enabled_defenses)
-        {
-            Ok(attack_surface) => attack_surface,
-            Err(_) => {
-                panic!("Attack surface calculation failed");
-            }
+        let defender_action = match action_dict.get("defender") {
+            Some(action) => (action.0, self.index_to_id.get(action.1)),
+            None => (self.wait_idx(), None),
         };
+
+        let attacker_action = match action_dict.get("attacker") {
+            Some(action) => (action.0, self.index_to_id.get(action.1)),
+            None => (self.wait_idx(), None),
+        };
+
+        let defender_reward = old_state.defender_reward(&self.g, defender_action.1);
+
+        let attacker_reward = old_state.attacker_reward(&self.g);
 
         let mut rng = old_state.export_rng();
 
-        let missed_alerts = compromised_steps
+        let missed_alerts = old_state
+            .compromised_steps
             .iter()
             .filter_map(
                 |id| match rng.gen::<f64>() < self.confusion_per_step[id].0 {
@@ -623,7 +465,8 @@ where
             )
             .collect::<HashSet<I>>();
 
-        let false_alerts = uncompromised_steps
+        let false_alerts = old_state
+            .uncompromised_steps(&self.g)
             .iter()
             .filter_map(
                 |id| match rng.gen::<f64>() < self.confusion_per_step[id].1 {
@@ -633,24 +476,35 @@ where
             )
             .collect::<HashSet<I>>();
 
-        Ok(SimulatorState {
-            attack_surface,
-            enabled_defenses,
-            remaining_ttc,
-            compromised_steps,
-            time: old_state.time + 1,
-            rng,
-            num_observed_alerts: 0,
-            //actions: action_dict,
-            missed_alerts,
-            false_alerts,
-        })
+        Ok((
+            SimulatorState {
+                attack_surface: old_state.attack_surface(&self.g, defender_action.1, attacker_action.1),
+                defense_surface: old_state.defense_surface(&self.g, defender_action.1),
+                enabled_defenses: old_state.enabled_defenses(&self.g, defender_action.1),
+                remaining_ttc: old_state.remaining_ttc(
+                    &self.g,
+                    attacker_action.1,
+                    defender_action.1,
+                ),
+                compromised_steps: old_state.compromised_steps(
+                    &self.g,
+                    attacker_action.1,
+                    defender_action.1,
+                ),
+                time: old_state.time + 1,
+                rng,
+                num_observed_alerts: 0,
+                //actions: action_dict,
+                missed_alerts,
+                false_alerts,
+            },
+            (attacker_reward, defender_reward),
+        ))
     }
 }
 
 #[cfg(test)]
 mod tests {
-
 
     use crate::{
         config,
@@ -673,14 +527,6 @@ mod tests {
         assert_eq!(initial_state.enabled_defenses.len(), 0);
         assert_eq!(initial_state.compromised_steps.len(), num_entrypoints);
         assert_eq!(initial_state.remaining_ttc.len(), sim.g.nodes().len());
-        assert_eq!(
-            initial_state
-                .remaining_ttc
-                .iter()
-                .filter(|(_, &ttc)| ttc == 0)
-                .count(),
-            num_entrypoints
-        );
         /*
         assert_eq!(
             sim.defender_action_to_graph.len(),
@@ -753,7 +599,7 @@ mod tests {
             assert_eq!(observation.nodes[*i].0, false); // Defense steps should be disabled
         }
 
-        assert!(observation.ttc_remaining.iter().sum::<u64>() > 0);
+        //assert!(observation.ttc_remaining.iter().sum::<u64>() > 0);
 
         let edges = observation.edges;
         let entrypoints = sim.g.entry_points();

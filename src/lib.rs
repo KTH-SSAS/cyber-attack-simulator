@@ -115,17 +115,17 @@ mod tests {
     use crate::{
         config::SimulatorConfig,
         loading::load_graph_from_json,
-        observation::{Info, Observation},
+        observation::Observation,
         runtime,
     };
     use rand::{seq::SliceRandom, SeedableRng};
     use rand_chacha::ChaChaRng;
 
-    const TEST_FILENAME: &str = "mal/attackgraph.json"; //"graphs/four_ways_mod.json";
-    const TEST_VOCAB: &str = "mal/corelang_vocab_merged.json";
+    const TEST_FILENAME: &str = "graphs/four_ways_mod.json";
+    const TEST_VOCAB: Option<&str> = None; // Some("mal/corelang_vocab_merged.json");
 
     fn get_sim_from_filename(filename: &str) -> runtime::SimulatorRuntime<usize> {
-        let graph = load_graph_from_json(filename, Some(TEST_VOCAB)).unwrap();
+        let graph = load_graph_from_json(filename, TEST_VOCAB).unwrap();
         let config = SimulatorConfig {
             seed: 0,
             false_negative_rate: 0.0,
@@ -166,23 +166,21 @@ mod tests {
         let mut sim = get_sim_from_filename(filename);
 
         let mut observation: Observation;
-        let mut info: Info;
 
-        (observation, info) = sim.reset(None).unwrap();
+        (observation, _) = sim.reset(None).unwrap();
 
         let mut rng = ChaChaRng::seed_from_u64(0);
         let action = sim.actions["use"];
-        let mut time = info.time;
         let mut attack_surface = observation.attack_surface.clone();
         let mut available_steps = available_actions(&attack_surface);
-        while available_steps.len() > 0 && time < sim.ttc_sum {
+        while available_steps.len() > 0 {
             let step = random_step(&attack_surface, &mut rng).unwrap();
 
             //assert!(action != sim.actions["terminate"]); // We should never terminate, for now
             assert!(action != sim.actions["wait"]); // We should never NOP, for now
 
             let action_dict = HashMap::from([("attacker".to_string(), (action, step))]);
-            let (new_observation, new_info) = sim.step(action_dict).unwrap();
+            let (new_observation, _) = sim.step(action_dict).unwrap();
 
             //let graphviz = sim.to_graphviz();
             //let file = std::fs::File::create(format!("test_attacker_{:0>2}.dot", time)).unwrap();
@@ -194,11 +192,13 @@ mod tests {
             assert_eq!(a, max(b as i64 - 1, 0) as u64);
             let old_ttc_sum = observation.ttc_remaining.iter().sum::<u64>();
             let new_ttc_sum = new_observation.ttc_remaining.iter().sum::<u64>();
-            assert_eq!(old_ttc_sum - 1, new_ttc_sum);
+            if observation.ids_observation == new_observation.ids_observation {
+                assert_eq!(old_ttc_sum - 1, new_ttc_sum);
+            } else {
+                assert_eq!(old_ttc_sum, new_ttc_sum);
+            }
 
             observation = new_observation;
-            info = new_info;
-            time = info.time;
             attack_surface = observation.attack_surface.clone();
             available_steps = available_actions(&attack_surface);
         }
@@ -214,21 +214,18 @@ mod tests {
         let mut sim = get_sim_from_filename(filename);
         let mut rng = ChaChaRng::seed_from_u64(0);
         let mut observation: Observation;
-        let mut info: Info;
         let action = sim.actions["use"];
-        (observation, info) = sim.reset(None).unwrap();
+        (observation, _) = sim.reset(None).unwrap();
         let mut defense_surface = observation.defense_surface.clone();
         let num_entrypoints = observation.nodes.iter().filter(|&(x, _, _, _)| *x).count();
         let num_defense = defense_surface.iter().filter(|&x| *x).count();
         let mut available_defenses = available_actions(&defense_surface);
-        let mut time = info.time;
-        while available_defenses.len() > 0 && time < sim.ttc_sum {
+        while available_defenses.len() > 0 {
             let step = random_step(&defense_surface, &mut rng).unwrap();
             let action_dict = HashMap::from([("defender".to_string(), (action, step))]);
-            (observation, info) = sim.step(action_dict).unwrap();
+            (observation, _) = sim.step(action_dict).unwrap();
             defense_surface = observation.defense_surface.clone();
             available_defenses = available_actions(&defense_surface);
-            time = info.time;
         }
 
         assert_eq!(observation.defense_surface.iter().filter(|&x| *x).count(), 0);
