@@ -16,8 +16,6 @@ use crate::config::SimulatorConfig;
 use crate::observation::{Info, Observation, StepInfo};
 use crate::state::SimulatorState;
 
-use rand::Rng;
-
 pub type SimResult<T> = std::result::Result<T, SimError>;
 #[derive(Debug, Clone)]
 pub struct SimError {
@@ -325,7 +323,6 @@ where
             .index_to_id
             .iter()
             .map(|id| {
-                let step = self.g.get_step(id).unwrap();
                 state.enabled_defenses.contains(id) || state.compromised_steps.contains(id)
             })
             .collect::<Vec<bool>>();
@@ -335,8 +332,6 @@ where
             .iter()
             .map(|id| {
                 let step = self.g.get_step(id).unwrap();
-                let enabled =
-                    state.enabled_defenses.contains(id) || state.compromised_steps.contains(id);
                 step.to_info_tuple()
             })
             .map(|x| (self.g.word2idx(x.0), x.1, self.g.word2idx(x.2)))
@@ -446,8 +441,6 @@ where
         &self,
         action_dict: HashMap<String, ParameterAction>,
     ) -> SimResult<(SimulatorState<I>, (i64, i64))> {
-        let old_state = self.state.borrow();
-
         // Attacker selects and attack step from the attack surface
         // Defender selects a defense step from the defense surface, which is
         // the vector of all defense steps that are not disabled
@@ -468,42 +461,18 @@ where
             None => (self.wait_idx(), None),
         };
 
-        let defender_reward = old_state.defender_reward(&self.g, defender_action.1);
-
-        let attacker_reward = old_state.attacker_reward(&self.g);
-
-        let mut rng = old_state.rng.clone();
-        let p = rng.gen::<f64>();
-        Ok((
-            SimulatorState {
-                attack_surface: old_state.attack_surface(
-                    &self.g,
-                    defender_action.1,
-                    attacker_action.1,
-                ),
-                defense_surface: old_state.defense_surface(&self.g, defender_action.1),
-                enabled_defenses: old_state.enabled_defenses(&self.g, defender_action.1),
-                remaining_ttc: old_state.remaining_ttc(
-                    &self.g,
-                    attacker_action.1,
-                    defender_action.1,
-                ),
-                compromised_steps: old_state.compromised_steps(
-                    &self.g,
-                    attacker_action.1,
-                    defender_action.1,
-                ),
-                time: old_state.time + 1,
-                rng,
-                //actions: action_dict,
-                defender_observed_steps: old_state.defender_steps_observered(
-                    &self.g,
-                    &self.confusion_per_step,
-                    p,
-                ),
-            },
-            (attacker_reward, defender_reward),
-        ))
+        let old_state = self.state.borrow();
+        match old_state.get_new_state(
+            &self.g,
+            &self.confusion_per_step,
+            attacker_action.1,
+            defender_action.1,
+        ) {
+            Ok((new_state, rewards)) => {
+                return Ok((new_state, rewards));
+            }
+            Err(e) => return Err(SimError{error: e.to_string()}),
+        }
     }
 }
 

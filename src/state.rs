@@ -27,6 +27,8 @@ impl std::error::Error for StateError {
     }
 }
 
+pub(crate) type StateResult<T> = std::result::Result<T, StateError>;
+
 pub(crate) struct SimulatorState<I> {
     pub time: u64,
     pub rng: ChaChaRng,
@@ -116,8 +118,62 @@ where
         return self.remaining_ttc.iter().map(|(_, &ttc)| ttc).sum();
     }
 
-    pub fn export_rng(&self) -> ChaChaRng {
-        self.rng.clone()
+    pub(crate) fn get_new_state(
+        &self,
+        graph: &AttackGraph<I>,
+        confusion_per_step: &HashMap<I, Confusion>,
+        attacker_action: Option<&I>,
+        defender_action: Option<&I>,
+    ) -> StateResult<(SimulatorState<I>, (i64, i64))> {
+        let mut rng = self.rng.clone();
+        let p = rng.gen::<f64>();
+        Ok((
+            SimulatorState {
+                attack_surface: self.attack_surface(graph, defender_action, attacker_action),
+                defense_surface: self.defense_surface(graph, defender_action),
+                enabled_defenses: self.enabled_defenses(graph, defender_action),
+                remaining_ttc: self.remaining_ttc(graph, attacker_action, defender_action),
+                compromised_steps: self.compromised_steps(graph, attacker_action, defender_action),
+                time: self.time + 1,
+                rng,
+                defender_observed_steps: self.defender_steps_observered(
+                    graph,
+                    confusion_per_step,
+                    p,
+                ),
+            },
+            (
+                self.attacker_reward(graph),
+                self.defender_reward(graph, defender_action),
+            ),
+        ))
+    }
+
+    fn remaining_ttc(
+        &self,
+        graph: &AttackGraph<I>,
+        selected_attack: Option<&I>,
+        selected_defense: Option<&I>,
+    ) -> HashMap<I, TTCType> {
+        Self::_remaining_ttc(
+            graph,
+            &self.remaining_ttc,
+            selected_attack,
+            selected_defense,
+        )
+    }
+
+    fn defender_steps_observered(
+        &self,
+        graph: &AttackGraph<I>,
+        confusion_per_step: &HashMap<I, Confusion>,
+        p: f64,
+    ) -> HashSet<I> {
+        Self::_defender_steps_observered(graph, &self.compromised_steps, confusion_per_step, p)
+    }
+
+    fn enabled_defenses(&self, graph: &AttackGraph<I>, selected_defense: Option<&I>) -> HashSet<I> {
+        Self::_enabled_defenses(graph, &self.enabled_defenses, selected_defense)
     }
 
     fn should_defense_be_enabled(
@@ -130,15 +186,6 @@ where
                 Some(selected_node) => node == selected_node,
                 None => false,
             }
-    }
-
-    pub(crate) fn defender_steps_observered(
-        &self,
-        graph: &AttackGraph<I>,
-        confusion_per_step: &HashMap<I, Confusion>,
-        p: f64,
-    ) -> HashSet<I> {
-        Self::_defender_steps_observered(graph, &self.compromised_steps, confusion_per_step, p)
     }
 
     fn _defender_steps_observered(
@@ -160,14 +207,6 @@ where
                 false => None,
             })
             .collect()
-    }
-
-    pub(crate) fn enabled_defenses(
-        &self,
-        graph: &AttackGraph<I>,
-        selected_defense: Option<&I>,
-    ) -> HashSet<I> {
-        Self::_enabled_defenses(graph, &self.enabled_defenses, selected_defense)
     }
 
     fn _enabled_defenses(
@@ -206,17 +245,39 @@ where
         }
     }
 
-    pub(crate) fn remaining_ttc(
+    fn attack_surface(
         &self,
         graph: &AttackGraph<I>,
-        selected_attack: Option<&I>,
-        selected_defense: Option<&I>,
-    ) -> HashMap<I, TTCType> {
-        Self::_remaining_ttc(
+        defender_action: Option<&I>,
+        attacker_action: Option<&I>,
+    ) -> HashSet<I> {
+        return Self::_attack_surface(
+            graph,
+            &self.compromised_steps,
+            &self.remaining_ttc,
+            &self.enabled_defenses,
+            defender_action,
+            attacker_action,
+        );
+    }
+
+    fn defense_surface(&self, graph: &AttackGraph<I>, defender_action: Option<&I>) -> HashSet<I> {
+        Self::_defense_surface(graph, &self.enabled_defenses, defender_action)
+    }
+
+    fn compromised_steps(
+        &self,
+        graph: &AttackGraph<I>,
+        attacker_action: Option<&I>,
+        defender_action: Option<&I>,
+    ) -> HashSet<I> {
+        Self::_compromised_steps(
             graph,
             &self.remaining_ttc,
-            selected_attack,
-            selected_defense,
+            &self.compromised_steps,
+            &self.enabled_defenses,
+            attacker_action,
+            defender_action,
         )
     }
 
@@ -242,30 +303,6 @@ where
                 (*id, ttc)
             })
             .collect::<HashMap<I, TTCType>>()
-    }
-
-    pub(crate) fn uncompromised_steps(&self, graph: &AttackGraph<I>) -> HashSet<I> {
-        graph
-            .attack_steps
-            .difference(&self.compromised_steps)
-            .map(|&x| x)
-            .collect()
-    }
-
-    pub(crate) fn attack_surface(
-        &self,
-        graph: &AttackGraph<I>,
-        defender_action: Option<&I>,
-        attacker_action: Option<&I>,
-    ) -> HashSet<I> {
-        return Self::_attack_surface(
-            graph,
-            &self.compromised_steps,
-            &self.remaining_ttc,
-            &self.enabled_defenses,
-            defender_action,
-            attacker_action,
-        );
     }
 
     fn _attack_surface(
@@ -299,7 +336,7 @@ where
         return attack_surface;
     }
 
-    pub(crate) fn can_step_be_compromised(
+    fn can_step_be_compromised(
         graph: &AttackGraph<I>,
         compromised_steps: &HashSet<I>,
         ttc_remaining: &HashMap<I, TTCType>,
@@ -320,14 +357,6 @@ where
             (Some(a), None) => parent_conditions_fulfilled && a == step && ttc_remaining[a] == 0,
             (None, _) => false,
         }
-    }
-
-    pub(crate) fn defense_surface(
-        &self,
-        graph: &AttackGraph<I>,
-        defender_action: Option<&I>,
-    ) -> HashSet<I> {
-        Self::_defense_surface(graph, &self.enabled_defenses, defender_action)
     }
 
     fn defense_available(
@@ -357,22 +386,6 @@ where
                 },
             )
             .collect()
-    }
-
-    pub(crate) fn compromised_steps(
-        &self,
-        graph: &AttackGraph<I>,
-        attacker_action: Option<&I>,
-        defender_action: Option<&I>,
-    ) -> HashSet<I> {
-        Self::_compromised_steps(
-            graph,
-            &self.remaining_ttc,
-            &self.compromised_steps,
-            &self.enabled_defenses,
-            attacker_action,
-            defender_action,
-        )
     }
 
     fn is_defended(graph: &AttackGraph<I>, node: &I, enabled_defenses: &HashSet<I>) -> bool {
