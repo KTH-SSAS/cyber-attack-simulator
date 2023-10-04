@@ -81,8 +81,9 @@ where
             None => &binding,
         };
         return format!(
-            "{}\n{}\n{}\n{}",
+            "{}\n{}\n{}\n{}\n{}",
             "digraph {",
+            "size=\"50,50!\"",
             self.nodes_to_graphviz(attributes),
             self.edges_to_graphviz(),
             "}"
