@@ -11,7 +11,6 @@ from typing import Any, Dict
 import numpy as np
 
 from ...constants import UINT
-from ...mal.graph import AttackGraph
 from ...utils.rng import get_rng
 from ..agent import Agent
 
@@ -74,7 +73,7 @@ class WellInformedAttacker(Agent):
 
     def __init__(self, agent_config: dict) -> None:
         super().__init__(agent_config)
-        graph: AttackGraph = agent_config["attack_graph"]
+        graph = agent_config["attack_graph"]
         steps = graph.attack_steps
         names = graph.attack_names
         # self._ttc = dict(zip(names, graph.ttc_params))

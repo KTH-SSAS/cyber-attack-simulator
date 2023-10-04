@@ -21,36 +21,23 @@ class Config:
 
 
 @dataclass(frozen=True)
-class GraphConfig(Config):
-    """Config class for attack graph."""
-
-    filename: str
-    vocab_filename: str = None
-
-    @classmethod
-    def from_yaml(cls, filename: str) -> GraphConfig:
-        """Load configuration data from YAML file."""
-        with open(filename, encoding="utf8") as f:
-            dictionary = yaml.safe_load(f)
-            dictionary = dictionary["graph_config"]
-            return cls(**dictionary)
-
-
-@dataclass(frozen=True)
 class EnvConfig(Config):
     """Config class for RL environment."""
 
-    graph_config: GraphConfig
     sim_config: SimulatorConfig
+    graph_filename: str
     seed: Optional[int] = None
+    vocab_filename: str = None
 
     @classmethod
     def from_yaml(cls, filename: str) -> EnvConfig:
         """Load configuration data from YAML file."""
         with open(filename, encoding="utf8") as f:
-            dictionary = yaml.safe_load(f)
-            dictionary["sim_config"] = SimulatorConfig(**dictionary["sim_config"])
-            dictionary["graph_config"] = GraphConfig(**dictionary["graph_config"])
+            dictionary: Dict = yaml.safe_load(f)
+            sim_keys = [key for key in dictionary if key.startswith("sim_")]
+            sim_config = {key[len("sim_"):]: dictionary.pop(key) for key in sim_keys}
+            sim_config["seed"] = dictionary.get("seed")
+            dictionary["sim_config"] = SimulatorConfig(**sim_config)
             return cls(**dictionary)
 
 

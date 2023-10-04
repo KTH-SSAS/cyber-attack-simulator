@@ -8,7 +8,6 @@ from networkx.algorithms.shortest_paths.generic import shortest_path
 from numpy.typing import NDArray
 
 from ...constants import UINT
-from ...mal.graph import AttackGraph
 from ..agent import Agent
 
 
@@ -23,7 +22,7 @@ class PathFinderAttacker(Agent):
         super().__init__(agent_config)
         # graph : AttackGraph = simulator.g #agent_config["attack_graph"]
 
-        self.g: AttackGraph = agent_config["attack_graph"]
+        self.g = agent_config["attack_graph"]
         self.flags_taken: List[int] = []
         # Create a random order in which to do flags
 

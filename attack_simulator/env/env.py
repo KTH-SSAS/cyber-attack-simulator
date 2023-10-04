@@ -11,9 +11,7 @@ from maturin import import_hook
 from .roles import Defender, Attacker
 from ..constants import AGENT_ATTACKER, AGENT_DEFENDER
 from ..mal.observation import Info, Observation
-from ..mal.sim import Simulator
-from ..renderer.renderer import AttackSimulationRenderer
-from ..utils.config import EnvConfig, GraphConfig, SimulatorConfig
+from ..utils.config import EnvConfig, SimulatorConfig
 from ..utils.rng import get_rng
 
 
@@ -48,15 +46,9 @@ class AttackSimulationEnv():
     NO_ACTION = "no action"
 
     # attacker: Agent
-    sim: Simulator
     last_obs: Observation
 
     def __init__(self, config: EnvConfig, render_mode: str | None = None):
-        graph_config = (
-            config.graph_config
-            if isinstance(config.graph_config, GraphConfig)
-            else GraphConfig(**config.graph_config)
-        )
 
         sim_config = (
             config.sim_config
@@ -68,7 +60,7 @@ class AttackSimulationEnv():
         sim_config = dataclasses.replace(sim_config, seed=config.seed)
 
         self.sim = RustAttackSimulator(
-            json.dumps(sim_config.to_dict()), graph_config.filename, graph_config.vocab_filename
+            json.dumps(sim_config.to_dict()), config.graph_filename, config.vocab_filename
         )  # noqa: F821
         self.rng, self.env_seed = get_rng(config.seed)
         self.config = config
@@ -101,7 +93,7 @@ class AttackSimulationEnv():
         self.episode_count = (
             -1
         )  # Start episode count at -1 since it will be incremented the first time reset is called.
-        self.renderer: Optional[AttackSimulationRenderer] = None
+        #self.renderer: Optional[AttackSimulationRenderer] = None
         self.reset_render = True
         self.n_nodes = num_nodes
         self.n_actions = num_actions
@@ -140,15 +132,6 @@ class AttackSimulationEnv():
             for agent, a_space in self.observation_space.spaces.items()
             for obs_key, space in a_space.spaces.items()
         }
-
-    @staticmethod
-    def create_renderer(episode_count: int, config: EnvConfig) -> AttackSimulationRenderer:
-        return AttackSimulationRenderer(
-            config.run_id,
-            episode_count,
-            save_graph=config.save_graphs,
-            save_logs=config.save_logs,
-        )
 
     def reset(self, *, seed=None, options=None):
         if seed is None:
@@ -294,7 +277,10 @@ class AttackSimulationEnv():
         ## Render the graph
         graphviz_code = self.sim.render()
         graphviz_graph = graphviz.Source(graphviz_code)
+        graphviz_graph.engine = "dot"
         graphviz_graph.format = "png"
+        graphviz_graph.renderer = "cairo"
+        graphviz_graph.formatter = "cairo"
         #graphviz_graph.render("graphviz_graph")
         graphviz_graph = PIL.Image.open(io.BytesIO(graphviz_graph.pipe()))
         graphviz_graph = graphviz_graph.resize((screen_width, screen_height))
