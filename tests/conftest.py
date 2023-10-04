@@ -89,7 +89,6 @@ def fixture_env_config(config_yaml: Path) -> EnvConfig:
 )
 def fixture_env(request) -> AttackSimulationEnv:
     env_config = request.getfixturevalue("env_config")
-    env_config = env_config.replace(backend=request.param)
     return AttackSimulationEnv(env_config)
 
 

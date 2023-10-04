@@ -30,7 +30,7 @@ def test_sim_attacker_action(simulator: Simulator) -> None:
 
 def test_sim_step(simulator: Simulator) -> None:
     # Take a step
-    actions = {AGENT_ATTACKER: simulator.wait_action, AGENT_DEFENDER: simulator.wait_action}
+    actions = {AGENT_ATTACKER: (simulator.actions["wait"], None), AGENT_DEFENDER: (simulator.actions["wait"], None)}
     obs: Observation
     info: Info
     obs, info = simulator.step(actions)
