@@ -38,9 +38,6 @@ pub(crate) struct SimulatorState<I> {
     pub defense_surface: HashSet<I>,
     pub remaining_ttc: HashMap<I, TTCType>,
     pub defender_observed_steps: HashSet<I>,
-    //pub false_alerts: HashSet<I>,
-    //pub missed_alerts: HashSet<I>,
-    //actions: HashMap<String, usize>,
 }
 
 impl<I> Debug for SimulatorState<I>
