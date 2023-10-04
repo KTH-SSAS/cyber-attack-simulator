@@ -7,9 +7,7 @@ from typing import Any, Dict, List
 import pytest
 
 from attack_simulator.env.env import AttackSimulationEnv
-from attack_simulator.mal.graph import AttackGraph
-from attack_simulator.mal.sim import AttackSimulator
-from attack_simulator.utils.config import EnvConfig, GraphConfig
+from attack_simulator.utils.config import EnvConfig
 
 from maturin import import_hook
 
@@ -25,8 +23,8 @@ def fixture_config_filename() -> Path:
 
 
 @pytest.fixture(scope="session")
-def test_defense_steps(graph_config: GraphConfig) -> List[str]:
-    with open(graph_config.filename, "r", encoding="utf8") as f:
+def test_defense_steps(env_config: EnvConfig) -> List[str]:
+    with open(env_config.graph_filename, "r", encoding="utf8") as f:
         text = f.read()
 
     defense_steps = re.findall(r"id: (\w\.(defend))", text)
@@ -37,8 +35,8 @@ def test_defense_steps(graph_config: GraphConfig) -> List[str]:
 
 
 @pytest.fixture(scope="session")
-def test_attack_steps(graph_config: GraphConfig) -> List[str]:
-    with open(graph_config.filename, "r", encoding="utf8") as f:
+def test_attack_steps(env_config: EnvConfig) -> List[str]:
+    with open(env_config.graph_filename, "r", encoding="utf8") as f:
         text = f.read()
 
     attack_steps = re.findall(r"id: (\w\.(attack|capture))", text)
@@ -47,33 +45,13 @@ def test_attack_steps(graph_config: GraphConfig) -> List[str]:
 
     return [t[0] for t in attack_steps]
 
-
-# @pytest.fixture(scope="session", name="test_assets")
-# def fixture_test_assets() -> Dict[str, Any]:
-#     return ["a", "b", "c", "d"]
-
-
-@pytest.fixture(scope="session", name="graph_config")
-def fixture_graph_config(config_yaml: Path) -> GraphConfig:
-    config: GraphConfig = GraphConfig.from_yaml(config_yaml)
-    config = dataclasses.replace(
-        config,
-    )
-    absolute_graph_pathname = Path(config.filename).absolute()
-    config = dataclasses.replace(config, filename=str(absolute_graph_pathname))
-    return config
-
-
 @pytest.fixture(scope="session", name="env_config")
 def fixture_env_config(config_yaml: Path) -> EnvConfig:
     config: EnvConfig = EnvConfig.from_yaml(config_yaml)
 
-    absolute_graph_pathname = Path(config.graph_config.filename).absolute()
+    absolute_graph_pathname = Path(config.graph_filename).absolute()
     config = dataclasses.replace(
-        config,
-        graph_config=dataclasses.replace(
-            config.graph_config, filename=str(absolute_graph_pathname)
-        ),
+        config, graph_filename=str(absolute_graph_pathname)
     )
 
     return config
@@ -91,21 +69,13 @@ def fixture_env(request) -> AttackSimulationEnv:
     env_config = request.getfixturevalue("env_config")
     return AttackSimulationEnv(env_config)
 
-
-@pytest.fixture(
-    name="simulator",
-    params=[
-        # pytest.param(AttackSimulator, id="python"),
-        pytest.param(RustAttackSimulator, id="rust"),
-    ],
-)
-def fixture_simulator(request) -> AttackSimulator:
+@pytest.fixture(scope="session", name="simulator")
+def fixture_simulator(request):
     config_yaml = Path("config/test_config.yaml")
     config: EnvConfig = EnvConfig.from_yaml(config_yaml)
     return RustAttackSimulator(
-        json.dumps(dataclasses.asdict(config.sim_config)), config.graph_config.filename
+        json.dumps(dataclasses.asdict(config.sim_config)), config.graph_filename
     )
-
 
 @pytest.fixture(scope="session")
 def rllib_config(env_config: EnvConfig) -> Dict[str, Any]:

@@ -1,34 +1,27 @@
-from collections import OrderedDict
-from typing import Sequence
 
-import numpy as np
 import pytest
 
-from attack_simulator.constants import ACTION_TERMINATE, ACTION_WAIT, AGENT_ATTACKER, AGENT_DEFENDER
-from attack_simulator.agents.agent import Agent
-from attack_simulator.agents.attackers.searchers import BreadthFirstAttacker
-from attack_simulator.mal.graph import AttackGraph
+from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.mal.observation import Info, Observation
-from attack_simulator.mal.sim import AttackSimulator, Simulator
-from attack_simulator.utils.config import EnvConfig
 
 
-def test_sim_reset(simulator: Simulator) -> None:
+
+def test_sim_reset(simulator) -> None:
     obs, info = simulator.reset()
     assert info.time == 0
 
 
 @pytest.mark.skip(reason="Not implemented")
-def test_sim_defender_action(simulator: Simulator) -> None:
+def test_sim_defender_action(simulator) -> None:
     pass
 
 
 @pytest.mark.skip(reason="Not implemented")
-def test_sim_attacker_action(simulator: Simulator) -> None:
+def test_sim_attacker_action(simulator) -> None:
     pass
 
 
-def test_sim_step(simulator: Simulator) -> None:
+def test_sim_step(simulator) -> None:
     # Take a step
     actions = {AGENT_ATTACKER: (simulator.actions["wait"], None), AGENT_DEFENDER: (simulator.actions["wait"], None)}
     obs: Observation
