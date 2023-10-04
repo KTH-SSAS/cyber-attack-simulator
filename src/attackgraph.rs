@@ -111,14 +111,9 @@ impl From<&MALAttackStep> for AttackStep {
 }
 
 impl AttackStep {
-    pub(crate) fn to_state_tuple(&self, enabled: bool) -> (bool, String, usize, String) {
+    pub(crate) fn to_info_tuple(&self) -> (String, usize, String) {
         //split name by colon
-        return (
-            enabled,
-            self.asset.clone(),
-            self.asset_id,
-            self.name.clone(),
-        );
+        return (self.asset.clone(), self.asset_id, self.name.clone());
     }
 
     pub(crate) fn can_be_compromised(&self, parent_states: &Vec<bool>) -> bool {

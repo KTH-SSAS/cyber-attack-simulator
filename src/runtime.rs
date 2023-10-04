@@ -13,7 +13,7 @@ use log4rs::Config;
 
 use crate::attackgraph::{AttackGraph, TTCType};
 use crate::config::SimulatorConfig;
-use crate::observation::{Info, Observation, StateTuple};
+use crate::observation::{Info, Observation, StepInfo};
 use crate::state::SimulatorState;
 
 use rand::Rng;
@@ -49,14 +49,19 @@ impl<I> Default for ActionResult<I> {
 //type ActionIndex = usize;
 // type ActorIndex = usize;
 
-type ParameterAction = (usize, usize);
+type ParameterAction = (usize, Option<usize>);
+
+pub(crate) struct Confusion {
+    pub fnr: f64,
+    pub fpr: f64,
+}
 
 pub(crate) struct SimulatorRuntime<I> {
     g: AttackGraph<I>,
     state: RefCell<SimulatorState<I>>,
     history: Vec<SimulatorState<I>>,
     pub config: SimulatorConfig,
-    pub confusion_per_step: HashMap<I, (f64, f64)>,
+    pub confusion_per_step: HashMap<I, Confusion>,
     pub ttc_sum: TTCType,
 
     pub actions: HashMap<String, usize>,
@@ -145,18 +150,25 @@ where
 
         */
 
-        let initial_state = SimulatorState::new(&graph, config.seed, config.randomize_ttc)?;
-
         let fnr_fpr_per_step = index_to_id
             .iter()
             .map(|id| {
                 match graph.has_attack(&id) {
-                    true => (id, (config.false_negative_rate, config.false_positive_rate)),
-                    false => (id, (0.0, 0.0)), // No false negatives or positives for defense steps
+                    true => (
+                        id,
+                        Confusion {
+                            fnr: config.false_negative_rate,
+                            fpr: config.false_positive_rate,
+                        },
+                    ),
+                    false => (id, Confusion { fnr: 0.0, fpr: 0.0 }), // No false negatives or positives for defense steps
                 }
             })
-            .map(|(id, (fnr, fpr))| (id.clone(), (fnr, fpr)))
-            .collect::<HashMap<I, (f64, f64)>>();
+            .map(|(id, c)| (id.clone(), c))
+            .collect::<HashMap<I, Confusion>>();
+
+        let initial_state =
+            SimulatorState::new(&graph, &fnr_fpr_per_step, config.seed, config.randomize_ttc)?;
 
         let attacker_string = "attacker".to_string();
         let defender_string = "defender".to_string();
@@ -247,7 +259,12 @@ where
             self.config.seed = seed;
         }
 
-        let new_state = SimulatorState::new(&self.g, self.config.seed, self.config.randomize_ttc)?;
+        let new_state = SimulatorState::new(
+            &self.g,
+            &self.confusion_per_step,
+            self.config.seed,
+            self.config.randomize_ttc,
+        )?;
 
         log::info!("Resetting simulator with seed {}", self.config.seed);
         log::info!("Initial state:\n {:?}", new_state);
@@ -309,23 +326,25 @@ where
             .iter()
             .map(|id| {
                 let step = self.g.get_step(id).unwrap();
+                state.enabled_defenses.contains(id) || state.compromised_steps.contains(id)
+            })
+            .collect::<Vec<bool>>();
+
+        let step_info = self
+            .index_to_id
+            .iter()
+            .map(|id| {
+                let step = self.g.get_step(id).unwrap();
                 let enabled =
                     state.enabled_defenses.contains(id) || state.compromised_steps.contains(id);
-                let state_tuple = step.to_state_tuple(enabled);
-                state_tuple
+                step.to_info_tuple()
             })
-            .map(|x| (x.0, self.g.word2idx(x.1), x.2, self.g.word2idx(x.3)))
-            .collect::<Vec<StateTuple>>();
+            .map(|x| (self.g.word2idx(x.0), x.1, self.g.word2idx(x.2)))
+            .collect::<Vec<StepInfo>>();
 
-        let ids_observed = state.get_ids_obs();
-
-        let mut ids_observed_vec = vec![false; self.id_to_index.len()];
-        ids_observed.iter().for_each(|node_id| {
-            ids_observed_vec[self.id_to_index[node_id]] = true;
-        });
-
-        state.enabled_defenses.iter().for_each(|&node_id| {
-            ids_observed_vec[self.id_to_index[&node_id]] = true;
+        let mut observed_vec = vec![false; self.id_to_index.len()];
+        state.defender_observed_steps.iter().for_each(|node_id| {
+            observed_vec[self.id_to_index[node_id]] = true;
         });
 
         //let mut action_mask = vec![false; SPECIAL_ACTIONS.len()];
@@ -376,8 +395,9 @@ where
             defender_action_mask,
             attacker_action_mask,
             ttc_remaining,
-            ids_observation: ids_observed_vec,
-            nodes: step_state,
+            observation: observed_vec,
+            step_info,
+            state: step_state,
             edges: vector_edges,
             //defense_indices: self.defender_action_to_state(),
             flags: self.g.flag_to_index(&self.id_to_index),
@@ -433,12 +453,18 @@ where
         // the vector of all defense steps that are not disabled
 
         let defender_action = match action_dict.get("defender") {
-            Some(action) => (action.0, self.index_to_id.get(action.1)),
+            Some(action) => match action.1 {
+                Some(a) => (action.0, self.index_to_id.get(a)),
+                None => (action.0, None),
+            },
             None => (self.wait_idx(), None),
         };
 
         let attacker_action = match action_dict.get("attacker") {
-            Some(action) => (action.0, self.index_to_id.get(action.1)),
+            Some(action) => match action.1 {
+                Some(a) => (action.0, self.index_to_id.get(a)),
+                None => (action.0, None),
+            },
             None => (self.wait_idx(), None),
         };
 
@@ -446,30 +472,8 @@ where
 
         let attacker_reward = old_state.attacker_reward(&self.g);
 
-        let mut rng = old_state.export_rng();
-
-        let missed_alerts = old_state
-            .compromised_steps
-            .iter()
-            .filter_map(
-                |id| match rng.gen::<f64>() < self.confusion_per_step[id].0 {
-                    true => Some(*id), // if p < fnr, then we missed an alert
-                    false => None,
-                },
-            )
-            .collect::<HashSet<I>>();
-
-        let false_alerts = old_state
-            .uncompromised_steps(&self.g)
-            .iter()
-            .filter_map(
-                |id| match rng.gen::<f64>() < self.confusion_per_step[id].1 {
-                    true => Some(*id), // if p < fpr, then we got a false alert
-                    false => None,
-                },
-            )
-            .collect::<HashSet<I>>();
-
+        let mut rng = old_state.rng.clone();
+        let p = rng.gen::<f64>();
         Ok((
             SimulatorState {
                 attack_surface: old_state.attack_surface(
@@ -491,10 +495,12 @@ where
                 ),
                 time: old_state.time + 1,
                 rng,
-                num_observed_alerts: 0,
                 //actions: action_dict,
-                missed_alerts,
-                false_alerts,
+                defender_observed_steps: old_state.defender_steps_observered(
+                    &self.g,
+                    &self.confusion_per_step,
+                    p,
+                ),
             },
             (attacker_reward, defender_reward),
         ))
@@ -575,9 +581,9 @@ mod tests {
             num_defenses
         );
 
-        assert_eq!(observation.nodes.len(), sim.g.nodes().len());
+        assert_eq!(observation.state.len(), sim.g.nodes().len());
         assert_eq!(
-            observation.nodes.iter().filter(|&(x, _, _, _)| *x).count(),
+            observation.state.iter().filter(|&x| *x).count(),
             num_entrypoints
         ); // 4 available defenses + 1 compromised attack step
 
@@ -594,7 +600,7 @@ mod tests {
             .collect::<Vec<usize>>();
 
         for i in defense_indices.iter() {
-            assert_eq!(observation.nodes[*i].0, false); // Defense steps should be disabled
+            assert_eq!(observation.state[*i], false); // Defense steps should be disabled
         }
 
         //assert!(observation.ttc_remaining.iter().sum::<u64>() > 0);

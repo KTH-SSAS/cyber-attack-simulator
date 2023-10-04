@@ -25,12 +25,12 @@ class Observation:
 
     @classmethod
     def from_rust(cls, obs):
-        state, assets, asset_ids, names = zip(*obs.nodes)
+        assets, asset_ids, names = zip(*obs.step_info)
         return Observation(
-            ids_observation=np.array(obs.ids_observation, dtype=np.int8),
+            ids_observation=np.array(obs.observation, dtype=np.int8),
             attack_surface=np.array(obs.attack_surface, dtype=np.int8),
             defense_surface=np.array(obs.defense_surface, dtype=np.int8),
-            state=np.array(state, dtype=np.int8),
+            state=np.array(obs.state, dtype=np.int8),
             assets=np.array(assets, dtype=np.int64),
             asset_ids=np.array(asset_ids, dtype=np.int64),
             names=np.array(names, dtype=np.int64),
@@ -52,7 +52,6 @@ class Info:
     perc_compromised_flags: float
     perc_compromised_steps: np.double
     perc_defenses_activated: np.double
-    num_observed_alerts: UINT
     sum_ttc: UINT
 
 

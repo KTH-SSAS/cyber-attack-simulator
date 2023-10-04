@@ -26,10 +26,6 @@ class GraphConfig(Config):
 
     filename: str
     vocab_filename: str = None
-    root: str = "notused"
-    prune: List[str] = field(default_factory=list)
-    rewards: Dict[str, float] = field(default_factory=dict)
-    ttc: Dict[str, float] = field(default_factory=dict)
 
     @classmethod
     def from_yaml(cls, filename: str) -> GraphConfig:
@@ -46,13 +42,7 @@ class EnvConfig(Config):
 
     graph_config: GraphConfig
     sim_config: SimulatorConfig
-    attacker: str
-    save_graphs: bool
-    save_logs: bool
-    reward_mode: str
-    run_id: str = "run"
     seed: Optional[int] = None
-    backend: str = "python"
 
     @classmethod
     def from_yaml(cls, filename: str) -> EnvConfig:
@@ -65,25 +55,11 @@ class EnvConfig(Config):
 
 
 @dataclass(frozen=True)
-class AgentConfig(Config):
-    """Config class for RL agents."""
-
-    agent_type: str
-    seed: Optional[int]
-    input_dim: int
-    hidden_dim: int
-    num_actions: int
-    learning_rate: float
-    use_cuda: bool
-
-
-@dataclass(frozen=True)
 class SimulatorConfig(Config):
     """Config class for attack simulator."""
 
     false_negative_rate: float
     false_positive_rate: float
-    attack_start_time: int
     seed: int
     randomize_ttc: bool = False
     log: bool = False

@@ -25,32 +25,6 @@ from ..rusty_sim import RustAttackSimulator  # noqa: E402
 logger = logging.getLogger("simulator")
 
 
-def uptime_reward(
-    _defender_action, defense_state: NDArray[np.int8], defense_costs: NDArray[np.int8]
-) -> float:
-    # Defender is rewarded each timestep for each defense that has been not used
-    return sum(defense_costs * defense_state)
-
-
-def downtime_penalty(
-    _defender_action, defense_state: NDArray[np.int8], defense_costs: NDArray[np.int8]
-) -> float:
-    # Defender is penalized each timestep for each defense that has been used
-    return sum(defense_costs * defense_state)
-
-
-def defense_penalty(
-    defender_action: int, _defense_state: NDArray[np.int8], defense_costs: NDArray[np.int8]
-) -> float:
-    # Defender is penalized once when a defense is used
-    return -(defense_costs[defender_action]) if defender_action != -1 else 0
-
-
-reward_funcs = {
-    "uptime-reward": uptime_reward,
-    "downtime-penalty": downtime_penalty,
-    "defense-penalty": defense_penalty,
-}
 
 def get_agent_obs(sim_obs: Observation) -> Dict[str, Any]:
 
@@ -93,7 +67,6 @@ class AttackSimulationEnv():
         # Set the seed for the simulator.
         sim_config = dataclasses.replace(sim_config, seed=config.seed)
 
-        self.reward_function = reward_funcs[config.reward_mode]
         self.sim = RustAttackSimulator(
             json.dumps(sim_config.to_dict()), graph_config.filename, graph_config.vocab_filename
         )  # noqa: F821
@@ -110,16 +83,14 @@ class AttackSimulationEnv():
         # terminate_action_idx = actions["terminate"]
         wait_action_idx = actions["wait"]
 
-        num_defenses = self.sim.num_defense_steps
-        num_attacks = self.sim.num_attack_steps
         num_nodes = len(obs.state)
         num_edges = len(obs.edges)
 
         self.observation_space: spaces.Dict = self.define_observation_space(
-            num_defenses, num_nodes, num_edges, num_actions
+            num_nodes, num_edges, num_actions
         )
         self.action_space: spaces.Dict = self.define_action_space(
-            num_defenses, num_attacks, num_actions
+            num_nodes, num_actions
         )
 
         self.state = EnvironmentState()
@@ -130,7 +101,6 @@ class AttackSimulationEnv():
         self.episode_count = (
             -1
         )  # Start episode count at -1 since it will be incremented the first time reset is called.
-        self.render_env = config.save_graphs or config.save_logs
         self.renderer: Optional[AttackSimulationRenderer] = None
         self.reset_render = True
         self.n_nodes = num_nodes
@@ -145,17 +115,17 @@ class AttackSimulationEnv():
         super().__init__()
 
     @staticmethod
-    def define_action_space(num_defenses, num_attacks, num_actions) -> spaces.Discrete:
+    def define_action_space(n_nodes, num_actions) -> spaces.Discrete:
         return spaces.Dict(
             {
-                AGENT_DEFENDER: spaces.MultiDiscrete([num_actions, num_defenses + num_attacks]),
-                AGENT_ATTACKER: spaces.MultiDiscrete([num_actions, num_defenses + num_attacks]),
+                AGENT_DEFENDER: spaces.MultiDiscrete([num_actions, n_nodes]),
+                AGENT_ATTACKER: spaces.MultiDiscrete([num_actions, n_nodes]),
             }
         )
 
     @staticmethod
     def define_observation_space(
-        num_defenses, n_nodes: int, n_edges, num_actions: int
+        n_nodes: int, n_edges, num_actions: int
     ) -> spaces.Dict:
         return spaces.Dict(
             {
@@ -202,9 +172,6 @@ class AttackSimulationEnv():
 
         agent_obs = get_agent_obs(sim_obs)
         agent_info = self.get_agent_info(info)
-
-        if self.render_env:
-            self.render()
 
         return agent_obs, agent_info
 

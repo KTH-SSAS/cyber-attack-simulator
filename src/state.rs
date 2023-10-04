@@ -1,7 +1,7 @@
 use crate::attackgraph::{AttackGraph, TTCType};
 use crate::observation::Info;
-use crate::runtime::SimResult;
-use rand::SeedableRng;
+use crate::runtime::{Confusion, SimResult};
+use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 use rand_distr::Distribution;
 use rand_distr::Exp;
@@ -35,9 +35,9 @@ pub(crate) struct SimulatorState<I> {
     pub attack_surface: HashSet<I>,
     pub defense_surface: HashSet<I>,
     pub remaining_ttc: HashMap<I, TTCType>,
-    pub num_observed_alerts: usize,
-    pub false_alerts: HashSet<I>,
-    pub missed_alerts: HashSet<I>,
+    pub defender_observed_steps: HashSet<I>,
+    //pub false_alerts: HashSet<I>,
+    //pub missed_alerts: HashSet<I>,
     //actions: HashMap<String, usize>,
 }
 
@@ -51,9 +51,10 @@ where
         s += &format!("Compromised steps: {:?}\n", self.compromised_steps);
         s += &format!("Attack surface: {:?}\n", self.attack_surface);
         s += &format!("Remaining TTC: {:?}\n", self.remaining_ttc);
-        s += &format!("Num observed alerts: {}\n", self.num_observed_alerts);
-        s += &format!("False alerts: {:?}\n", self.false_alerts);
-        s += &format!("Missed alerts: {:?}\n", self.missed_alerts);
+        s += &format!(
+            "Steps observed as compromised by defender: {:?}\n",
+            self.defender_observed_steps
+        );
         write!(f, "{}", s)
     }
 }
@@ -64,6 +65,7 @@ where
 {
     pub fn new(
         graph: &AttackGraph<I>,
+        confusion_per_step: &HashMap<I, Confusion>,
         seed: u64,
         randomize_ttc: bool,
     ) -> SimResult<SimulatorState<I>> {
@@ -76,6 +78,8 @@ where
 
         let enabled_defenses = HashSet::new();
         let compromised_steps = graph.entry_points();
+
+        let p = rng.gen();
 
         Ok(SimulatorState {
             time: 0,
@@ -91,7 +95,6 @@ where
             ),
             enabled_defenses: Self::_enabled_defenses(graph, &enabled_defenses, None),
             remaining_ttc: Self::_remaining_ttc(graph, &remaining_ttc, None, None),
-            num_observed_alerts: 0,
             compromised_steps: Self::_compromised_steps(
                 graph,
                 &remaining_ttc,
@@ -100,24 +103,17 @@ where
                 None,
                 None,
             ),
-            //actions: HashMap::new(),
-            false_alerts: HashSet::new(),
-            missed_alerts: HashSet::new(),
+            defender_observed_steps: Self::_defender_steps_observered(
+                graph,
+                &compromised_steps,
+                confusion_per_step,
+                p,
+            ),
         })
     }
 
     pub fn total_ttc_remaining(&self) -> TTCType {
         return self.remaining_ttc.iter().map(|(_, &ttc)| ttc).sum();
-    }
-
-    pub fn get_ids_obs(&self) -> HashSet<&I> {
-        self.compromised_steps // true alerts
-            .union(&self.false_alerts) // add false alerts
-            .filter_map(|x| match self.missed_alerts.contains(x) {
-                true => None, // remove missed alerts
-                false => Some(x),
-            })
-            .collect::<HashSet<&I>>()
     }
 
     pub fn export_rng(&self) -> ChaChaRng {
@@ -134,6 +130,36 @@ where
                 Some(selected_node) => node == selected_node,
                 None => false,
             }
+    }
+
+    pub(crate) fn defender_steps_observered(
+        &self,
+        graph: &AttackGraph<I>,
+        confusion_per_step: &HashMap<I, Confusion>,
+        p: f64,
+    ) -> HashSet<I> {
+        Self::_defender_steps_observered(graph, &self.compromised_steps, confusion_per_step, p)
+    }
+
+    fn _defender_steps_observered(
+        graph: &AttackGraph<I>,
+        compromised_steps: &HashSet<I>,
+        confusion_per_step: &HashMap<I, Confusion>,
+        p: f64,
+    ) -> HashSet<I> {
+        graph
+            .nodes()
+            .iter()
+            .map(|(i, _)| (i, compromised_steps.contains(i)))
+            .map(|(i, compromised)| match compromised {
+                true => (i, p < confusion_per_step[i].fnr),
+                false => (i, p < confusion_per_step[i].fpr),
+            })
+            .filter_map(|(i, x)| match x {
+                true => Some(*i),
+                false => None,
+            })
+            .collect()
     }
 
     pub(crate) fn enabled_defenses(
@@ -482,7 +508,6 @@ where
             time: self.time,
             sum_ttc: self.total_ttc_remaining(),
             num_compromised_steps,
-            num_observed_alerts: self.num_observed_alerts,
             perc_compromised_steps: num_compromised_steps as f64 / num_attacks as f64,
             perc_defenses_activated: num_enabled_defenses as f64 / num_defenses as f64,
             num_compromised_flags,

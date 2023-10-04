@@ -90,7 +90,7 @@ impl AttackSimulator<usize> {
 
     pub fn step(
         &mut self,
-        actions: HashMap<String, (usize, usize)>,
+        actions: HashMap<String, (usize, Option<usize>)>,
     ) -> AttackSimResult<(Observation, Info)> {
         match self.runtime.step(actions) {
             Ok((obs, info)) => Ok((obs, info)),
@@ -173,7 +173,7 @@ mod tests {
             //assert!(action != sim.actions["terminate"]); // We should never terminate, for now
             assert!(action != sim.actions["wait"]); // We should never NOP, for now
 
-            let action_dict = HashMap::from([("attacker".to_string(), (action, step))]);
+            let action_dict = HashMap::from([("attacker".to_string(), (action, Some(step)))]);
             let (new_observation, _) = sim.step(action_dict).unwrap();
 
             //let graphviz = sim.to_graphviz();
@@ -186,7 +186,7 @@ mod tests {
             assert_eq!(a, max(b as i64 - 1, 0) as u64);
             let old_ttc_sum = observation.ttc_remaining.iter().sum::<u64>();
             let new_ttc_sum = new_observation.ttc_remaining.iter().sum::<u64>();
-            if observation.ids_observation == new_observation.ids_observation {
+            if observation.state == new_observation.state {
                 assert_eq!(old_ttc_sum - 1, new_ttc_sum);
             } else {
                 assert_eq!(old_ttc_sum, new_ttc_sum);
@@ -211,12 +211,12 @@ mod tests {
         let action = sim.actions["use"];
         (observation, _) = sim.reset(None).unwrap();
         let mut defense_surface = observation.defense_surface.clone();
-        let num_entrypoints = observation.nodes.iter().filter(|&(x, _, _, _)| *x).count();
+        let num_entrypoints = observation.state.iter().filter(|&x| *x).count();
         let num_defense = defense_surface.iter().filter(|&x| *x).count();
         let mut available_defenses = available_actions(&defense_surface);
         while available_defenses.len() > 0 {
             let step = random_step(&defense_surface, &mut rng).unwrap();
-            let action_dict = HashMap::from([("defender".to_string(), (action, step))]);
+            let action_dict = HashMap::from([("defender".to_string(), (action, Some(step)))]);
             (observation, _) = sim.step(action_dict).unwrap();
             defense_surface = observation.defense_surface.clone();
             available_defenses = available_actions(&defense_surface);
@@ -227,7 +227,7 @@ mod tests {
             0
         );
         assert_eq!(
-            observation.nodes.iter().filter(|&(x, _, _, _)| *x).count(),
+            observation.state.iter().filter(|&x| *x).count(),
             num_defense + num_entrypoints
         );
     }

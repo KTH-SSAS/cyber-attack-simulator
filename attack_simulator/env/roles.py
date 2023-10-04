@@ -28,7 +28,6 @@ class Defender:
     def get_info(info: Info):
         return {
             "perc_defenses_activated": info.perc_defenses_activated,
-            "num_observed_alerts": info.num_observed_alerts,
         }
 
     @staticmethod

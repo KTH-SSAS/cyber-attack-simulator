@@ -26,10 +26,6 @@ pub(crate) struct RustAttackSimulator {
     #[pyo3(get)]
     actors: HashMap<String, usize>,
     #[pyo3(get)]
-    num_attack_steps: usize,
-    #[pyo3(get)]
-    num_defense_steps: usize,
-    #[pyo3(get)]
     vocab: HashMap<String, usize>,
 }
 
@@ -45,8 +41,6 @@ impl RustAttackSimulator {
             Ok(graph) => graph,
             Err(e) => return pyresult_with(Err(e), "Error in rust_sim"),
         };
-        let num_attack_steps = graph.number_of_attacks();
-        let num_defense_steps = graph.number_of_defenses();
 
         let config = SimulatorConfig::from_json(&config_str).unwrap();
         let runtime = match SimulatorRuntime::new(graph, config) {
@@ -55,8 +49,6 @@ impl RustAttackSimulator {
         };
         let config = runtime.config.clone();
         Ok(RustAttackSimulator {
-            num_attack_steps,
-            num_defense_steps,
             config,
             actions: runtime.actions.clone(),
             actors: runtime.actors.clone(),
@@ -71,7 +63,7 @@ impl RustAttackSimulator {
 
     pub(crate) fn step(
         &mut self,
-        actions: HashMap<String, (usize, usize)>,
+        actions: HashMap<String, (usize, Option<usize>)>,
     ) -> PyResult<(Observation, Info)> {
         pyresult(self.runtime.step(actions))
     }
