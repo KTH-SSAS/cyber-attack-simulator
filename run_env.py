@@ -8,14 +8,14 @@ import numpy as np
 
 
 class NumpyArrayEncoder(JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        if isinstance(obj, np.bool_):
-            return bool(obj)
-        if isinstance(obj, np.int64):
-            return int(obj)
-        return JSONEncoder.default(self, obj)
+    def default(self, o):
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        if isinstance(o, np.bool_):
+            return bool(o)
+        if isinstance(o, np.int64):
+            return int(o)
+        return JSONEncoder.default(self, o)
 
 
 class KeyboardAgent:
@@ -75,8 +75,7 @@ class KeyboardAgent:
        
         return (a, available_objects[node] if a != 0 else 0)
 
-
-env_config = attack_simulator.EnvConfig.from_yaml("config/maze_env_config.yaml")
+env_config = attack_simulator.EnvConfig.from_yaml("config/demo_config.yaml")
 env = attack_simulator.parallel_env(env_config, render_mode="human")
 
 control_attacker = False
@@ -87,7 +86,7 @@ attacker = KeyboardAgent(env.reverse_vocab) if control_attacker else BreadthFirs
 obs, info = env.reset()
 done = False
 
-with open("sim_obs_log.jsonl", "w") as f:
+with open("sim_obs_log.jsonl", "w", encoding="utf8") as f:
     f.write("Game Start!\n")
 
 total_reward_defender = 0

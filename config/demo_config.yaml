@@ -1,0 +1,9 @@
+seed: 0
+
+sim_config:
+  seed: 0
+  false_positive_rate: 0.0
+  false_negative_rate: 0.0
+
+graph_config:
+  filename: graphs/four_ways_mod.json
