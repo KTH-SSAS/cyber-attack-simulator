@@ -1,173 +1,9 @@
 [
     {
-        "id": "a:0:attack",
-        "type": "or",
-        "asset": "a:0",
-        "name": "firstSteps",
-        "ttc": null,
-        "defense_status": null,
-        "children": [
-            "b:0:attack",
-            "c:0:attack"
-        ],
-        "parents": null,
-        "existence_status": null,
-        "is_reachable": null,
-        "is_traversable": null,
-        "compromised_by": [],
-        "extra": null,
-        "mitre_info": null
-    },
-    {
-        "id": "b:0:attack",
+        "id": "flag:0:take",
         "type": "and",
-        "asset": "b:0",
-        "name": "attack",
-        "ttc": null,
-        "defense_status": null,
-        "children": [
-            "d:0:attack"
-        ],
-        "parents": null,
-        "existence_status": null,
-        "is_reachable": null,
-        "is_traversable": null,
-        "compromised_by": [],
-        "extra": null,
-        "mitre_info": null
-    },
-    {
-        "id": "b:0:defend",
-        "type": "defense",
-        "asset": "b:0",
-        "name": "defend",
-        "ttc": null,
-        "defense_status": null,
-        "children": [
-            "b:0:attack"
-        ],
-        "parents": null,
-        "existence_status": null,
-        "is_reachable": null,
-        "is_traversable": null,
-        "compromised_by": [],
-        "extra": null,
-        "mitre_info": null
-    },
-    {
-        "id": "c:0:attack",
-        "type": "and",
-        "asset": "c:0",
-        "name": "attack",
-        "ttc": null,
-        "defense_status": null,
-        "children": [
-            "d:0:attack"
-        ],
-        "parents": null,
-        "existence_status": null,
-        "is_reachable": null,
-        "is_traversable": null,
-        "compromised_by": [],
-        "extra": null,
-        "mitre_info": null
-    },
-    {
-        "id": "c:0:defend",
-        "type": "defense",
-        "asset": "c:0",
-        "name": "defend",
-        "ttc": null,
-        "defense_status": null,
-        "children": [
-            "c:0:attack"
-        ],
-        "parents": null,
-        "existence_status": null,
-        "is_reachable": null,
-        "is_traversable": null,
-        "compromised_by": [],
-        "extra": null,
-        "mitre_info": null
-    },
-    {
-        "id": "d:0:attack",
-        "type": "and",
-        "asset": "d:0",
-        "name": "attack",
-        "ttc": null,
-        "defense_status": null,
-        "children": [
-            "f:0:attack",
-            "f:0:elevate"
-        ],
-        "parents": null,
-        "existence_status": null,
-        "is_reachable": null,
-        "is_traversable": null,
-        "compromised_by": [],
-        "extra": null,
-        "mitre_info": null
-    },
-    {
-        "id": "d:0:defend",
-        "type": "or",
-        "asset": "d:0",
-        "name": "defend",
-        "ttc": null,
-        "defense_status": null,
-        "children": [
-            "d:0:attack"
-        ],
-        "parents": null,
-        "existence_status": null,
-        "is_reachable": null,
-        "is_traversable": null,
-        "compromised_by": [],
-        "extra": null,
-        "mitre_info": null
-    },
-    {
-        "id": "f:0:attack",
-        "type": "or",
-        "asset": "f:0",
-        "name": "attack",
-        "ttc": null,
-        "defense_status": null,
-        "children": [
-            "f:0:flag"
-        ],
-        "parents": null,
-        "existence_status": null,
-        "is_reachable": null,
-        "is_traversable": null,
-        "compromised_by": [],
-        "extra": null,
-        "mitre_info": null
-    },
-    {
-        "id": "f:0:elevate",
-        "type": "or",
-        "asset": "f:0",
-        "name": "elevate",
-        "ttc": null,
-        "defense_status": null,
-        "children": [
-            "f:0:flag"
-        ],
-        "parents": null,
-        "existence_status": null,
-        "is_reachable": null,
-        "is_traversable": null,
-        "compromised_by": [],
-        "extra": null,
-        "mitre_info": null
-    },
-    {
-        "id": "f:0:flag",
-        "type": "and",
-        "asset": "f:0",
-        "name": "flag",
+        "asset": "flag:0",
+        "name": "gather",
         "ttc": null,
         "defense_status": null,
         "children": [],
@@ -180,15 +16,232 @@
         "mitre_info": null
     },
     {
-        "id": "f:0:defend",
-        "type": "defense",
-        "asset": "f:0",
-        "name": "defend",
+        "id": "firewall:1:connect",
+        "type": "and",
+        "asset": "firewall:1",
+        "name": "connect",
         "ttc": null,
         "defense_status": null,
         "children": [
-            "f:0:attack",
-            "f:0:elevate"
+            "flag:0:take"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "authenticator:2:unlock",
+        "type": "and",
+        "asset": "authenticator:2",
+        "name": "unlock",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "firewall:1:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:3:connect",
+        "type": "or",
+        "asset": "host:3",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "authenticator:2:discover"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "credentials:4:crack",
+        "type": "or",
+        "asset": "credentials:4",
+        "name": "crack",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "authenticator:2:credentials_gathered"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:5:connect",
+        "type": "or",
+        "asset": "host:5",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "credentials:4:crack"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:6:connect",
+        "type": "or",
+        "asset": "host:6",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "host:3:connect",
+            "host:5:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:7:connect",
+        "type": "or",
+        "asset": "host:7",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "host:6:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "attacker:8:enter",
+        "type": "or",
+        "asset": "attacker:8",
+        "name": "firstSteps",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "host:7:connect",
+            "credentials:9:crack",
+            "host:10:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "credentials:9:crack",
+        "type": "or",
+        "asset": "credentials:9",
+        "name": "crack",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "authenticator:2:credentials_gathered"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:10:connect",
+        "type": "or",
+        "asset": "host:10",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "authenticator:2:discover",
+        "type": "or",
+        "asset": "authenticator:2",
+        "name": "discover",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "authenticator:2:unlock"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "authenticator:2:credentials_gathered",
+        "type": "or",
+        "asset": "authenticator:2",
+        "name": "credentials_gathered",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "authenticator:2:unlock"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:1:defend",
+        "type": "defense",
+        "asset": "firewall:1",
+        "name": "enable",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "firewall:1:connect",
+            "flag:0:take"
         ],
         "parents": null,
         "existence_status": null,

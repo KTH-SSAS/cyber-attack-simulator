@@ -1,9 +1,4 @@
 seed: 0
-
-sim_config:
-  seed: 0
-  false_positive_rate: 0.2
-  false_negative_rate: 0.2
-
-graph_config:
-  filename: graphs/test_graph.json
+sim_false_positive_rate: 0.2
+sim_false_negative_rate: 0.2
+graph_filename: graphs/test_graph.json

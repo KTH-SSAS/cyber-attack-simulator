@@ -24,9 +24,9 @@ class KeyboardAgent:
 
     def compute_action_from_dict(self, obs):
         def valid_action(user_input):
-            if user_input == '':
-                return False
-            
+            if user_input == "":
+                return (0, 0)
+
             try:
                 node = int(user_input)
             except ValueError:
@@ -36,16 +36,15 @@ class KeyboardAgent:
                 a = associated_action[action_strings[node]]
             except IndexError:
                 return False
-            
+
             if a == 0:
-                return True # wait is always valid
+                return True  # wait is always valid
             return node < len(available_objects) and node >= 0
 
         def get_action_object(user_input):
-            node = int(user_input)
-            action = associated_action[action_strings[node]]
+            node = int(user_input) if user_input != "" else 0
+            action = associated_action[action_strings[node]] if user_input != "" else 0
             return node, action
-
 
         assets = obs["asset"]
         asset_ids = obs["asset_id"]
@@ -60,22 +59,30 @@ class KeyboardAgent:
         action_strings += ["wait"]
         associated_action["wait"] = 0
 
-        user_input = ''
+        user_input = "xxx"
         while not valid_action(user_input):
             print("Available actions:")
             print("\n".join([f"{i}. {a}" for i, a in enumerate(action_strings)]))
-            print("Enter action:")
-            user_input = input()
-            
+            print("Enter action or leave empty to wait:")
+            user_input = input("> ")
+
             if not valid_action(user_input):
                 print("Invalid action.")
 
         node, a = get_action_object(user_input)
         print(f"Selected action: {action_strings[node]}")
-       
+
         return (a, available_objects[node] if a != 0 else 0)
 
-env_config = attack_simulator.EnvConfig.from_yaml("config/demo_config.yaml")
+
+sim_config = attack_simulator.SimulatorConfig(
+    false_negative_rate=0, false_positive_rate=0, seed=0, randomize_ttc=False, log=False
+)
+env_config = attack_simulator.EnvConfig(
+    sim_config=sim_config,
+    graph_filename="graphs/corelang.json",
+    seed=0,
+)
 env = attack_simulator.parallel_env(env_config, render_mode="human")
 
 control_attacker = False
@@ -103,7 +110,6 @@ with torch.no_grad():
         print("Defender Reward: ", rewards[AGENT_DEFENDER])
         total_reward_defender += rewards[AGENT_DEFENDER]
         total_reward_attacker += rewards[AGENT_ATTACKER]
-        print("Press Enter to continue.")
 
         done = terminated["__all__"]
 
