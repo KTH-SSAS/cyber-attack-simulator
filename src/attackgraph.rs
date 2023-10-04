@@ -117,6 +117,9 @@ impl AttackStep {
     }
 
     pub(crate) fn can_be_compromised(&self, parent_states: &Vec<bool>) -> bool {
+        if parent_states.len() == 0 {
+            return false;
+        }
         match self.logic {
             Logic::And => parent_states.iter().all(|x| *x),
             Logic::Or => parent_states.iter().any(|x| *x),
