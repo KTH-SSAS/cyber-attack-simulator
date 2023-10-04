@@ -122,18 +122,18 @@ where
         &self,
         graph: &AttackGraph<I>,
         confusion_per_step: &HashMap<I, Confusion>,
-        attacker_action: Option<&I>,
-        defender_action: Option<&I>,
+        attacker_step: Option<&I>,
+        defender_step: Option<&I>,
     ) -> StateResult<(SimulatorState<I>, (i64, i64))> {
         let mut rng = self.rng.clone();
         let p = rng.gen::<f64>();
         Ok((
             SimulatorState {
-                attack_surface: self.attack_surface(graph, defender_action, attacker_action),
-                defense_surface: self.defense_surface(graph, defender_action),
-                enabled_defenses: self.enabled_defenses(graph, defender_action),
-                remaining_ttc: self.remaining_ttc(graph, attacker_action, defender_action),
-                compromised_steps: self.compromised_steps(graph, attacker_action, defender_action),
+                attack_surface: self.attack_surface(graph, defender_step, attacker_step),
+                defense_surface: self.defense_surface(graph, defender_step),
+                enabled_defenses: self.enabled_defenses(graph, defender_step),
+                remaining_ttc: self.remaining_ttc(graph, attacker_step, defender_step),
+                compromised_steps: self.compromised_steps(graph, attacker_step, defender_step),
                 time: self.time + 1,
                 rng,
                 defender_observed_steps: self.defender_steps_observered(
@@ -144,7 +144,7 @@ where
             },
             (
                 self.attacker_reward(graph),
-                self.defender_reward(graph, defender_action),
+                self.defender_reward(graph, defender_step),
             ),
         ))
     }
@@ -248,36 +248,36 @@ where
     fn attack_surface(
         &self,
         graph: &AttackGraph<I>,
-        defender_action: Option<&I>,
-        attacker_action: Option<&I>,
+        defender_step: Option<&I>,
+        attacker_step: Option<&I>,
     ) -> HashSet<I> {
         return Self::_attack_surface(
             graph,
             &self.compromised_steps,
             &self.remaining_ttc,
             &self.enabled_defenses,
-            defender_action,
-            attacker_action,
+            defender_step,
+            attacker_step,
         );
     }
 
-    fn defense_surface(&self, graph: &AttackGraph<I>, defender_action: Option<&I>) -> HashSet<I> {
-        Self::_defense_surface(graph, &self.enabled_defenses, defender_action)
+    fn defense_surface(&self, graph: &AttackGraph<I>, defender_step: Option<&I>) -> HashSet<I> {
+        Self::_defense_surface(graph, &self.enabled_defenses, defender_step)
     }
 
     fn compromised_steps(
         &self,
         graph: &AttackGraph<I>,
-        attacker_action: Option<&I>,
-        defender_action: Option<&I>,
+        attacker_step: Option<&I>,
+        defender_step: Option<&I>,
     ) -> HashSet<I> {
         Self::_compromised_steps(
             graph,
             &self.remaining_ttc,
             &self.compromised_steps,
             &self.enabled_defenses,
-            attacker_action,
-            defender_action,
+            attacker_step,
+            defender_step,
         )
     }
 
@@ -310,8 +310,8 @@ where
         compromised_steps: &HashSet<I>,
         ttc_remaining: &HashMap<I, TTCType>,
         enabled_defenses: &HashSet<I>,
-        defender_action: Option<&I>,
-        attacker_action: Option<&I>,
+        defender_step: Option<&I>,
+        attacker_step: Option<&I>,
     ) -> HashSet<I> {
         let attack_surface: HashSet<I> = graph
             .attack_steps
@@ -323,8 +323,8 @@ where
                     ttc_remaining,
                     enabled_defenses,
                     n,
-                    defender_action,
-                    attacker_action,
+                    defender_step,
+                    attacker_step,
                 ) {
                     true => Some(n),
                     false => None,
@@ -362,10 +362,10 @@ where
     fn defense_available(
         step: &I,
         enabled_defenses: &HashSet<I>,
-        defender_action: Option<&I>,
+        defender_step: Option<&I>,
     ) -> bool {
         !enabled_defenses.contains(step)
-            && match defender_action {
+            && match defender_step {
                 Some(d) => d != step,
                 None => true,
             }
@@ -374,13 +374,13 @@ where
     fn _defense_surface(
         graph: &AttackGraph<I>,
         enabled_defenses: &HashSet<I>,
-        defender_action: Option<&I>,
+        defender_step: Option<&I>,
     ) -> HashSet<I> {
         graph
             .defense_steps
             .iter()
             .filter_map(
-                |d| match Self::defense_available(d, enabled_defenses, defender_action) {
+                |d| match Self::defense_available(d, enabled_defenses, defender_step) {
                     true => Some(*d),
                     false => None,
                 },
@@ -400,8 +400,8 @@ where
         remaining_ttc: &HashMap<I, TTCType>,
         compromised_steps: &HashSet<I>,
         enabled_defenses: &HashSet<I>,
-        attacker_action: Option<&I>,
-        defender_action: Option<&I>,
+        attacker_step: Option<&I>,
+        defender_step: Option<&I>,
     ) -> HashSet<I> {
         graph
             .attack_steps
@@ -409,7 +409,7 @@ where
             .filter_map(|step| {
                 let already_compromised = compromised_steps.contains(step);
                 let defended = Self::is_defended(graph, step, enabled_defenses);
-                let will_be_defended = match defender_action {
+                let will_be_defended = match defender_step {
                     Some(d) => graph.step_is_defended_by(step, d),
                     None => false,
                 };
@@ -419,8 +419,8 @@ where
                         compromised_steps,
                         remaining_ttc,
                         step,
-                        attacker_action,
-                        defender_action,
+                        attacker_step,
+                        defender_step,
                     ) {
                     true => Some(*step),
                     false => None,
@@ -435,8 +435,8 @@ where
         ttc_remaining: &HashMap<I, TTCType>,
         enabled_defenses: &HashSet<I>,
         node_id: &I,
-        defender_action: Option<&I>,
-        attacker_action: Option<&I>,
+        defender_step: Option<&I>,
+        attacker_step: Option<&I>,
     ) -> bool {
         // Returns true if a node can be attacked given the current state of the
         // graph meaning that the
@@ -445,7 +445,7 @@ where
             .iter()
             .map(|&p| {
                 compromised_steps.contains(p)
-                    || match attacker_action {
+                    || match attacker_step {
                         Some(a) => {
                             a == p
                                 && Self::can_step_be_compromised(
@@ -453,8 +453,8 @@ where
                                     compromised_steps,
                                     ttc_remaining,
                                     a,
-                                    attacker_action,
-                                    defender_action,
+                                    attacker_step,
+                                    defender_step,
                                 )
                         }
                         None => false,
@@ -471,12 +471,12 @@ where
 
         let defended = Self::is_defended(graph, node_id, enabled_defenses);
 
-        let will_be_defended = match defender_action {
+        let will_be_defended = match defender_step {
             Some(d) => graph.step_is_defended_by(node_id, d),
             None => false,
         };
 
-        let will_be_attacked = match attacker_action {
+        let will_be_attacked = match attacker_step {
             Some(a) => a == node_id,
             None => false,
         };
