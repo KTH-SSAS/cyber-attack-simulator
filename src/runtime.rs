@@ -486,9 +486,11 @@ mod tests {
         runtime::SimulatorRuntime,
     };
 
+    const FILENAME: &str = "graphs/corelang.json";
+
     #[test]
     fn test_sim_init() {
-        let filename = "mal/attackgraph.json";
+        let filename = FILENAME;
         let graph = load_graph_from_json(filename, None).unwrap();
         //let num_defenses = graph.number_of_defenses();
         let num_entrypoints = graph.entry_points().len();
@@ -511,7 +513,7 @@ mod tests {
 
     #[test]
     fn test_sim_obs() {
-        let filename = "mal/attackgraph.json";
+        let filename = FILENAME;
         let graph = load_graph_from_json(filename, None).unwrap();
         //let num_attacks = graph.number_of_attacks();
         let num_defenses = graph.number_of_defenses();
