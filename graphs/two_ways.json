@@ -1,0 +1,242 @@
+[
+    {
+        "id": "flag:4:take",
+        "type": "and",
+        "asset": "flag:4",
+        "name": "gather",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "defense_status": null,
+        "children": [],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:9:connect",
+        "type": "and",
+        "asset": "host:9",
+        "name": "connect",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "defense_status": null,
+        "children": [
+            "flag:4:take"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:2:connect",
+        "type": "or",
+        "asset": "firewall:2",
+        "name": "connect",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "defense_status": null,
+        "children": [
+            "host:9:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "attacker:1:enter",
+        "type": "or",
+        "asset": "attacker:1",
+        "name": "firstSteps",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "defense_status": null,
+        "children": [
+            "host:16:connect",
+            "host:34:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:16:connect",
+        "type": "or",
+        "asset": "host:16",
+        "name": "connect",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "defense_status": null,
+        "children": [
+            "firewall:3:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:3:connect",
+        "type": "or",
+        "asset": "firewall:3",
+        "name": "connect",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "defense_status": null,
+        "children": [
+            "host:33:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "flag:2:take",
+        "type": "and",
+        "asset": "flag:2",
+        "name": "gather",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "defense_status": null,
+        "children": [],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:2:defend",
+        "type": "defense",
+        "asset": "firewall:2",
+        "name": "enable",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "defense_status": null,
+        "children": [
+            "host:9:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:3:defend",
+        "type": "defense",
+        "asset": "firewall:3",
+        "name": "enable",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "defense_status": null,
+        "children": [
+            "host:33:connect",
+            "flag:2:take"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:33:connect",
+        "type": "and",
+        "asset": "host:33",
+        "name": "connect",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "defense_status": null,
+        "children": [
+            "flag:2:take"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:34:connect",
+        "type": "or",
+        "asset": "host:34",
+        "name": "connect",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "defense_status": null,
+        "children": [
+            "firewall:2:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    }
+]
