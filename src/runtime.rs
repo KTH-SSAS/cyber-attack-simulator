@@ -49,6 +49,7 @@ impl<I> Default for ActionResult<I> {
 
 type ParameterAction = (usize, Option<usize>);
 
+#[derive(Debug, Clone)]
 pub(crate) struct Confusion {
     pub fnr: f64,
     pub fpr: f64,
@@ -212,8 +213,20 @@ where
             .collect();
     }
 
-    fn get_color(&self, id: &I, state: &SimulatorState<I>) -> String {
+    fn get_color(&self, id: &I, state: &SimulatorState<I>, show_false: bool) -> String {
+        let false_negatives: HashSet<&I> = state
+            .compromised_steps
+            .difference(&state.defender_observed_steps)
+            .collect();
+        let false_positives: HashSet<&I> = state
+            .defender_observed_steps
+            .difference(&state.compromised_steps)
+            .collect();
         match id {
+            id if false_negatives.contains(id) && show_false => "deeppink".to_string(), // show false negatives for debugging
+            id if false_negatives.contains(id) && !show_false => "white".to_string(), // false negatives hide true positives
+            id if false_positives.contains(id) && show_false => "darkorchid1".to_string(), // show false positives for debugging
+            id if false_positives.contains(id) && !show_false => "firebrick1".to_string(), // observered steps
             id if self.g.entry_points().contains(id) => "crimson".to_string(), // entry points
             id if state.defense_surface.contains(id) => "chartreuse4".to_string(), // disabled defenses
             id if state.enabled_defenses.contains(id) => "chartreuse".to_string(), // enabled defenses
@@ -224,7 +237,7 @@ where
         }
     }
 
-    pub fn to_graphviz(&self) -> String {
+    pub fn to_graphviz(&self, show_false: bool) -> String {
         let attributes = self
             .g
             .nodes()
@@ -234,7 +247,7 @@ where
                 attrs.push(("style".to_string(), "filled".to_string()));
                 attrs.push((
                     "fillcolor".to_string(),
-                    self.get_color(id, &self.state.borrow()),
+                    self.get_color(id, &self.state.borrow(), show_false),
                 ));
                 // Add TTC
                 attrs.push((
@@ -322,9 +335,7 @@ where
         let step_state = self
             .index_to_id
             .iter()
-            .map(|id| {
-                state.enabled_defenses.contains(id) || state.compromised_steps.contains(id)
-            })
+            .map(|id| state.enabled_defenses.contains(id) || state.compromised_steps.contains(id))
             .collect::<Vec<bool>>();
 
         let step_info = self
@@ -471,13 +482,19 @@ where
             Ok((new_state, rewards)) => {
                 return Ok((new_state, rewards));
             }
-            Err(e) => return Err(SimError{error: e.to_string()}),
+            Err(e) => {
+                return Err(SimError {
+                    error: e.to_string(),
+                })
+            }
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+
+    use std::collections::HashSet;
 
     use crate::{
         config,
@@ -486,7 +503,72 @@ mod tests {
         runtime::SimulatorRuntime,
     };
 
-    const FILENAME: &str = "graphs/corelang.json";
+    const FILENAME: &str = "graphs/four_ways_mod.json";
+
+    #[test]
+    fn test_sim_fnr() {
+        let filename = FILENAME;
+        let graph = load_graph_from_json(filename, None).unwrap();
+        //let num_defenses = graph.number_of_defenses();
+        let num_entrypoints = graph.entry_points().len();
+        let config = config::SimulatorConfig {
+            seed: 0,
+            randomize_ttc: false,
+            false_negative_rate: 1.0,
+            false_positive_rate: 0.0,
+            log: false,
+            show_false: true,
+        };
+        let sim = SimulatorRuntime::new(graph, config).unwrap();
+
+        let initial_state = sim.state.borrow();
+
+        //println!("Confusion: {:?}", sim.confusion_per_step);
+        let false_negatives: HashSet<&_> = initial_state
+            .compromised_steps
+            .difference(&initial_state.defender_observed_steps)
+            .collect();
+        let false_positives: HashSet<&_> = initial_state
+            .defender_observed_steps
+            .difference(&initial_state.compromised_steps)
+            .collect();
+
+        assert_eq!(false_negatives.len(), initial_state.compromised_steps.len());
+        assert_eq!(false_negatives.len(), num_entrypoints);
+        assert_eq!(false_positives.len(), 0);
+    }
+
+    #[test]
+    fn test_sim_fpr() {
+        let filename = FILENAME;
+        let graph = load_graph_from_json(filename, None).unwrap();
+        let num_attacks = graph.number_of_attacks();
+        let num_entrypoints = graph.entry_points().len();
+        let config = config::SimulatorConfig {
+            seed: 0,
+            randomize_ttc: false,
+            false_negative_rate: 0.0,
+            false_positive_rate: 1.0,
+            log: false,
+            show_false: true,
+        };
+        let sim = SimulatorRuntime::new(graph, config).unwrap();
+
+        let initial_state = sim.state.borrow();
+
+        //println!("Confusion: {:?}", sim.confusion_per_step);
+        let false_negatives: HashSet<&_> = initial_state
+            .compromised_steps
+            .difference(&initial_state.defender_observed_steps)
+            .collect();
+        let false_positives: HashSet<&_> = initial_state
+            .defender_observed_steps
+            .difference(&initial_state.compromised_steps)
+            .collect();
+
+        assert_eq!(false_negatives.len(), 0);
+        assert_eq!(false_positives.len(), num_attacks - num_entrypoints);
+    }
 
     #[test]
     fn test_sim_init() {
@@ -494,7 +576,14 @@ mod tests {
         let graph = load_graph_from_json(filename, None).unwrap();
         //let num_defenses = graph.number_of_defenses();
         let num_entrypoints = graph.entry_points().len();
-        let config = config::SimulatorConfig::default();
+        let config = config::SimulatorConfig {
+            seed: 0,
+            randomize_ttc: false,
+            false_negative_rate: 0.0,
+            false_positive_rate: 0.0,
+            log: false,
+            show_false: true,
+        };
         let sim = SimulatorRuntime::new(graph, config).unwrap();
 
         let initial_state = sim.state.borrow();

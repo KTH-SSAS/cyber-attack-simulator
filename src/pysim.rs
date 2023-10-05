@@ -27,6 +27,7 @@ pub(crate) struct RustAttackSimulator {
     actors: HashMap<String, usize>,
     #[pyo3(get)]
     vocab: HashMap<String, usize>,
+    show_false: bool,
 }
 
 #[pymethods]
@@ -49,6 +50,7 @@ impl RustAttackSimulator {
         };
         let config = runtime.config.clone();
         Ok(RustAttackSimulator {
+            show_false: config.show_false,
             config,
             actions: runtime.actions.clone(),
             actors: runtime.actors.clone(),
@@ -69,6 +71,6 @@ impl RustAttackSimulator {
     }
 
     pub fn render(&self) -> String {
-        self.runtime.to_graphviz()
+        self.runtime.to_graphviz(self.show_false)
     }
 }

@@ -46,10 +46,11 @@ class SimulatorConfig(Config):
     """Config class for attack simulator."""
 
     false_negative_rate: float
-    false_positive_rate: float
-    seed: int
-    randomize_ttc: bool = False
-    log: bool = False
+    false_positive_rate: float 
+    seed: int # Random seed
+    randomize_ttc: bool = False # Randomize time to compromise values
+    log: bool = False # Log simulator output to file
+    show_false: bool = False # Show false positives in render
 
     @classmethod
     def from_yaml(cls, filename: str) -> SimulatorConfig:

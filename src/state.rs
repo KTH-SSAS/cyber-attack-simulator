@@ -3,7 +3,7 @@ use crate::observation::Info;
 use crate::runtime::{Confusion, SimResult};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
-use rand_distr::Distribution;
+use rand_distr::{Distribution, Standard};
 use rand_distr::Exp;
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
@@ -78,11 +78,8 @@ where
         let enabled_defenses = HashSet::new();
         let compromised_steps = graph.entry_points();
 
-        let p = rng.gen();
-
         Ok(SimulatorState {
             time: 0,
-            rng,
             defense_surface: Self::_defense_surface(graph, &enabled_defenses, None),
             attack_surface: Self::_attack_surface(
                 graph,
@@ -106,8 +103,9 @@ where
                 graph,
                 &compromised_steps,
                 confusion_per_step,
-                p,
+                &mut rng,
             ),
+            rng,
         })
     }
 
@@ -123,7 +121,6 @@ where
         defender_step: Option<&I>,
     ) -> StateResult<(SimulatorState<I>, (i64, i64))> {
         let mut rng = self.rng.clone();
-        let p = rng.gen::<f64>();
         Ok((
             SimulatorState {
                 attack_surface: self.attack_surface(graph, defender_step, attacker_step),
@@ -132,12 +129,12 @@ where
                 remaining_ttc: self.remaining_ttc(graph, attacker_step, defender_step),
                 compromised_steps: self.compromised_steps(graph, attacker_step, defender_step),
                 time: self.time + 1,
-                rng,
                 defender_observed_steps: self.defender_steps_observered(
                     graph,
                     confusion_per_step,
-                    p,
+                    &mut rng,
                 ),
+                rng,
             },
             (
                 self.attacker_reward(graph),
@@ -164,9 +161,9 @@ where
         &self,
         graph: &AttackGraph<I>,
         confusion_per_step: &HashMap<I, Confusion>,
-        p: f64,
+        rng: &mut ChaChaRng,
     ) -> HashSet<I> {
-        Self::_defender_steps_observered(graph, &self.compromised_steps, confusion_per_step, p)
+        Self::_defender_steps_observered(graph, &self.compromised_steps, confusion_per_step, rng)
     }
 
     fn enabled_defenses(&self, graph: &AttackGraph<I>, selected_defense: Option<&I>) -> HashSet<I> {
@@ -189,19 +186,22 @@ where
         graph: &AttackGraph<I>,
         compromised_steps: &HashSet<I>,
         confusion_per_step: &HashMap<I, Confusion>,
-        p: f64,
+        rng: &mut ChaChaRng,
     ) -> HashSet<I> {
         graph
             .nodes()
             .iter()
             .map(|(i, _)| (i, compromised_steps.contains(i)))
-            .map(|(i, compromised)| match compromised {
-                true => (i, p < confusion_per_step[i].fnr),
-                false => (i, p < confusion_per_step[i].fpr),
-            })
-            .filter_map(|(i, x)| match x {
-                true => Some(*i),
-                false => None,
+            .zip(rng.sample_iter::<f64, Standard>(Standard))
+            .filter_map(|((i, compromised), p)| match compromised {
+                true => match p < confusion_per_step[i].fnr { // Sample Bernoulli(fnr_prob)
+                    true => None,
+                    false => Some(*i),
+                },
+                false => match p < confusion_per_step[i].fpr { // Sample Bernoulli(fpr_prob)
+                    true => Some(*i),
+                    false => None,
+                }
             })
             .collect()
     }

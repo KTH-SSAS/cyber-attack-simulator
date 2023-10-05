@@ -25,7 +25,7 @@ class KeyboardAgent:
     def compute_action_from_dict(self, obs):
         def valid_action(user_input):
             if user_input == "":
-                return (0, 0)
+                return (0, None)
 
             try:
                 node = int(user_input)
@@ -72,15 +72,15 @@ class KeyboardAgent:
         node, a = get_action_object(user_input)
         print(f"Selected action: {action_strings[node]}")
 
-        return (a, available_objects[node] if a != 0 else 0)
+        return (a, available_objects[node] if a != 0 else None)
 
 
 sim_config = attack_simulator.SimulatorConfig(
-    false_negative_rate=0, false_positive_rate=0, seed=0, randomize_ttc=False, log=False
+    false_negative_rate=0.0, false_positive_rate=0.0, seed=0, randomize_ttc=False, log=False, show_false=False
 )
 env_config = attack_simulator.EnvConfig(
     sim_config=sim_config,
-    graph_filename="graphs/corelang.json",
+    graph_filename="graphs/two_ways.json",
     seed=0,
 )
 env = attack_simulator.parallel_env(env_config, render_mode="human")

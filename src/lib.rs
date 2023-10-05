@@ -41,6 +41,7 @@ pub struct AttackSimulator<T> {
     pub actors: HashMap<String, usize>,
     pub num_attack_steps: usize,
     pub num_defense_steps: usize,
+    pub show_false: bool,
 }
 
 impl AttackSimulator<usize> {
@@ -72,6 +73,7 @@ impl AttackSimulator<usize> {
         Ok(AttackSimulator {
             num_attack_steps,
             num_defense_steps,
+            show_false: config.show_false,
             config,
             actions: runtime.actions.clone(),
             actors: runtime.actors.clone(),
@@ -101,7 +103,7 @@ impl AttackSimulator<usize> {
     }
 
     pub fn render(&self) -> String {
-        self.runtime.to_graphviz()
+        self.runtime.to_graphviz(self.show_false)
     }
 }
 
@@ -126,6 +128,7 @@ mod tests {
             false_positive_rate: 0.0,
             randomize_ttc: false,
             log: false,
+            show_false: false,
         };
         let sim = runtime::SimulatorRuntime::new(graph, config).unwrap();
         return sim;
