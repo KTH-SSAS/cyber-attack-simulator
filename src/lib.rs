@@ -168,7 +168,7 @@ mod tests {
 
         let mut rng = ChaChaRng::seed_from_u64(0);
         let action = sim.actions["use"];
-        let mut attack_surface = observation.attack_surface.clone();
+        let mut attack_surface = observation.attacker_possible_objects.clone();
         let mut available_steps = available_actions(&attack_surface);
         while available_steps.len() > 0 {
             let step = random_step(&attack_surface, &mut rng).unwrap();
@@ -196,11 +196,18 @@ mod tests {
             }
 
             observation = new_observation;
-            attack_surface = observation.attack_surface.clone();
+            attack_surface = observation.attacker_possible_objects.clone();
             available_steps = available_actions(&attack_surface);
         }
 
-        assert_eq!(observation.attack_surface.iter().filter(|&x| *x).count(), 0);
+        assert_eq!(
+            observation
+                .attacker_possible_objects
+                .iter()
+                .filter(|&x| *x)
+                .count(),
+            0
+        );
 
         //sim.step(action_dict)
     }
@@ -213,7 +220,7 @@ mod tests {
         let mut observation: Observation;
         let action = sim.actions["use"];
         (observation, _) = sim.reset(None).unwrap();
-        let mut defense_surface = observation.defense_surface.clone();
+        let mut defense_surface = observation.defender_possible_objects.clone();
         let num_entrypoints = observation.state.iter().filter(|&x| *x).count();
         let num_defense = defense_surface.iter().filter(|&x| *x).count();
         let mut available_defenses = available_actions(&defense_surface);
@@ -221,12 +228,16 @@ mod tests {
             let step = random_step(&defense_surface, &mut rng).unwrap();
             let action_dict = HashMap::from([("defender".to_string(), (action, Some(step)))]);
             (observation, _) = sim.step(action_dict).unwrap();
-            defense_surface = observation.defense_surface.clone();
+            defense_surface = observation.defender_possible_objects.clone();
             available_defenses = available_actions(&defense_surface);
         }
 
         assert_eq!(
-            observation.defense_surface.iter().filter(|&x| *x).count(),
+            observation
+                .defender_possible_objects
+                .iter()
+                .filter(|&x| *x)
+                .count(),
             0
         );
         assert_eq!(

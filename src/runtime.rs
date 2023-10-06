@@ -228,9 +228,9 @@ where
             id if false_positives.contains(id) && show_false => "darkorchid1".to_string(), // show false positives for debugging
             id if false_positives.contains(id) && !show_false => "firebrick1".to_string(), // observered steps
             id if self.g.entry_points().contains(id) => "crimson".to_string(), // entry points
-            id if state.defense_surface.contains(id) => "chartreuse4".to_string(), // disabled defenses
+            id if state.defender_possible_objects.contains(id) => "chartreuse4".to_string(), // disabled defenses
             id if state.enabled_defenses.contains(id) => "chartreuse".to_string(), // enabled defenses
-            id if state.attack_surface.contains(id) => "gold".to_string(),         // attack surface
+            id if state.attacker_possible_objects.contains(id) => "gold".to_string(), // attack surface
             id if state.compromised_steps.contains(id) => "firebrick1".to_string(), // compromised steps
             id if self.g.flags.contains(id) => "darkmagenta".to_string(),           // flags
             _ => "white".to_string(),
@@ -305,7 +305,7 @@ where
 
         let mut attack_surface_vec = vec![false; self.id_to_index.len()];
         state
-            .attack_surface
+            .attacker_possible_objects
             .iter()
             .map(|node_id| self.id_to_index[&node_id])
             .for_each(|index| {
@@ -348,9 +348,14 @@ where
             .map(|x| (self.g.word2idx(x.0), x.1, self.g.word2idx(x.2)))
             .collect::<Vec<StepInfo>>();
 
-        let mut observed_vec = vec![false; self.id_to_index.len()];
+        let mut defender_observed_vec = vec![false; self.id_to_index.len()];
         state.defender_observed_steps.iter().for_each(|node_id| {
-            observed_vec[self.id_to_index[node_id]] = true;
+            defender_observed_vec[self.id_to_index[node_id]] = true;
+        });
+
+        let mut attacker_observed_vec = vec![false; self.id_to_index.len()];
+        state.attacker_observed_steps.iter().for_each(|node_id| {
+            attacker_observed_vec[self.id_to_index[node_id]] = true;
         });
 
         //let mut action_mask = vec![false; SPECIAL_ACTIONS.len()];
@@ -359,7 +364,7 @@ where
 
         let mut defense_surface_vec = vec![false; self.id_to_index.len()];
         state
-            .defense_surface
+            .defender_possible_objects
             .iter()
             .map(|node_id| self.id_to_index[&node_id])
             .for_each(|index| {
@@ -385,7 +390,7 @@ where
             true,                                                        // wait
             self.g.disabled_defenses(&state.enabled_defenses).len() > 0, // can use as long as there are disabled defenses
         ];
-        let attacker_action_mask = vec![false, state.attack_surface.len() > 0];
+        let attacker_action_mask = vec![false, state.attacker_possible_objects.len() > 0];
 
         let edges = &self.g.edges();
 
@@ -396,12 +401,13 @@ where
             .collect::<Vec<(usize, usize)>>();
 
         Observation {
-            attack_surface: attack_surface_vec,
-            defense_surface: defense_surface_vec,
-            defender_action_mask,
-            attacker_action_mask,
+            attacker_possible_objects: attack_surface_vec,
+            defender_possible_objects: defense_surface_vec,
+            defender_possible_actions: defender_action_mask,
+            attacker_possible_actions: attacker_action_mask,
             ttc_remaining,
-            observation: observed_vec,
+            defender_observation: defender_observed_vec,
+            attacker_observation: attacker_observed_vec,
             step_info,
             state: step_state,
             edges: vector_edges,
@@ -588,6 +594,8 @@ mod tests {
 
         let initial_state = sim.state.borrow();
 
+        assert_eq!(initial_state.attacker_observed_steps.len(), num_entrypoints + initial_state.attacker_possible_objects.len());
+        assert_eq!(initial_state.defender_observed_steps.len(), num_entrypoints);
         assert_eq!(initial_state.enabled_defenses.len(), 0);
         assert_eq!(initial_state.compromised_steps.len(), num_entrypoints);
         assert_eq!(initial_state.remaining_ttc.len(), sim.g.nodes().len());
@@ -616,14 +624,18 @@ mod tests {
         (observation, _info) = sim.reset(None).unwrap();
 
         assert_eq!(
-            observation.defense_surface.iter().filter(|&x| *x).count(),
+            observation
+                .defender_possible_objects
+                .iter()
+                .filter(|&x| *x)
+                .count(),
             num_defenses
         );
 
         //println!("AS: {:?}", observation.attack_surface);
 
         let _steps = observation
-            .attack_surface
+            .attacker_possible_objects
             .iter()
             .enumerate()
             .filter_map(|(i, x)| match x {
@@ -634,10 +646,17 @@ mod tests {
         //let strings = sim.translate_index_vec(&steps);
         //println!("AS: {:?}", strings);
 
-        assert_eq!(observation.attacker_action_mask.len(), sim.actions.len());
+        assert_eq!(
+            observation.attacker_possible_actions.len(),
+            sim.actions.len()
+        );
 
         assert_eq!(
-            observation.defense_surface.iter().filter(|&x| *x).count(),
+            observation
+                .defender_possible_objects
+                .iter()
+                .filter(|&x| *x)
+                .count(),
             num_defenses
         );
 
@@ -650,7 +669,7 @@ mod tests {
         //check that all defense steps are disabled
 
         let defense_indices = observation
-            .defense_surface
+            .defender_possible_objects
             .iter()
             .enumerate()
             .filter_map(|(i, x)| match x {
@@ -689,7 +708,7 @@ mod tests {
 
             // All the outgoing edges should be in the attack surface
             for index in indices_from_entrypoint {
-                assert_eq!(observation.attack_surface[*index], true);
+                assert_eq!(observation.attacker_possible_objects[*index], true);
             }
         }
     }

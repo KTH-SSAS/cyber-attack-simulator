@@ -3,8 +3,8 @@ use crate::observation::Info;
 use crate::runtime::{Confusion, SimResult};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
-use rand_distr::{Distribution, Standard};
 use rand_distr::Exp;
+use rand_distr::{Distribution, Standard};
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
@@ -30,14 +30,18 @@ impl std::error::Error for StateError {
 pub(crate) type StateResult<T> = std::result::Result<T, StateError>;
 
 pub(crate) struct SimulatorState<I> {
-    pub time: u64,
-    pub rng: ChaChaRng,
-    pub enabled_defenses: HashSet<I>,
-    pub compromised_steps: HashSet<I>,
-    pub attack_surface: HashSet<I>,
-    pub defense_surface: HashSet<I>,
-    pub remaining_ttc: HashMap<I, TTCType>,
+    // Possible actions in the given state
+    pub attacker_possible_objects: HashSet<I>,
+    pub defender_possible_objects: HashSet<I>,
+    // Observations
     pub defender_observed_steps: HashSet<I>,
+    pub attacker_observed_steps: HashSet<I>,
+    // Decomposed State
+    pub time: u64,
+    pub compromised_steps: HashSet<I>,
+    pub enabled_defenses: HashSet<I>,
+    pub remaining_ttc: HashMap<I, TTCType>,
+    pub rng: ChaChaRng,
 }
 
 impl<I> Debug for SimulatorState<I>
@@ -48,7 +52,7 @@ where
         let mut s = format!("Time: {}\n", self.time);
         s += &format!("Enabled defenses: {:?}\n", self.enabled_defenses);
         s += &format!("Compromised steps: {:?}\n", self.compromised_steps);
-        s += &format!("Attack surface: {:?}\n", self.attack_surface);
+        s += &format!("Attack surface: {:?}\n", self.attacker_possible_objects);
         s += &format!("Remaining TTC: {:?}\n", self.remaining_ttc);
         s += &format!(
             "Steps observed as compromised by defender: {:?}\n",
@@ -80,8 +84,8 @@ where
 
         Ok(SimulatorState {
             time: 0,
-            defense_surface: Self::_defense_surface(graph, &enabled_defenses, None),
-            attack_surface: Self::_attack_surface(
+            defender_possible_objects: Self::_defense_surface(graph, &enabled_defenses, None),
+            attacker_possible_objects: Self::_attack_surface(
                 graph,
                 &compromised_steps,
                 &remaining_ttc,
@@ -105,6 +109,14 @@ where
                 confusion_per_step,
                 &mut rng,
             ),
+            attacker_observed_steps: Self::_attacker_steps_observed(
+                graph,
+                &compromised_steps,
+                &remaining_ttc,
+                &enabled_defenses,
+                None,
+                None,
+            ),
             rng,
         })
     }
@@ -123,8 +135,8 @@ where
         let mut rng = self.rng.clone();
         Ok((
             SimulatorState {
-                attack_surface: self.attack_surface(graph, defender_step, attacker_step),
-                defense_surface: self.defense_surface(graph, defender_step),
+                attacker_possible_objects: self.attack_surface(graph, defender_step, attacker_step),
+                defender_possible_objects: self.defense_surface(graph, defender_step),
                 enabled_defenses: self.enabled_defenses(graph, defender_step),
                 remaining_ttc: self.remaining_ttc(graph, attacker_step, defender_step),
                 compromised_steps: self.compromised_steps(graph, attacker_step, defender_step),
@@ -133,6 +145,14 @@ where
                     graph,
                     confusion_per_step,
                     &mut rng,
+                ),
+                attacker_observed_steps: Self::_attacker_steps_observed(
+                    graph,
+                    &self.compromised_steps,
+                    &self.remaining_ttc,
+                    &self.enabled_defenses,
+                    defender_step,
+                    attacker_step,
                 ),
                 rng,
             },
@@ -194,14 +214,16 @@ where
             .map(|(i, _)| (i, compromised_steps.contains(i)))
             .zip(rng.sample_iter::<f64, Standard>(Standard))
             .filter_map(|((i, compromised), p)| match compromised {
-                true => match p < confusion_per_step[i].fnr { // Sample Bernoulli(fnr_prob)
+                true => match p < confusion_per_step[i].fnr {
+                    // Sample Bernoulli(fnr_prob)
                     true => None,
                     false => Some(*i),
                 },
-                false => match p < confusion_per_step[i].fpr { // Sample Bernoulli(fpr_prob)
+                false => match p < confusion_per_step[i].fpr {
+                    // Sample Bernoulli(fpr_prob)
                     true => Some(*i),
                     false => None,
-                }
+                },
             })
             .collect()
     }
@@ -590,5 +612,26 @@ where
         };
 
         return r1 + r2 + r3;
+    }
+
+    fn _attacker_steps_observed(
+        graph: &AttackGraph<I>,
+        compromised_steps: &HashSet<I>,
+        remaining_ttc: &HashMap<I, u64>,
+        enabled_defenses: &HashSet<I>,
+        defender_step: Option<&I>,
+        attacker_step: Option<&I>,
+    ) -> HashSet<I> {
+        return Self::_attack_surface(
+            graph,
+            compromised_steps,
+            remaining_ttc,
+            enabled_defenses,
+            defender_step,
+            attacker_step,
+        )
+        .union(&compromised_steps)
+        .cloned()
+        .collect();
     }
 }
