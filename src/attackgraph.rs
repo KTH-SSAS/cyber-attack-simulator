@@ -78,7 +78,7 @@ pub(crate) struct AttackStep {
     id: String,
     asset: String,
     asset_id: usize,
-    name: String,
+    pub name: String,
     ttc: TTCType,
     logic: Logic,
     step_type: NodeType,
@@ -114,6 +114,10 @@ impl AttackStep {
     pub(crate) fn to_info_tuple(&self) -> (String, usize, String) {
         //split name by colon
         return (self.asset.clone(), self.asset_id, self.name.clone());
+    }
+
+    pub(crate) fn asset(&self) -> String {
+        return format!("{}:{}", self.asset, self.asset_id);
     }
 
     pub(crate) fn can_be_compromised(&self, parent_states: &Vec<bool>) -> bool {
@@ -296,6 +300,21 @@ where
         self.attack_steps.contains(id)
     }
 
+    pub(crate) fn distinct_assets(&self) -> HashSet<String> {
+        self.graph
+            .nodes
+            .values()
+            .map(|n| format!("{}:{}", n.data.asset.clone(), n.data.asset_id.clone()))
+            .collect()
+    }
+
+    pub(crate) fn distinct_steps(&self) -> HashSet<String> {
+        self.graph
+            .nodes
+            .values()
+            .map(|n| n.data.name.clone())
+            .collect()
+    }
     pub(crate) fn entry_points(&self) -> HashSet<I> {
         return self.entry_points.iter().map(|&i| i).collect();
     }
@@ -422,32 +441,21 @@ pub struct TTC {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Write;
 
-    /*
+    use crate::loading;
+
     #[test]
     fn load_graph_from_file() {
-        let filename = "graphs/four_ways.yaml";
-        let attackgraph = loading::load_graph_from_yaml(filename);
-        let entry_point = attackgraph.entry_points.iter().collect::<Vec<&u64>>();
+        let filename = "graphs/corelang.json";
+        let attackgraph = loading::load_graph_from_json(filename, None).unwrap();
 
-        let entry_point = *entry_point.first().unwrap();
-        assert_eq!(
-            attackgraph.graph.nodes[entry_point].data.name,
-            "attacker-13-enter-13"
-        );
-
-        assert_eq!(attackgraph.graph.children(entry_point).len(), 4);
-        assert_eq!(attackgraph.graph.parents(entry_point).len(), 0);
-        assert_eq!(attackgraph.entry_points.len(), 1);
-        assert_eq!(attackgraph.attack_steps.len(), 15);
-        assert_eq!(attackgraph.defense_steps.len(), 4);
-        assert_eq!(attackgraph.graph.nodes.len(), 19);
-        assert_eq!(attackgraph.flags.len(), 4);
+        println!("{:?}", attackgraph.distinct_assets());
+        println!("{:?}", attackgraph.distinct_steps());
 
         let graphviz = attackgraph.graph.to_graphviz(None);
         let mut file = std::fs::File::create("test.dot").unwrap();
         file.write_all(graphviz.as_bytes()).unwrap();
         file.flush().unwrap();
     }
-    */
 }
