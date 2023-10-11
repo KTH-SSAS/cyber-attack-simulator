@@ -6,6 +6,8 @@ mod observation;
 mod pysim;
 mod runtime;
 mod state;
+mod defender_state;
+mod attacker_state;
 
 use config::SimulatorConfig;
 
