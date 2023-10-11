@@ -33,6 +33,11 @@ pub(crate) struct SimulatorState<I> {
     // Possible actions in the given state
     pub attacker_possible_objects: HashSet<I>,
     pub defender_possible_objects: HashSet<I>,
+    // MAL stuff
+    pub defender_possible_steps: HashSet<String>,
+    pub defender_possible_assets: HashSet<String>,
+    pub attacker_possible_steps: HashSet<String>,
+    pub attacker_possible_assets: HashSet<String>,
     // Observations
     pub defender_observed_steps: HashSet<I>,
     pub attacker_observed_steps: HashSet<I>,
@@ -117,6 +122,34 @@ where
                 None,
                 None,
             ),
+            attacker_possible_assets: Self::_attacker_possible_assets(
+                graph,
+                &compromised_steps,
+                &remaining_ttc,
+                &enabled_defenses,
+                None,
+                None,
+            ),
+            attacker_possible_steps: Self::_attacker_possible_actions(
+                graph,
+                &compromised_steps,
+                &remaining_ttc,
+                &enabled_defenses,
+                None,
+                None,
+            ),
+            defender_possible_assets: Self::_defender_possible_assets(
+                graph,
+                &enabled_defenses,
+                None,
+                None,
+            ),
+            defender_possible_steps: Self::_defender_possible_actions(
+                graph,
+                &enabled_defenses,
+                None,
+                None,
+            ),
             rng,
         })
     }
@@ -150,6 +183,34 @@ where
                     graph,
                     &self.compromised_steps,
                     &self.remaining_ttc,
+                    &self.enabled_defenses,
+                    defender_step,
+                    attacker_step,
+                ),
+                attacker_possible_assets: Self::_attacker_possible_assets(
+                    graph,
+                    &self.compromised_steps,
+                    &self.remaining_ttc,
+                    &self.enabled_defenses,
+                    defender_step,
+                    attacker_step,
+                ),
+                attacker_possible_steps: Self::_attacker_possible_actions(
+                    graph,
+                    &self.compromised_steps,
+                    &self.remaining_ttc,
+                    &self.enabled_defenses,
+                    defender_step,
+                    attacker_step,
+                ),
+                defender_possible_assets: Self::_defender_possible_assets(
+                    graph,
+                    &self.enabled_defenses,
+                    defender_step,
+                    attacker_step,
+                ),
+                defender_possible_steps: Self::_defender_possible_actions(
+                    graph,
                     &self.enabled_defenses,
                     defender_step,
                     attacker_step,
@@ -633,5 +694,89 @@ where
         .union(&compromised_steps)
         .cloned()
         .collect();
+    }
+
+    fn _attacker_possible_assets(
+        graph: &AttackGraph<I>,
+        compromised_steps: &HashSet<I>,
+        remaining_ttc: &HashMap<I, u64>,
+        enabled_defenses: &HashSet<I>,
+        defender_step: Option<&I>,
+        attacker_step: Option<&I>,
+    ) -> HashSet<String> {
+        Self::_attack_surface(
+            graph,
+            compromised_steps,
+            remaining_ttc,
+            enabled_defenses,
+            defender_step,
+            attacker_step,
+        )
+        .iter()
+        .filter_map(|x| match graph.get_step(x) {
+            Ok(step) => Some(step.asset()),
+            Err(e) => None,
+        })
+        .collect::<HashSet<String>>()
+    }
+
+    fn _attacker_possible_actions(
+        graph: &AttackGraph<I>,
+        compromised_steps: &HashSet<I>,
+        remaining_ttc: &HashMap<I, u64>,
+        enabled_defenses: &HashSet<I>,
+        defender_step: Option<&I>,
+        attacker_step: Option<&I>,
+    ) -> HashSet<String> {
+        Self::_attack_surface(
+            graph,
+            compromised_steps,
+            remaining_ttc,
+            enabled_defenses,
+            defender_step,
+            attacker_step,
+        )
+        .iter()
+        .filter_map(|x| match graph.get_step(x) {
+            Ok(step) => Some(step.name.clone()),
+            Err(e) => None,
+        })
+        .collect::<HashSet<String>>()
+        .union(&HashSet::from_iter(vec!["wait".to_string()]))
+        .cloned()
+        .collect()
+    }
+
+    fn _defender_possible_assets(
+        graph: &AttackGraph<I>,
+        enabled_defenses: &HashSet<I>,
+        defender_step: Option<&I>,
+        attacker_step: Option<&I>,
+    ) -> HashSet<String> {
+        Self::_defense_surface(graph, enabled_defenses, defender_step)
+            .iter()
+            .filter_map(|x| match graph.get_step(x) {
+                Ok(step) => Some(step.asset()),
+                Err(e) => None,
+            })
+            .collect::<HashSet<String>>()
+    }
+
+    fn _defender_possible_actions(
+        graph: &AttackGraph<I>,
+        enabled_defenses: &HashSet<I>,
+        defender_step: Option<&I>,
+        attacker_step: Option<&I>,
+    ) -> HashSet<String> {
+        Self::_defense_surface(graph, enabled_defenses, defender_step)
+        .iter()
+        .filter_map(|x| match graph.get_step(x) {
+            Ok(step) => Some(step.name.clone()),
+            Err(e) => None,
+            })
+            .collect::<HashSet<String>>()
+            .union(&HashSet::from_iter(vec!["wait".to_string()]))
+            .cloned()
+            .collect()
     }
 }
