@@ -1,13 +1,13 @@
+mod attacker_state;
 mod attackgraph;
 pub mod config;
+mod defender_state;
 mod graph;
 mod loading;
 mod observation;
 mod pysim;
 mod runtime;
 mod state;
-mod defender_state;
-mod attacker_state;
 
 use config::SimulatorConfig;
 
@@ -52,7 +52,7 @@ impl AttackSimulator<usize> {
         graph_filename: String,
         vocab_filename: Option<&str>,
     ) -> AttackSimResult<AttackSimulator<usize>> {
-        let graph = match load_graph_from_json(&graph_filename, vocab_filename) {
+        let graph = match load_graph_from_json(&graph_filename, vocab_filename, 0.0, 0.0) {
             Ok(graph) => graph,
             Err(e) => {
                 return Err(AttackSimError {
@@ -123,7 +123,7 @@ mod tests {
     const TEST_VOCAB: Option<&str> = None; // Some("mal/corelang_vocab_merged.json");
 
     fn get_sim_from_filename(filename: &str) -> runtime::SimulatorRuntime<usize> {
-        let graph = load_graph_from_json(filename, TEST_VOCAB).unwrap();
+        let graph = load_graph_from_json(filename, TEST_VOCAB, 0.0, 0.0).unwrap();
         let config = SimulatorConfig {
             seed: 0,
             false_negative_rate: 0.0,

@@ -11,8 +11,10 @@ use log4rs::config::{Appender, Root};
 use log4rs::encode::pattern::PatternEncoder;
 use log4rs::Config;
 
+use crate::attacker_state::AttackerObs;
 use crate::attackgraph::{AttackGraph, TTCType};
 use crate::config::SimulatorConfig;
+use crate::defender_state::DefenderObs;
 use crate::observation::{Info, Observation, StepInfo};
 use crate::state::SimulatorState;
 
@@ -49,18 +51,11 @@ impl<I> Default for ActionResult<I> {
 
 type ParameterAction = (usize, Option<usize>);
 
-#[derive(Debug, Clone)]
-pub(crate) struct Confusion {
-    pub fnr: f64,
-    pub fpr: f64,
-}
-
 pub(crate) struct SimulatorRuntime<I> {
     g: AttackGraph<I>,
     state: RefCell<SimulatorState<I>>,
     history: Vec<SimulatorState<I>>,
     pub config: SimulatorConfig,
-    pub confusion_per_step: HashMap<I, Confusion>,
     pub ttc_sum: TTCType,
 
     pub actions: HashMap<String, usize>,
@@ -149,25 +144,7 @@ where
 
         */
 
-        let fnr_fpr_per_step = index_to_id
-            .iter()
-            .map(|id| {
-                match graph.has_attack(&id) {
-                    true => (
-                        id,
-                        Confusion {
-                            fnr: config.false_negative_rate,
-                            fpr: config.false_positive_rate,
-                        },
-                    ),
-                    false => (id, Confusion { fnr: 0.0, fpr: 0.0 }), // No false negatives or positives for defense steps
-                }
-            })
-            .map(|(id, c)| (id.clone(), c))
-            .collect::<HashMap<I, Confusion>>();
-
-        let initial_state =
-            SimulatorState::new(&graph, &fnr_fpr_per_step, config.seed, config.randomize_ttc)?;
+        let initial_state = SimulatorState::new(&graph, config.seed, config.randomize_ttc)?;
 
         let attacker_string = "attacker".to_string();
         let defender_string = "defender".to_string();
@@ -181,7 +158,6 @@ where
         let sim = SimulatorRuntime {
             state: RefCell::new(initial_state),
             g: graph,
-            confusion_per_step: fnr_fpr_per_step,
             config,
             ttc_sum: 0,
             id_to_index,
@@ -214,12 +190,14 @@ where
     }
 
     fn get_color(&self, id: &I, state: &SimulatorState<I>, show_false: bool) -> String {
+        let defender_obs = DefenderObs::new(&self.g, &state);
+        let attacker_obs = AttackerObs::new(&self.g, &state);
         let false_negatives: HashSet<&I> = state
             .compromised_steps
-            .difference(&state.defender_observed_steps)
+            .difference(&defender_obs.observed_steps)
             .collect();
-        let false_positives: HashSet<&I> = state
-            .defender_observed_steps
+        let false_positives: HashSet<&I> = defender_obs
+            .observed_steps
             .difference(&state.compromised_steps)
             .collect();
         match id {
@@ -228,9 +206,9 @@ where
             id if false_positives.contains(id) && show_false => "darkorchid1".to_string(), // show false positives for debugging
             id if false_positives.contains(id) && !show_false => "firebrick1".to_string(), // observered steps
             id if self.g.entry_points().contains(id) => "crimson".to_string(), // entry points
-            id if state.defender_possible_objects.contains(id) => "chartreuse4".to_string(), // disabled defenses
+            id if defender_obs.possible_objects.contains(id) => "chartreuse4".to_string(), // disabled defenses
             id if state.enabled_defenses.contains(id) => "chartreuse".to_string(), // enabled defenses
-            id if state.attacker_possible_objects.contains(id) => "gold".to_string(), // attack surface
+            id if attacker_obs.possible_objects.contains(id) => "gold".to_string(), // attack surface
             id if state.compromised_steps.contains(id) => "firebrick1".to_string(), // compromised steps
             id if self.g.flags.contains(id) => "darkmagenta".to_string(),           // flags
             _ => "white".to_string(),
@@ -270,12 +248,7 @@ where
             self.config.seed = seed;
         }
 
-        let new_state = SimulatorState::new(
-            &self.g,
-            &self.confusion_per_step,
-            self.config.seed,
-            self.config.randomize_ttc,
-        )?;
+        let new_state = SimulatorState::new(&self.g, self.config.seed, self.config.randomize_ttc)?;
 
         log::info!("Resetting simulator with seed {}", self.config.seed);
         log::info!("Initial state:\n {:?}", new_state);
@@ -303,9 +276,12 @@ where
     ) -> Observation {
         // reverse graph id to action index mapping
 
+        let attacker_obs = AttackerObs::new(&self.g, &state);
+        let defender_obs = DefenderObs::new(&self.g, &state);
+
         let mut attack_surface_vec = vec![false; self.id_to_index.len()];
-        state
-            .attacker_possible_objects
+        attacker_obs
+            .possible_objects
             .iter()
             .map(|node_id| self.id_to_index[&node_id])
             .for_each(|index| {
@@ -349,12 +325,12 @@ where
             .collect::<Vec<StepInfo>>();
 
         let mut defender_observed_vec = vec![false; self.id_to_index.len()];
-        state.defender_observed_steps.iter().for_each(|node_id| {
+        defender_obs.observed_steps.iter().for_each(|node_id| {
             defender_observed_vec[self.id_to_index[node_id]] = true;
         });
 
         let mut attacker_observed_vec = vec![false; self.id_to_index.len()];
-        state.attacker_observed_steps.iter().for_each(|node_id| {
+        attacker_obs.observed_steps.iter().for_each(|node_id| {
             attacker_observed_vec[self.id_to_index[node_id]] = true;
         });
 
@@ -363,8 +339,8 @@ where
         //action_mask[ACTION_TERMINATE] = false;
 
         let mut defense_surface_vec = vec![false; self.id_to_index.len()];
-        state
-            .defender_possible_objects
+        defender_obs
+            .possible_objects
             .iter()
             .map(|node_id| self.id_to_index[&node_id])
             .for_each(|index| {
@@ -390,7 +366,7 @@ where
             true,                                                        // wait
             self.g.disabled_defenses(&state.enabled_defenses).len() > 0, // can use as long as there are disabled defenses
         ];
-        let attacker_action_mask = vec![false, state.attacker_possible_objects.len() > 0];
+        let attacker_action_mask = vec![false, attacker_obs.possible_objects.len() > 0];
 
         let edges = &self.g.edges();
 
@@ -479,12 +455,7 @@ where
         };
 
         let old_state = self.state.borrow();
-        match old_state.get_new_state(
-            &self.g,
-            &self.confusion_per_step,
-            attacker_action.1,
-            defender_action.1,
-        ) {
+        match old_state.get_new_state(&self.g, attacker_action.1, defender_action.1) {
             Ok((new_state, rewards)) => {
                 return Ok((new_state, rewards));
             }
@@ -503,7 +474,9 @@ mod tests {
     use std::collections::HashSet;
 
     use crate::{
+        attacker_state::AttackerObs,
         config,
+        defender_state::DefenderObs,
         loading::load_graph_from_json,
         observation::{Info, Observation},
         runtime::SimulatorRuntime,
@@ -514,9 +487,6 @@ mod tests {
     #[test]
     fn test_sim_fnr() {
         let filename = FILENAME;
-        let graph = load_graph_from_json(filename, None).unwrap();
-        //let num_defenses = graph.number_of_defenses();
-        let num_entrypoints = graph.entry_points().len();
         let config = config::SimulatorConfig {
             seed: 0,
             randomize_ttc: false,
@@ -525,17 +495,30 @@ mod tests {
             log: false,
             show_false: true,
         };
+        let graph = load_graph_from_json(
+            filename,
+            None,
+            config.false_negative_rate,
+            config.false_positive_rate,
+        )
+        .unwrap();
+        //let num_defenses = graph.number_of_defenses();
+        let num_entrypoints = graph.entry_points().len();
+
         let sim = SimulatorRuntime::new(graph, config).unwrap();
 
         let initial_state = sim.state.borrow();
 
+        let defender_obs = DefenderObs::new(&sim.g, &initial_state);
+
         //println!("Confusion: {:?}", sim.confusion_per_step);
         let false_negatives: HashSet<&_> = initial_state
             .compromised_steps
-            .difference(&initial_state.defender_observed_steps)
+            .difference(&defender_obs.observed_steps)
             .collect();
-        let false_positives: HashSet<&_> = initial_state
-            .defender_observed_steps
+
+        let false_positives: HashSet<&_> = defender_obs
+            .observed_steps
             .difference(&initial_state.compromised_steps)
             .collect();
 
@@ -547,9 +530,6 @@ mod tests {
     #[test]
     fn test_sim_fpr() {
         let filename = FILENAME;
-        let graph = load_graph_from_json(filename, None).unwrap();
-        let num_attacks = graph.number_of_attacks();
-        let num_entrypoints = graph.entry_points().len();
         let config = config::SimulatorConfig {
             seed: 0,
             randomize_ttc: false,
@@ -558,17 +538,29 @@ mod tests {
             log: false,
             show_false: true,
         };
+        let graph = load_graph_from_json(
+            filename,
+            None,
+            config.false_negative_rate,
+            config.false_positive_rate,
+        )
+        .unwrap();
+        let num_attacks = graph.number_of_attacks();
+        let num_entrypoints = graph.entry_points().len();
+
         let sim = SimulatorRuntime::new(graph, config).unwrap();
 
         let initial_state = sim.state.borrow();
 
+        let defender_obs = DefenderObs::new(&sim.g, &initial_state);
+
         //println!("Confusion: {:?}", sim.confusion_per_step);
         let false_negatives: HashSet<&_> = initial_state
             .compromised_steps
-            .difference(&initial_state.defender_observed_steps)
+            .difference(&defender_obs.observed_steps)
             .collect();
-        let false_positives: HashSet<&_> = initial_state
-            .defender_observed_steps
+        let false_positives: HashSet<&_> = defender_obs
+            .observed_steps
             .difference(&initial_state.compromised_steps)
             .collect();
 
@@ -579,7 +571,7 @@ mod tests {
     #[test]
     fn test_sim_init() {
         let filename = FILENAME;
-        let graph = load_graph_from_json(filename, None).unwrap();
+        let graph = load_graph_from_json(filename, None, 0.0, 0.0).unwrap();
         //let num_defenses = graph.number_of_defenses();
         let num_entrypoints = graph.entry_points().len();
         let config = config::SimulatorConfig {
@@ -594,8 +586,14 @@ mod tests {
 
         let initial_state = sim.state.borrow();
 
-        assert_eq!(initial_state.attacker_observed_steps.len(), num_entrypoints + initial_state.attacker_possible_objects.len());
-        assert_eq!(initial_state.defender_observed_steps.len(), num_entrypoints);
+        let attacker_obs = AttackerObs::new(&sim.g, &initial_state);
+        let defender_obs = DefenderObs::new(&sim.g, &initial_state);
+
+        assert_eq!(
+            attacker_obs.observed_steps.len(),
+            num_entrypoints + attacker_obs.possible_objects.len()
+        );
+        assert_eq!(defender_obs.observed_steps.len(), num_entrypoints);
         assert_eq!(initial_state.enabled_defenses.len(), 0);
         assert_eq!(initial_state.compromised_steps.len(), num_entrypoints);
         assert_eq!(initial_state.remaining_ttc.len(), sim.g.nodes().len());
@@ -611,7 +609,7 @@ mod tests {
     #[test]
     fn test_sim_obs() {
         let filename = FILENAME;
-        let graph = load_graph_from_json(filename, None).unwrap();
+        let graph = load_graph_from_json(filename, None, 0.0, 0.0).unwrap();
         //let num_attacks = graph.number_of_attacks();
         let num_defenses = graph.number_of_defenses();
         let num_entrypoints = graph.entry_points().len();

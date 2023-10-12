@@ -38,12 +38,17 @@ impl RustAttackSimulator {
         graph_filename: String,
         vocab_filename: Option<&str>,
     ) -> PyResult<RustAttackSimulator> {
-        let graph = match load_graph_from_json(&graph_filename, vocab_filename) {
+        let config = SimulatorConfig::from_json(&config_str).unwrap();
+        let graph = match load_graph_from_json(
+            &graph_filename,
+            vocab_filename,
+            config.false_negative_rate,
+            config.false_positive_rate,
+        ) {
             Ok(graph) => graph,
             Err(e) => return pyresult_with(Err(e), "Error in rust_sim"),
         };
 
-        let config = SimulatorConfig::from_json(&config_str).unwrap();
         let runtime = match SimulatorRuntime::new(graph, config) {
             Ok(runtime) => runtime,
             Err(e) => return pyresult_with(Err(e), "Error in rust_sim"),

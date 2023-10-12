@@ -1,49 +1,64 @@
 use crate::attackgraph::{AttackGraph, TTCType};
-use crate::observation::Info;
-use crate::runtime::{Confusion, SimResult};
 use crate::state::SimulatorState;
-use rand::{Rng, SeedableRng};
-use rand_chacha::ChaChaRng;
-use rand_distr::Exp;
-use rand_distr::{Distribution, Standard};
-use std::cmp::max;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
 
-impl<I> SimulatorState<I>
+pub(crate) struct AttackerObs<I> {
+    // Possible actions in the given state
+    pub possible_objects: HashSet<I>,
+    // MAL stuff
+    pub possible_steps: HashSet<String>,
+    pub possible_assets: HashSet<String>,
+    // Observations
+    pub observed_steps: HashSet<I>,
+}
+
+impl<I> AttackerObs<I>
 where
     I: Eq + Hash + Ord + Display + Copy + Debug,
 {
+    pub fn new(graph: &AttackGraph<I>, s: &SimulatorState<I>) -> Self {
+        Self {
+            possible_objects: Self::_attack_surface(
+                graph,
+                &s.compromised_steps,
+                &s.remaining_ttc,
+                &s.enabled_defenses,
+                None,
+                None,
+            ),
 
-	pub fn attacker_reward(&self, graph: &AttackGraph<I>) -> i64 {
-        let flag_value = 1;
-        self.compromised_steps
-            .iter()
-            .filter_map(|x| match graph.flags.contains(&x) {
-                true => Some(flag_value),
-                false => None,
-            })
-            .sum()
+            observed_steps: Self::_attacker_steps_observed(
+                graph,
+                &s.compromised_steps,
+                &s.remaining_ttc,
+                &s.enabled_defenses,
+                None,
+                None,
+            ),
+
+            possible_assets: Self::_attacker_possible_assets(
+                graph,
+                &s.compromised_steps,
+                &s.remaining_ttc,
+                &s.enabled_defenses,
+                None,
+                None,
+            ),
+
+            possible_steps: Self::_attacker_possible_actions(
+                graph,
+                &s.compromised_steps,
+                &s.remaining_ttc,
+                &s.enabled_defenses,
+                None,
+                None,
+            ),
+        }
     }
 
-	pub(crate) fn attack_surface(
-        &self,
-        graph: &AttackGraph<I>,
-        defender_step: Option<&I>,
-        attacker_step: Option<&I>,
-    ) -> HashSet<I> {
-        return Self::_attack_surface(
-            graph,
-            &self.compromised_steps,
-            &self.remaining_ttc,
-            &self.enabled_defenses,
-            defender_step,
-            attacker_step,
-        );
-    }
-
-	fn is_in_attack_surface(
+    fn is_in_attack_surface(
         graph: &AttackGraph<I>,
         compromised_steps: &HashSet<I>,
         ttc_remaining: &HashMap<I, TTCType>,
@@ -62,8 +77,7 @@ where
                     || match attacker_step {
                         Some(a) => {
                             a == p
-                                && Self::can_step_be_compromised(
-                                    graph,
+                                && graph.can_step_be_compromised(
                                     compromised_steps,
                                     ttc_remaining,
                                     a,
@@ -83,7 +97,7 @@ where
 
         let compromised = compromised_steps.contains(node_id);
 
-        let defended = Self::is_defended(graph, node_id, enabled_defenses);
+        let defended = graph.is_defended(node_id, enabled_defenses);
 
         let will_be_defended = match defender_step {
             Some(d) => graph.step_is_defended_by(node_id, d),
@@ -99,7 +113,7 @@ where
             && !(compromised || defended || will_be_defended || will_be_attacked);
     }
 
-	pub(crate) fn _attack_surface(
+    pub(crate) fn _attack_surface(
         graph: &AttackGraph<I>,
         compromised_steps: &HashSet<I>,
         ttc_remaining: &HashMap<I, TTCType>,
@@ -130,7 +144,7 @@ where
         return attack_surface;
     }
 
-	pub(crate) fn _attacker_steps_observed(
+    pub(crate) fn _attacker_steps_observed(
         graph: &AttackGraph<I>,
         compromised_steps: &HashSet<I>,
         remaining_ttc: &HashMap<I, u64>,
@@ -170,7 +184,7 @@ where
         .iter()
         .filter_map(|x| match graph.get_step(x) {
             Ok(step) => Some(step.asset()),
-            Err(e) => None,
+            Err(_e) => None,
         })
         .collect::<HashSet<String>>()
     }
@@ -194,7 +208,7 @@ where
         .iter()
         .filter_map(|x| match graph.get_step(x) {
             Ok(step) => Some(step.name.clone()),
-            Err(e) => None,
+            Err(_e) => None,
         })
         .collect::<HashSet<String>>()
         .union(&HashSet::from_iter(vec!["wait".to_string()]))

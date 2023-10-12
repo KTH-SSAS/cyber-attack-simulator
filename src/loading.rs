@@ -100,6 +100,8 @@ fn create_vocab_from_steps(steps: &Vec<MALAttackStep>) -> HashMap<String, usize>
 pub(crate) fn load_graph_from_json(
     filename: &str,
     vocab_filename: Option<&str>,
+    fnr: f64,
+    fpr: f64,
 ) -> IOResult<AttackGraph<usize>> {
     let file = match File::open(filename) {
         Ok(f) => f,
@@ -203,7 +205,8 @@ pub(crate) fn load_graph_from_json(
         Some(f) => load_vocab_from_json(f),
     };
 
-    let attack_graph = AttackGraph::<u64>::new(attack_steps, edges, flags, entry_points, vocab);
+    let attack_graph =
+        AttackGraph::<u64>::new(attack_steps, edges, flags, entry_points, vocab, fpr, fnr);
 
     return Ok(attack_graph);
 }
@@ -218,7 +221,7 @@ mod tests {
     fn load_mal_graph() {
         let filename = "graphs/four_ways_mod.json";
         let vocab_filename = "mal/corelang_vocab_merged.json";
-        let attack_graph = load_graph_from_json(filename, Some(vocab_filename)).unwrap();
+        let attack_graph = load_graph_from_json(filename, Some(vocab_filename), 0.0, 0.0).unwrap();
 
         let graphviz = attack_graph.to_graphviz(None);
 

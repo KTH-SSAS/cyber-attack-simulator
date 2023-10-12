@@ -9,6 +9,12 @@ use crate::graph::{Graph, Node};
 use crate::loading::MALAttackStep;
 
 #[derive(Debug, Clone)]
+pub(crate) struct Confusion {
+    pub fnr: f64,
+    pub fpr: f64,
+}
+
+#[derive(Debug, Clone)]
 pub(crate) struct GraphError {
     message: String,
 }
@@ -82,31 +88,13 @@ pub(crate) struct AttackStep {
     ttc: TTCType,
     logic: Logic,
     step_type: NodeType,
+    confusion: Confusion,
     //pub compromised: bool,
 }
 
 impl Display for AttackStep {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}/{}/{}", self.asset, self.asset_id, self.name)
-    }
-}
-
-impl From<&MALAttackStep> for AttackStep {
-    fn from(s: &MALAttackStep) -> AttackStep {
-        let node_type = NodeType::from(s.node_type.as_str());
-        let (asset, asset_id) = match s.asset.split_once(":") {
-            Some((asset, asset_id)) => (asset.to_string(), asset_id.parse::<usize>().unwrap()),
-            None => (s.asset.clone(), 0),
-        };
-        AttackStep {
-            id: s.id.clone(),
-            name: s.name.clone(),
-            asset,
-            asset_id,
-            ttc: 0,
-            logic: Logic::from(&node_type),
-            step_type: node_type,
-        }
     }
 }
 
@@ -129,6 +117,27 @@ impl AttackStep {
             Logic::Or => parent_states.iter().any(|x| *x),
         }
     }
+
+    fn from(s: &MALAttackStep, fpr: f64, fnr: f64) -> AttackStep {
+        let node_type = NodeType::from(s.node_type.as_str());
+        let (asset, asset_id) = match s.asset.split_once(":") {
+            Some((asset, asset_id)) => (asset.to_string(), asset_id.parse::<usize>().unwrap()),
+            None => (s.asset.clone(), 0),
+        };
+        AttackStep {
+            id: s.id.clone(),
+            name: s.name.clone(),
+            asset,
+            asset_id,
+            ttc: 0,
+            logic: Logic::from(&node_type),
+            confusion: match node_type {
+                NodeType::Defense => Confusion { fnr: 0.0, fpr: 0.0 },
+                _ => Confusion { fnr, fpr },
+            },
+            step_type: node_type,
+        }
+    }
 }
 
 impl<I> AttackGraph<I>
@@ -149,6 +158,8 @@ where
         flags: Vec<String>,
         entry_points: Vec<String>,
         vocab: HashMap<String, usize>,
+        fpr: f64,
+        fnr: f64,
     ) -> AttackGraph<usize> {
         // Hash the node names to numerical indexes
         let numerical_indexes = nodes
@@ -165,7 +176,7 @@ where
                     id,
                     Node {
                         id,
-                        data: AttackStep::from(s),
+                        data: AttackStep::from(s, fpr, fnr),
                     },
                 )
             })
@@ -227,6 +238,10 @@ where
         };
 
         return graph;
+    }
+
+    pub(crate) fn confusion_for_step(&self, i: &I) -> Confusion {
+        self.get_step(i).unwrap().confusion.clone()
     }
 }
 
@@ -296,10 +311,6 @@ where
     }
     */
 
-    pub(crate) fn has_attack(&self, id: &I) -> bool {
-        self.attack_steps.contains(id)
-    }
-
     pub(crate) fn distinct_assets(&self) -> HashSet<String> {
         self.graph
             .nodes
@@ -315,6 +326,7 @@ where
             .map(|n| n.data.name.clone())
             .collect()
     }
+
     pub(crate) fn entry_points(&self) -> HashSet<I> {
         return self.entry_points.iter().map(|&i| i).collect();
     }
@@ -448,7 +460,7 @@ mod tests {
     #[test]
     fn load_graph_from_file() {
         let filename = "graphs/corelang.json";
-        let attackgraph = loading::load_graph_from_json(filename, None).unwrap();
+        let attackgraph = loading::load_graph_from_json(filename, None, 0.0, 0.0).unwrap();
 
         println!("{:?}", attackgraph.distinct_assets());
         println!("{:?}", attackgraph.distinct_steps());
