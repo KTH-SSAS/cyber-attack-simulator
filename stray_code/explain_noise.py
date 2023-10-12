@@ -9,7 +9,6 @@ ids_fnr = 0.5
 
 env_config = {
     "attacker": "depth-first",
-    "save_graphs": False,
     "save_logs": False,
     "seed": 22,
     "sim_config": {
