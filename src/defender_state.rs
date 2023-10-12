@@ -5,13 +5,14 @@ use rand::Rng;
 use rand_chacha::ChaChaRng;
 
 use rand_distr::Standard;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
 
 pub(crate) struct DefenderObs<I> {
     // Possible actions in the given state
     pub possible_objects: HashSet<I>,
+    pub possible_actions: HashSet<String>,
     // MAL stuff
     pub possible_steps: HashSet<String>,
     pub possible_assets: HashSet<String>,
@@ -24,23 +25,30 @@ where
     I: Eq + Hash + Ord + Display + Copy + Debug,
 {
     pub fn new(graph: &AttackGraph<I>, s: &SimulatorState<I>) -> Self {
+        let all_actions = HashMap::from([
+            ("wait".to_string(), true), // wait
+            (
+                "use".to_string(),
+                graph.disabled_defenses(&s.enabled_defenses).len() > 0,
+            ), // can use as long as there are disabled defenses
+        ]);
+
         Self {
             possible_objects: Self::_defense_surface(graph, &s.enabled_defenses, None),
+            possible_actions: all_actions
+                .iter()
+                .filter_map(|(k, v)| match v {
+                    true => Some(k.clone()),
+                    false => None,
+                })
+                .collect(),
             observed_steps: Self::_defender_steps_observered(
                 graph,
                 &s.compromised_steps,
                 &mut s.rng.clone(),
             ),
-            possible_assets: Self::_defender_possible_assets(
-                graph,
-                &s.enabled_defenses,
-                None,
-            ),
-            possible_steps: Self::_defender_possible_actions(
-                graph,
-                &s.enabled_defenses,
-                None,
-            ),
+            possible_assets: Self::_defender_possible_assets(graph, &s.enabled_defenses, None),
+            possible_steps: Self::_defender_possible_actions(graph, &s.enabled_defenses, None),
         }
     }
 

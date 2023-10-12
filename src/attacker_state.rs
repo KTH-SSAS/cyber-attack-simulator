@@ -7,6 +7,7 @@ use std::hash::Hash;
 pub(crate) struct AttackerObs<I> {
     // Possible actions in the given state
     pub possible_objects: HashSet<I>,
+    pub possible_actions: HashSet<String>,
     // MAL stuff
     pub possible_steps: HashSet<String>,
     pub possible_assets: HashSet<String>,
@@ -19,16 +20,23 @@ where
     I: Eq + Hash + Ord + Display + Copy + Debug,
 {
     pub fn new(graph: &AttackGraph<I>, s: &SimulatorState<I>) -> Self {
-        Self {
-            possible_objects: Self::_attack_surface(
-                graph,
-                &s.compromised_steps,
-                &s.remaining_ttc,
-                &s.enabled_defenses,
-                None,
-                None,
-            ),
+        let attack_surface = Self::_attack_surface(
+            graph,
+            &s.compromised_steps,
+            &s.remaining_ttc,
+            &s.enabled_defenses,
+            None,
+            None,
+        );
+        
+        let all_actions = HashMap::from([("wait".to_string(), false), ("use".to_string(), attack_surface.len() > 0)]);
 
+        Self {
+            possible_objects: attack_surface,
+            possible_actions: all_actions.iter().filter_map(|(k, v)| match v {
+                true => Some(k.clone()),
+                false => None,
+            }).collect(),
             observed_steps: Self::_attacker_steps_observed(
                 graph,
                 &s.compromised_steps,

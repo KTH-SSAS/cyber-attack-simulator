@@ -90,6 +90,8 @@ pub(crate) struct SimulatorState<I> {
     pub enabled_defenses: HashSet<I>,
     pub remaining_ttc: HashMap<I, TTCType>,
     pub rng: ChaChaRng,
+    pub _defender_action: Option<I>, // Action that the defender took in previous state
+    pub _attacker_action: Option<I>, // Action that the attacker took in previous state
 }
 
 impl<I> Debug for SimulatorState<I>
@@ -137,7 +139,8 @@ where
                 None,
                 None,
             ),
-
+            _attacker_action: None,
+            _defender_action: None,
             rng,
         })
     }
@@ -208,6 +211,8 @@ where
                 compromised_steps: self.compromised_steps(graph, attacker_step, defender_step),
                 time: self.time + 1,
                 rng,
+                _attacker_action: attacker_step.copied(),
+                _defender_action: defender_step.copied(),
             },
             (
                 self.attacker_reward(graph),

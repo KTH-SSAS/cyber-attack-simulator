@@ -14,7 +14,7 @@ use config::SimulatorConfig;
 use loading::load_graph_from_json;
 use pyo3::prelude::*;
 
-use observation::{Info, Observation};
+use observation::{Info, VectorizedObservation};
 use pysim::RustAttackSimulator;
 
 use std::collections::HashMap;
@@ -25,7 +25,7 @@ use crate::runtime::SimulatorRuntime;
 #[pymodule]
 fn rusty_sim(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<RustAttackSimulator>()?;
-    m.add_class::<Observation>()?;
+    m.add_class::<VectorizedObservation>()?;
     m.add_class::<Info>()?;
     Ok(())
 }
@@ -77,13 +77,13 @@ impl AttackSimulator<usize> {
             num_defense_steps,
             show_false: config.show_false,
             config,
-            actions: runtime.actions.clone(),
+            actions: runtime.action2idx.clone(),
             actors: runtime.actors.clone(),
             runtime,
         })
     }
 
-    pub fn reset(&mut self, seed: Option<u64>) -> AttackSimResult<(Observation, Info)> {
+    pub fn reset(&mut self, seed: Option<u64>) -> AttackSimResult<(VectorizedObservation, Info)> {
         match self.runtime.reset(seed) {
             Ok((obs, info)) => Ok((obs, info)),
             Err(e) => Err(AttackSimError {
@@ -95,7 +95,7 @@ impl AttackSimulator<usize> {
     pub fn step(
         &mut self,
         actions: HashMap<String, (usize, Option<usize>)>,
-    ) -> AttackSimResult<(Observation, Info)> {
+    ) -> AttackSimResult<(VectorizedObservation, Info)> {
         match self.runtime.step(actions) {
             Ok((obs, info)) => Ok((obs, info)),
             Err(e) => Err(AttackSimError {
@@ -114,7 +114,7 @@ mod tests {
     use std::{cmp::max, collections::HashMap};
 
     use crate::{
-        config::SimulatorConfig, loading::load_graph_from_json, observation::Observation, runtime,
+        config::SimulatorConfig, loading::load_graph_from_json, observation::VectorizedObservation, runtime,
     };
     use rand::{seq::SliceRandom, SeedableRng};
     use rand_chacha::ChaChaRng;
@@ -164,19 +164,19 @@ mod tests {
         let filename = TEST_FILENAME;
         let mut sim = get_sim_from_filename(filename);
 
-        let mut observation: Observation;
+        let mut observation: VectorizedObservation;
 
         (observation, _) = sim.reset(None).unwrap();
 
         let mut rng = ChaChaRng::seed_from_u64(0);
-        let action = sim.actions["use"];
+        let action = sim.action2idx["use"];
         let mut attack_surface = observation.attacker_possible_objects.clone();
         let mut available_steps = available_actions(&attack_surface);
         while available_steps.len() > 0 {
             let step = random_step(&attack_surface, &mut rng).unwrap();
 
             //assert!(action != sim.actions["terminate"]); // We should never terminate, for now
-            assert!(action != sim.actions["wait"]); // We should never NOP, for now
+            assert!(action != sim.action2idx["wait"]); // We should never NOP, for now
 
             let action_dict = HashMap::from([("attacker".to_string(), (action, Some(step)))]);
             let (new_observation, _) = sim.step(action_dict).unwrap();
@@ -219,8 +219,8 @@ mod tests {
         let filename = TEST_FILENAME;
         let mut sim = get_sim_from_filename(filename);
         let mut rng = ChaChaRng::seed_from_u64(0);
-        let mut observation: Observation;
-        let action = sim.actions["use"];
+        let mut observation: VectorizedObservation;
+        let action = sim.action2idx["use"];
         (observation, _) = sim.reset(None).unwrap();
         let mut defense_surface = observation.defender_possible_objects.clone();
         let num_entrypoints = observation.state.iter().filter(|&x| *x).count();

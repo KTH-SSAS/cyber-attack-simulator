@@ -2,7 +2,7 @@ use pyo3::pyclass;
 
 pub(crate) type StepInfo = (usize, usize, usize);
 #[pyclass]
-pub struct Observation {
+pub struct VectorizedObservation {
     #[pyo3(get)]
     pub attacker_possible_objects: Vec<bool>, // Attack surface of the attacker, all attackable nodes
     #[pyo3(get)]

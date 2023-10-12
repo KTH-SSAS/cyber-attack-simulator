@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt::Display};
 use crate::{
     config::SimulatorConfig,
     loading::load_graph_from_json,
-    observation::{Info, Observation},
+    observation::{Info, VectorizedObservation},
     runtime::SimulatorRuntime,
 };
 use pyo3::{exceptions::PyRuntimeError, pyclass, pymethods, PyErr, PyResult};
@@ -57,21 +57,21 @@ impl RustAttackSimulator {
         Ok(RustAttackSimulator {
             show_false: config.show_false,
             config,
-            actions: runtime.actions.clone(),
+            actions: runtime.action2idx.clone(),
             actors: runtime.actors.clone(),
             vocab: runtime.vocab(),
             runtime,
         })
     }
 
-    pub(crate) fn reset(&mut self, seed: Option<u64>) -> PyResult<(Observation, Info)> {
+    pub(crate) fn reset(&mut self, seed: Option<u64>) -> PyResult<(VectorizedObservation, Info)> {
         pyresult(self.runtime.reset(seed))
     }
 
     pub(crate) fn step(
         &mut self,
         actions: HashMap<String, (usize, Option<usize>)>,
-    ) -> PyResult<(Observation, Info)> {
+    ) -> PyResult<(VectorizedObservation, Info)> {
         pyresult(self.runtime.step(actions))
     }
 
