@@ -311,7 +311,7 @@ where
     }
     */
 
-    pub(crate) fn distinct_assets(&self) -> HashSet<String> {
+    pub(crate) fn distinct_objects(&self) -> HashSet<String> {
         self.graph
             .nodes
             .values()
@@ -319,7 +319,7 @@ where
             .collect()
     }
 
-    pub(crate) fn distinct_steps(&self) -> HashSet<String> {
+    pub(crate) fn distinct_actions(&self) -> HashSet<String> {
         self.graph
             .nodes
             .values()
@@ -462,8 +462,8 @@ mod tests {
         let filename = "graphs/corelang.json";
         let attackgraph = loading::load_graph_from_json(filename, None, 0.0, 0.0).unwrap();
 
-        println!("{:?}", attackgraph.distinct_assets());
-        println!("{:?}", attackgraph.distinct_steps());
+        println!("{:?}", attackgraph.distinct_objects());
+        println!("{:?}", attackgraph.distinct_actions());
 
         let graphviz = attackgraph.graph.to_graphviz(None);
         let mut file = std::fs::File::create("test.dot").unwrap();

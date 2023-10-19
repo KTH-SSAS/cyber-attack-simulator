@@ -4,7 +4,7 @@ pub mod config;
 mod defender_state;
 mod graph;
 mod loading;
-mod observation;
+pub mod observation;
 mod pysim;
 mod runtime;
 mod state;

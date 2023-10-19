@@ -2,6 +2,7 @@ use pyo3::pyclass;
 
 pub(crate) type StepInfo = (usize, usize, usize);
 #[pyclass]
+#[derive(Clone, Debug, Hash, Eq)]
 pub struct VectorizedObservation {
     #[pyo3(get)]
     pub attacker_possible_objects: Vec<bool>, // Attack surface of the attacker, all attackable nodes
@@ -29,6 +30,18 @@ pub struct VectorizedObservation {
     pub edges: Vec<(usize, usize)>,
     #[pyo3(get)]
     pub flags: Vec<usize>,
+}
+
+impl PartialEq for VectorizedObservation {
+    fn eq(&self, other: &Self) -> bool {
+        self.state == other.state && self.ttc_remaining == other.ttc_remaining
+    }
+}
+
+impl VectorizedObservation {
+    pub(crate) fn is_terminal(&self) -> bool {
+        self.attacker_possible_actions.iter().all(|&x| !x)
+    }
 }
 
 #[pyclass]
