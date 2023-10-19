@@ -130,10 +130,27 @@ where
         let roles = vec![attacker_string, defender_string];
         let actors = HashMap::from_iter(roles.into_iter().enumerate().map(|(i, x)| (x, i)));
 
-        let idx2action = vec!["wait".to_string(), "use".to_string()];
+        let use_actions_from_graph = false;
+        let idx2action: Vec<String>;
+        let action2idx: HashMap<String, usize>;
 
-        let action2idx =
-            HashMap::from_iter(idx2action.iter().enumerate().map(|(i, x)| (x.clone(), i)));
+        if use_actions_from_graph {
+            let unique_actions = graph.distinct_actions();
+            idx2action = unique_actions
+                .iter()
+                .sorted()
+                .cloned()
+                .collect::<Vec<String>>();
+            action2idx = idx2action
+                .iter()
+                .enumerate()
+                .map(|(i, x)| (x.clone(), i))
+                .collect();
+        } else {
+            idx2action = vec!["wait".to_string(), "use".to_string()];
+            action2idx =
+                HashMap::from_iter(idx2action.iter().enumerate().map(|(i, x)| (x.clone(), i)));
+        }
 
         let sim = SimulatorRuntime {
             state: RefCell::new(initial_state),
