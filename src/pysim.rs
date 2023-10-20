@@ -65,14 +65,14 @@ impl RustAttackSimulator {
     }
 
     pub(crate) fn reset(&mut self, seed: Option<u64>) -> PyResult<(VectorizedObservation, Info)> {
-        pyresult(self.runtime.reset(seed))
+        pyresult(self.runtime.reset_vec(seed))
     }
 
     pub(crate) fn step(
         &mut self,
         actions: HashMap<String, (usize, Option<usize>)>,
     ) -> PyResult<(VectorizedObservation, Info)> {
-        pyresult(self.runtime.step(actions))
+        pyresult(self.runtime.step_vec(actions))
     }
 
     pub fn render(&self) -> String {

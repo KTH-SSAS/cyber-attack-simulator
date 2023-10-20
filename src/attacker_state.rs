@@ -1,10 +1,11 @@
 use crate::attackgraph::{AttackGraph, TTCType};
+
 use crate::state::SimulatorState;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
 
-pub(crate) struct AttackerObs<I> {
+pub struct AttackerObs<I> {
     // Possible actions in the given state
     pub possible_objects: HashSet<I>,
     pub possible_actions: HashSet<String>,
@@ -13,32 +14,39 @@ pub(crate) struct AttackerObs<I> {
     pub possible_assets: HashSet<String>,
     // Observations
     pub observed_steps: HashSet<I>,
+    pub reward: i64,
 }
 
 impl<I> AttackerObs<I>
 where
     I: Eq + Hash + Ord + Display + Copy + Debug,
 {
-    pub fn new(graph: &AttackGraph<I>, s: &SimulatorState<I>) -> Self {
+    pub(crate) fn new(s: &SimulatorState<I>, graph: &AttackGraph<I>) -> Self {
         let attack_surface = Self::_attack_surface(
-            graph,
+            &graph,
             &s.compromised_steps,
             &s.remaining_ttc,
             &s.enabled_defenses,
             None,
             None,
         );
-        
-        let all_actions = HashMap::from([("wait".to_string(), false), ("use".to_string(), attack_surface.len() > 0)]);
+
+        let all_actions = HashMap::from([
+            ("wait".to_string(), false),
+            ("use".to_string(), attack_surface.len() > 0),
+        ]);
 
         Self {
             possible_objects: attack_surface,
-            possible_actions: all_actions.iter().filter_map(|(k, v)| match v {
-                true => Some(k.clone()),
-                false => None,
-            }).collect(),
+            possible_actions: all_actions
+                .iter()
+                .filter_map(|(k, v)| match v {
+                    true => Some(k.clone()),
+                    false => None,
+                })
+                .collect(),
             observed_steps: Self::_attacker_steps_observed(
-                graph,
+                &graph,
                 &s.compromised_steps,
                 &s.remaining_ttc,
                 &s.enabled_defenses,
@@ -47,7 +55,7 @@ where
             ),
 
             possible_assets: Self::_attacker_possible_assets(
-                graph,
+                &graph,
                 &s.compromised_steps,
                 &s.remaining_ttc,
                 &s.enabled_defenses,
@@ -56,13 +64,14 @@ where
             ),
 
             possible_steps: Self::_attacker_possible_actions(
-                graph,
+                &graph,
                 &s.compromised_steps,
                 &s.remaining_ttc,
                 &s.enabled_defenses,
                 None,
                 None,
             ),
+            reward: s.attacker_reward(&graph),
         }
     }
 

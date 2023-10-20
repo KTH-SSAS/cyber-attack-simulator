@@ -9,13 +9,17 @@ mod pysim;
 mod runtime;
 mod state;
 
+use attacker_state::AttackerObs;
+
 use config::SimulatorConfig;
 
+use defender_state::DefenderObs;
 use loading::load_graph_from_json;
 use pyo3::prelude::*;
 
 use observation::{Info, VectorizedObservation};
 use pysim::RustAttackSimulator;
+use state::SimulatorObs;
 
 use std::collections::HashMap;
 
@@ -83,7 +87,13 @@ impl AttackSimulator<usize> {
         })
     }
 
-    pub fn reset(&mut self, seed: Option<u64>) -> AttackSimResult<(VectorizedObservation, Info)> {
+    pub fn reset(
+        &mut self,
+        seed: Option<u64>,
+    ) -> AttackSimResult<(
+        (SimulatorObs<usize>, AttackerObs<usize>, DefenderObs<usize>),
+        Info,
+    )> {
         match self.runtime.reset(seed) {
             Ok((obs, info)) => Ok((obs, info)),
             Err(e) => Err(AttackSimError {
@@ -95,9 +105,13 @@ impl AttackSimulator<usize> {
     pub fn step(
         &mut self,
         actions: HashMap<String, (usize, Option<usize>)>,
-    ) -> AttackSimResult<(VectorizedObservation, Info)> {
+    ) -> AttackSimResult<(
+        (SimulatorObs<usize>, AttackerObs<usize>, DefenderObs<usize>),
+        Info,
+    )>
+    {
         match self.runtime.step(actions) {
-            Ok((obs, info)) => Ok((obs, info)),
+            Ok((obs, info, _)) => Ok((obs, info)),
             Err(e) => Err(AttackSimError {
                 msg: format!("Error in rust_sim: {}", e),
             }),
@@ -114,7 +128,8 @@ mod tests {
     use std::{cmp::max, collections::HashMap};
 
     use crate::{
-        config::SimulatorConfig, loading::load_graph_from_json, observation::VectorizedObservation, runtime,
+        config::SimulatorConfig, loading::load_graph_from_json, observation::VectorizedObservation,
+        runtime,
     };
     use rand::{seq::SliceRandom, SeedableRng};
     use rand_chacha::ChaChaRng;
@@ -166,7 +181,7 @@ mod tests {
 
         let mut observation: VectorizedObservation;
 
-        (observation, _) = sim.reset(None).unwrap();
+        (observation, _) = sim.reset_vec(None).unwrap();
 
         let mut rng = ChaChaRng::seed_from_u64(0);
         let action = sim.action2idx["use"];
@@ -179,7 +194,7 @@ mod tests {
             assert!(action != sim.action2idx["wait"]); // We should never NOP, for now
 
             let action_dict = HashMap::from([("attacker".to_string(), (action, Some(step)))]);
-            let (new_observation, _) = sim.step(action_dict).unwrap();
+            let (new_observation, _) = sim.step_vec(action_dict).unwrap();
 
             //let graphviz = sim.to_graphviz();
             //let file = std::fs::File::create(format!("test_attacker_{:0>2}.dot", time)).unwrap();
@@ -221,7 +236,7 @@ mod tests {
         let mut rng = ChaChaRng::seed_from_u64(0);
         let mut observation: VectorizedObservation;
         let action = sim.action2idx["use"];
-        (observation, _) = sim.reset(None).unwrap();
+        (observation, _) = sim.reset_vec(None).unwrap();
         let mut defense_surface = observation.defender_possible_objects.clone();
         let num_entrypoints = observation.state.iter().filter(|&x| *x).count();
         let num_defense = defense_surface.iter().filter(|&x| *x).count();
@@ -229,7 +244,7 @@ mod tests {
         while available_defenses.len() > 0 {
             let step = random_step(&defense_surface, &mut rng).unwrap();
             let action_dict = HashMap::from([("defender".to_string(), (action, Some(step)))]);
-            (observation, _) = sim.step(action_dict).unwrap();
+            (observation, _) = sim.step_vec(action_dict).unwrap();
             defense_surface = observation.defender_possible_objects.clone();
             available_defenses = available_actions(&defense_surface);
         }

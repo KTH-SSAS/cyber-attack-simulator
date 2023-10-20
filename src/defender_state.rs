@@ -9,7 +9,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
 
-pub(crate) struct DefenderObs<I> {
+pub struct DefenderObs<I> {
     // Possible actions in the given state
     pub possible_objects: HashSet<I>,
     pub possible_actions: HashSet<String>,
@@ -24,7 +24,7 @@ impl<I> DefenderObs<I>
 where
     I: Eq + Hash + Ord + Display + Copy + Debug,
 {
-    pub fn new(graph: &AttackGraph<I>, s: &SimulatorState<I>) -> Self {
+    pub(crate) fn new(s: &SimulatorState<I>, graph: &AttackGraph<I>) -> Self {
         let all_actions = HashMap::from([
             ("wait".to_string(), true), // wait
             (
@@ -34,7 +34,7 @@ where
         ]);
 
         Self {
-            possible_objects: Self::_defense_surface(graph, &s.enabled_defenses, None),
+            possible_objects: Self::_defense_surface(&graph, &s.enabled_defenses, None),
             possible_actions: all_actions
                 .iter()
                 .filter_map(|(k, v)| match v {
@@ -43,16 +43,16 @@ where
                 })
                 .collect(),
             observed_steps: Self::_defender_steps_observered(
-                graph,
+                &graph,
                 &s.compromised_steps,
                 &mut s.rng.clone(),
             ),
-            possible_assets: Self::_defender_possible_assets(graph, &s.enabled_defenses, None),
-            possible_steps: Self::_defender_possible_actions(graph, &s.enabled_defenses, None),
+            possible_assets: Self::_defender_possible_assets(&graph, &s.enabled_defenses, None),
+            possible_steps: Self::_defender_possible_actions(&graph, &s.enabled_defenses, None),
         }
     }
 
-    pub fn _defender_steps_observered(
+    pub(crate) fn _defender_steps_observered(
         graph: &AttackGraph<I>,
         compromised_steps: &HashSet<I>,
         rng: &mut ChaChaRng,

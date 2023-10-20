@@ -12,11 +12,11 @@ use log4rs::encode::pattern::PatternEncoder;
 use log4rs::Config;
 
 use crate::attacker_state::AttackerObs;
-use crate::attackgraph::{AttackGraph, TTCType};
+use crate::attackgraph::AttackGraph;
 use crate::config::SimulatorConfig;
 use crate::defender_state::DefenderObs;
 use crate::observation::{Info, StepInfo, VectorizedObservation};
-use crate::state::SimulatorState;
+use crate::state::{SimulatorObs, SimulatorState};
 
 pub type SimResult<T> = std::result::Result<T, SimError>;
 #[derive(Debug, Clone)]
@@ -56,7 +56,6 @@ pub(crate) struct SimulatorRuntime<I> {
     state: RefCell<SimulatorState<I>>,
     history: Vec<SimulatorState<I>>,
     pub config: SimulatorConfig,
-    pub ttc_sum: TTCType,
     pub actors: HashMap<String, usize>,
 
     pub action2idx: HashMap<String, usize>,
@@ -156,7 +155,6 @@ where
             state: RefCell::new(initial_state),
             g: graph,
             config,
-            ttc_sum: 0,
             id_to_index,
             index_to_id,
             history: Vec::new(),
@@ -188,8 +186,8 @@ where
     }
 
     fn get_color(&self, id: &I, state: &SimulatorState<I>, show_false: bool) -> String {
-        let defender_obs = DefenderObs::new(&self.g, &state);
-        let attacker_obs = AttackerObs::new(&self.g, &state);
+        let defender_obs = DefenderObs::new(state, &self.g);
+        let attacker_obs = AttackerObs::new(state, &self.g);
         let false_negatives: HashSet<&I> = state
             .compromised_steps
             .difference(&defender_obs.observed_steps)
@@ -241,7 +239,10 @@ where
         return self.g.to_graphviz(Some(&attributes));
     }
 
-    pub fn reset(&mut self, seed: Option<u64>) -> SimResult<(VectorizedObservation, Info)> {
+    pub fn reset(
+        &mut self,
+        seed: Option<u64>,
+    ) -> SimResult<((SimulatorObs<I>, AttackerObs<I>, DefenderObs<I>), Info)> {
         if let Some(seed) = seed {
             self.config.seed = seed;
         }
@@ -250,20 +251,26 @@ where
 
         log::info!("Resetting simulator with seed {}", self.config.seed);
         log::info!("Initial state:\n {:?}", new_state);
-
         let flag_status = self.g.get_flag_status(&new_state.compromised_steps);
-
-        let result = Ok((
-            self.map_state_to_observation(&new_state, (0, 0)),
-            new_state.to_info(
-                self.g.number_of_attacks(),
-                self.g.number_of_defenses(),
-                flag_status,
-            ),
-        ));
-        self.ttc_sum = new_state.total_ttc_remaining();
         self.history.clear();
+        let info = new_state.to_info(
+            self.g.number_of_attacks(),
+            self.g.number_of_defenses(),
+            flag_status,
+        );
+
+        let sim_obs = SimulatorObs::from(&new_state);
+        let attacker_obs = AttackerObs::new(&new_state, &self.g);
+        let defender_obs = DefenderObs::new(&new_state, &self.g);
+
         self.state.replace(new_state);
+
+        return Ok(((sim_obs, attacker_obs, defender_obs), info));
+    }
+
+    pub fn reset_vec(&mut self, seed: Option<u64>) -> SimResult<(VectorizedObservation, Info)> {
+        let ((sim_obs, a_obs, d_obs), info) = self.reset(seed)?;
+        let result = Ok((self.vectorize_obs(&sim_obs, &a_obs, &d_obs, (0, 0)), info));
         return result;
     }
 
@@ -274,21 +281,20 @@ where
         return self.index_to_id.iter().map(predicate).collect();
     }
 
-    fn map_state_to_observation(
+    fn vectorize_obs(
         &self,
-        state: &SimulatorState<I>,
+        sim_obs: &SimulatorObs<I>,
+        attacker_obs: &AttackerObs<I>,
+        defender_obs: &DefenderObs<I>,
         rewards: (i64, i64),
     ) -> VectorizedObservation {
         // reverse graph id to action index mapping
 
-        let attacker_obs = AttackerObs::new(&self.g, &state);
-        let defender_obs = DefenderObs::new(&self.g, &state);
-
         let attack_surface_vec = self.to_vec(|id| attacker_obs.possible_objects.contains(&id));
-        let ttc_remaining = self.to_vec(|id| state.remaining_ttc[id]);
+        let ttc_remaining = self.to_vec(|id| sim_obs.remaining_ttc[id]);
 
         let step_state = self.to_vec(|id| {
-            state.enabled_defenses.contains(id) || state.compromised_steps.contains(id)
+            sim_obs.enabled_defenses.contains(id) || sim_obs.compromised_steps.contains(id)
         });
 
         let step_info = self
@@ -345,10 +351,27 @@ where
         }
     }
 
-    pub fn step(
+    pub fn step_vec(
         &mut self,
         action_dict: HashMap<String, ParameterAction>,
     ) -> SimResult<(VectorizedObservation, Info)> {
+        let (state, info, rewards) = self.step(action_dict)?;
+        let result = Ok((
+            self.vectorize_obs(&state.0, &state.1, &state.2, rewards),
+            info,
+        ));
+
+        return result;
+    }
+
+    pub fn step(
+        &mut self,
+        action_dict: HashMap<String, ParameterAction>,
+    ) -> SimResult<(
+        (SimulatorObs<I>, AttackerObs<I>, DefenderObs<I>),
+        Info,
+        (i64, i64),
+    )> {
         log::info!("Step with action dict {:?}", action_dict);
 
         let (new_state, rewards) = self.calculate_next_state(action_dict)?;
@@ -356,19 +379,16 @@ where
         log::info!("New state:\n{:?}", new_state);
 
         let flag_status = self.g.get_flag_status(&new_state.compromised_steps);
-
-        let result = Ok((
-            self.map_state_to_observation(&new_state, rewards),
-            new_state.to_info(
-                self.g.number_of_attacks(),
-                self.g.number_of_defenses(),
-                flag_status,
-            ),
-        ));
-
+        let sim_obs = SimulatorObs::from(&new_state);
+        let attacker_obs = AttackerObs::new(&new_state, &self.g);
+        let defender_obs = DefenderObs::new(&new_state, &self.g);
+        let info = new_state.to_info(
+            self.g.number_of_attacks(),
+            self.g.number_of_defenses(),
+            flag_status,
+        );
         self.history.push(self.state.replace(new_state));
-
-        return result;
+        return Ok(((sim_obs, attacker_obs, defender_obs), info, rewards));
     }
 
     fn wait_idx(&self) -> usize {
@@ -451,24 +471,27 @@ mod tests {
         //let num_defenses = graph.number_of_defenses();
         let num_entrypoints = graph.entry_points().len();
 
-        let sim = SimulatorRuntime::new(graph, config).unwrap();
+        let mut sim = SimulatorRuntime::new(graph, config).unwrap();
 
-        let initial_state = sim.state.borrow();
-
-        let defender_obs = DefenderObs::new(&sim.g, &initial_state);
+        let (initial_state, _info) = sim.reset(None).unwrap();
 
         //println!("Confusion: {:?}", sim.confusion_per_step);
         let false_negatives: HashSet<&_> = initial_state
+            .0
             .compromised_steps
-            .difference(&defender_obs.observed_steps)
+            .difference(&initial_state.2.observed_steps)
             .collect();
 
-        let false_positives: HashSet<&_> = defender_obs
+        let false_positives: HashSet<&_> = initial_state
+            .2
             .observed_steps
-            .difference(&initial_state.compromised_steps)
+            .difference(&initial_state.0.compromised_steps)
             .collect();
 
-        assert_eq!(false_negatives.len(), initial_state.compromised_steps.len());
+        assert_eq!(
+            false_negatives.len(),
+            initial_state.0.compromised_steps.len()
+        );
         assert_eq!(false_negatives.len(), num_entrypoints);
         assert_eq!(false_positives.len(), 0);
     }
@@ -494,20 +517,21 @@ mod tests {
         let num_attacks = graph.number_of_attacks();
         let num_entrypoints = graph.entry_points().len();
 
-        let sim = SimulatorRuntime::new(graph, config).unwrap();
+        let mut sim = SimulatorRuntime::new(graph, config).unwrap();
 
-        let initial_state = sim.state.borrow();
-
-        let defender_obs = DefenderObs::new(&sim.g, &initial_state);
+        let (initial_state, _info) = sim.reset(None).unwrap();
 
         //println!("Confusion: {:?}", sim.confusion_per_step);
         let false_negatives: HashSet<&_> = initial_state
+            .0
             .compromised_steps
-            .difference(&defender_obs.observed_steps)
+            .difference(&initial_state.2.observed_steps)
             .collect();
-        let false_positives: HashSet<&_> = defender_obs
+
+        let false_positives: HashSet<&_> = initial_state
+            .2
             .observed_steps
-            .difference(&initial_state.compromised_steps)
+            .difference(&initial_state.0.compromised_steps)
             .collect();
 
         assert_eq!(false_negatives.len(), 0);
@@ -532,8 +556,8 @@ mod tests {
 
         let initial_state = sim.state.borrow();
 
-        let attacker_obs = AttackerObs::new(&sim.g, &initial_state);
-        let defender_obs = DefenderObs::new(&sim.g, &initial_state);
+        let attacker_obs = AttackerObs::new(&initial_state, &sim.g);
+        let defender_obs = DefenderObs::new(&initial_state, &sim.g);
 
         assert_eq!(
             attacker_obs.observed_steps.len(),
@@ -565,7 +589,7 @@ mod tests {
         let observation: VectorizedObservation;
         let _info: Info;
 
-        (observation, _info) = sim.reset(None).unwrap();
+        (observation, _info) = sim.reset_vec(None).unwrap();
 
         assert_eq!(
             observation
@@ -633,7 +657,7 @@ mod tests {
         let entrypoint_index = sim
             .id_to_index
             .iter()
-            .filter_map(|(id, _)| match entrypoints.get(&id) {
+            .filter_map(|(id, _)| match entrypoints.get(id) {
                 Some(i) => Some(i),
                 None => None,
             })

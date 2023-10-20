@@ -83,6 +83,7 @@ where
 
 pub(crate) type StateResult<T> = std::result::Result<T, StateError>;
 
+#[derive(Clone)]
 pub(crate) struct SimulatorState<I> {
     // Decomposed State
     pub time: u64,
@@ -92,6 +93,27 @@ pub(crate) struct SimulatorState<I> {
     pub rng: ChaChaRng,
     pub _defender_action: Option<I>, // Action that the defender took in previous state
     pub _attacker_action: Option<I>, // Action that the attacker took in previous state
+}
+
+pub struct SimulatorObs<I> {
+    pub time: u64,
+    pub compromised_steps: HashSet<I>,
+    pub enabled_defenses: HashSet<I>,
+    pub remaining_ttc: HashMap<I, TTCType>,
+}
+
+impl<I> From<&SimulatorState<I>> for SimulatorObs<I>
+where
+    I: Eq + Hash + Ord + Display + Copy + Debug,
+{
+    fn from(state: &SimulatorState<I>) -> Self {
+        SimulatorObs {
+            time: state.time,
+            compromised_steps: state.compromised_steps.clone(),
+            enabled_defenses: state.enabled_defenses.clone(),
+            remaining_ttc: state.remaining_ttc.clone(),
+        }
+    }
 }
 
 impl<I> Debug for SimulatorState<I>
@@ -128,7 +150,6 @@ where
 
         Ok(SimulatorState {
             time: 0,
-
             enabled_defenses: Self::_enabled_defenses(graph, &enabled_defenses, None),
             remaining_ttc: Self::_remaining_ttc(graph, &remaining_ttc, None, None),
             compromised_steps: Self::_compromised_steps(
