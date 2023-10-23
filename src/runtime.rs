@@ -266,7 +266,7 @@ where
         return Ok(((sim_obs, attacker_obs, defender_obs), info));
     }
 
-    pub fn reset_vec(&mut self, seed: Option<u64>) -> SimResult<(VectorizedObservation, Info)> {
+    pub fn reset_vec(&self, seed: Option<u64>) -> SimResult<(VectorizedObservation, Info)> {
         let ((sim_obs, a_obs, d_obs), info) = self.reset(seed)?;
         let result = Ok((self.vectorize_obs(&sim_obs, &a_obs, &d_obs, (0, 0)), info));
         return result;
@@ -350,7 +350,7 @@ where
     }
 
     pub fn step_vec(
-        &mut self,
+        &self,
         action_dict: HashMap<String, ParameterAction>,
     ) -> SimResult<(VectorizedObservation, Info)> {
         let (state, info, rewards) = self.step(action_dict)?;

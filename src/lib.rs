@@ -103,7 +103,7 @@ impl AttackSimulator<usize> {
     }
 
     pub fn reset_vec(
-        &mut self,
+        &self,
         seed: Option<u64>,
     ) -> AttackSimResult<(
         VectorizedObservation,
@@ -118,7 +118,7 @@ impl AttackSimulator<usize> {
     }
 
     pub fn step(
-        &mut self,
+        &self,
         actions: HashMap<String, (usize, Option<usize>)>,
     ) -> AttackSimResult<(
         (SimulatorObs<usize>, AttackerObs<usize>, DefenderObs<usize>),
@@ -134,7 +134,7 @@ impl AttackSimulator<usize> {
     }
 
     pub fn step_vec(
-        &mut self,
+        &self,
         actions: HashMap<String, (usize, Option<usize>)>,
     ) -> AttackSimResult<(
         VectorizedObservation,
