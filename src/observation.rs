@@ -45,24 +45,21 @@ impl PartialEq for VectorizedObservation {
     }
 }
 
-impl VectorizedObservation {
-    pub(crate) fn is_terminal(&self) -> bool {
-        self.attacker_possible_actions.iter().all(|&x| !x)
-    }
-}
-
 impl serde::ser::Serialize for VectorizedObservation {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::ser::Serializer,
     {
-        (
-            &self.state,
-            &self.step_info,
-            &self.ttc_remaining,
-            &self.edges,
-        )
-            .serialize(serializer)
+        fn vec2string<T>(vec: &Vec<T>) -> String
+        where
+            T: ToString,
+        {
+            vec.iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<String>>()
+                .join("")
+        }
+        vec2string(&self.state).serialize(serializer)
     }
 }
 
