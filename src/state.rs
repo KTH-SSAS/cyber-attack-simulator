@@ -135,10 +135,13 @@ where
 {
     pub fn new(
         graph: &AttackGraph<I>,
-        seed: u64,
+        seed: Option<u64>,
         randomize_ttc: bool,
     ) -> SimResult<SimulatorState<I>> {
-        let mut rng = ChaChaRng::seed_from_u64(seed);
+        let mut rng = match seed {
+            Some(s) => ChaChaRng::seed_from_u64(s),
+            None => ChaChaRng::from_entropy(),
+        };
         let ttc_params = graph.ttc_params();
         let remaining_ttc = match randomize_ttc {
             true => Self::get_initial_ttc_vals(&mut rng, &ttc_params),

@@ -6,7 +6,7 @@ use serde_json::Error;
 #[pyclass]
 pub struct SimulatorConfig {
     #[pyo3(get)]
-    pub seed: u64,
+    pub seed: Option<u64>,
     #[pyo3(get)]
     pub false_negative_rate: f64,
     #[pyo3(get)]

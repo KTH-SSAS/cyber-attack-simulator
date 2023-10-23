@@ -54,7 +54,7 @@ type ParameterAction = (usize, Option<usize>);
 pub(crate) struct SimulatorRuntime<I> {
     g: AttackGraph<I>,
     state: RefCell<SimulatorState<I>>,
-    history: Vec<SimulatorState<I>>,
+    history: RefCell<Vec<SimulatorState<I>>>,
     pub config: SimulatorConfig,
     pub actors: HashMap<String, usize>,
 
@@ -157,7 +157,7 @@ where
             config,
             id_to_index,
             index_to_id,
-            history: Vec::new(),
+            history: RefCell::new(Vec::new()),
             action2idx,
             idx2action,
             actors,
@@ -240,19 +240,17 @@ where
     }
 
     pub fn reset(
-        &mut self,
+        &self,
         seed: Option<u64>,
     ) -> SimResult<((SimulatorObs<I>, AttackerObs<I>, DefenderObs<I>), Info)> {
-        if let Some(seed) = seed {
-            self.config.seed = seed;
-        }
 
-        let new_state = SimulatorState::new(&self.g, self.config.seed, self.config.randomize_ttc)?;
 
-        log::info!("Resetting simulator with seed {}", self.config.seed);
+        let new_state = SimulatorState::new(&self.g, seed, self.config.randomize_ttc)?;
+
+        log::info!("Resetting simulator with seed {:?}", seed);
         log::info!("Initial state:\n {:?}", new_state);
         let flag_status = self.g.get_flag_status(&new_state.compromised_steps);
-        self.history.clear();
+        self.history.borrow_mut().clear();
         let info = new_state.to_info(
             self.g.number_of_attacks(),
             self.g.number_of_defenses(),
@@ -365,7 +363,7 @@ where
     }
 
     pub fn step(
-        &mut self,
+        &self,
         action_dict: HashMap<String, ParameterAction>,
     ) -> SimResult<(
         (SimulatorObs<I>, AttackerObs<I>, DefenderObs<I>),
@@ -387,7 +385,7 @@ where
             self.g.number_of_defenses(),
             flag_status,
         );
-        self.history.push(self.state.replace(new_state));
+        self.history.borrow_mut().push(self.state.replace(new_state));
         return Ok(((sim_obs, attacker_obs, defender_obs), info, rewards));
     }
 
@@ -454,7 +452,7 @@ mod tests {
     fn test_sim_fnr() {
         let filename = FILENAME;
         let config = config::SimulatorConfig {
-            seed: 0,
+            seed: Some(0),
             randomize_ttc: false,
             false_negative_rate: 1.0,
             false_positive_rate: 0.0,
@@ -500,7 +498,7 @@ mod tests {
     fn test_sim_fpr() {
         let filename = FILENAME;
         let config = config::SimulatorConfig {
-            seed: 0,
+            seed: Some(0),
             randomize_ttc: false,
             false_negative_rate: 0.0,
             false_positive_rate: 1.0,
@@ -545,7 +543,7 @@ mod tests {
         //let num_defenses = graph.number_of_defenses();
         let num_entrypoints = graph.entry_points().len();
         let config = config::SimulatorConfig {
-            seed: 0,
+            seed: Some(0),
             randomize_ttc: false,
             false_negative_rate: 0.0,
             false_positive_rate: 0.0,
