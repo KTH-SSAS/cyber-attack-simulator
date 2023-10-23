@@ -51,6 +51,21 @@ impl VectorizedObservation {
     }
 }
 
+impl serde::ser::Serialize for VectorizedObservation {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        (
+            &self.state,
+            &self.step_info,
+            &self.ttc_remaining,
+            &self.edges,
+        )
+            .serialize(serializer)
+    }
+}
+
 #[pyclass]
 pub struct Info {
     #[pyo3(get)]
