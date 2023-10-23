@@ -102,6 +102,21 @@ impl AttackSimulator<usize> {
         }
     }
 
+    pub fn reset_vec(
+        &mut self,
+        seed: Option<u64>,
+    ) -> AttackSimResult<(
+        VectorizedObservation,
+        Info,
+    )> {
+        match self.runtime.reset_vec(seed) {
+            Ok((obs, info)) => Ok((obs, info)),
+            Err(e) => Err(AttackSimError {
+                msg: format!("Error in rust_sim: {}", e),
+            }),
+        }
+    }
+
     pub fn step(
         &mut self,
         actions: HashMap<String, (usize, Option<usize>)>,
@@ -112,6 +127,22 @@ impl AttackSimulator<usize> {
     {
         match self.runtime.step(actions) {
             Ok((obs, info, _)) => Ok((obs, info)),
+            Err(e) => Err(AttackSimError {
+                msg: format!("Error in rust_sim: {}", e),
+            }),
+        }
+    }
+
+    pub fn step_vec(
+        &mut self,
+        actions: HashMap<String, (usize, Option<usize>)>,
+    ) -> AttackSimResult<(
+        VectorizedObservation,
+        Info,
+    )>
+    {
+        match self.runtime.step_vec(actions) {
+            Ok((obs, info)) => Ok((obs, info)),
             Err(e) => Err(AttackSimError {
                 msg: format!("Error in rust_sim: {}", e),
             }),

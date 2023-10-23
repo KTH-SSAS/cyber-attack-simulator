@@ -1,5 +1,12 @@
 use pyo3::pyclass;
 
+pub trait Observation<T> {
+    fn state(&self) -> Vec<T>;
+    fn possible_actions(&self) -> Vec<T>;
+    fn possible_objects(&self) -> Vec<T>;
+    fn is_terminal(&self) -> bool;
+}
+
 pub(crate) type StepInfo = (usize, usize, usize);
 #[pyclass]
 #[derive(Clone, Debug, Hash, Eq)]
