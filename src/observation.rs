@@ -86,7 +86,7 @@ impl serde::ser::Serialize for VectorizedObservation {
                 .collect::<Vec<String>>()
                 .join(" ")
         }
-        self.state.serialize(serializer)
+        vec2string(&self.state).serialize(serializer)
     }
 }
 
