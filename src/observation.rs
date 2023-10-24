@@ -41,7 +41,7 @@ pub struct VectorizedObservation {
 
 impl PartialEq for VectorizedObservation {
     fn eq(&self, other: &Self) -> bool {
-        self.state == other.state && self.ttc_remaining == other.ttc_remaining
+        self.state == other.state
     }
 }
 
