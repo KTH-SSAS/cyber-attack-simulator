@@ -40,6 +40,26 @@ pub struct VectorizedObservation {
     pub flags: Vec<usize>,
 }
 
+impl Default for VectorizedObservation {
+    fn default() -> Self {
+        VectorizedObservation {
+            attacker_possible_objects: vec![],
+            defender_possible_objects: vec![],
+            attacker_possible_actions: vec![],
+            defender_possible_actions: vec![],
+            defender_observation: vec![],
+            attacker_observation: vec![],
+            defender_reward: 0,
+            attacker_reward: 0,
+            state: vec![],
+            step_info: vec![],
+            ttc_remaining: vec![],
+            edges: vec![],
+            flags: vec![],
+        }
+    }
+}
+
 impl PartialEq for VectorizedObservation {
     fn eq(&self, other: &Self) -> bool {
         self.state == other.state
@@ -66,7 +86,7 @@ impl serde::ser::Serialize for VectorizedObservation {
                 .collect::<Vec<String>>()
                 .join(" ")
         }
-        vec2string(&self.state).serialize(serializer)
+        self.state.serialize(serializer)
     }
 }
 
@@ -86,4 +106,19 @@ pub struct Info {
     pub num_compromised_flags: usize,
     #[pyo3(get)]
     pub perc_compromised_flags: f64,
+}
+
+
+// Tests
+#[cfg(test)]
+mod tests {
+    use super::VectorizedObservation;
+
+
+    #[test]
+    fn test_serialize() {
+        let obs = VectorizedObservation::default();
+        let serialized = serde_json::to_string(&obs).unwrap();
+        println!("{}", serialized)
+    }
 }
