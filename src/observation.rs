@@ -1,4 +1,5 @@
 use pyo3::pyclass;
+use std::hash::{Hash, Hasher};
 
 pub trait Observation<T> {
     fn state(&self) -> Vec<T>;
@@ -9,7 +10,7 @@ pub trait Observation<T> {
 
 pub(crate) type StepInfo = (usize, usize, usize);
 #[pyclass]
-#[derive(Clone, Debug, Hash, Eq)]
+#[derive(Clone, Debug, Eq)]
 pub struct VectorizedObservation {
     #[pyo3(get)]
     pub attacker_possible_objects: Vec<bool>, // Attack surface of the attacker, all attackable nodes
@@ -42,6 +43,12 @@ pub struct VectorizedObservation {
 impl PartialEq for VectorizedObservation {
     fn eq(&self, other: &Self) -> bool {
         self.state == other.state
+    }
+}
+
+impl Hash for VectorizedObservation {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.state.hash(state);
     }
 }
 
