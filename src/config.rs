@@ -33,10 +33,10 @@ impl SimulatorConfig {
 impl Default for SimulatorConfig {
     fn default() -> Self {
         SimulatorConfig {
-            seed: Default::default(),
-            false_negative_rate: Default::default(),
-            false_positive_rate: Default::default(),
-            randomize_ttc: Default::default(),
+            seed: None,
+            false_negative_rate: 0.0,
+            false_positive_rate: 0.0,
+            randomize_ttc: false,
             log: false,
             show_false: false,
         }
