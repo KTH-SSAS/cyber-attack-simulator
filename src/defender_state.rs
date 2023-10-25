@@ -66,6 +66,7 @@ where
     pub(crate) fn _defender_steps_observered(
         graph: &AttackGraph<I>,
         compromised_steps: &HashSet<I>,
+        enabled_defenses: &HashSet<I>,
         rng: &mut ChaChaRng,
     ) -> HashMap<I, bool> {
         // Defender observes all steps with potential false positives
@@ -76,19 +77,19 @@ where
         graph
             .nodes()
             .iter()
-            .map(|(i, _)| (i, compromised_steps.contains(i)))
+            .map(|(i, _)| (i, compromised_steps.contains(i) || enabled_defenses.contains(i)))
             .zip(rng.sample_iter::<f64, Standard>(Standard))
             .filter_map(|s| match is_obs {true => Some(s), false => None}) // Step is observed
-            .map(|((i, compromised), p)| match compromised {
+            .map(|((i, step_state), p)| match step_state {
                 true => match is_false_obs((p, graph.confusion_for_step(i).fnr)) {
                     // Sample Bernoulli(fnr_prob)
                     true => (*i, false), // We observe the step, but it is reported as a false negative
-                    false => (*i, compromised),
+                    false => (*i, step_state),
                 },
                 false => match is_false_obs((p, graph.confusion_for_step(i).fpr)) {
                     // Sample Bernoulli(fpr_prob)
                     true => (*i, true), // We observe the step, but it is reported as a false positive
-                    false => (*i, compromised), 
+                    false => (*i, step_state), 
                 },
             })
             .collect()
