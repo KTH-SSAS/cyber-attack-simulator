@@ -17,13 +17,24 @@ pub struct DefenderObs<I> {
     pub possible_steps: HashSet<String>,
     pub possible_assets: HashSet<String>,
     // Observations
-    pub observed_steps: HashSet<I>,
+    pub observed_steps: HashMap<I, bool>,
 }
 
 impl<I> DefenderObs<I>
 where
     I: Eq + Hash + Ord + Display + Copy + Debug,
 {
+
+    pub(crate) fn steps_observed_as_compromised(&self) -> HashSet<I> {
+        self.observed_steps
+            .iter()
+            .filter_map(|(k, v)| match v {
+                true => Some(*k),
+                false => None,
+            })
+            .collect()
+    }
+
     pub(crate) fn new(s: &SimulatorState<I>, graph: &AttackGraph<I>) -> Self {
         let all_actions = HashMap::from([
             ("wait".to_string(), true), // wait
@@ -56,22 +67,28 @@ where
         graph: &AttackGraph<I>,
         compromised_steps: &HashSet<I>,
         rng: &mut ChaChaRng,
-    ) -> HashSet<I> {
+    ) -> HashMap<I, bool> {
+        // Defender observes all steps with potential false positives
+        
+        let is_obs = true;
+        let is_false_obs = |(p, rate)| p < rate;
+        
         graph
             .nodes()
             .iter()
             .map(|(i, _)| (i, compromised_steps.contains(i)))
             .zip(rng.sample_iter::<f64, Standard>(Standard))
-            .filter_map(|((i, compromised), p)| match compromised {
-                true => match p < graph.confusion_for_step(i).fnr {
+            .filter_map(|s| match is_obs {true => Some(s), false => None}) // Step is observed
+            .map(|((i, compromised), p)| match compromised {
+                true => match is_false_obs((p, graph.confusion_for_step(i).fnr)) {
                     // Sample Bernoulli(fnr_prob)
-                    true => None,
-                    false => Some(*i),
+                    true => (*i, false), // We observe the step, but it is reported as a false negative
+                    false => (*i, compromised),
                 },
-                false => match p < graph.confusion_for_step(i).fpr {
+                false => match is_false_obs((p, graph.confusion_for_step(i).fpr)) {
                     // Sample Bernoulli(fpr_prob)
-                    true => Some(*i),
-                    false => None,
+                    true => (*i, compromised),
+                    false => (*i, true), // We observe the step, but it is reported as a false positive
                 },
             })
             .collect()

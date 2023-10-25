@@ -188,12 +188,12 @@ where
     fn get_color(&self, id: &I, state: &SimulatorState<I>, show_false: bool) -> String {
         let defender_obs = DefenderObs::new(state, &self.g);
         let attacker_obs = AttackerObs::new(state, &self.g);
+        let steps_observed_as_compromised = defender_obs.steps_observed_as_compromised();
         let false_negatives: HashSet<&I> = state
             .compromised_steps
-            .difference(&defender_obs.observed_steps)
+            .difference(&steps_observed_as_compromised)
             .collect();
-        let false_positives: HashSet<&I> = defender_obs
-            .observed_steps
+        let false_positives: HashSet<&I> = steps_observed_as_compromised
             .difference(&state.compromised_steps)
             .collect();
         match id {
@@ -243,8 +243,6 @@ where
         &self,
         seed: Option<u64>,
     ) -> SimResult<((SimulatorObs<I>, AttackerObs<I>, DefenderObs<I>), Info)> {
-
-
         let new_state = SimulatorState::new(&self.g, seed, self.config.randomize_ttc)?;
 
         log::info!("Resetting simulator with seed {:?}", seed);
@@ -305,9 +303,16 @@ where
             .map(|x| (self.g.word2idx(x.0), x.1, self.g.word2idx(x.2)))
             .collect::<Vec<StepInfo>>();
 
-        let defender_observed_vec = self.to_vec(|id| defender_obs.observed_steps.contains(&id));
-
-        let attacker_observed_vec = self.to_vec(|id| attacker_obs.observed_steps.contains(&id));
+        let defender_observed_vec: Vec<i64> =
+            self.to_vec(|id| match defender_obs.observed_steps.get(&id) {
+                Some(i) => i64::from(*i),
+                None => -1,
+            });
+        let attacker_observed_vec: Vec<i64> =
+            self.to_vec(|id| match attacker_obs.observed_steps.get(&id) {
+                Some(i) => i64::from(*i),
+                None => -1,
+            });
 
         let defense_surface_vec = self.to_vec(|id| defender_obs.possible_objects.contains(&id));
 
@@ -385,12 +390,10 @@ where
             self.g.number_of_defenses(),
             flag_status,
         );
-        self.history.borrow_mut().push(self.state.replace(new_state));
+        self.history
+            .borrow_mut()
+            .push(self.state.replace(new_state));
         return Ok(((sim_obs, attacker_obs, defender_obs), info, rewards));
-    }
-
-    fn wait_idx(&self) -> usize {
-        return self.action2idx["wait"];
     }
 
     /*
@@ -469,20 +472,18 @@ mod tests {
         //let num_defenses = graph.number_of_defenses();
         let num_entrypoints = graph.entry_points().len();
 
-        let mut sim = SimulatorRuntime::new(graph, config).unwrap();
+        let sim = SimulatorRuntime::new(graph, config).unwrap();
 
         let (initial_state, _info) = sim.reset(None).unwrap();
-
+        let steps_observed_as_compromised = initial_state.2.steps_observed_as_compromised();
         //println!("Confusion: {:?}", sim.confusion_per_step);
         let false_negatives: HashSet<&_> = initial_state
             .0
             .compromised_steps
-            .difference(&initial_state.2.observed_steps)
+            .difference(&steps_observed_as_compromised)
             .collect();
 
-        let false_positives: HashSet<&_> = initial_state
-            .2
-            .observed_steps
+        let false_positives: HashSet<&_> = steps_observed_as_compromised
             .difference(&initial_state.0.compromised_steps)
             .collect();
 
@@ -515,20 +516,19 @@ mod tests {
         let num_attacks = graph.number_of_attacks();
         let num_entrypoints = graph.entry_points().len();
 
-        let mut sim = SimulatorRuntime::new(graph, config).unwrap();
+        let sim = SimulatorRuntime::new(graph, config).unwrap();
 
         let (initial_state, _info) = sim.reset(None).unwrap();
 
         //println!("Confusion: {:?}", sim.confusion_per_step);
+        let steps_observed_as_compromised = initial_state.2.steps_observed_as_compromised();
         let false_negatives: HashSet<&_> = initial_state
             .0
             .compromised_steps
-            .difference(&initial_state.2.observed_steps)
+            .difference(&steps_observed_as_compromised)
             .collect();
 
-        let false_positives: HashSet<&_> = initial_state
-            .2
-            .observed_steps
+        let false_positives: HashSet<&_> = steps_observed_as_compromised
             .difference(&initial_state.0.compromised_steps)
             .collect();
 
@@ -582,7 +582,7 @@ mod tests {
         let num_defenses = graph.number_of_defenses();
         let num_entrypoints = graph.entry_points().len();
         let config = config::SimulatorConfig::default();
-        let mut sim = SimulatorRuntime::new(graph, config).unwrap();
+        let sim = SimulatorRuntime::new(graph, config).unwrap();
 
         let observation: VectorizedObservation;
         let _info: Info;

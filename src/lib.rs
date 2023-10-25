@@ -208,7 +208,7 @@ mod tests {
     #[test]
     fn test_attacker() {
         let filename = TEST_FILENAME;
-        let mut sim = get_sim_from_filename(filename);
+        let sim = get_sim_from_filename(filename);
 
         let mut observation: VectorizedObservation;
 
@@ -263,7 +263,7 @@ mod tests {
     #[test]
     fn test_defender() {
         let filename = TEST_FILENAME;
-        let mut sim = get_sim_from_filename(filename);
+        let sim = get_sim_from_filename(filename);
         let mut rng = ChaChaRng::seed_from_u64(0);
         let mut observation: VectorizedObservation;
         let action = sim.action2idx["use"];

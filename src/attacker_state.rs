@@ -13,7 +13,7 @@ pub struct AttackerObs<I> {
     pub possible_steps: HashSet<String>,
     pub possible_assets: HashSet<String>,
     // Observations
-    pub observed_steps: HashSet<I>,
+    pub observed_steps: HashMap<I, bool>,
     pub reward: i64,
 }
 
@@ -168,18 +168,25 @@ where
         enabled_defenses: &HashSet<I>,
         defender_step: Option<&I>,
         attacker_step: Option<&I>,
-    ) -> HashSet<I> {
-        return Self::_attack_surface(
+    ) -> HashMap<I, bool> {
+        // Attacker observes compromised steps and attack surface
+        let attack_surface = Self::_attack_surface(
             graph,
             compromised_steps,
             remaining_ttc,
             enabled_defenses,
             defender_step,
             attacker_step,
+        );
+
+        graph.attack_steps.iter()
+        .filter_map(|s| match (attack_surface.contains(s), compromised_steps.contains(s)) {
+            (true, false) => Some((*s, false)),
+            (false, true) => Some((*s, true)),
+            _ => None,
+        }
         )
-        .union(&compromised_steps)
-        .cloned()
-        .collect();
+        .collect()
     }
 
     pub(crate) fn _attacker_possible_assets(

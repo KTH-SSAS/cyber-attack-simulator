@@ -21,9 +21,9 @@ pub struct VectorizedObservation {
     #[pyo3(get)]
     pub defender_possible_actions: Vec<bool>, // All available actions for the defender
     #[pyo3(get)]
-    pub defender_observation: Vec<bool>,
+    pub defender_observation: Vec<i64>,
     #[pyo3(get)]
-    pub attacker_observation: Vec<bool>,
+    pub attacker_observation: Vec<i64>,
     #[pyo3(get)]
     pub defender_reward: i64,
     #[pyo3(get)]
