@@ -90,12 +90,13 @@ where
             .get_attack_parents(node_id)
             .iter()
             .map(|&p| {
-                compromised_steps.contains(p)
-                    || match attacker_step {
+                compromised_steps.contains(p) // If the parent is compromised
+                    || match attacker_step { // If the parent will be compromised by the attacker
                         Some(a) => {
                             a == p
                                 && graph.can_step_be_compromised(
                                     compromised_steps,
+                                    enabled_defenses,
                                     ttc_remaining,
                                     a,
                                     attacker_step,
@@ -113,7 +114,6 @@ where
             .can_be_compromised(&parent_states);
 
         let compromised = compromised_steps.contains(node_id);
-
         let defended = graph.is_defended(node_id, enabled_defenses);
 
         let will_be_defended = match defender_step {
@@ -128,6 +128,45 @@ where
 
         return parent_conditions_fulfilled
             && !(compromised || defended || will_be_defended || will_be_attacked);
+    }
+
+    pub(crate) fn _step_is_observable(
+        graph: &AttackGraph<I>,
+        compromised_steps: &HashSet<I>,
+        enabled_defenses: &HashSet<I>,
+        node_id: &I,
+        ttc_remaining: &HashMap<I, TTCType>,
+        attacker_step: Option<&I>,
+        defender_step: Option<&I>,
+    ) -> bool {
+        let parent_states: Vec<bool> = graph
+            .get_attack_parents(node_id)
+            .iter()
+            .map(|&p| {
+                compromised_steps.contains(p)
+                    || match attacker_step {
+                        Some(a) => {
+                            a == p
+                                && graph.can_step_be_compromised(
+                                    compromised_steps,
+                                    enabled_defenses,
+                                    ttc_remaining,
+                                    a,
+                                    attacker_step,
+                                    defender_step,
+                                )
+                        }
+                        None => false,
+                    }
+            })
+            .collect();
+        let parent_conditions_fulfilled = graph
+            .get_step(node_id)
+            .unwrap()
+            .can_be_compromised(&parent_states);
+
+        let compromised = compromised_steps.contains(node_id);
+        return parent_conditions_fulfilled || compromised;
     }
 
     pub(crate) fn _attack_surface(
@@ -169,24 +208,24 @@ where
         defender_step: Option<&I>,
         attacker_step: Option<&I>,
     ) -> HashMap<I, bool> {
-        // Attacker observes compromised steps and attack surface
-        let attack_surface = Self::_attack_surface(
-            graph,
-            compromised_steps,
-            remaining_ttc,
-            enabled_defenses,
-            defender_step,
-            attacker_step,
-        );
-
-        graph.attack_steps.iter()
-        .filter_map(|s| match (attack_surface.contains(s), compromised_steps.contains(s)) {
-            (true, false) => Some((*s, false)),
-            (false, true) => Some((*s, true)),
-            _ => None,
-        }
-        )
-        .collect()
+        graph
+            .attack_steps
+            .iter()
+            .filter_map(|s| {
+                match Self::_step_is_observable(
+                    graph,
+                    compromised_steps,
+                    enabled_defenses,
+                    s,
+                    remaining_ttc,
+                    attacker_step,
+                    defender_step,
+                ) {
+                    false => None,
+                    true => Some((*s, compromised_steps.contains(s))),
+                }
+            })
+            .collect()
     }
 
     pub(crate) fn _attacker_possible_assets(

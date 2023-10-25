@@ -58,6 +58,7 @@ where
     pub(crate) fn can_step_be_compromised(
         &self,
         compromised_steps: &HashSet<I>,
+        enabled_defenses: &HashSet<I>,
         ttc_remaining: &HashMap<I, TTCType>,
         step: &I,
         attack_step: Option<&I>,
@@ -73,6 +74,7 @@ where
                 parent_conditions_fulfilled
                     && a == step
                     && ttc_remaining[a] == 0
+                    && !self.is_defended(step, enabled_defenses)
                     && !self.step_is_defended_by(a, d)
             }
             (Some(a), None) => parent_conditions_fulfilled && a == step && ttc_remaining[a] == 0,
@@ -367,14 +369,9 @@ where
             .iter()
             .filter_map(|step| {
                 let already_compromised = compromised_steps.contains(step);
-                let defended = graph.is_defended(step, enabled_defenses);
-                let will_be_defended = match defender_step {
-                    Some(d) => graph.step_is_defended_by(step, d),
-                    None => false,
-                };
-                match !(defended || will_be_defended) && already_compromised
-                    || graph.can_step_be_compromised(
+                match already_compromised || graph.can_step_be_compromised(
                         compromised_steps,
+                        enabled_defenses,
                         remaining_ttc,
                         step,
                         attacker_step,
