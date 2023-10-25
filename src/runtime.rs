@@ -561,7 +561,7 @@ mod tests {
             attacker_obs.observed_steps.len(),
             num_entrypoints + attacker_obs.possible_objects.len()
         );
-        assert_eq!(defender_obs.observed_steps.len(), num_entrypoints);
+        assert_eq!(defender_obs.steps_observed_as_compromised().len(), num_entrypoints);
         assert_eq!(initial_state.enabled_defenses.len(), 0);
         assert_eq!(initial_state.compromised_steps.len(), num_entrypoints);
         assert_eq!(initial_state.remaining_ttc.len(), sim.g.nodes().len());

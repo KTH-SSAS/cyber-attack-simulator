@@ -87,8 +87,8 @@ where
                 },
                 false => match is_false_obs((p, graph.confusion_for_step(i).fpr)) {
                     // Sample Bernoulli(fpr_prob)
-                    true => (*i, compromised),
-                    false => (*i, true), // We observe the step, but it is reported as a false positive
+                    true => (*i, true), // We observe the step, but it is reported as a false positive
+                    false => (*i, compromised), 
                 },
             })
             .collect()
