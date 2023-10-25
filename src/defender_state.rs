@@ -56,6 +56,7 @@ where
             observed_steps: Self::_defender_steps_observered(
                 &graph,
                 &s.compromised_steps,
+                &s.enabled_defenses,
                 &mut s.rng.clone(),
             ),
             possible_assets: Self::_defender_possible_assets(&graph, &s.enabled_defenses, None),
