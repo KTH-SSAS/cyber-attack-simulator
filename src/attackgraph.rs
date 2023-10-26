@@ -420,13 +420,7 @@ where
     }
 
     pub(crate) fn step_is_defended_by(&self, step_id: &I, defense_id: &I) -> bool {
-        let parents = self.graph.parents(step_id);
-        return parents
-            .filter_map(|f| match f.data.step_type {
-                NodeType::Defense => Some(f.id),
-                _ => None,
-            })
-            .any(|p| p == *defense_id);
+        return self.get_defense_parents(step_id).any(|p| p == defense_id);
     }
 
     pub(crate) fn ttc_params(&self) -> Vec<(I, TTCType)> {
