@@ -11,6 +11,7 @@ where
 {
     pub nodes: BTreeMap<I, Node<T, I>>,
     pub edges: Vec<(I, I)>,
+    parents: HashMap<I, Vec<I>>,
 }
 
 fn format_attributes(attributes: Option<&Vec<(String, String)>>) -> String {
@@ -28,7 +29,7 @@ fn format_attributes(attributes: Option<&Vec<(String, String)>>) -> String {
 
 impl<T, I: Eq + Hash> Graph<T, I>
 where
-    I: Debug + Ord,
+    I: Debug + Ord + Copy,
     T: Display,
 {
     /*
@@ -39,6 +40,27 @@ where
         };
     }
     */
+
+    fn _parents<'a>(edges: &'a Vec<(I, I)>, id: &'a I) -> impl Iterator<Item = &'a I> {
+        return edges
+            .iter()
+            .filter_map(move |(parent, child)| match child == id {
+                true => Some(parent),
+                false => None,
+            });
+    }
+
+    pub fn new(nodes: BTreeMap<I, Node<T, I>>, edges: Vec<(I, I)>) -> Graph<T, I> {
+        let parents = nodes
+            .iter()
+            .map(|(&id, _)| (id, Graph::<T, I>::_parents(&edges, &id).map(|x| *x).collect()))
+            .collect();
+        Graph {
+            nodes,
+            edges,
+            parents,
+        }
+    }
 
     pub fn children(&self, id: &I) -> Vec<&Node<T, I>> {
         return self
@@ -51,6 +73,7 @@ where
             .collect();
     }
 
+    /* 
     pub fn parents<'a>(&'a self, id: &'a I) -> impl Iterator<Item = &'a Node<T, I>> {
         return self
             .edges
@@ -59,6 +82,10 @@ where
                 true => Some(self.nodes.get(parent).unwrap()),
                 false => None,
             });
+    }
+    */
+    pub fn parents<'a>(&'a self, id: &'a I) -> impl Iterator<Item = &'a Node<T, I>> {
+        return self.parents.get(id).unwrap().iter().map(move |x| self.nodes.get(x).unwrap());
     }
 
     pub fn edges_to_graphviz(&self) -> String {

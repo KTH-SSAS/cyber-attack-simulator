@@ -217,7 +217,7 @@ where
             })
             .collect();
 
-        let graph = Graph { nodes, edges };
+        let graph = Graph::new(nodes, edges);
 
         let attack_steps = graph
             .nodes
