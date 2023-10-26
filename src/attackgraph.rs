@@ -387,7 +387,7 @@ where
         return self.graph.to_graphviz(attributes);
     }
 
-    pub(crate) fn get_attack_parents(&self, id: &I) -> HashSet<&I> {
+    pub(crate) fn get_attack_parents(&self, id: &I) -> Vec<&I> {
         self.graph
             .parents(id)
             .iter()
@@ -398,7 +398,7 @@ where
             .collect()
     }
 
-    pub(crate) fn get_defense_parents(&self, id: &I) -> HashSet<&I> {
+    pub(crate) fn get_defense_parents(&self, id: &I) -> Vec<&I> {
         self.graph
             .parents(id)
             .iter()
