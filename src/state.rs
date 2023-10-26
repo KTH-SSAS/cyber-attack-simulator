@@ -43,15 +43,14 @@ where
             return self.is_entry(node_id);
         }
 
-        let parent_states = attack_parents
+        let mut parent_states = attack_parents
             .iter()
-            .map(|&p| compromised_steps.contains(p))
-            .collect();
+            .map(|&p| compromised_steps.contains(p));
 
         return self
             .get_step(node_id)
             .unwrap()
-            .can_be_compromised(&parent_states);
+            .can_be_compromised(&mut parent_states);
     }
 
     pub(crate) fn can_step_be_compromised(

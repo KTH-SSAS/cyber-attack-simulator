@@ -13,7 +13,6 @@ where
     pub edges: Vec<(I, I)>,
 }
 
-
 fn format_attributes(attributes: Option<&Vec<(String, String)>>) -> String {
     match attributes {
         Some(attributes) => {
@@ -59,7 +58,7 @@ where
             .filter_map(move |(parent, child)| match child == id {
                 true => Some(self.nodes.get(parent).unwrap()),
                 false => None,
-            })
+            });
     }
 
     pub fn edges_to_graphviz(&self) -> String {

@@ -40,7 +40,10 @@ pub struct AttackSimError {
 }
 pub type AttackSimResult<T> = Result<T, AttackSimError>;
 
-pub struct AttackSimulator<T> where T : Ord {
+pub struct AttackSimulator<T>
+where
+    T: Ord,
+{
     runtime: SimulatorRuntime<T>,
     pub config: SimulatorConfig,
     pub actions: HashMap<String, usize>,
@@ -91,7 +94,11 @@ impl AttackSimulator<(usize, usize, usize)> {
         &mut self,
         seed: Option<u64>,
     ) -> AttackSimResult<(
-        (SimulatorObs<(usize, usize, usize)>, AttackerObs<(usize, usize, usize)>, DefenderObs<(usize, usize, usize)>),
+        (
+            SimulatorObs<(usize, usize, usize)>,
+            AttackerObs<(usize, usize, usize)>,
+            DefenderObs<(usize, usize, usize)>,
+        ),
         Info,
     )> {
         match self.runtime.reset(seed) {
@@ -102,13 +109,7 @@ impl AttackSimulator<(usize, usize, usize)> {
         }
     }
 
-    pub fn reset_vec(
-        &self,
-        seed: Option<u64>,
-    ) -> AttackSimResult<(
-        VectorizedObservation,
-        Info,
-    )> {
+    pub fn reset_vec(&self, seed: Option<u64>) -> AttackSimResult<(VectorizedObservation, Info)> {
         match self.runtime.reset_vec(seed) {
             Ok((obs, info)) => Ok((obs, info)),
             Err(e) => Err(AttackSimError {
@@ -121,10 +122,13 @@ impl AttackSimulator<(usize, usize, usize)> {
         &self,
         actions: HashMap<String, (usize, Option<usize>)>,
     ) -> AttackSimResult<(
-        (SimulatorObs<(usize, usize, usize)>, AttackerObs<(usize, usize, usize)>, DefenderObs<(usize, usize, usize)>),
+        (
+            SimulatorObs<(usize, usize, usize)>,
+            AttackerObs<(usize, usize, usize)>,
+            DefenderObs<(usize, usize, usize)>,
+        ),
         Info,
-    )>
-    {
+    )> {
         match self.runtime.step(actions) {
             Ok((obs, info, _)) => Ok((obs, info)),
             Err(e) => Err(AttackSimError {
@@ -136,11 +140,7 @@ impl AttackSimulator<(usize, usize, usize)> {
     pub fn step_vec(
         &self,
         actions: HashMap<String, (usize, Option<usize>)>,
-    ) -> AttackSimResult<(
-        VectorizedObservation,
-        Info,
-    )>
-    {
+    ) -> AttackSimResult<(VectorizedObservation, Info)> {
         match self.runtime.step_vec(actions) {
             Ok((obs, info)) => Ok((obs, info)),
             Err(e) => Err(AttackSimError {
@@ -226,6 +226,8 @@ mod tests {
 
             let action_dict = HashMap::from([("attacker".to_string(), (action, Some(step)))]);
             let (new_observation, _) = sim.step_vec(action_dict).unwrap();
+
+            assert_eq!(new_observation.state[step], true);
 
             //let graphviz = sim.to_graphviz();
             //let file = std::fs::File::create(format!("test_attacker_{:0>2}.dot", time)).unwrap();

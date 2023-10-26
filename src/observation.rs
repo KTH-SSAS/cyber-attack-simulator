@@ -108,12 +108,10 @@ pub struct Info {
     pub perc_compromised_flags: f64,
 }
 
-
 // Tests
 #[cfg(test)]
 mod tests {
     use super::VectorizedObservation;
-
 
     #[test]
     fn test_serialize() {

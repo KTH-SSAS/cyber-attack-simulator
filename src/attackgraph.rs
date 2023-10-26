@@ -1,9 +1,9 @@
+use core::fmt::Debug;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet, BTreeMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt::{self, Display};
 use std::hash::Hash;
-use core::fmt::Debug;
 type GraphResult<T> = std::result::Result<T, GraphError>;
 use crate::graph::{Graph, Node};
 use crate::loading::MALAttackStep;
@@ -109,10 +109,14 @@ fn split_asset_name(asset_name: &str) -> (String, usize) {
 fn split_id(mal_id: &str) -> (String, usize, String) {
     let (asset, asset_id, name) = match mal_id.split_once(":") {
         Some((asset, rest)) => match rest.split_once(":") {
-            Some((asset_id, name)) => (asset.to_string(), asset_id.parse::<usize>().unwrap(), name.to_string()),
+            Some((asset_id, name)) => (
+                asset.to_string(),
+                asset_id.parse::<usize>().unwrap(),
+                name.to_string(),
+            ),
             None => panic!("Invalid part: {} in {}", rest, mal_id),
         },
-        None => panic!("Invalid id: {}", mal_id)
+        None => panic!("Invalid id: {}", mal_id),
     };
     return (asset, asset_id, name);
 }
@@ -127,14 +131,19 @@ impl AttackStep {
         return format!("{}:{}", self.asset, self.asset_id);
     }
 
-    pub(crate) fn can_be_compromised(&self, parent_states: &Vec<bool>) -> bool {
-        if parent_states.len() == 0 {
-            return false;
+    pub(crate) fn can_be_compromised_vec(&self, parent_states: &Vec<bool>) -> bool {
+        match (&self.logic, parent_states.iter().any(|&x| x)) {
+            (Logic::And, p) => p && parent_states.iter().all(|&x| x),
+            (Logic::Or, p) => p,
         }
-        match self.logic {
-            Logic::And => parent_states.iter().all(|x| *x),
-            Logic::Or => parent_states.iter().any(|x| *x),
-        }
+    }
+
+    pub(crate) fn can_be_compromised(&self, parent_states: impl Iterator<Item = bool>) -> bool {
+        //let mut parent_states = parent_states;
+        parent_states.fold(false, |acc, x| match (&self.logic, x) {
+            (Logic::And, p) => acc && p,
+            (Logic::Or, p) => acc || p,
+        })
     }
 
     fn from(s: &MALAttackStep, fpr: f64, fnr: f64) -> AttackStep {
@@ -179,7 +188,7 @@ where
     ) -> AttackGraph<(usize, usize, usize)> {
         // Hash the node names to numerical indexes
 
-        let translate_id = |x: &String | {
+        let translate_id = |x: &String| {
             let (asset, asset_id, name) = split_id(&x);
             let id = (vocab[&asset], asset_id, vocab[&name]);
             return id;
@@ -266,7 +275,10 @@ impl PartialEq for AttackStep {
     }
 }
 
-pub(crate) struct AttackGraph<I> where I : Ord {
+pub(crate) struct AttackGraph<I>
+where
+    I: Ord,
+{
     graph: Graph<AttackStep, I>,
     pub(crate) attack_steps: HashSet<I>,
     pub(crate) defense_steps: HashSet<I>,

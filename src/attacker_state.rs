@@ -38,8 +38,8 @@ where
 
         Self {
             possible_actions: all_actions
-            .iter()
-            .filter_map(|(k, v)| match v {
+                .iter()
+                .filter_map(|(k, v)| match v {
                     true => Some(k.clone()),
                     false => None,
                 })
@@ -53,15 +53,9 @@ where
                 None,
             ),
 
-            possible_assets: Self::_attacker_possible_assets(
-                &graph,
-                &attack_surface,
-            ),
+            possible_assets: Self::_attacker_possible_assets(&graph, &attack_surface),
 
-            possible_steps: Self::_attacker_possible_actions(
-                &graph,
-                &attack_surface,
-            ),
+            possible_steps: Self::_attacker_possible_actions(&graph, &attack_surface),
             reward: s.attacker_reward(&graph),
             possible_objects: attack_surface,
         }
@@ -78,10 +72,8 @@ where
     ) -> bool {
         // Returns true if a node can be attacked given the current state of the
         // graph meaning that the
-        let parent_states: Vec<bool> = graph
-            .get_attack_parents(node_id)
-            .map(|p| {
-                compromised_steps.contains(p) // If the parent is compromised
+        let parent_states = graph.get_attack_parents(node_id).map(|p| {
+            compromised_steps.contains(p) // If the parent is compromised
                     || match attacker_step { // If the parent will be compromised by the attacker
                         Some(a) => {
                             a == p
@@ -96,13 +88,12 @@ where
                         }
                         None => false,
                     }
-            })
-            .collect();
+        });
 
         let parent_conditions_fulfilled = graph
             .get_step(node_id)
             .unwrap()
-            .can_be_compromised(&parent_states);
+            .can_be_compromised(parent_states);
 
         let compromised = compromised_steps.contains(node_id);
         let defended = graph.is_defended(node_id, enabled_defenses);
@@ -130,30 +121,27 @@ where
         attacker_step: Option<&I>,
         defender_step: Option<&I>,
     ) -> bool {
-        let parent_states: Vec<bool> = graph
-            .get_attack_parents(node_id)
-            .map(|p| {
-                compromised_steps.contains(p)
-                    || match attacker_step {
-                        Some(a) => {
-                            a == p
-                                && graph.can_step_be_compromised(
-                                    compromised_steps,
-                                    enabled_defenses,
-                                    ttc_remaining,
-                                    a,
-                                    attacker_step,
-                                    defender_step,
-                                )
-                        }
-                        None => false,
+        let parent_states = graph.get_attack_parents(node_id).map(|p| {
+            compromised_steps.contains(p)
+                || match attacker_step {
+                    Some(a) => {
+                        a == p
+                            && graph.can_step_be_compromised(
+                                compromised_steps,
+                                enabled_defenses,
+                                ttc_remaining,
+                                a,
+                                attacker_step,
+                                defender_step,
+                            )
                     }
-            })
-            .collect();
+                    None => false,
+                }
+        });
         let parent_conditions_fulfilled = graph
             .get_step(node_id)
             .unwrap()
-            .can_be_compromised(&parent_states);
+            .can_be_compromised(parent_states);
 
         let compromised = compromised_steps.contains(node_id);
         return parent_conditions_fulfilled || compromised;
@@ -223,12 +211,12 @@ where
         attack_surface: &HashSet<I>,
     ) -> HashSet<String> {
         attack_surface
-        .iter()
-        .filter_map(|x| match graph.get_step(x) {
-            Ok(step) => Some(step.asset()),
-            Err(_e) => None,
-        })
-        .collect::<HashSet<String>>()
+            .iter()
+            .filter_map(|x| match graph.get_step(x) {
+                Ok(step) => Some(step.asset()),
+                Err(_e) => None,
+            })
+            .collect::<HashSet<String>>()
     }
 
     pub(crate) fn _attacker_possible_actions(
@@ -236,14 +224,14 @@ where
         attack_surface: &HashSet<I>,
     ) -> HashSet<String> {
         attack_surface
-        .iter()
-        .filter_map(|x| match graph.get_step(x) {
-            Ok(step) => Some(step.name.clone()),
-            Err(_e) => None,
-        })
-        .collect::<HashSet<String>>()
-        .union(&HashSet::from_iter(vec!["wait".to_string()]))
-        .cloned()
-        .collect()
+            .iter()
+            .filter_map(|x| match graph.get_step(x) {
+                Ok(step) => Some(step.name.clone()),
+                Err(_e) => None,
+            })
+            .collect::<HashSet<String>>()
+            .union(&HashSet::from_iter(vec!["wait".to_string()]))
+            .cloned()
+            .collect()
     }
 }
