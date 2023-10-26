@@ -37,10 +37,9 @@ where
         ]);
 
         Self {
-            possible_objects: attack_surface,
             possible_actions: all_actions
-                .iter()
-                .filter_map(|(k, v)| match v {
+            .iter()
+            .filter_map(|(k, v)| match v {
                     true => Some(k.clone()),
                     false => None,
                 })
@@ -56,22 +55,15 @@ where
 
             possible_assets: Self::_attacker_possible_assets(
                 &graph,
-                &s.compromised_steps,
-                &s.remaining_ttc,
-                &s.enabled_defenses,
-                None,
-                None,
+                &attack_surface,
             ),
 
             possible_steps: Self::_attacker_possible_actions(
                 &graph,
-                &s.compromised_steps,
-                &s.remaining_ttc,
-                &s.enabled_defenses,
-                None,
-                None,
+                &attack_surface,
             ),
             reward: s.attacker_reward(&graph),
+            possible_objects: attack_surface,
         }
     }
 
@@ -228,20 +220,9 @@ where
 
     pub(crate) fn _attacker_possible_assets(
         graph: &AttackGraph<I>,
-        compromised_steps: &HashSet<I>,
-        remaining_ttc: &HashMap<I, u64>,
-        enabled_defenses: &HashSet<I>,
-        defender_step: Option<&I>,
-        attacker_step: Option<&I>,
+        attack_surface: &HashSet<I>,
     ) -> HashSet<String> {
-        Self::_attack_surface(
-            graph,
-            compromised_steps,
-            remaining_ttc,
-            enabled_defenses,
-            defender_step,
-            attacker_step,
-        )
+        attack_surface
         .iter()
         .filter_map(|x| match graph.get_step(x) {
             Ok(step) => Some(step.asset()),
@@ -252,20 +233,9 @@ where
 
     pub(crate) fn _attacker_possible_actions(
         graph: &AttackGraph<I>,
-        compromised_steps: &HashSet<I>,
-        remaining_ttc: &HashMap<I, u64>,
-        enabled_defenses: &HashSet<I>,
-        defender_step: Option<&I>,
-        attacker_step: Option<&I>,
+        attack_surface: &HashSet<I>,
     ) -> HashSet<String> {
-        Self::_attack_surface(
-            graph,
-            compromised_steps,
-            remaining_ttc,
-            enabled_defenses,
-            defender_step,
-            attacker_step,
-        )
+        attack_surface
         .iter()
         .filter_map(|x| match graph.get_step(x) {
             Ok(step) => Some(step.name.clone()),
