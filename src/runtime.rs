@@ -80,7 +80,7 @@ pub(crate) struct SimulatorRuntime<I> {
 
 impl<I> SimulatorRuntime<I>
 where
-    I: Eq + Hash + Ord + Display + Copy + Debug,
+    I: Eq + Hash + Ord + Debug + Copy + Debug,
 {
     pub fn vocab(&self) -> HashMap<String, usize> {
         return self.g.vocab.clone();
@@ -652,16 +652,16 @@ mod tests {
 
         let edges = observation.edges;
         let entrypoints = sim.g.entry_points();
-        let entrypoint_index = sim
+        let entrypoint_indices: Vec<&usize> = sim
             .id_to_index
             .iter()
-            .filter_map(|(id, _)| match entrypoints.get(id) {
-                Some(i) => Some(i),
+            .filter_map(|(id, idx)| match entrypoints.get(id) {
+                Some(i) => Some(idx),
                 None => None,
             })
-            .collect::<Vec<&usize>>();
+            .collect();
 
-        for index in entrypoint_index {
+        for index in entrypoint_indices {
             let indices_from_entrypoint = edges
                 .iter()
                 .filter_map(|(from, to)| match from == index {

@@ -3,10 +3,27 @@ use std::collections::HashSet;
 use std::fmt::Display;
 use std::hash::Hash;
 use std::hash::Hasher;
+use std::fmt::Debug;
+
+use cached::proc_macro::cached;
+use cached::SizedCache;
 
 pub struct Graph<T, I> {
     pub nodes: HashMap<I, Node<T, I>>,
-    pub edges: HashSet<(I, I)>,
+    pub edges: Vec<(I, I)>,
+}
+
+#[cached(
+    type = "SizedCache<String, HashSet<usize>>",
+    create = "{ SizedCache::with_size(100) }",
+    convert = r#"{ format!("{}", id) }"#
+)]
+fn parents_cached<I>(edges: HashSet<(usize, usize)>, id: usize) -> HashSet<usize> {
+    return edges
+        .iter()
+        .filter(|(_, child)| *child == id)
+        .map(|(parent, _)| parent.clone())
+        .collect();
 }
 
 fn format_attributes(attributes: Option<&Vec<(String, String)>>) -> String {
@@ -24,9 +41,9 @@ fn format_attributes(attributes: Option<&Vec<(String, String)>>) -> String {
 
 impl<T, I: Eq + Hash> Graph<T, I>
 where
-    I: Display,
-    T: std::fmt::Display,
-{
+    I: Debug,
+    T: Display,
+{   
     /*
     pub fn get_data(&self, id: &I) -> Option<&T> {
         return match self.nodes.get(id) {
@@ -57,7 +74,7 @@ where
     pub fn edges_to_graphviz(&self) -> String {
         self.edges
             .iter()
-            .map(|(parent, child)| format!("{} -> {}", parent, child))
+            .map(|(parent, child)| format!("\"{:?}\" -> \"{:?}\"", parent, child))
             .collect::<Vec<String>>()
             .join("\n")
     }
@@ -65,7 +82,7 @@ where
     pub fn nodes_to_graphviz(&self, attributes: &HashMap<&I, Vec<(String, String)>>) -> String {
         self.nodes
             .iter()
-            .map(|(id, _node)| format!("{} [{}]", id, format_attributes(attributes.get(id))))
+            .map(|(id, _node)| format!("\"{:?}\" [{}]", id, format_attributes(attributes.get(id))))
             .collect::<Vec<String>>()
             .join("\n")
     }

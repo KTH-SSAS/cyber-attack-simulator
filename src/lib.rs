@@ -50,12 +50,12 @@ pub struct AttackSimulator<T> {
     pub show_false: bool,
 }
 
-impl AttackSimulator<usize> {
+impl AttackSimulator<(usize, usize, usize)> {
     pub fn new(
         config: SimulatorConfig,
         graph_filename: String,
         vocab_filename: Option<&str>,
-    ) -> AttackSimResult<AttackSimulator<usize>> {
+    ) -> AttackSimResult<AttackSimulator<(usize, usize, usize)>> {
         let graph = match load_graph_from_json(&graph_filename, vocab_filename, 0.0, 0.0) {
             Ok(graph) => graph,
             Err(e) => {
@@ -91,7 +91,7 @@ impl AttackSimulator<usize> {
         &mut self,
         seed: Option<u64>,
     ) -> AttackSimResult<(
-        (SimulatorObs<usize>, AttackerObs<usize>, DefenderObs<usize>),
+        (SimulatorObs<(usize, usize, usize)>, AttackerObs<(usize, usize, usize)>, DefenderObs<(usize, usize, usize)>),
         Info,
     )> {
         match self.runtime.reset(seed) {
@@ -121,7 +121,7 @@ impl AttackSimulator<usize> {
         &self,
         actions: HashMap<String, (usize, Option<usize>)>,
     ) -> AttackSimResult<(
-        (SimulatorObs<usize>, AttackerObs<usize>, DefenderObs<usize>),
+        (SimulatorObs<(usize, usize, usize)>, AttackerObs<(usize, usize, usize)>, DefenderObs<(usize, usize, usize)>),
         Info,
     )>
     {
@@ -168,7 +168,7 @@ mod tests {
     const TEST_FILENAME: &str = "graphs/corelang.json";
     const TEST_VOCAB: Option<&str> = None; // Some("mal/corelang_vocab_merged.json");
 
-    fn get_sim_from_filename(filename: &str) -> runtime::SimulatorRuntime<usize> {
+    fn get_sim_from_filename(filename: &str) -> runtime::SimulatorRuntime<(usize, usize, usize)> {
         let graph = load_graph_from_json(filename, TEST_VOCAB, 0.0, 0.0).unwrap();
         let config = SimulatorConfig {
             seed: Some(0),

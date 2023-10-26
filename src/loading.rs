@@ -102,7 +102,7 @@ pub(crate) fn load_graph_from_json(
     vocab_filename: Option<&str>,
     fnr: f64,
     fpr: f64,
-) -> IOResult<AttackGraph<usize>> {
+) -> IOResult<AttackGraph<(usize, usize, usize)>> {
     let file = match File::open(filename) {
         Ok(f) => f,
         Err(e) => {
@@ -219,7 +219,7 @@ mod tests {
 
     #[test]
     fn load_mal_graph() {
-        let filename = "graphs/four_ways_mod.json";
+        let filename = "graphs/corelang.json";
         let vocab_filename = "mal/corelang_vocab_merged.json";
         let attack_graph = load_graph_from_json(filename, Some(vocab_filename), 0.0, 0.0).unwrap();
 

@@ -22,7 +22,7 @@ pub struct DefenderObs<I> {
 
 impl<I> DefenderObs<I>
 where
-    I: Eq + Hash + Ord + Display + Copy + Debug,
+    I: Eq + Hash + Ord + Copy + Debug,
 {
 
     pub(crate) fn steps_observed_as_compromised(&self) -> HashSet<I> {

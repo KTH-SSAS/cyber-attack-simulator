@@ -19,7 +19,7 @@ pub struct AttackerObs<I> {
 
 impl<I> AttackerObs<I>
 where
-    I: Eq + Hash + Ord + Display + Copy + Debug,
+    I: Eq + Hash + Ord + Copy + Debug,
 {
     pub(crate) fn new(s: &SimulatorState<I>, graph: &AttackGraph<I>) -> Self {
         let attack_surface = Self::_attack_surface(

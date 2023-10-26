@@ -29,7 +29,7 @@ impl std::error::Error for StateError {
 
 impl<I> AttackGraph<I>
 where
-    I: Eq + Hash + Ord + Display + Copy + Debug,
+    I: Eq + Hash + Ord + Copy + Debug,
 {
     pub(crate) fn is_defended(&self, node: &I, enabled_defenses: &HashSet<I>) -> bool {
         self.get_defense_parents(node)
@@ -65,7 +65,7 @@ where
         defense_step: Option<&I>,
     ) -> bool
     where
-        I: Eq + Hash + Ord + Display + Copy + Debug,
+        I: Eq + Hash + Ord + Copy + Debug,
     {
         let parent_conditions_fulfilled = self.parent_conditions_fulfilled(compromised_steps, step);
 
@@ -106,7 +106,7 @@ pub struct SimulatorObs<I> {
 
 impl<I> From<&SimulatorState<I>> for SimulatorObs<I>
 where
-    I: Eq + Hash + Ord + Display + Copy + Debug,
+    I: Eq + Hash + Ord + Copy + Debug,
 {
     fn from(state: &SimulatorState<I>) -> Self {
         SimulatorObs {
@@ -133,7 +133,7 @@ where
 
 impl<I> SimulatorState<I>
 where
-    I: Eq + Hash + Ord + Display + Copy + Debug,
+    I: Eq + Hash + Ord + Copy + Debug,
 {
     pub fn new(
         graph: &AttackGraph<I>,

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fmt::{self, Display};
 use std::hash::Hash;
-
+use core::fmt::Debug;
 type GraphResult<T> = std::result::Result<T, GraphError>;
 use crate::graph::{Graph, Node};
 use crate::loading::MALAttackStep;
@@ -98,6 +98,25 @@ impl Display for AttackStep {
     }
 }
 
+fn split_asset_name(asset_name: &str) -> (String, usize) {
+    let (asset, asset_id) = match asset_name.split_once(":") {
+        Some((asset, asset_id)) => (asset.to_string(), asset_id.parse::<usize>().unwrap()),
+        None => (asset_name.to_string(), 0),
+    };
+    return (asset, asset_id);
+}
+
+fn split_id(mal_id: &str) -> (String, usize, String) {
+    let (asset, asset_id, name) = match mal_id.split_once(":") {
+        Some((asset, rest)) => match rest.split_once(":") {
+            Some((asset_id, name)) => (asset.to_string(), asset_id.parse::<usize>().unwrap(), name.to_string()),
+            None => panic!("Invalid part: {} in {}", rest, mal_id),
+        },
+        None => panic!("Invalid id: {}", mal_id)
+    };
+    return (asset, asset_id, name);
+}
+
 impl AttackStep {
     pub(crate) fn to_info_tuple(&self) -> (String, usize, String) {
         //split name by colon
@@ -120,10 +139,7 @@ impl AttackStep {
 
     fn from(s: &MALAttackStep, fpr: f64, fnr: f64) -> AttackStep {
         let node_type = NodeType::from(s.node_type.as_str());
-        let (asset, asset_id) = match s.asset.split_once(":") {
-            Some((asset, asset_id)) => (asset.to_string(), asset_id.parse::<usize>().unwrap()),
-            None => (s.asset.clone(), 0),
-        };
+        let (asset, asset_id) = split_asset_name(&s.asset);
         AttackStep {
             id: s.id.clone(),
             name: s.name.clone(),
@@ -142,7 +158,7 @@ impl AttackStep {
 
 impl<I> AttackGraph<I>
 where
-    I: Eq + Hash + Ord + Display + Copy,
+    I: Eq + Hash + Ord + Debug + Copy,
 {
     pub(crate) fn word2idx(&self, word: String) -> usize {
         let word = match self.vocab.get(&word) {
@@ -160,18 +176,19 @@ where
         vocab: HashMap<String, usize>,
         fpr: f64,
         fnr: f64,
-    ) -> AttackGraph<usize> {
+    ) -> AttackGraph<(usize, usize, usize)> {
         // Hash the node names to numerical indexes
-        let numerical_indexes = nodes
-            .iter()
-            .enumerate()
-            .map(|(i, s)| (s.id.clone(), i))
-            .collect::<HashMap<String, usize>>();
+
+        let translate_id = |x: &String | {
+            let (asset, asset_id, name) = split_id(&x);
+            let id = (vocab[&asset], asset_id, vocab[&name]);
+            return id;
+        };
 
         let nodes = nodes
             .iter()
             .map(|s| {
-                let id = numerical_indexes[&s.id];
+                let id = translate_id(&s.id);
                 (
                     id,
                     Node {
@@ -185,11 +202,8 @@ where
         let edges = edges
             .iter()
             .map(|(parent, child)| {
-                let parent = numerical_indexes[parent];
-                let child = match numerical_indexes.get(child) {
-                    Some(child) => *child,
-                    None => panic!("No such child node for {}: {}", parent, child),
-                };
+                let parent = translate_id(parent);
+                let child = translate_id(child);
                 (parent, child)
             })
             .collect();
@@ -198,23 +212,23 @@ where
 
         let attack_steps = graph
             .nodes
-            .values()
-            .filter_map(|n| match &n.data.step_type {
+            .iter()
+            .filter_map(|(i, n)| match &n.data.step_type {
                 NodeType::Defense => None,
-                _ => Some(numerical_indexes[&n.data.id]),
+                _ => Some(*i),
             })
             .collect();
 
         let defenses = graph
             .nodes
-            .values()
-            .filter_map(|n| match &n.data.step_type {
-                NodeType::Defense => Some(numerical_indexes[&n.data.id]),
+            .iter()
+            .filter_map(|(i, n)| match &n.data.step_type {
+                NodeType::Defense => Some(*i),
                 _ => None,
             })
             .collect();
 
-        let flags = flags.iter().map(|x| numerical_indexes[x]).collect();
+        let flags = flags.iter().map(|x| translate_id(x)).collect();
 
         // let defense_indices = steps
         //     .iter()
@@ -228,13 +242,14 @@ where
         //     .map(|s| s.name.clone())
         //     .collect::<Vec<String>>();
 
+        let entry_points = entry_points.iter().map(|x| translate_id(x)).collect();
         let graph = AttackGraph {
             vocab,
             graph,
             attack_steps,
             flags,
             defense_steps: defenses,
-            entry_points: entry_points.iter().map(|x| numerical_indexes[x]).collect(),
+            entry_points,
         };
 
         return graph;
@@ -282,13 +297,13 @@ fn get_children<I>(id: &I, edges: &Vec<(I, I)>) -> HashSet<I> where I: Eq + Hash
 
 impl<I> AttackGraph<I>
 where
-    I: Eq + Hash + Ord + Display + Copy,
+    I: Eq + Hash + Ord + Debug + Copy,
 {
     pub(crate) fn nodes(&self) -> &HashMap<I, Node<AttackStep, I>> {
         return &self.graph.nodes;
     }
 
-    pub(crate) fn edges(&self) -> &HashSet<(I, I)> {
+    pub(crate) fn edges(&self) -> &Vec<(I, I)> {
         return &self.graph.edges;
     }
 
@@ -296,7 +311,7 @@ where
         match self.graph.nodes.get(id) {
             Some(step) => Ok(&step.data),
             None => Err(GraphError {
-                message: format!("No such step: {}", id),
+                message: format!("No such step: {:?}", id),
             }),
         }
     }
