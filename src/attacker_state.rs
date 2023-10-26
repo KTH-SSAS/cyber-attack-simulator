@@ -88,8 +88,7 @@ where
         // graph meaning that the
         let parent_states: Vec<bool> = graph
             .get_attack_parents(node_id)
-            .iter()
-            .map(|&p| {
+            .map(|p| {
                 compromised_steps.contains(p) // If the parent is compromised
                     || match attacker_step { // If the parent will be compromised by the attacker
                         Some(a) => {
@@ -141,8 +140,7 @@ where
     ) -> bool {
         let parent_states: Vec<bool> = graph
             .get_attack_parents(node_id)
-            .iter()
-            .map(|&p| {
+            .map(|p| {
                 compromised_steps.contains(p)
                     || match attacker_step {
                         Some(a) => {

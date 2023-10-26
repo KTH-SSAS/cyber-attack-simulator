@@ -52,15 +52,14 @@ where
             .collect();
     }
 
-    pub fn parents(&self, id: &I) -> Vec<&Node<T, I>> {
+    pub fn parents<'a>(&'a self, id: &'a I) -> impl Iterator<Item = &'a Node<T, I>> {
         return self
             .edges
             .iter()
-            .filter_map(|(parent, child)| match child == id {
+            .filter_map(move |(parent, child)| match child == id {
                 true => Some(self.nodes.get(parent).unwrap()),
                 false => None,
             })
-            .collect();
     }
 
     pub fn edges_to_graphviz(&self) -> String {

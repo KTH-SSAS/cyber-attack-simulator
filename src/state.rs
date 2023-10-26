@@ -33,18 +33,17 @@ where
 {
     pub(crate) fn is_defended(&self, node: &I, enabled_defenses: &HashSet<I>) -> bool {
         self.get_defense_parents(node)
-            .iter()
             .any(|d| enabled_defenses.contains(d))
     }
 
     fn parent_conditions_fulfilled(&self, compromised_steps: &HashSet<I>, node_id: &I) -> bool {
-        let attack_parents: HashSet<&I> = self.get_attack_parents(node_id);
+        let attack_parents: HashSet<&I> = self.get_attack_parents(node_id).collect();
 
         if attack_parents.is_empty() {
             return self.is_entry(node_id);
         }
 
-        let parent_states: Vec<bool> = attack_parents
+        let parent_states = attack_parents
             .iter()
             .map(|&p| compromised_steps.contains(p))
             .collect();
@@ -369,7 +368,8 @@ where
             .iter()
             .filter_map(|step| {
                 let already_compromised = compromised_steps.contains(step);
-                match already_compromised || graph.can_step_be_compromised(
+                match already_compromised
+                    || graph.can_step_be_compromised(
                         compromised_steps,
                         enabled_defenses,
                         remaining_ttc,

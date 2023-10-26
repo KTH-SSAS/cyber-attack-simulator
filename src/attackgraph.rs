@@ -387,32 +387,29 @@ where
         return self.graph.to_graphviz(attributes);
     }
 
-    pub(crate) fn get_attack_parents(&self, id: &I) -> Vec<&I> {
+    pub(crate) fn get_attack_parents<'a>(&'a self, id: &'a I) -> impl Iterator<Item = &'a I> {
         self.graph
             .parents(id)
-            .iter()
-            .filter_map(|&p| match (&p.data.step_type, NodeType::Defense) {
+            .map(|p| (&p.id, &p.data.step_type))
+            .filter_map(|(id, step_type)| match (step_type, NodeType::Defense) {
                 (NodeType::Defense, NodeType::Defense) => None,
-                _ => Some(&p.id),
+                _ => Some(id),
             }) // Exclude defense parents
-            .collect()
     }
 
-    pub(crate) fn get_defense_parents(&self, id: &I) -> Vec<&I> {
+    pub(crate) fn get_defense_parents<'a>(&'a self, id: &'a I) -> impl Iterator<Item = &'a I> {
         self.graph
             .parents(id)
-            .iter()
-            .filter_map(|&p| match (&p.data.step_type, NodeType::Defense) {
-                (NodeType::Defense, NodeType::Defense) => Some(&p.id),
+            .map(|p| (&p.id, &p.data.step_type))
+            .filter_map(|(id, step_type)| match (step_type, NodeType::Defense) {
+                (NodeType::Defense, NodeType::Defense) => Some(id),
                 _ => None,
             })
-            .collect()
     }
 
     pub(crate) fn step_is_defended_by(&self, step_id: &I, defense_id: &I) -> bool {
         let parents = self.graph.parents(step_id);
         return parents
-            .iter()
             .filter_map(|f| match f.data.step_type {
                 NodeType::Defense => Some(f.id),
                 _ => None,
