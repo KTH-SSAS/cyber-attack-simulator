@@ -6,7 +6,7 @@ use rand_chacha::ChaChaRng;
 
 use rand_distr::Standard;
 use std::collections::{HashMap, HashSet};
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 use std::hash::Hash;
 
 pub struct DefenderObs<I> {

@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 use std::hash::Hash;
 use std::{fmt, vec};
 
@@ -51,7 +51,7 @@ impl<I> Default for ActionResult<I> {
 
 type ParameterAction = (usize, Option<usize>);
 
-pub(crate) struct SimulatorRuntime<I> {
+pub(crate) struct SimulatorRuntime<I> where I : Ord{
     g: AttackGraph<I>,
     state: RefCell<SimulatorState<I>>,
     history: RefCell<Vec<SimulatorState<I>>>,
@@ -656,7 +656,7 @@ mod tests {
             .id_to_index
             .iter()
             .filter_map(|(id, idx)| match entrypoints.get(id) {
-                Some(i) => Some(idx),
+                Some(_i) => Some(idx),
                 None => None,
             })
             .collect();

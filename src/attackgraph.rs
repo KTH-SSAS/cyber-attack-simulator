@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, BTreeMap};
 use std::fmt::{self, Display};
 use std::hash::Hash;
 use core::fmt::Debug;
@@ -266,7 +266,7 @@ impl PartialEq for AttackStep {
     }
 }
 
-pub(crate) struct AttackGraph<I> {
+pub(crate) struct AttackGraph<I> where I : Ord {
     graph: Graph<AttackStep, I>,
     pub(crate) attack_steps: HashSet<I>,
     pub(crate) defense_steps: HashSet<I>,
@@ -299,7 +299,7 @@ impl<I> AttackGraph<I>
 where
     I: Eq + Hash + Ord + Debug + Copy,
 {
-    pub(crate) fn nodes(&self) -> &HashMap<I, Node<AttackStep, I>> {
+    pub(crate) fn nodes(&self) -> &BTreeMap<I, Node<AttackStep, I>> {
         return &self.graph.nodes;
     }
 
@@ -376,7 +376,7 @@ where
         self.attack_steps.len()
     }
 
-    pub(crate) fn children(&self, id: &I) -> HashSet<&Node<AttackStep, I>> {
+    pub(crate) fn children(&self, id: &I) -> Vec<&Node<AttackStep, I>> {
         return self.graph.children(id);
     }
 

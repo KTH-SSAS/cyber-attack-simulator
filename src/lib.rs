@@ -40,7 +40,7 @@ pub struct AttackSimError {
 }
 pub type AttackSimResult<T> = Result<T, AttackSimError>;
 
-pub struct AttackSimulator<T> {
+pub struct AttackSimulator<T> where T : Ord {
     runtime: SimulatorRuntime<T>,
     pub config: SimulatorConfig,
     pub actions: HashMap<String, usize>,

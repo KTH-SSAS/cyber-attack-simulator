@@ -8,7 +8,7 @@ use rand_distr::Exp;
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 use std::hash::Hash;
 #[derive(Debug, Clone)]
 pub(crate) struct StateError {

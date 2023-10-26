@@ -1,15 +1,19 @@
+use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::fmt::Debug;
 use std::fmt::Display;
 use std::hash::Hash;
 use std::hash::Hasher;
-use std::fmt::Debug;
 
 use cached::proc_macro::cached;
 use cached::SizedCache;
 
-pub struct Graph<T, I> {
-    pub nodes: HashMap<I, Node<T, I>>,
+pub struct Graph<T, I>
+where
+    I: Ord,
+{
+    pub nodes: BTreeMap<I, Node<T, I>>,
     pub edges: Vec<(I, I)>,
 }
 
@@ -41,9 +45,9 @@ fn format_attributes(attributes: Option<&Vec<(String, String)>>) -> String {
 
 impl<T, I: Eq + Hash> Graph<T, I>
 where
-    I: Debug,
+    I: Debug + Ord,
     T: Display,
-{   
+{
     /*
     pub fn get_data(&self, id: &I) -> Option<&T> {
         return match self.nodes.get(id) {
@@ -53,21 +57,25 @@ where
     }
     */
 
-    pub fn children(&self, id: &I) -> HashSet<&Node<T, I>> {
+    pub fn children(&self, id: &I) -> Vec<&Node<T, I>> {
         return self
             .edges
             .iter()
-            .filter(|(parent, _)| parent == id)
-            .map(|(_, child)| self.nodes.get(child).unwrap())
+            .filter_map(|(parent, child)| match parent == id {
+                true => Some(self.nodes.get(child).unwrap()),
+                false => None,
+            })
             .collect();
     }
 
-    pub fn parents(&self, id: &I) -> HashSet<&Node<T, I>> {
+    pub fn parents(&self, id: &I) -> Vec<&Node<T, I>> {
         return self
             .edges
             .iter()
-            .filter(|(_, child)| child == id)
-            .map(|(parent, _)| self.nodes.get(parent).unwrap())
+            .filter_map(|(parent, child)| match child == id {
+                true => Some(self.nodes.get(parent).unwrap()),
+                false => None,
+            })
             .collect();
     }
 

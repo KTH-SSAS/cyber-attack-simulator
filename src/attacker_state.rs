@@ -2,7 +2,7 @@ use crate::attackgraph::{AttackGraph, TTCType};
 
 use crate::state::SimulatorState;
 use std::collections::{HashMap, HashSet};
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 use std::hash::Hash;
 
 pub struct AttackerObs<I> {
