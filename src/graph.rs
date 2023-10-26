@@ -1,13 +1,9 @@
 use std::collections::BTreeMap;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::hash::Hash;
 use std::hash::Hasher;
-
-use cached::proc_macro::cached;
-use cached::SizedCache;
 
 pub struct Graph<T, I>
 where
@@ -17,18 +13,6 @@ where
     pub edges: Vec<(I, I)>,
 }
 
-#[cached(
-    type = "SizedCache<String, HashSet<usize>>",
-    create = "{ SizedCache::with_size(100) }",
-    convert = r#"{ format!("{}", id) }"#
-)]
-fn parents_cached<I>(edges: HashSet<(usize, usize)>, id: usize) -> HashSet<usize> {
-    return edges
-        .iter()
-        .filter(|(_, child)| *child == id)
-        .map(|(parent, _)| parent.clone())
-        .collect();
-}
 
 fn format_attributes(attributes: Option<&Vec<(String, String)>>) -> String {
     match attributes {
