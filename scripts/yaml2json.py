@@ -3,12 +3,16 @@ import json
 from pathlib import Path
 from maltoolbox.attackgraph.node import AttackGraphNode
 from dataclasses import asdict
+import sys
 
 in_folder = Path("graphs")
 out_folder = in_folder
 filename = Path("yaml_graphs/branches.yaml")
 
 basename = filename.stem
+
+
+data = yaml.safe_load(sys.stdin.read())
 
 
 def AttackGraphNodeFromYaml(d, defenses, entrypoints):
@@ -21,10 +25,8 @@ def AttackGraphNodeFromYaml(d, defenses, entrypoints):
     return AttackGraphNode(**d)
 
 
-with open(in_folder / filename) as f:
-    data = yaml.safe_load(f)
+
 
 nodes = [asdict(AttackGraphNodeFromYaml(d, data["defenses"], data["entry_points"])) for d in data["attack_graph"]]
 
-with open(str(out_folder / basename) + ".json", "w") as f:
-    json.dump(nodes, f, indent=4)
+print(json.dumps(nodes, indent=4))
