@@ -177,7 +177,13 @@ where
         })
     }
 
-    pub fn attacker_reward(&self, graph: &AttackGraph<I>) -> i64 {
+    pub fn attacker_reward(&self, graph: &AttackGraph<I>, selected_step: Option<&I>) -> i64 {
+        
+        match selected_step {
+            None => return 0,
+            Some(_) => (),
+        };
+        
         let flag_value = 1;
         self.compromised_steps
             .iter()
@@ -247,7 +253,7 @@ where
                 _defender_action: defender_step.copied(),
             },
             (
-                self.attacker_reward(graph),
+                self.attacker_reward(graph, attacker_step),
                 self.defender_reward(graph, defender_step),
             ),
         ))

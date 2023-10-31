@@ -56,7 +56,7 @@ where
             possible_assets: Self::_attacker_possible_assets(&graph, &attack_surface),
 
             possible_steps: Self::_attacker_possible_actions(&graph, &attack_surface),
-            reward: s.attacker_reward(&graph),
+            reward: s.attacker_reward(&graph, None),
             possible_objects: attack_surface,
         }
     }
