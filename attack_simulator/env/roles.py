@@ -69,8 +69,8 @@ class Defender:
         # plt.show()
 
         return {
-            "action_mask": obs.defender_action_mask,
-            "node_surface": obs.defense_surface,
+            "action_mask": obs.defender_possible_actions,
+            "node_surface": obs.defender_possible_objects,
             "ids_observation": obs.state,
             "asset": obs.assets,
             "asset_id": obs.asset_ids,
@@ -122,8 +122,8 @@ class Attacker:
     @staticmethod
     def get_obs(obs: Observation):
         return {
-            "action_mask": obs.attacker_action_mask,
-            "node_surface": obs.attack_surface,
+            "action_mask": obs.attacker_possible_actions,
+            "node_surface": obs.attacker_possible_objects,
             "state": obs.state,
             "asset": obs.assets,
             "asset_id": obs.asset_ids,
@@ -134,5 +134,5 @@ class Attacker:
 
     @staticmethod
     def done(obs: Observation):
-        attack_surface = obs.attack_surface
+        attack_surface = obs.attacker_possible_objects
         return not any(attack_surface)
