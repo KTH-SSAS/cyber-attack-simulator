@@ -190,6 +190,9 @@ pub(crate) fn load_graph_from_json(
         .iter()
         .filter_map(|step| match step.name.as_str() {
             "gather" => Some(step.id.clone()),
+            "modify" => Some(step.id.clone()),
+            "read" => Some(step.id.clone()),
+            "deny" => Some(step.id.clone()),
             _ => None,
         })
         .collect::<Vec<String>>();
