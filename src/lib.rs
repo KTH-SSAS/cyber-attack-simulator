@@ -22,6 +22,7 @@ use pysim::RustAttackSimulator;
 use state::SimulatorObs;
 
 use std::collections::HashMap;
+use std::hash::Hash;
 
 use crate::runtime::SimulatorRuntime;
 
@@ -42,7 +43,7 @@ pub type AttackSimResult<T> = Result<T, AttackSimError>;
 
 pub struct AttackSimulator<T>
 where
-    T: Ord,
+    T: Ord + Hash,
 {
     runtime: SimulatorRuntime<T>,
     pub config: SimulatorConfig,

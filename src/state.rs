@@ -83,8 +83,8 @@ where
 
 pub(crate) type StateResult<T> = std::result::Result<T, StateError>;
 
-#[derive(Clone)]
-pub(crate) struct SimulatorState<I> {
+#[derive(Clone, Eq)]
+pub(crate) struct SimulatorState<I> where I : Hash {
     // Decomposed State
     pub time: u64,
     pub compromised_steps: HashSet<I>,
@@ -93,6 +93,14 @@ pub(crate) struct SimulatorState<I> {
     pub rng: ChaChaRng,
     pub _defender_action: Option<I>, // Action that the defender took in previous state
     pub _attacker_action: Option<I>, // Action that the attacker took in previous state
+}
+
+impl<I> PartialEq for SimulatorState<I> where I : Eq + Hash { 
+    fn eq(&self, other: &Self) -> bool {
+            self.compromised_steps == other.compromised_steps
+            && self.enabled_defenses == other.enabled_defenses
+            && self.remaining_ttc == other.remaining_ttc
+    }
 }
 
 pub struct SimulatorObs<I> {
@@ -118,7 +126,7 @@ where
 
 impl<I> Debug for SimulatorState<I>
 where
-    I: Debug,
+    I: Debug + Hash,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = format!("Time: {}\n", self.time);

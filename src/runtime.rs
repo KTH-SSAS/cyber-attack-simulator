@@ -53,7 +53,7 @@ type ParameterAction = (usize, Option<usize>);
 
 pub(crate) struct SimulatorRuntime<I>
 where
-    I: Ord,
+    I: Ord + Hash,
 {
     g: AttackGraph<I>,
     state: RefCell<SimulatorState<I>>,
@@ -65,9 +65,29 @@ where
     pub idx2action: Vec<String>,
     pub id_to_index: HashMap<I, usize>,
     pub index_to_id: Vec<I>,
+    //state_cache : RefCell<HashMap<CacheIndex, SimulatorState<I>>>,
     //pub defender_action_to_graph: Vec<I>,
     //pub attacker_action_to_graph: Vec<I>,
 }
+
+/* 
+#[derive(Eq)]
+struct CacheIndex((VectorizedObservation, ParameterAction, ParameterAction));
+    
+impl PartialEq for CacheIndex {
+    fn eq(&self, other: &Self) -> bool {
+        return self.0.0 == other.0.0 && self.0.1 == other.0.1 && self.0.2 == other.0.2;
+    }
+}
+
+impl Hash for CacheIndex {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.0.hash(state);
+        self.0.1.hash(state);
+        self.0.2.hash(state);
+    }
+}
+*/
 
 // def get_initial_attack_surface(self, attack_start_time: int) -> NDArray:
 // attack_surface = np.zeros(self.g.num_attacks, dtype="int8")
@@ -161,6 +181,7 @@ where
             id_to_index,
             index_to_id,
             history: RefCell::new(Vec::new()),
+            //state_cache: RefCell::new(HashMap::new()),
             action2idx,
             idx2action,
             actors,
