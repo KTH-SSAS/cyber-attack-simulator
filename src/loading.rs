@@ -94,6 +94,11 @@ fn create_vocab_from_steps(steps: &Vec<MALAttackStep>) -> HashMap<String, usize>
         .map(|(i, &x)| (x.clone(), i))
         .collect();
 
+    // Save the vocab to a file
+    let vocab_filename = "generated_vocab.json";
+    let vocab_json = serde_json::to_string_pretty(&vocab).unwrap();
+    std::fs::write(vocab_filename, vocab_json).unwrap();
+
     return vocab;
 }
 

@@ -139,11 +139,16 @@ impl AttackStep {
     }
 
     pub(crate) fn can_be_compromised(&self, parent_states: impl Iterator<Item = bool>) -> bool {
-        //let mut parent_states = parent_states;
-        parent_states.fold(false, |acc, x| match (&self.logic, x) {
-            (Logic::And, p) => acc && p,
-            (Logic::Or, p) => acc || p,
-        })
+        let parent_states = parent_states.collect::<Vec<bool>>();
+
+        if parent_states.is_empty() {
+            return false;
+        }
+
+        return match &self.logic {
+            Logic::And => parent_states.iter().all(|&x| x),
+            Logic::Or => parent_states.iter().any(|&x| x),
+        };
     }
 
     fn from(s: &MALAttackStep, fpr: f64, fnr: f64) -> AttackStep {
@@ -175,6 +180,12 @@ where
             None => panic!("No index for word '{}'", word),
         };
         return word;
+    }
+
+    pub(crate) fn translate_id(&self, x: &str) -> (usize, usize, usize) {
+        let (asset, asset_id, name) = split_id(&x);
+        let id = (self.vocab[&asset], asset_id, self.vocab[&name]);
+        return id;
     }
 
     pub(crate) fn new(

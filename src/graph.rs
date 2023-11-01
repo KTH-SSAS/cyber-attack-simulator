@@ -53,7 +53,12 @@ where
     pub fn new(nodes: BTreeMap<I, Node<T, I>>, edges: Vec<(I, I)>) -> Graph<T, I> {
         let parents = nodes
             .iter()
-            .map(|(&id, _)| (id, Graph::<T, I>::_parents(&edges, &id).map(|x| *x).collect()))
+            .map(|(&id, _)| {
+                (
+                    id,
+                    Graph::<T, I>::_parents(&edges, &id).map(|x| *x).collect(),
+                )
+            })
             .collect();
         Graph {
             nodes,
@@ -73,7 +78,7 @@ where
             .collect();
     }
 
-    /* 
+    /*
     pub fn parents<'a>(&'a self, id: &'a I) -> impl Iterator<Item = &'a Node<T, I>> {
         return self
             .edges
@@ -85,7 +90,12 @@ where
     }
     */
     pub fn parents<'a>(&'a self, id: &'a I) -> impl Iterator<Item = &'a Node<T, I>> {
-        return self.parents.get(id).unwrap().iter().map(move |x| self.nodes.get(x).unwrap());
+        return self
+            .parents
+            .get(id)
+            .unwrap()
+            .iter()
+            .map(move |x| self.nodes.get(x).unwrap());
     }
 
     pub fn edges_to_graphviz(&self) -> String {

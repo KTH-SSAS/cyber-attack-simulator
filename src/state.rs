@@ -37,20 +37,14 @@ where
     }
 
     fn parent_conditions_fulfilled(&self, compromised_steps: &HashSet<I>, node_id: &I) -> bool {
-        let attack_parents: HashSet<&I> = self.get_attack_parents(node_id).collect();
-
-        if attack_parents.is_empty() {
-            return self.is_entry(node_id);
-        }
-
-        let mut parent_states = attack_parents
-            .iter()
-            .map(|&p| compromised_steps.contains(p));
-
+        let mut parent_states = self
+            .get_attack_parents(node_id)
+            .map(|p| compromised_steps.contains(p));
         return self
             .get_step(node_id)
             .unwrap()
-            .can_be_compromised(&mut parent_states);
+            .can_be_compromised(&mut parent_states)
+            || self.is_entry(node_id);
     }
 
     pub(crate) fn can_step_be_compromised(
@@ -84,7 +78,10 @@ where
 pub(crate) type StateResult<T> = std::result::Result<T, StateError>;
 
 #[derive(Clone, Eq)]
-pub(crate) struct SimulatorState<I> where I : Hash {
+pub(crate) struct SimulatorState<I>
+where
+    I: Hash,
+{
     // Decomposed State
     pub time: u64,
     pub compromised_steps: HashSet<I>,
@@ -95,9 +92,12 @@ pub(crate) struct SimulatorState<I> where I : Hash {
     pub _attacker_action: Option<I>, // Action that the attacker took in previous state
 }
 
-impl<I> PartialEq for SimulatorState<I> where I : Eq + Hash { 
+impl<I> PartialEq for SimulatorState<I>
+where
+    I: Eq + Hash,
+{
     fn eq(&self, other: &Self) -> bool {
-            self.compromised_steps == other.compromised_steps
+        self.compromised_steps == other.compromised_steps
             && self.enabled_defenses == other.enabled_defenses
             && self.remaining_ttc == other.remaining_ttc
     }
@@ -178,12 +178,11 @@ where
     }
 
     pub fn attacker_reward(&self, graph: &AttackGraph<I>, selected_step: Option<&I>) -> i64 {
-        
         match selected_step {
             None => return 0,
             Some(_) => (),
         };
-        
+
         let flag_value = 1;
         self.compromised_steps
             .iter()

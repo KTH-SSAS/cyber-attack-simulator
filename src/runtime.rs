@@ -70,10 +70,10 @@ where
     //pub attacker_action_to_graph: Vec<I>,
 }
 
-/* 
+/*
 #[derive(Eq)]
 struct CacheIndex((VectorizedObservation, ParameterAction, ParameterAction));
-    
+
 impl PartialEq for CacheIndex {
     fn eq(&self, other: &Self) -> bool {
         return self.0.0 == other.0.0 && self.0.1 == other.0.1 && self.0.2 == other.0.2;
@@ -462,7 +462,7 @@ where
 #[cfg(test)]
 mod tests {
 
-    use std::collections::HashSet;
+    use std::collections::{HashMap, HashSet};
 
     use crate::{
         attacker_state::AttackerObs,
@@ -599,6 +599,35 @@ mod tests {
         );
         */
         //assert_eq!(sim.attacker_action_to_graph.len(), sim.g.nodes().len());
+    }
+
+    #[test]
+    fn test_test_graph() {
+        let filename = "graphs/test_graph.json";
+        let graph = load_graph_from_json(filename, None, 0.0, 0.0).unwrap();
+        let config = config::SimulatorConfig::default();
+        let sim = SimulatorRuntime::new(graph, config).unwrap();
+
+        let initial_state = sim.state.borrow();
+
+        let attacker_obs = AttackerObs::new(&initial_state, &sim.g);
+
+        let graph = load_graph_from_json(filename, None, 0.0, 0.0).unwrap();
+
+        assert!(attacker_obs
+            .possible_objects
+            .contains(&graph.translate_id("b:1:attack")));
+        //assert!(attacker_obs.possible_objects.contains(&graph.translate_id("c:1:attack")));
+
+        let expected_obs = HashMap::from([
+            (graph.translate_id("a:1:firstSteps"), true),
+            (graph.translate_id("b:1:attack"), false),
+            (graph.translate_id("c:1:attack"), false),
+        ]);
+        assert_eq!(attacker_obs.observed_steps, expected_obs);
+
+        assert_eq!(attacker_obs.observed_steps.len(), 3);
+        assert_eq!(attacker_obs.possible_objects.len(), 2);
     }
 
     #[test]
