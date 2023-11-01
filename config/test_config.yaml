@@ -1,4 +1,4 @@
 seed: 0
 sim_false_positive_rate: 0.2
 sim_false_negative_rate: 0.2
-graph_filename: graphs/test_graph.json
+graph_name: test_graph
