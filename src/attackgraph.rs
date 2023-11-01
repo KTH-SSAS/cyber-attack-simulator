@@ -7,6 +7,7 @@ use std::hash::Hash;
 type GraphResult<T> = std::result::Result<T, GraphError>;
 use crate::graph::{Graph, Node};
 use crate::loading::MALAttackStep;
+use crate::vocab::Vocab;
 
 #[derive(Debug, Clone)]
 pub(crate) struct Confusion {
@@ -175,16 +176,16 @@ where
     I: Eq + Hash + Ord + Debug + Copy,
 {
     pub(crate) fn word2idx(&self, word: String) -> usize {
-        let word = match self.vocab.get(&word) {
-            Some(idx) => *idx,
-            None => panic!("No index for word '{}'", word),
-        };
-        return word;
+        return self.vocab.get_idx(&word);
     }
 
     pub(crate) fn translate_id(&self, x: &str) -> (usize, usize, usize) {
         let (asset, asset_id, name) = split_id(&x);
-        let id = (self.vocab[&asset], asset_id, self.vocab[&name]);
+        let id = (
+            self.vocab.get_idx(&asset),
+            asset_id,
+            self.vocab.get_idx(&name),
+        );
         return id;
     }
 
@@ -193,7 +194,7 @@ where
         edges: HashSet<(String, String)>,
         flags: Vec<String>,
         entry_points: Vec<String>,
-        vocab: HashMap<String, usize>,
+        vocab: Vocab,
         fpr: f64,
         fnr: f64,
     ) -> AttackGraph<(usize, usize, usize)> {
@@ -201,7 +202,7 @@ where
 
         let translate_id = |x: &String| {
             let (asset, asset_id, name) = split_id(&x);
-            let id = (vocab[&asset], asset_id, vocab[&name]);
+            let id = (vocab.get_idx(&asset), asset_id, vocab.get_idx(&name));
             return id;
         };
 
@@ -295,7 +296,7 @@ where
     pub(crate) defense_steps: HashSet<I>,
     pub(crate) flags: HashSet<I>,
     entry_points: HashSet<I>,
-    pub(crate) vocab: HashMap<String, usize>,
+    pub(crate) vocab: Vocab,
 }
 
 /*

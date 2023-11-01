@@ -106,7 +106,7 @@ where
     I: Eq + Hash + Ord + Debug + Copy + Debug,
 {
     pub fn vocab(&self) -> HashMap<String, usize> {
-        return self.g.vocab.clone();
+        return self.g.vocab.export();
     }
 
     // Path: src/sim.rs

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use std::collections::HashSet;
 
-use crate::attackgraph::AttackGraph;
+use crate::{attackgraph::AttackGraph, vocab::Vocab};
 
 pub type IOResult<T> = std::result::Result<T, IOError>;
 
@@ -64,35 +64,27 @@ pub struct MALAttackStep {
     existence_status: Option<String>,
 }
 
-fn load_vocab_from_json(filename: &str) -> HashMap<String, usize> {
+fn load_vocab_from_json(filename: &str) -> Vocab {
     let contents = std::fs::read_to_string(filename).unwrap();
-    let vocab: Vec<String> = serde_json::from_str(&contents).unwrap();
-    let vocab: HashMap<String, usize> = vocab
-        .iter()
-        .enumerate()
-        .map(|(i, x)| (x.clone(), i))
-        .collect();
+    let words: Vec<String> = serde_json::from_str(&contents).unwrap();
+    let vocab = Vocab::from(words);
     return vocab;
 }
 
-fn create_vocab_from_steps(steps: &Vec<MALAttackStep>) -> HashMap<String, usize> {
+fn create_vocab_from_steps(steps: &Vec<MALAttackStep>) -> Vocab {
     let mut unique_words = HashSet::new();
     for step in steps {
         let (asset, _) = match step.asset.split_once(":") {
             Some((asset, _)) => (asset, ""),
             None => (step.asset.as_str(), ""),
         };
-        unique_words.insert(asset.to_string().clone());
+        unique_words.insert(asset.to_string());
         unique_words.insert(step.name.clone());
     }
 
-    let unique_words: Vec<&String> = unique_words.iter().sorted().collect();
+    let unique_words: Vec<String> = unique_words.iter().sorted().cloned().collect();
 
-    let vocab: HashMap<String, usize> = unique_words
-        .iter()
-        .enumerate()
-        .map(|(i, &x)| (x.clone(), i))
-        .collect();
+    let vocab = Vocab::from(unique_words);
 
     // Save the vocab to a file
     let vocab_filename = "generated_vocab.json";

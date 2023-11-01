@@ -8,6 +8,7 @@ pub mod observation;
 mod pysim;
 mod runtime;
 mod state;
+mod vocab;
 
 use attacker_state::AttackerObs;
 
