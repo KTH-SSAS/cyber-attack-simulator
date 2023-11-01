@@ -162,7 +162,7 @@ class AttackSimulationEnv():
         self.last_obs = sim_obs
 
         agent_obs = get_agent_obs(self._agent_ids, sim_obs)
-        agent_info = self.get_agent_info(info)
+        agent_info = self.get_agent_info(self._agent_ids, info)
 
         return agent_obs, agent_info
 
@@ -184,11 +184,13 @@ class AttackSimulationEnv():
     def observation_space_contains(self, x) -> bool:
         return all(self.observation_space[agent_id].contains(x[agent_id]) for agent_id in x)
 
-    def get_agent_info(self, info: Info) -> Dict[str, Any]:
-        infos = {
-            AGENT_DEFENDER: Defender.get_info(info),
-            AGENT_ATTACKER: Attacker.get_info(info),
+    def get_agent_info(self, agent_ids, info: Info) -> Dict[str, Any]:
+        info_funcs = {
+            AGENT_DEFENDER: Defender.get_info,
+            AGENT_ATTACKER: Attacker.get_info,
         }
+
+        infos = {key: info_funcs[key](info) for key in agent_ids}
 
         for key, entry in infos.items():
             entry[f"{key}_cumulative_reward"] = self.state.cumulative_rewards[key]
@@ -211,7 +213,7 @@ class AttackSimulationEnv():
         sim_obs = Observation.from_rust(sim_obs)
 
         obs = get_agent_obs(self._agent_ids, sim_obs)
-        infos = self.get_agent_info(info)
+        infos = self.get_agent_info(self._agent_ids, info)
         rewards = {}
 
         reward_funcs = {

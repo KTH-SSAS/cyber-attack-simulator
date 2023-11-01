@@ -78,10 +78,14 @@ class KeyboardAgent:
 sim_config = attack_simulator.SimulatorConfig(
     false_negative_rate=0.0, false_positive_rate=0.0, seed=0, randomize_ttc=False, log=False, show_false=False
 )
+
+attacker_only = True
+
 env_config = attack_simulator.EnvConfig(
     sim_config=sim_config,
-    graph_filename="graphs/two_ways.json",
+    graph_filename="graphs/four_ways_mod.json",
     seed=0,
+    attacker_only=attacker_only,
 )
 env = attack_simulator.parallel_env(env_config, render_mode="human")
 
@@ -102,13 +106,14 @@ total_reward_attacker = 0
 with torch.no_grad():
     while not done:
         env.render()
-        defender_action = defender.compute_action_from_dict(obs["defender"])
+        defender_action = defender.compute_action_from_dict(obs["defender"]) if not attacker_only else (0, None)
         attacker_action = attacker.compute_action_from_dict(obs["attacker"])
         action_dict = {AGENT_ATTACKER: attacker_action, AGENT_DEFENDER: defender_action}
         obs, rewards, terminated, truncated, infos = env.step(action_dict)
         print("Attacker Reward: ", rewards[AGENT_ATTACKER])
-        print("Defender Reward: ", rewards[AGENT_DEFENDER])
-        total_reward_defender += rewards[AGENT_DEFENDER]
+        if not attacker_only:
+            print("Defender Reward: ", rewards[AGENT_DEFENDER])
+        total_reward_defender += rewards[AGENT_DEFENDER] if not attacker_only else 0
         total_reward_attacker += rewards[AGENT_ATTACKER]
 
         done = terminated["__all__"]
@@ -129,7 +134,8 @@ with torch.no_grad():
 
 env.render()
 print("Game Over.")
-print("Total Defender Reward: ", total_reward_defender)
+if not attacker_only:
+    print("Total Defender Reward: ", total_reward_defender)
 print("Total Attacker Reward: ", total_reward_attacker)
 print("Press Enter to exit.")
 input()
