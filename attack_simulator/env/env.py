@@ -22,22 +22,30 @@ from ..rusty_sim import RustAttackSimulator  # noqa: E402
 
 logger = logging.getLogger("simulator")
 
+def defender_reward(obs):
+    return np.sum(obs.defender_reward)
 
+def attacker_reward(obs):
+    return np.sum(obs.attacker_reward)
 
-def get_agent_obs(sim_obs: Observation) -> Dict[str, Any]:
+def get_agent_obs(agents, sim_obs: Observation) -> Dict[str, Any]:
 
-    defender_obs = Defender.get_obs(sim_obs)
-    attacker_obs = Attacker.get_obs(sim_obs)
+    obs_funcs = {
+        AGENT_DEFENDER : Defender.get_obs,
+        AGENT_ATTACKER : Attacker.get_obs
+    }
 
-    return {AGENT_DEFENDER: defender_obs, AGENT_ATTACKER: attacker_obs}
+    return {key: obs_funcs[key](sim_obs) for key in agents}
 
 
 class EnvironmentState:
-    def __init__(self):
-        self.cumulative_rewards = {AGENT_DEFENDER: 0.0, AGENT_ATTACKER: 0.0}
-        self.reward = {AGENT_ATTACKER: 0.0, AGENT_DEFENDER: 0.0}
-        self.terminated = {AGENT_DEFENDER: False, AGENT_ATTACKER: False, "__all__": False}
-        self.truncated = {AGENT_DEFENDER: False, AGENT_ATTACKER: False, "__all__": False}
+    def __init__(self, agent_ids):
+        self.cumulative_rewards = {k: 0.0 for k in agent_ids}
+        self.reward = {k : 0.0 for k in agent_ids}
+        self.terminated = {k : False for k in agent_ids}
+        self.terminated["__all__"] = False
+        self.truncated = {k : False for k in agent_ids}
+        self.truncated["__all__"] = False
 
 
 class AttackSimulationEnv():
@@ -85,8 +93,8 @@ class AttackSimulationEnv():
             num_nodes, num_actions
         )
 
-        self.state = EnvironmentState()
-        self._agent_ids = [AGENT_DEFENDER, AGENT_ATTACKER]
+        self._agent_ids = [AGENT_DEFENDER, AGENT_ATTACKER] if not config.attacker_only else [AGENT_ATTACKER]
+        self.state = EnvironmentState(self._agent_ids)
         self._action_space_in_preferred_format = True
         self._observation_space_in_preferred_format = True
         self._obs_space_in_preferred_format = True
@@ -145,7 +153,7 @@ class AttackSimulationEnv():
 
         self.episode_count = episode_count
         self.reset_render = True
-        self.state = EnvironmentState()
+        self.state = EnvironmentState(self._agent_ids)
         self.rng = rng
         self.env_seed = env_seed
 
@@ -153,7 +161,7 @@ class AttackSimulationEnv():
 
         self.last_obs = sim_obs
 
-        agent_obs = get_agent_obs(sim_obs)
+        agent_obs = get_agent_obs(self._agent_ids, sim_obs)
         agent_info = self.get_agent_info(info)
 
         return agent_obs, agent_info
@@ -202,11 +210,16 @@ class AttackSimulationEnv():
         sim_obs, info = self.sim.step(action_dict)
         sim_obs = Observation.from_rust(sim_obs)
 
-        obs = get_agent_obs(sim_obs)
+        obs = get_agent_obs(self._agent_ids, sim_obs)
         infos = self.get_agent_info(info)
         rewards = {}
-        rewards[AGENT_ATTACKER] = np.sum(sim_obs.attacker_reward)
-        rewards[AGENT_DEFENDER] = np.sum(sim_obs.defender_reward)
+
+        reward_funcs = {
+            AGENT_DEFENDER: defender_reward,
+            AGENT_ATTACKER: attacker_reward,
+        }
+
+        rewards = {key: reward_funcs[key](sim_obs) for key in self._agent_ids}
 
 
         terminated = self.state.terminated

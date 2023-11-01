@@ -28,6 +28,7 @@ class EnvConfig(Config):
     graph_filename: str
     seed: Optional[int] = None
     vocab_filename: str = None
+    attacker_only = False
 
     @classmethod
     def from_yaml(cls, filename: str) -> EnvConfig:

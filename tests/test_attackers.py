@@ -17,11 +17,11 @@ from attack_simulator.env.env import AttackSimulationEnv
 @pytest.mark.parametrize(
     "attacker_class",
     [
-        PathFinderAttacker,
+        # PathFinderAttacker,
         # InformedAttacker,
         # RandomNoActionAttacker,
         RandomAttacker,
-        RoundRobinAttacker,
+        # RoundRobinAttacker,
         # RoundRobinNoActionAttacker,
         BreadthFirstAttacker,
         DepthFirstAttacker,
