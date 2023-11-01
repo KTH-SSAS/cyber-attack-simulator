@@ -1,0 +1,568 @@
+[
+    {
+        "id": "attacker:0:enter",
+        "type": "or",
+        "asset": "attacker",
+        "name": "firstSteps",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "host:1:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:1:connect",
+        "type": "or",
+        "asset": "host",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "host:4:connect",
+            "host:5:connect",
+            "firewall:6:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:2:connect",
+        "type": "or",
+        "asset": "host",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "host:3:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:3:connect",
+        "type": "or",
+        "asset": "host",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "host:9:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:4:connect",
+        "type": "or",
+        "asset": "host",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "host:2:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:5:connect",
+        "type": "or",
+        "asset": "host",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "host:10:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:6:connect",
+        "type": "or",
+        "asset": "firewall",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "host:36:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:9:connect",
+        "type": "or",
+        "asset": "host",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "host:12:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:10:connect",
+        "type": "or",
+        "asset": "host",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "firewall:13:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:12:connect",
+        "type": "or",
+        "asset": "host",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "firewall:16:connect",
+            "host:17:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:13:connect",
+        "type": "or",
+        "asset": "firewall",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "host:35:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "flag:15:take",
+        "type": "or",
+        "asset": "flag",
+        "name": "gather",
+        "ttc": null,
+        "defense_status": null,
+        "children": [],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:16:connect",
+        "type": "or",
+        "asset": "firewall",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "flag:15:take"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:17:connect",
+        "type": "or",
+        "asset": "host",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "firewall:23:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:19:connect",
+        "type": "or",
+        "asset": "host",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "firewall:25:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:20:connect",
+        "type": "or",
+        "asset": "firewall",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "host:21:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:21:connect",
+        "type": "or",
+        "asset": "host",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "flag:22:take"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "flag:22:take",
+        "type": "or",
+        "asset": "flag",
+        "name": "gather",
+        "ttc": null,
+        "defense_status": null,
+        "children": [],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:23:connect",
+        "type": "or",
+        "asset": "firewall",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "flag:26:take"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:25:connect",
+        "type": "or",
+        "asset": "firewall",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "flag:28:take"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "flag:26:take",
+        "type": "or",
+        "asset": "flag",
+        "name": "gather",
+        "ttc": null,
+        "defense_status": null,
+        "children": [],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "flag:27:take",
+        "type": "or",
+        "asset": "flag",
+        "name": "gather",
+        "ttc": null,
+        "defense_status": null,
+        "children": [],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "flag:28:take",
+        "type": "or",
+        "asset": "flag",
+        "name": "gather",
+        "ttc": null,
+        "defense_status": null,
+        "children": [],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:6:defend",
+        "type": "defense",
+        "asset": "firewall",
+        "name": "enable",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "firewall:6:connect",
+            "host:36:connect",
+            "host:19:connect",
+            "firewall:20:connect",
+            "host:21:connect",
+            "flag:22:take",
+            "firewall:25:connect",
+            "flag:28:take"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:13:defend",
+        "type": "defense",
+        "asset": "firewall",
+        "name": "enable",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "firewall:13:connect",
+            "flag:27:take",
+            "host:35:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:16:defend",
+        "type": "defense",
+        "asset": "firewall",
+        "name": "enable",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "firewall:16:connect",
+            "flag:15:take"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:20:defend",
+        "type": "defense",
+        "asset": "firewall",
+        "name": "enable",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "firewall:20:connect",
+            "host:21:connect",
+            "flag:22:take"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:23:defend",
+        "type": "defense",
+        "asset": "firewall",
+        "name": "enable",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "firewall:23:connect",
+            "flag:26:take"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "firewall:25:defend",
+        "type": "defense",
+        "asset": "firewall",
+        "name": "enable",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "firewall:25:connect",
+            "flag:28:take"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:35:connect",
+        "type": "or",
+        "asset": "host",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "flag:27:take"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    },
+    {
+        "id": "host:36:connect",
+        "type": "or",
+        "asset": "host",
+        "name": "connect",
+        "ttc": null,
+        "defense_status": null,
+        "children": [
+            "firewall:20:connect",
+            "host:19:connect"
+        ],
+        "parents": null,
+        "existence_status": null,
+        "is_reachable": null,
+        "is_traversable": null,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null
+    }
+]

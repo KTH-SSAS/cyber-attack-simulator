@@ -8,6 +8,7 @@ from gymnasium import spaces
 from numpy.typing import NDArray
 from maturin import import_hook
 
+from .. import examplemanager
 from .roles import Defender, Attacker
 from ..constants import AGENT_ATTACKER, AGENT_DEFENDER
 from ..mal.observation import Info, Observation
@@ -67,8 +68,10 @@ class AttackSimulationEnv():
         # Set the seed for the simulator.
         sim_config = dataclasses.replace(sim_config, seed=config.seed)
 
+        graph_filename = examplemanager.get_paths_to_graphs()[config.graph_name]
+
         self.sim = RustAttackSimulator(
-            json.dumps(sim_config.to_dict()), config.graph_filename, config.vocab_filename
+            json.dumps(sim_config.to_dict()), graph_filename, config.vocab_filename
         )  # noqa: F821
         self.rng, self.env_seed = get_rng(config.seed)
         self.config = config

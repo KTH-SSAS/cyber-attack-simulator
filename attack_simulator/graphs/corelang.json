@@ -1,0 +1,4404 @@
+[
+    {
+        "id": "Application:0:notPresent",
+        "type": "defense",
+        "name": "notPresent",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "Application:0:successfulUseVulnerability",
+            "Application:0:successfulReverseReach",
+            "Application:0:networkConnectFromResponse",
+            "Application:0:specificAccessFromLocalConnection",
+            "Application:0:specificAccessFromNetworkConnection",
+            "Application:0:localAccess",
+            "Application:0:networkAccess",
+            "Application:0:successfulUnsafeUserActivity",
+            "Application:0:fullAccessFromSupplyChainCompromise",
+            "Application:0:readFromSoftProdVulnerability",
+            "Application:0:modifyFromSoftProdVulnerability",
+            "Application:0:denyFromSoftProdVulnerability",
+            "Application:0:successfulApplicationRespondConnectThroughData",
+            "Application:0:successfulAuthorizedApplicationRespondConnectThroughData",
+            "Application:0:successfulRead",
+            "Application:0:successfulModify",
+            "Application:0:successfulDeny"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0",
+        "defense_status": "0.0",
+        "mitre_info": "Used for M1042: Disable or Remove Feature or Program, M1033: Limit Software Installation, M1028: Operating System Configuration"
+    },
+    {
+        "id": "Application:0:attemptUseVulnerability",
+        "type": "or",
+        "name": "attemptUseVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:0:successfulUseVulnerability"
+        ],
+        "parents": [
+            "Application:0:localConnect",
+            "Application:0:networkConnectUninspected",
+            "Application:0:specificAccess",
+            "Application:1:bypassContainerization",
+            "Application:2:bypassContainerization"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:successfulUseVulnerability",
+        "type": "and",
+        "name": "successfulUseVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:0:useVulnerability"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:attemptUseVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:useVulnerability",
+        "type": "or",
+        "name": "useVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:0:attemptSoftwareProductAbuse",
+            "Application:0:readFromSoftProdVulnerability",
+            "Application:0:modifyFromSoftProdVulnerability",
+            "Application:0:denyFromSoftProdVulnerability"
+        ],
+        "parents": [
+            "Application:0:successfulUseVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attemptReverseReach",
+        "type": "or",
+        "name": "attemptReverseReach",
+        "ttc": null,
+        "children": [
+            "Application:0:successfulReverseReach"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:successfulReverseReach",
+        "type": "and",
+        "name": "successfulReverseReach",
+        "ttc": null,
+        "children": [
+            "Application:0:reverseReach"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:attemptReverseReach"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:reverseReach",
+        "type": "or",
+        "name": "reverseReach",
+        "ttc": null,
+        "children": [
+            "Application:1:attemptReverseReach",
+            "Application:2:attemptReverseReach",
+            "Application:0:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "Application:0:networkConnectFromResponse"
+        ],
+        "parents": [
+            "Application:0:successfulReverseReach"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:localConnect",
+        "type": "or",
+        "name": "localConnect",
+        "ttc": null,
+        "children": [
+            "Application:0:localAccess",
+            "Application:0:specificAccessFromLocalConnection",
+            "Application:0:attemptUseVulnerability",
+            "Application:0:softwareProductVulnerabilityLocalAccessAchieved"
+        ],
+        "parents": [
+            "Application:0:unsafeUserActivity",
+            "Application:1:fullAccess",
+            "Application:2:fullAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:networkConnectUninspected",
+        "type": "or",
+        "name": "networkConnectUninspected",
+        "ttc": null,
+        "children": [
+            "Application:0:attemptUseVulnerability",
+            "Application:0:softwareProductVulnerabilityNetworkAccessAchieved",
+            "Application:0:networkConnect",
+            "Application:0:specificAccessNetworkConnect"
+        ],
+        "parents": [
+            "Application:0:networkConnectFromResponse",
+            "Application:0:unsafeUserActivity"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:networkConnectInspected",
+        "type": "or",
+        "name": "networkConnectInspected",
+        "ttc": null,
+        "children": [
+            "Application:0:networkConnect",
+            "Application:0:specificAccessNetworkConnect"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:networkConnect",
+        "type": "or",
+        "name": "networkConnect",
+        "ttc": null,
+        "children": [
+            "Application:0:networkAccess"
+        ],
+        "parents": [
+            "Application:0:networkConnectUninspected",
+            "Application:0:networkConnectInspected"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:specificAccessNetworkConnect",
+        "type": "or",
+        "name": "specificAccessNetworkConnect",
+        "ttc": null,
+        "children": [
+            "Application:0:specificAccessFromNetworkConnection"
+        ],
+        "parents": [
+            "Application:0:networkConnectUninspected",
+            "Application:0:networkConnectInspected"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:accessNetworkAndConnections",
+        "type": "or",
+        "name": "accessNetworkAndConnections",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:0:specificAccess",
+            "Application:0:fullAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attemptNetworkConnectFromResponse",
+        "type": "or",
+        "name": "attemptNetworkConnectFromResponse",
+        "ttc": null,
+        "children": [
+            "Application:0:networkConnectFromResponse"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:networkConnectFromResponse",
+        "type": "and",
+        "name": "networkConnectFromResponse",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "children": [
+            "Application:0:networkConnectUninspected"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:reverseReach",
+            "Application:0:attemptNetworkConnectFromResponse"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:specificAccessFromLocalConnection",
+        "type": "and",
+        "name": "specificAccessFromLocalConnection",
+        "ttc": null,
+        "children": [
+            "Application:0:specificAccess"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:localConnect",
+            "Application:0:specificAccessAuthenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:specificAccessFromNetworkConnection",
+        "type": "and",
+        "name": "specificAccessFromNetworkConnection",
+        "ttc": null,
+        "children": [
+            "Application:0:specificAccess"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:specificAccessNetworkConnect",
+            "Application:0:specificAccessAuthenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:specificAccess",
+        "type": "or",
+        "name": "specificAccess",
+        "ttc": null,
+        "children": [
+            "Application:1:localConnect",
+            "Application:2:localConnect",
+            "Application:0:specificAccessRead",
+            "Application:0:specificAccessModify",
+            "Application:0:specificAccessDelete",
+            "Application:0:bypassContainerization",
+            "Application:0:attemptUseVulnerability",
+            "Application:0:attemptAuthorizedApplicationRespondConnectThroughData",
+            "Application:0:accessNetworkAndConnections"
+        ],
+        "parents": [
+            "Application:0:specificAccessFromLocalConnection",
+            "Application:0:specificAccessFromNetworkConnection",
+            "Application:0:fullAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:bypassContainerization",
+        "type": "or",
+        "name": "bypassContainerization",
+        "ttc": {
+            "type": "function",
+            "name": "HardAndUncertain",
+            "arguments": []
+        },
+        "children": [],
+        "parents": [
+            "Application:0:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:authenticate",
+        "type": "or",
+        "name": "authenticate",
+        "ttc": null,
+        "children": [
+            "Application:0:localAccess",
+            "Application:0:networkAccess",
+            "Application:0:softwareProductVulnerabilityHighPrivilegesAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:specificAccessAuthenticate",
+        "type": "or",
+        "name": "specificAccessAuthenticate",
+        "ttc": null,
+        "children": [
+            "Application:0:specificAccessFromLocalConnection",
+            "Application:0:specificAccessFromNetworkConnection",
+            "Application:0:softwareProductVulnerabilityLowPrivilegesAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:localAccess",
+        "type": "and",
+        "name": "localAccess",
+        "ttc": null,
+        "children": [
+            "Application:0:fullAccess"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:localConnect",
+            "Application:0:authenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:networkAccess",
+        "type": "and",
+        "name": "networkAccess",
+        "ttc": null,
+        "children": [
+            "Application:0:fullAccess"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:networkConnect",
+            "Application:0:authenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:fullAccess",
+        "type": "or",
+        "name": "fullAccess",
+        "ttc": null,
+        "children": [
+            "Application:0:attemptRead",
+            "Application:0:attemptModify",
+            "Application:0:attemptDeny",
+            "Application:0:attemptApplicationRespondConnectThroughData",
+            "Application:0:accessNetworkAndConnections",
+            "Application:0:specificAccess"
+        ],
+        "parents": [
+            "Application:0:localAccess",
+            "Application:0:networkAccess",
+            "Application:0:fullAccessFromSupplyChainCompromise",
+            "Application:0:modify"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:physicalAccessAchieved",
+        "type": "or",
+        "name": "physicalAccessAchieved",
+        "ttc": null,
+        "children": [
+            "Application:0:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "Application:1:physicalAccessAchieved",
+            "Application:2:physicalAccessAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attemptUnsafeUserActivity",
+        "type": "or",
+        "name": "attemptUnsafeUserActivity",
+        "ttc": null,
+        "children": [
+            "Application:0:successfulUnsafeUserActivity",
+            "Application:0:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "Application:0:attackerUnsafeUserActivityCapabilityWithoutReverseReach"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:successfulUnsafeUserActivity",
+        "type": "and",
+        "name": "successfulUnsafeUserActivity",
+        "ttc": null,
+        "children": [
+            "Application:0:unsafeUserActivity"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:attemptUnsafeUserActivity",
+            "Application:0:attackerUnsafeUserActivityCapability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:unsafeUserActivity",
+        "type": "or",
+        "name": "unsafeUserActivity",
+        "ttc": null,
+        "children": [
+            "Application:0:localConnect",
+            "Application:0:networkConnectUninspected"
+        ],
+        "parents": [
+            "Application:0:successfulUnsafeUserActivity"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attackerUnsafeUserActivityCapability",
+        "type": "or",
+        "name": "attackerUnsafeUserActivityCapability",
+        "ttc": null,
+        "children": [
+            "Application:0:successfulUnsafeUserActivity"
+        ],
+        "parents": [
+            "Application:0:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "Application:0:attackerUnsafeUserActivityCapabilityWithoutReverseReach"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attackerUnsafeUserActivityCapabilityWithReverseReach",
+        "type": "and",
+        "name": "attackerUnsafeUserActivityCapabilityWithReverseReach",
+        "ttc": null,
+        "children": [
+            "Application:0:attackerUnsafeUserActivityCapability"
+        ],
+        "parents": [
+            "Application:0:reverseReach",
+            "Application:0:attemptUnsafeUserActivity"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attackerUnsafeUserActivityCapabilityWithoutReverseReach",
+        "type": "or",
+        "name": "attackerUnsafeUserActivityCapabilityWithoutReverseReach",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "children": [
+            "Application:0:attackerUnsafeUserActivityCapability"
+        ],
+        "parents": [
+            "Application:0:attemptUnsafeUserActivity"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:supplyChainAuditing",
+        "type": "defense",
+        "name": "supplyChainAuditing",
+        "ttc": null,
+        "children": [
+            "Application:0:supplyChainAuditingBypassed"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "Application:0:bypassSupplyChainAuditing",
+        "type": "or",
+        "name": "bypassSupplyChainAuditing",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "children": [
+            "Application:0:supplyChainAuditingBypassed"
+        ],
+        "parents": [
+            "Application:0:attemptFullAccessFromSupplyChainCompromise"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:supplyChainAuditingBypassed",
+        "type": "or",
+        "name": "supplyChainAuditingBypassed",
+        "ttc": null,
+        "children": [
+            "Application:0:fullAccessFromSupplyChainCompromise"
+        ],
+        "parents": [
+            "Application:0:supplyChainAuditing",
+            "Application:0:bypassSupplyChainAuditing"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attemptFullAccessFromSupplyChainCompromise",
+        "type": "or",
+        "name": "attemptFullAccessFromSupplyChainCompromise",
+        "ttc": null,
+        "children": [
+            "Application:0:fullAccessFromSupplyChainCompromise",
+            "Application:0:bypassSupplyChainAuditing"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:fullAccessFromSupplyChainCompromise",
+        "type": "and",
+        "name": "fullAccessFromSupplyChainCompromise",
+        "ttc": null,
+        "children": [
+            "Application:0:fullAccess"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:supplyChainAuditingBypassed",
+            "Application:0:attemptFullAccessFromSupplyChainCompromise"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attemptReadFromSoftProdVulnerability",
+        "type": "or",
+        "name": "attemptReadFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:0:readFromSoftProdVulnerability"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attemptModifyFromSoftProdVulnerability",
+        "type": "or",
+        "name": "attemptModifyFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:0:modifyFromSoftProdVulnerability"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attemptDenyFromSoftProdVulnerability",
+        "type": "or",
+        "name": "attemptDenyFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:0:denyFromSoftProdVulnerability"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:softwareCheck",
+        "type": "exist",
+        "name": "softwareCheck",
+        "ttc": null,
+        "children": [
+            "Application:0:readFromSoftProdVulnerability",
+            "Application:0:modifyFromSoftProdVulnerability",
+            "Application:0:denyFromSoftProdVulnerability"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0",
+        "existence_status": "False"
+    },
+    {
+        "id": "Application:0:softwareProductVulnerabilityLocalAccessAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityLocalAccessAchieved",
+        "ttc": null,
+        "children": [
+            "Application:0:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:0:localConnect"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:softwareProductVulnerabilityNetworkAccessAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityNetworkAccessAchieved",
+        "ttc": null,
+        "children": [
+            "Application:0:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:0:networkConnectUninspected"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:softwareProductVulnerabilityPhysicalAccessAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityPhysicalAccessAchieved",
+        "ttc": null,
+        "children": [
+            "Application:0:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:0:physicalAccessAchieved"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:softwareProductVulnerabilityLowPrivilegesAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityLowPrivilegesAchieved",
+        "ttc": null,
+        "children": [
+            "Application:0:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:0:specificAccessAuthenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:softwareProductVulnerabilityHighPrivilegesAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityHighPrivilegesAchieved",
+        "ttc": null,
+        "children": [
+            "Application:0:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:0:authenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:softwareProductVulnerabilityUserInteractionAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityUserInteractionAchieved",
+        "ttc": null,
+        "children": [
+            "Application:0:softwareProductAbuse"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attemptSoftwareProductAbuse",
+        "type": "or",
+        "name": "attemptSoftwareProductAbuse",
+        "ttc": null,
+        "children": [
+            "Application:0:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:0:useVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:softwareProductAbuse",
+        "type": "and",
+        "name": "softwareProductAbuse",
+        "ttc": null,
+        "children": [
+            "Application:0:readFromSoftProdVulnerability",
+            "Application:0:modifyFromSoftProdVulnerability",
+            "Application:0:denyFromSoftProdVulnerability"
+        ],
+        "parents": [
+            "Application:0:softwareProductVulnerabilityLocalAccessAchieved",
+            "Application:0:softwareProductVulnerabilityNetworkAccessAchieved",
+            "Application:0:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "Application:0:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "Application:0:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "Application:0:softwareProductVulnerabilityUserInteractionAchieved",
+            "Application:0:attemptSoftwareProductAbuse"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:readFromSoftProdVulnerability",
+        "type": "and",
+        "name": "readFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:0:attemptRead"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:useVulnerability",
+            "Application:0:attemptReadFromSoftProdVulnerability",
+            "Application:0:softwareCheck",
+            "Application:0:softwareProductAbuse"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:modifyFromSoftProdVulnerability",
+        "type": "and",
+        "name": "modifyFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:0:attemptModify"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:useVulnerability",
+            "Application:0:attemptModifyFromSoftProdVulnerability",
+            "Application:0:softwareCheck",
+            "Application:0:softwareProductAbuse"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:denyFromSoftProdVulnerability",
+        "type": "and",
+        "name": "denyFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:0:attemptDeny"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:useVulnerability",
+            "Application:0:attemptDenyFromSoftProdVulnerability",
+            "Application:0:softwareCheck",
+            "Application:0:softwareProductAbuse"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attemptApplicationRespondConnectThroughData",
+        "type": "or",
+        "name": "attemptApplicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [
+            "Application:0:successfulApplicationRespondConnectThroughData"
+        ],
+        "parents": [
+            "Application:0:fullAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:successfulApplicationRespondConnectThroughData",
+        "type": "and",
+        "name": "successfulApplicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [
+            "Application:0:applicationRespondConnectThroughData"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:attemptApplicationRespondConnectThroughData"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:applicationRespondConnectThroughData",
+        "type": "or",
+        "name": "applicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:0:successfulApplicationRespondConnectThroughData"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attemptAuthorizedApplicationRespondConnectThroughData",
+        "type": "or",
+        "name": "attemptAuthorizedApplicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [
+            "Application:0:successfulAuthorizedApplicationRespondConnectThroughData"
+        ],
+        "parents": [
+            "Application:0:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:successfulAuthorizedApplicationRespondConnectThroughData",
+        "type": "and",
+        "name": "successfulAuthorizedApplicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [
+            "Application:0:authorizedApplicationRespondConnectThroughData"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:attemptAuthorizedApplicationRespondConnectThroughData"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:authorizedApplicationRespondConnectThroughData",
+        "type": "or",
+        "name": "authorizedApplicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:0:successfulAuthorizedApplicationRespondConnectThroughData"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attemptRead",
+        "type": "or",
+        "name": "attemptRead",
+        "ttc": null,
+        "children": [
+            "Application:0:successfulRead"
+        ],
+        "parents": [
+            "Application:0:fullAccess",
+            "Application:0:readFromSoftProdVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:successfulRead",
+        "type": "and",
+        "name": "successfulRead",
+        "ttc": null,
+        "children": [
+            "Application:0:read"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:attemptRead"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:read",
+        "type": "or",
+        "name": "read",
+        "ttc": null,
+        "children": [
+            "Application:1:attemptRead",
+            "Application:2:attemptRead"
+        ],
+        "parents": [
+            "Application:0:successfulRead"
+        ],
+        "compromised_by": [
+            "Attacker:6"
+        ],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:specificAccessRead",
+        "type": "or",
+        "name": "specificAccessRead",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:0:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attemptModify",
+        "type": "or",
+        "name": "attemptModify",
+        "ttc": null,
+        "children": [
+            "Application:0:successfulModify"
+        ],
+        "parents": [
+            "Application:0:fullAccess",
+            "Application:0:modifyFromSoftProdVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:successfulModify",
+        "type": "and",
+        "name": "successfulModify",
+        "ttc": null,
+        "children": [
+            "Application:0:modify"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:attemptModify"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:modify",
+        "type": "or",
+        "name": "modify",
+        "ttc": null,
+        "children": [
+            "Application:0:fullAccess",
+            "Application:1:attemptModify",
+            "Application:2:attemptModify"
+        ],
+        "parents": [
+            "Application:0:successfulModify"
+        ],
+        "compromised_by": [
+            "Attacker:6"
+        ],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:specificAccessModify",
+        "type": "or",
+        "name": "specificAccessModify",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:0:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:attemptDeny",
+        "type": "or",
+        "name": "attemptDeny",
+        "ttc": null,
+        "children": [
+            "Application:0:successfulDeny"
+        ],
+        "parents": [
+            "Application:0:fullAccess",
+            "Application:0:denyFromSoftProdVulnerability",
+            "Application:0:denyFromNetworkingAsset",
+            "Application:0:denyFromLockout"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:successfulDeny",
+        "type": "and",
+        "name": "successfulDeny",
+        "ttc": null,
+        "children": [
+            "Application:0:deny"
+        ],
+        "parents": [
+            "Application:0:notPresent",
+            "Application:0:attemptDeny"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:deny",
+        "type": "or",
+        "name": "deny",
+        "ttc": null,
+        "children": [
+            "Application:1:attemptDeny",
+            "Application:2:attemptDeny"
+        ],
+        "parents": [
+            "Application:0:successfulDeny"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:specificAccessDelete",
+        "type": "or",
+        "name": "specificAccessDelete",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:0:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:denyFromNetworkingAsset",
+        "type": "and",
+        "name": "denyFromNetworkingAsset",
+        "ttc": null,
+        "children": [
+            "Application:0:attemptDeny"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:0:denyFromLockout",
+        "type": "and",
+        "name": "denyFromLockout",
+        "ttc": null,
+        "children": [
+            "Application:0:attemptDeny"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:0"
+    },
+    {
+        "id": "Application:1:notPresent",
+        "type": "defense",
+        "name": "notPresent",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "Application:1:successfulUseVulnerability",
+            "Application:1:successfulReverseReach",
+            "Application:1:networkConnectFromResponse",
+            "Application:1:specificAccessFromLocalConnection",
+            "Application:1:specificAccessFromNetworkConnection",
+            "Application:1:localAccess",
+            "Application:1:networkAccess",
+            "Application:1:successfulUnsafeUserActivity",
+            "Application:1:fullAccessFromSupplyChainCompromise",
+            "Application:1:readFromSoftProdVulnerability",
+            "Application:1:modifyFromSoftProdVulnerability",
+            "Application:1:denyFromSoftProdVulnerability",
+            "Application:1:successfulApplicationRespondConnectThroughData",
+            "Application:1:successfulAuthorizedApplicationRespondConnectThroughData",
+            "Application:1:successfulRead",
+            "Application:1:successfulModify",
+            "Application:1:successfulDeny"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:1",
+        "defense_status": "0.0",
+        "mitre_info": "Used for M1042: Disable or Remove Feature or Program, M1033: Limit Software Installation, M1028: Operating System Configuration"
+    },
+    {
+        "id": "Application:1:attemptUseVulnerability",
+        "type": "or",
+        "name": "attemptUseVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:1:successfulUseVulnerability"
+        ],
+        "parents": [
+            "Application:1:localConnect",
+            "Application:1:networkConnectUninspected",
+            "Application:1:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:successfulUseVulnerability",
+        "type": "and",
+        "name": "successfulUseVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:1:useVulnerability"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:attemptUseVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:useVulnerability",
+        "type": "or",
+        "name": "useVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:1:attemptSoftwareProductAbuse",
+            "Application:1:readFromSoftProdVulnerability",
+            "Application:1:modifyFromSoftProdVulnerability",
+            "Application:1:denyFromSoftProdVulnerability"
+        ],
+        "parents": [
+            "Application:1:successfulUseVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attemptReverseReach",
+        "type": "or",
+        "name": "attemptReverseReach",
+        "ttc": null,
+        "children": [
+            "Application:1:successfulReverseReach"
+        ],
+        "parents": [
+            "Application:0:reverseReach"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:successfulReverseReach",
+        "type": "and",
+        "name": "successfulReverseReach",
+        "ttc": null,
+        "children": [
+            "Application:1:reverseReach"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:attemptReverseReach"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:reverseReach",
+        "type": "or",
+        "name": "reverseReach",
+        "ttc": null,
+        "children": [
+            "Application:1:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "Application:1:networkConnectFromResponse"
+        ],
+        "parents": [
+            "Application:1:successfulReverseReach"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:localConnect",
+        "type": "or",
+        "name": "localConnect",
+        "ttc": null,
+        "children": [
+            "Application:1:localAccess",
+            "Application:1:specificAccessFromLocalConnection",
+            "Application:1:attemptUseVulnerability",
+            "Application:1:softwareProductVulnerabilityLocalAccessAchieved"
+        ],
+        "parents": [
+            "Application:0:specificAccess",
+            "Application:1:unsafeUserActivity"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:networkConnectUninspected",
+        "type": "or",
+        "name": "networkConnectUninspected",
+        "ttc": null,
+        "children": [
+            "Application:1:attemptUseVulnerability",
+            "Application:1:softwareProductVulnerabilityNetworkAccessAchieved",
+            "Application:1:networkConnect",
+            "Application:1:specificAccessNetworkConnect"
+        ],
+        "parents": [
+            "Application:1:networkConnectFromResponse",
+            "Application:1:unsafeUserActivity"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:networkConnectInspected",
+        "type": "or",
+        "name": "networkConnectInspected",
+        "ttc": null,
+        "children": [
+            "Application:1:networkConnect",
+            "Application:1:specificAccessNetworkConnect"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:networkConnect",
+        "type": "or",
+        "name": "networkConnect",
+        "ttc": null,
+        "children": [
+            "Application:1:networkAccess"
+        ],
+        "parents": [
+            "Application:1:networkConnectUninspected",
+            "Application:1:networkConnectInspected"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:specificAccessNetworkConnect",
+        "type": "or",
+        "name": "specificAccessNetworkConnect",
+        "ttc": null,
+        "children": [
+            "Application:1:specificAccessFromNetworkConnection"
+        ],
+        "parents": [
+            "Application:1:networkConnectUninspected",
+            "Application:1:networkConnectInspected"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:accessNetworkAndConnections",
+        "type": "or",
+        "name": "accessNetworkAndConnections",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:1:specificAccess",
+            "Application:1:fullAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attemptNetworkConnectFromResponse",
+        "type": "or",
+        "name": "attemptNetworkConnectFromResponse",
+        "ttc": null,
+        "children": [
+            "Application:1:networkConnectFromResponse"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:networkConnectFromResponse",
+        "type": "and",
+        "name": "networkConnectFromResponse",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "children": [
+            "Application:1:networkConnectUninspected"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:reverseReach",
+            "Application:1:attemptNetworkConnectFromResponse"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:specificAccessFromLocalConnection",
+        "type": "and",
+        "name": "specificAccessFromLocalConnection",
+        "ttc": null,
+        "children": [
+            "Application:1:specificAccess"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:localConnect",
+            "Application:1:specificAccessAuthenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:specificAccessFromNetworkConnection",
+        "type": "and",
+        "name": "specificAccessFromNetworkConnection",
+        "ttc": null,
+        "children": [
+            "Application:1:specificAccess"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:specificAccessNetworkConnect",
+            "Application:1:specificAccessAuthenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:specificAccess",
+        "type": "or",
+        "name": "specificAccess",
+        "ttc": null,
+        "children": [
+            "Application:1:specificAccessRead",
+            "Application:1:specificAccessModify",
+            "Application:1:specificAccessDelete",
+            "Application:1:bypassContainerization",
+            "Application:1:attemptUseVulnerability",
+            "Application:1:attemptAuthorizedApplicationRespondConnectThroughData",
+            "Application:1:accessNetworkAndConnections"
+        ],
+        "parents": [
+            "Application:1:specificAccessFromLocalConnection",
+            "Application:1:specificAccessFromNetworkConnection",
+            "Application:1:fullAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:bypassContainerization",
+        "type": "or",
+        "name": "bypassContainerization",
+        "ttc": {
+            "type": "function",
+            "name": "HardAndUncertain",
+            "arguments": []
+        },
+        "children": [
+            "Application:0:attemptUseVulnerability"
+        ],
+        "parents": [
+            "Application:1:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:authenticate",
+        "type": "or",
+        "name": "authenticate",
+        "ttc": null,
+        "children": [
+            "Application:1:localAccess",
+            "Application:1:networkAccess",
+            "Application:1:softwareProductVulnerabilityHighPrivilegesAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:specificAccessAuthenticate",
+        "type": "or",
+        "name": "specificAccessAuthenticate",
+        "ttc": null,
+        "children": [
+            "Application:1:specificAccessFromLocalConnection",
+            "Application:1:specificAccessFromNetworkConnection",
+            "Application:1:softwareProductVulnerabilityLowPrivilegesAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:localAccess",
+        "type": "and",
+        "name": "localAccess",
+        "ttc": null,
+        "children": [
+            "Application:1:fullAccess"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:localConnect",
+            "Application:1:authenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:networkAccess",
+        "type": "and",
+        "name": "networkAccess",
+        "ttc": null,
+        "children": [
+            "Application:1:fullAccess"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:networkConnect",
+            "Application:1:authenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:fullAccess",
+        "type": "or",
+        "name": "fullAccess",
+        "ttc": null,
+        "children": [
+            "Application:1:attemptRead",
+            "Application:1:attemptModify",
+            "Application:1:attemptDeny",
+            "Application:1:attemptApplicationRespondConnectThroughData",
+            "Application:1:accessNetworkAndConnections",
+            "Application:0:localConnect",
+            "Application:1:specificAccess"
+        ],
+        "parents": [
+            "Application:1:localAccess",
+            "Application:1:networkAccess",
+            "Application:1:fullAccessFromSupplyChainCompromise",
+            "Application:1:modify"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:physicalAccessAchieved",
+        "type": "or",
+        "name": "physicalAccessAchieved",
+        "ttc": null,
+        "children": [
+            "Application:1:softwareProductVulnerabilityPhysicalAccessAchieved"
+        ],
+        "parents": [
+            "Application:0:physicalAccessAchieved"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attemptUnsafeUserActivity",
+        "type": "or",
+        "name": "attemptUnsafeUserActivity",
+        "ttc": null,
+        "children": [
+            "Application:1:successfulUnsafeUserActivity",
+            "Application:1:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "Application:1:attackerUnsafeUserActivityCapabilityWithoutReverseReach"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:successfulUnsafeUserActivity",
+        "type": "and",
+        "name": "successfulUnsafeUserActivity",
+        "ttc": null,
+        "children": [
+            "Application:1:unsafeUserActivity"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:attemptUnsafeUserActivity",
+            "Application:1:attackerUnsafeUserActivityCapability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:unsafeUserActivity",
+        "type": "or",
+        "name": "unsafeUserActivity",
+        "ttc": null,
+        "children": [
+            "Application:1:localConnect",
+            "Application:1:networkConnectUninspected"
+        ],
+        "parents": [
+            "Application:1:successfulUnsafeUserActivity"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attackerUnsafeUserActivityCapability",
+        "type": "or",
+        "name": "attackerUnsafeUserActivityCapability",
+        "ttc": null,
+        "children": [
+            "Application:1:successfulUnsafeUserActivity"
+        ],
+        "parents": [
+            "Application:1:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "Application:1:attackerUnsafeUserActivityCapabilityWithoutReverseReach"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attackerUnsafeUserActivityCapabilityWithReverseReach",
+        "type": "and",
+        "name": "attackerUnsafeUserActivityCapabilityWithReverseReach",
+        "ttc": null,
+        "children": [
+            "Application:1:attackerUnsafeUserActivityCapability"
+        ],
+        "parents": [
+            "Application:1:reverseReach",
+            "Application:1:attemptUnsafeUserActivity"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attackerUnsafeUserActivityCapabilityWithoutReverseReach",
+        "type": "or",
+        "name": "attackerUnsafeUserActivityCapabilityWithoutReverseReach",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "children": [
+            "Application:1:attackerUnsafeUserActivityCapability"
+        ],
+        "parents": [
+            "Application:1:attemptUnsafeUserActivity"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:supplyChainAuditing",
+        "type": "defense",
+        "name": "supplyChainAuditing",
+        "ttc": null,
+        "children": [
+            "Application:1:supplyChainAuditingBypassed"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:1",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "Application:1:bypassSupplyChainAuditing",
+        "type": "or",
+        "name": "bypassSupplyChainAuditing",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "children": [
+            "Application:1:supplyChainAuditingBypassed"
+        ],
+        "parents": [
+            "Application:1:attemptFullAccessFromSupplyChainCompromise"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:supplyChainAuditingBypassed",
+        "type": "or",
+        "name": "supplyChainAuditingBypassed",
+        "ttc": null,
+        "children": [
+            "Application:1:fullAccessFromSupplyChainCompromise"
+        ],
+        "parents": [
+            "Application:1:supplyChainAuditing",
+            "Application:1:bypassSupplyChainAuditing"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attemptFullAccessFromSupplyChainCompromise",
+        "type": "or",
+        "name": "attemptFullAccessFromSupplyChainCompromise",
+        "ttc": null,
+        "children": [
+            "Application:1:fullAccessFromSupplyChainCompromise",
+            "Application:1:bypassSupplyChainAuditing"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:fullAccessFromSupplyChainCompromise",
+        "type": "and",
+        "name": "fullAccessFromSupplyChainCompromise",
+        "ttc": null,
+        "children": [
+            "Application:1:fullAccess"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:supplyChainAuditingBypassed",
+            "Application:1:attemptFullAccessFromSupplyChainCompromise"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attemptReadFromSoftProdVulnerability",
+        "type": "or",
+        "name": "attemptReadFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:1:readFromSoftProdVulnerability"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attemptModifyFromSoftProdVulnerability",
+        "type": "or",
+        "name": "attemptModifyFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:1:modifyFromSoftProdVulnerability"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attemptDenyFromSoftProdVulnerability",
+        "type": "or",
+        "name": "attemptDenyFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:1:denyFromSoftProdVulnerability"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:softwareCheck",
+        "type": "exist",
+        "name": "softwareCheck",
+        "ttc": null,
+        "children": [
+            "Application:1:readFromSoftProdVulnerability",
+            "Application:1:modifyFromSoftProdVulnerability",
+            "Application:1:denyFromSoftProdVulnerability"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:1",
+        "existence_status": "False"
+    },
+    {
+        "id": "Application:1:softwareProductVulnerabilityLocalAccessAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityLocalAccessAchieved",
+        "ttc": null,
+        "children": [
+            "Application:1:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:1:localConnect"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:softwareProductVulnerabilityNetworkAccessAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityNetworkAccessAchieved",
+        "ttc": null,
+        "children": [
+            "Application:1:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:1:networkConnectUninspected"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:softwareProductVulnerabilityPhysicalAccessAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityPhysicalAccessAchieved",
+        "ttc": null,
+        "children": [
+            "Application:1:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:1:physicalAccessAchieved"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:softwareProductVulnerabilityLowPrivilegesAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityLowPrivilegesAchieved",
+        "ttc": null,
+        "children": [
+            "Application:1:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:1:specificAccessAuthenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:softwareProductVulnerabilityHighPrivilegesAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityHighPrivilegesAchieved",
+        "ttc": null,
+        "children": [
+            "Application:1:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:1:authenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:softwareProductVulnerabilityUserInteractionAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityUserInteractionAchieved",
+        "ttc": null,
+        "children": [
+            "Application:1:softwareProductAbuse"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attemptSoftwareProductAbuse",
+        "type": "or",
+        "name": "attemptSoftwareProductAbuse",
+        "ttc": null,
+        "children": [
+            "Application:1:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:1:useVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:softwareProductAbuse",
+        "type": "and",
+        "name": "softwareProductAbuse",
+        "ttc": null,
+        "children": [
+            "Application:1:readFromSoftProdVulnerability",
+            "Application:1:modifyFromSoftProdVulnerability",
+            "Application:1:denyFromSoftProdVulnerability"
+        ],
+        "parents": [
+            "Application:1:softwareProductVulnerabilityLocalAccessAchieved",
+            "Application:1:softwareProductVulnerabilityNetworkAccessAchieved",
+            "Application:1:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "Application:1:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "Application:1:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "Application:1:softwareProductVulnerabilityUserInteractionAchieved",
+            "Application:1:attemptSoftwareProductAbuse"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:readFromSoftProdVulnerability",
+        "type": "and",
+        "name": "readFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:1:attemptRead"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:useVulnerability",
+            "Application:1:attemptReadFromSoftProdVulnerability",
+            "Application:1:softwareCheck",
+            "Application:1:softwareProductAbuse"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:modifyFromSoftProdVulnerability",
+        "type": "and",
+        "name": "modifyFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:1:attemptModify"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:useVulnerability",
+            "Application:1:attemptModifyFromSoftProdVulnerability",
+            "Application:1:softwareCheck",
+            "Application:1:softwareProductAbuse"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:denyFromSoftProdVulnerability",
+        "type": "and",
+        "name": "denyFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:1:attemptDeny"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:useVulnerability",
+            "Application:1:attemptDenyFromSoftProdVulnerability",
+            "Application:1:softwareCheck",
+            "Application:1:softwareProductAbuse"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attemptApplicationRespondConnectThroughData",
+        "type": "or",
+        "name": "attemptApplicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [
+            "Application:1:successfulApplicationRespondConnectThroughData"
+        ],
+        "parents": [
+            "Application:1:fullAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:successfulApplicationRespondConnectThroughData",
+        "type": "and",
+        "name": "successfulApplicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [
+            "Application:1:applicationRespondConnectThroughData"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:attemptApplicationRespondConnectThroughData"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:applicationRespondConnectThroughData",
+        "type": "or",
+        "name": "applicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:1:successfulApplicationRespondConnectThroughData"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attemptAuthorizedApplicationRespondConnectThroughData",
+        "type": "or",
+        "name": "attemptAuthorizedApplicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [
+            "Application:1:successfulAuthorizedApplicationRespondConnectThroughData"
+        ],
+        "parents": [
+            "Application:1:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:successfulAuthorizedApplicationRespondConnectThroughData",
+        "type": "and",
+        "name": "successfulAuthorizedApplicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [
+            "Application:1:authorizedApplicationRespondConnectThroughData"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:attemptAuthorizedApplicationRespondConnectThroughData"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:authorizedApplicationRespondConnectThroughData",
+        "type": "or",
+        "name": "authorizedApplicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:1:successfulAuthorizedApplicationRespondConnectThroughData"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attemptRead",
+        "type": "or",
+        "name": "attemptRead",
+        "ttc": null,
+        "children": [
+            "Application:1:successfulRead"
+        ],
+        "parents": [
+            "Application:0:read",
+            "Application:1:fullAccess",
+            "Application:1:readFromSoftProdVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:successfulRead",
+        "type": "and",
+        "name": "successfulRead",
+        "ttc": null,
+        "children": [
+            "Application:1:read"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:attemptRead"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:read",
+        "type": "or",
+        "name": "read",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:1:successfulRead"
+        ],
+        "compromised_by": [
+            "Attacker:6"
+        ],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:specificAccessRead",
+        "type": "or",
+        "name": "specificAccessRead",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:1:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attemptModify",
+        "type": "or",
+        "name": "attemptModify",
+        "ttc": null,
+        "children": [
+            "Application:1:successfulModify"
+        ],
+        "parents": [
+            "Application:0:modify",
+            "Application:1:fullAccess",
+            "Application:1:modifyFromSoftProdVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:successfulModify",
+        "type": "and",
+        "name": "successfulModify",
+        "ttc": null,
+        "children": [
+            "Application:1:modify"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:attemptModify"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:modify",
+        "type": "or",
+        "name": "modify",
+        "ttc": null,
+        "children": [
+            "Application:1:fullAccess"
+        ],
+        "parents": [
+            "Application:1:successfulModify"
+        ],
+        "compromised_by": [
+            "Attacker:6"
+        ],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:specificAccessModify",
+        "type": "or",
+        "name": "specificAccessModify",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:1:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:attemptDeny",
+        "type": "or",
+        "name": "attemptDeny",
+        "ttc": null,
+        "children": [
+            "Application:1:successfulDeny"
+        ],
+        "parents": [
+            "Application:0:deny",
+            "Application:1:fullAccess",
+            "Application:1:denyFromSoftProdVulnerability",
+            "Application:1:denyFromNetworkingAsset",
+            "Application:1:denyFromLockout"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:successfulDeny",
+        "type": "and",
+        "name": "successfulDeny",
+        "ttc": null,
+        "children": [
+            "Application:1:deny"
+        ],
+        "parents": [
+            "Application:1:notPresent",
+            "Application:1:attemptDeny"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:deny",
+        "type": "or",
+        "name": "deny",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:1:successfulDeny"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:specificAccessDelete",
+        "type": "or",
+        "name": "specificAccessDelete",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:1:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:denyFromNetworkingAsset",
+        "type": "and",
+        "name": "denyFromNetworkingAsset",
+        "ttc": null,
+        "children": [
+            "Application:1:attemptDeny"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:1:denyFromLockout",
+        "type": "and",
+        "name": "denyFromLockout",
+        "ttc": null,
+        "children": [
+            "Application:1:attemptDeny"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:1"
+    },
+    {
+        "id": "Application:2:notPresent",
+        "type": "defense",
+        "name": "notPresent",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "Application:2:successfulUseVulnerability",
+            "Application:2:successfulReverseReach",
+            "Application:2:networkConnectFromResponse",
+            "Application:2:specificAccessFromLocalConnection",
+            "Application:2:specificAccessFromNetworkConnection",
+            "Application:2:localAccess",
+            "Application:2:networkAccess",
+            "Application:2:successfulUnsafeUserActivity",
+            "Application:2:fullAccessFromSupplyChainCompromise",
+            "Application:2:readFromSoftProdVulnerability",
+            "Application:2:modifyFromSoftProdVulnerability",
+            "Application:2:denyFromSoftProdVulnerability",
+            "Application:2:successfulApplicationRespondConnectThroughData",
+            "Application:2:successfulAuthorizedApplicationRespondConnectThroughData",
+            "Application:2:successfulRead",
+            "Application:2:successfulModify",
+            "Application:2:successfulDeny"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:2",
+        "defense_status": "0.0",
+        "mitre_info": "Used for M1042: Disable or Remove Feature or Program, M1033: Limit Software Installation, M1028: Operating System Configuration"
+    },
+    {
+        "id": "Application:2:attemptUseVulnerability",
+        "type": "or",
+        "name": "attemptUseVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:2:successfulUseVulnerability"
+        ],
+        "parents": [
+            "Application:2:localConnect",
+            "Application:2:networkConnectUninspected",
+            "Application:2:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:successfulUseVulnerability",
+        "type": "and",
+        "name": "successfulUseVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:2:useVulnerability"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:attemptUseVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:useVulnerability",
+        "type": "or",
+        "name": "useVulnerability",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:5:attemptAbuse",
+            "Application:2:attemptSoftwareProductAbuse",
+            "Application:2:readFromSoftProdVulnerability",
+            "Application:2:modifyFromSoftProdVulnerability",
+            "Application:2:denyFromSoftProdVulnerability"
+        ],
+        "parents": [
+            "Application:2:successfulUseVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attemptReverseReach",
+        "type": "or",
+        "name": "attemptReverseReach",
+        "ttc": null,
+        "children": [
+            "Application:2:successfulReverseReach"
+        ],
+        "parents": [
+            "Application:0:reverseReach"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:successfulReverseReach",
+        "type": "and",
+        "name": "successfulReverseReach",
+        "ttc": null,
+        "children": [
+            "Application:2:reverseReach"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:attemptReverseReach"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:reverseReach",
+        "type": "or",
+        "name": "reverseReach",
+        "ttc": null,
+        "children": [
+            "Application:2:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "Application:2:networkConnectFromResponse"
+        ],
+        "parents": [
+            "Application:2:successfulReverseReach"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:localConnect",
+        "type": "or",
+        "name": "localConnect",
+        "ttc": null,
+        "children": [
+            "Application:2:localAccess",
+            "Application:2:specificAccessFromLocalConnection",
+            "Application:2:attemptUseVulnerability",
+            "SoftwareVulnerability:5:localAccessAchieved",
+            "Application:2:softwareProductVulnerabilityLocalAccessAchieved"
+        ],
+        "parents": [
+            "Application:0:specificAccess",
+            "Application:2:unsafeUserActivity"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:networkConnectUninspected",
+        "type": "or",
+        "name": "networkConnectUninspected",
+        "ttc": null,
+        "children": [
+            "Application:2:attemptUseVulnerability",
+            "SoftwareVulnerability:5:networkAccessAchieved",
+            "Application:2:softwareProductVulnerabilityNetworkAccessAchieved",
+            "Application:2:networkConnect",
+            "Application:2:specificAccessNetworkConnect"
+        ],
+        "parents": [
+            "Application:2:networkConnectFromResponse",
+            "Application:2:unsafeUserActivity"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:networkConnectInspected",
+        "type": "or",
+        "name": "networkConnectInspected",
+        "ttc": null,
+        "children": [
+            "Application:2:networkConnect",
+            "Application:2:specificAccessNetworkConnect"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:networkConnect",
+        "type": "or",
+        "name": "networkConnect",
+        "ttc": null,
+        "children": [
+            "Application:2:networkAccess"
+        ],
+        "parents": [
+            "Application:2:networkConnectUninspected",
+            "Application:2:networkConnectInspected"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:specificAccessNetworkConnect",
+        "type": "or",
+        "name": "specificAccessNetworkConnect",
+        "ttc": null,
+        "children": [
+            "Application:2:specificAccessFromNetworkConnection"
+        ],
+        "parents": [
+            "Application:2:networkConnectUninspected",
+            "Application:2:networkConnectInspected"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:accessNetworkAndConnections",
+        "type": "or",
+        "name": "accessNetworkAndConnections",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:2:specificAccess",
+            "Application:2:fullAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attemptNetworkConnectFromResponse",
+        "type": "or",
+        "name": "attemptNetworkConnectFromResponse",
+        "ttc": null,
+        "children": [
+            "Application:2:networkConnectFromResponse"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:networkConnectFromResponse",
+        "type": "and",
+        "name": "networkConnectFromResponse",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "children": [
+            "Application:2:networkConnectUninspected"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:reverseReach",
+            "Application:2:attemptNetworkConnectFromResponse"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:specificAccessFromLocalConnection",
+        "type": "and",
+        "name": "specificAccessFromLocalConnection",
+        "ttc": null,
+        "children": [
+            "Application:2:specificAccess"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:localConnect",
+            "Application:2:specificAccessAuthenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:specificAccessFromNetworkConnection",
+        "type": "and",
+        "name": "specificAccessFromNetworkConnection",
+        "ttc": null,
+        "children": [
+            "Application:2:specificAccess"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:specificAccessNetworkConnect",
+            "Application:2:specificAccessAuthenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:specificAccess",
+        "type": "or",
+        "name": "specificAccess",
+        "ttc": null,
+        "children": [
+            "Application:2:specificAccessRead",
+            "Application:2:specificAccessModify",
+            "Application:2:specificAccessDelete",
+            "Application:2:bypassContainerization",
+            "Application:2:attemptUseVulnerability",
+            "Application:2:attemptAuthorizedApplicationRespondConnectThroughData",
+            "Application:2:accessNetworkAndConnections"
+        ],
+        "parents": [
+            "Application:2:specificAccessFromLocalConnection",
+            "Application:2:specificAccessFromNetworkConnection",
+            "Application:2:fullAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:bypassContainerization",
+        "type": "or",
+        "name": "bypassContainerization",
+        "ttc": {
+            "type": "function",
+            "name": "HardAndUncertain",
+            "arguments": []
+        },
+        "children": [
+            "Application:0:attemptUseVulnerability"
+        ],
+        "parents": [
+            "Application:2:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:authenticate",
+        "type": "or",
+        "name": "authenticate",
+        "ttc": null,
+        "children": [
+            "Application:2:localAccess",
+            "Application:2:networkAccess",
+            "SoftwareVulnerability:5:highPrivilegesAchieved",
+            "Application:2:softwareProductVulnerabilityHighPrivilegesAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:specificAccessAuthenticate",
+        "type": "or",
+        "name": "specificAccessAuthenticate",
+        "ttc": null,
+        "children": [
+            "Application:2:specificAccessFromLocalConnection",
+            "Application:2:specificAccessFromNetworkConnection",
+            "SoftwareVulnerability:5:lowPrivilegesAchieved",
+            "Application:2:softwareProductVulnerabilityLowPrivilegesAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:localAccess",
+        "type": "and",
+        "name": "localAccess",
+        "ttc": null,
+        "children": [
+            "Application:2:fullAccess"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:localConnect",
+            "Application:2:authenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:networkAccess",
+        "type": "and",
+        "name": "networkAccess",
+        "ttc": null,
+        "children": [
+            "Application:2:fullAccess"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:networkConnect",
+            "Application:2:authenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:fullAccess",
+        "type": "or",
+        "name": "fullAccess",
+        "ttc": null,
+        "children": [
+            "Application:2:attemptRead",
+            "Application:2:attemptModify",
+            "Application:2:attemptDeny",
+            "Application:2:attemptApplicationRespondConnectThroughData",
+            "Application:2:accessNetworkAndConnections",
+            "Application:0:localConnect",
+            "Application:2:specificAccess"
+        ],
+        "parents": [
+            "Application:2:localAccess",
+            "Application:2:networkAccess",
+            "Application:2:fullAccessFromSupplyChainCompromise",
+            "Application:2:modify"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:physicalAccessAchieved",
+        "type": "or",
+        "name": "physicalAccessAchieved",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:5:physicalAccessAchieved",
+            "Application:2:softwareProductVulnerabilityPhysicalAccessAchieved"
+        ],
+        "parents": [
+            "Application:0:physicalAccessAchieved"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attemptUnsafeUserActivity",
+        "type": "or",
+        "name": "attemptUnsafeUserActivity",
+        "ttc": null,
+        "children": [
+            "Application:2:successfulUnsafeUserActivity",
+            "Application:2:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "Application:2:attackerUnsafeUserActivityCapabilityWithoutReverseReach"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:successfulUnsafeUserActivity",
+        "type": "and",
+        "name": "successfulUnsafeUserActivity",
+        "ttc": null,
+        "children": [
+            "Application:2:unsafeUserActivity"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:attemptUnsafeUserActivity",
+            "Application:2:attackerUnsafeUserActivityCapability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:unsafeUserActivity",
+        "type": "or",
+        "name": "unsafeUserActivity",
+        "ttc": null,
+        "children": [
+            "Application:2:localConnect",
+            "Application:2:networkConnectUninspected",
+            "SoftwareVulnerability:5:userInteractionAchieved"
+        ],
+        "parents": [
+            "Application:2:successfulUnsafeUserActivity"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attackerUnsafeUserActivityCapability",
+        "type": "or",
+        "name": "attackerUnsafeUserActivityCapability",
+        "ttc": null,
+        "children": [
+            "Application:2:successfulUnsafeUserActivity"
+        ],
+        "parents": [
+            "Application:2:attackerUnsafeUserActivityCapabilityWithReverseReach",
+            "Application:2:attackerUnsafeUserActivityCapabilityWithoutReverseReach"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attackerUnsafeUserActivityCapabilityWithReverseReach",
+        "type": "and",
+        "name": "attackerUnsafeUserActivityCapabilityWithReverseReach",
+        "ttc": null,
+        "children": [
+            "Application:2:attackerUnsafeUserActivityCapability"
+        ],
+        "parents": [
+            "Application:2:reverseReach",
+            "Application:2:attemptUnsafeUserActivity"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attackerUnsafeUserActivityCapabilityWithoutReverseReach",
+        "type": "or",
+        "name": "attackerUnsafeUserActivityCapabilityWithoutReverseReach",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "children": [
+            "Application:2:attackerUnsafeUserActivityCapability"
+        ],
+        "parents": [
+            "Application:2:attemptUnsafeUserActivity"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:supplyChainAuditing",
+        "type": "defense",
+        "name": "supplyChainAuditing",
+        "ttc": null,
+        "children": [
+            "Application:2:supplyChainAuditingBypassed"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:2",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "Application:2:bypassSupplyChainAuditing",
+        "type": "or",
+        "name": "bypassSupplyChainAuditing",
+        "ttc": {
+            "type": "function",
+            "name": "VeryHardAndUncertain",
+            "arguments": []
+        },
+        "children": [
+            "Application:2:supplyChainAuditingBypassed"
+        ],
+        "parents": [
+            "Application:2:attemptFullAccessFromSupplyChainCompromise"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:supplyChainAuditingBypassed",
+        "type": "or",
+        "name": "supplyChainAuditingBypassed",
+        "ttc": null,
+        "children": [
+            "Application:2:fullAccessFromSupplyChainCompromise"
+        ],
+        "parents": [
+            "Application:2:supplyChainAuditing",
+            "Application:2:bypassSupplyChainAuditing"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attemptFullAccessFromSupplyChainCompromise",
+        "type": "or",
+        "name": "attemptFullAccessFromSupplyChainCompromise",
+        "ttc": null,
+        "children": [
+            "Application:2:fullAccessFromSupplyChainCompromise",
+            "Application:2:bypassSupplyChainAuditing"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:fullAccessFromSupplyChainCompromise",
+        "type": "and",
+        "name": "fullAccessFromSupplyChainCompromise",
+        "ttc": null,
+        "children": [
+            "Application:2:fullAccess"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:supplyChainAuditingBypassed",
+            "Application:2:attemptFullAccessFromSupplyChainCompromise"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attemptReadFromSoftProdVulnerability",
+        "type": "or",
+        "name": "attemptReadFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:2:readFromSoftProdVulnerability"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attemptModifyFromSoftProdVulnerability",
+        "type": "or",
+        "name": "attemptModifyFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:2:modifyFromSoftProdVulnerability"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attemptDenyFromSoftProdVulnerability",
+        "type": "or",
+        "name": "attemptDenyFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:2:denyFromSoftProdVulnerability"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:softwareCheck",
+        "type": "exist",
+        "name": "softwareCheck",
+        "ttc": null,
+        "children": [
+            "Application:2:readFromSoftProdVulnerability",
+            "Application:2:modifyFromSoftProdVulnerability",
+            "Application:2:denyFromSoftProdVulnerability"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:2",
+        "existence_status": "False"
+    },
+    {
+        "id": "Application:2:softwareProductVulnerabilityLocalAccessAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityLocalAccessAchieved",
+        "ttc": null,
+        "children": [
+            "Application:2:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:2:localConnect"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:softwareProductVulnerabilityNetworkAccessAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityNetworkAccessAchieved",
+        "ttc": null,
+        "children": [
+            "Application:2:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:2:networkConnectUninspected"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:softwareProductVulnerabilityPhysicalAccessAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityPhysicalAccessAchieved",
+        "ttc": null,
+        "children": [
+            "Application:2:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:2:physicalAccessAchieved"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:softwareProductVulnerabilityLowPrivilegesAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityLowPrivilegesAchieved",
+        "ttc": null,
+        "children": [
+            "Application:2:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:2:specificAccessAuthenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:softwareProductVulnerabilityHighPrivilegesAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityHighPrivilegesAchieved",
+        "ttc": null,
+        "children": [
+            "Application:2:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:2:authenticate"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:softwareProductVulnerabilityUserInteractionAchieved",
+        "type": "or",
+        "name": "softwareProductVulnerabilityUserInteractionAchieved",
+        "ttc": null,
+        "children": [
+            "Application:2:softwareProductAbuse"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attemptSoftwareProductAbuse",
+        "type": "or",
+        "name": "attemptSoftwareProductAbuse",
+        "ttc": null,
+        "children": [
+            "Application:2:softwareProductAbuse"
+        ],
+        "parents": [
+            "Application:2:useVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:softwareProductAbuse",
+        "type": "and",
+        "name": "softwareProductAbuse",
+        "ttc": null,
+        "children": [
+            "Application:2:readFromSoftProdVulnerability",
+            "Application:2:modifyFromSoftProdVulnerability",
+            "Application:2:denyFromSoftProdVulnerability"
+        ],
+        "parents": [
+            "Application:2:softwareProductVulnerabilityLocalAccessAchieved",
+            "Application:2:softwareProductVulnerabilityNetworkAccessAchieved",
+            "Application:2:softwareProductVulnerabilityPhysicalAccessAchieved",
+            "Application:2:softwareProductVulnerabilityLowPrivilegesAchieved",
+            "Application:2:softwareProductVulnerabilityHighPrivilegesAchieved",
+            "Application:2:softwareProductVulnerabilityUserInteractionAchieved",
+            "Application:2:attemptSoftwareProductAbuse"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:readFromSoftProdVulnerability",
+        "type": "and",
+        "name": "readFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:2:attemptRead"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:useVulnerability",
+            "Application:2:attemptReadFromSoftProdVulnerability",
+            "Application:2:softwareCheck",
+            "Application:2:softwareProductAbuse"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:modifyFromSoftProdVulnerability",
+        "type": "and",
+        "name": "modifyFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:2:attemptModify"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:useVulnerability",
+            "Application:2:attemptModifyFromSoftProdVulnerability",
+            "Application:2:softwareCheck",
+            "Application:2:softwareProductAbuse"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:denyFromSoftProdVulnerability",
+        "type": "and",
+        "name": "denyFromSoftProdVulnerability",
+        "ttc": null,
+        "children": [
+            "Application:2:attemptDeny"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:useVulnerability",
+            "Application:2:attemptDenyFromSoftProdVulnerability",
+            "Application:2:softwareCheck",
+            "Application:2:softwareProductAbuse"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attemptApplicationRespondConnectThroughData",
+        "type": "or",
+        "name": "attemptApplicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [
+            "Application:2:successfulApplicationRespondConnectThroughData"
+        ],
+        "parents": [
+            "Application:2:fullAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:successfulApplicationRespondConnectThroughData",
+        "type": "and",
+        "name": "successfulApplicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [
+            "Application:2:applicationRespondConnectThroughData"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:attemptApplicationRespondConnectThroughData"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:applicationRespondConnectThroughData",
+        "type": "or",
+        "name": "applicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:2:successfulApplicationRespondConnectThroughData"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attemptAuthorizedApplicationRespondConnectThroughData",
+        "type": "or",
+        "name": "attemptAuthorizedApplicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [
+            "Application:2:successfulAuthorizedApplicationRespondConnectThroughData"
+        ],
+        "parents": [
+            "Application:2:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:successfulAuthorizedApplicationRespondConnectThroughData",
+        "type": "and",
+        "name": "successfulAuthorizedApplicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [
+            "Application:2:authorizedApplicationRespondConnectThroughData"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:attemptAuthorizedApplicationRespondConnectThroughData"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:authorizedApplicationRespondConnectThroughData",
+        "type": "or",
+        "name": "authorizedApplicationRespondConnectThroughData",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:2:successfulAuthorizedApplicationRespondConnectThroughData"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attemptRead",
+        "type": "or",
+        "name": "attemptRead",
+        "ttc": null,
+        "children": [
+            "Application:2:successfulRead"
+        ],
+        "parents": [
+            "Application:0:read",
+            "Application:2:fullAccess",
+            "Application:2:readFromSoftProdVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:successfulRead",
+        "type": "and",
+        "name": "successfulRead",
+        "ttc": null,
+        "children": [
+            "Application:2:read"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:attemptRead"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:read",
+        "type": "or",
+        "name": "read",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:2:successfulRead",
+            "SoftwareVulnerability:5:read"
+        ],
+        "compromised_by": [
+            "Attacker:7"
+        ],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:specificAccessRead",
+        "type": "or",
+        "name": "specificAccessRead",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:2:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attemptModify",
+        "type": "or",
+        "name": "attemptModify",
+        "ttc": null,
+        "children": [
+            "Application:2:successfulModify"
+        ],
+        "parents": [
+            "Application:0:modify",
+            "Application:2:fullAccess",
+            "Application:2:modifyFromSoftProdVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:successfulModify",
+        "type": "and",
+        "name": "successfulModify",
+        "ttc": null,
+        "children": [
+            "Application:2:modify"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:attemptModify"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:modify",
+        "type": "or",
+        "name": "modify",
+        "ttc": null,
+        "children": [
+            "Application:2:fullAccess"
+        ],
+        "parents": [
+            "Application:2:successfulModify",
+            "SoftwareVulnerability:5:modify"
+        ],
+        "compromised_by": [
+            "Attacker:7"
+        ],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:specificAccessModify",
+        "type": "or",
+        "name": "specificAccessModify",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:2:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:attemptDeny",
+        "type": "or",
+        "name": "attemptDeny",
+        "ttc": null,
+        "children": [
+            "Application:2:successfulDeny"
+        ],
+        "parents": [
+            "Application:0:deny",
+            "Application:2:fullAccess",
+            "Application:2:denyFromSoftProdVulnerability",
+            "Application:2:denyFromNetworkingAsset",
+            "Application:2:denyFromLockout"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:successfulDeny",
+        "type": "and",
+        "name": "successfulDeny",
+        "ttc": null,
+        "children": [
+            "Application:2:deny"
+        ],
+        "parents": [
+            "Application:2:notPresent",
+            "Application:2:attemptDeny"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:deny",
+        "type": "or",
+        "name": "deny",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:2:successfulDeny",
+            "SoftwareVulnerability:5:deny"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:specificAccessDelete",
+        "type": "or",
+        "name": "specificAccessDelete",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "Application:2:specificAccess"
+        ],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:denyFromNetworkingAsset",
+        "type": "and",
+        "name": "denyFromNetworkingAsset",
+        "ttc": null,
+        "children": [
+            "Application:2:attemptDeny"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "Application:2:denyFromLockout",
+        "type": "and",
+        "name": "denyFromLockout",
+        "ttc": null,
+        "children": [
+            "Application:2:attemptDeny"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Application:2"
+    },
+    {
+        "id": "SoftwareProduct:3:read",
+        "type": "or",
+        "name": "read",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "SoftwareProduct:3:attemptReadFromReplica"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareProduct:3"
+    },
+    {
+        "id": "SoftwareProduct:3:write",
+        "type": "or",
+        "name": "write",
+        "ttc": null,
+        "children": [
+            "SoftwareProduct:3:delete",
+            "SoftwareProduct:3:compromiseApplications"
+        ],
+        "parents": [
+            "SoftwareProduct:3:attemptWriteFromReplica"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareProduct:3"
+    },
+    {
+        "id": "SoftwareProduct:3:delete",
+        "type": "or",
+        "name": "delete",
+        "ttc": null,
+        "children": [
+            "SoftwareProduct:3:deny"
+        ],
+        "parents": [
+            "SoftwareProduct:3:write",
+            "SoftwareProduct:3:attemptDeleteFromReplica"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareProduct:3"
+    },
+    {
+        "id": "SoftwareProduct:3:deny",
+        "type": "or",
+        "name": "deny",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "SoftwareProduct:3:delete",
+            "SoftwareProduct:3:attemptDenyFromReplica"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareProduct:3"
+    },
+    {
+        "id": "SoftwareProduct:3:extract",
+        "type": "or",
+        "name": "extract",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "SoftwareProduct:3:attemptExtractFromReplica"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareProduct:3"
+    },
+    {
+        "id": "SoftwareProduct:3:attemptReadFromReplica",
+        "type": "or",
+        "name": "attemptReadFromReplica",
+        "ttc": null,
+        "children": [
+            "SoftwareProduct:3:read"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareProduct:3"
+    },
+    {
+        "id": "SoftwareProduct:3:attemptWriteFromReplica",
+        "type": "and",
+        "name": "attemptWriteFromReplica",
+        "ttc": null,
+        "children": [
+            "SoftwareProduct:3:write"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareProduct:3"
+    },
+    {
+        "id": "SoftwareProduct:3:attemptDeleteFromReplica",
+        "type": "and",
+        "name": "attemptDeleteFromReplica",
+        "ttc": null,
+        "children": [
+            "SoftwareProduct:3:delete"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareProduct:3"
+    },
+    {
+        "id": "SoftwareProduct:3:attemptDenyFromReplica",
+        "type": "and",
+        "name": "attemptDenyFromReplica",
+        "ttc": null,
+        "children": [
+            "SoftwareProduct:3:deny"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareProduct:3"
+    },
+    {
+        "id": "SoftwareProduct:3:attemptExtractFromReplica",
+        "type": "or",
+        "name": "attemptExtractFromReplica",
+        "ttc": null,
+        "children": [
+            "SoftwareProduct:3:extract"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareProduct:3"
+    },
+    {
+        "id": "SoftwareProduct:3:compromiseApplications",
+        "type": "or",
+        "name": "compromiseApplications",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "SoftwareProduct:3:write"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareProduct:3",
+        "mitre_info": "Used for T1195: Supply Chain Compromise(both software and firmware under certain circumstances)"
+    },
+    {
+        "id": "SoftwareProduct:3:readApplications",
+        "type": "or",
+        "name": "readApplications",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "SoftwareVulnerability:4:read"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareProduct:3"
+    },
+    {
+        "id": "SoftwareProduct:3:modifyApplications",
+        "type": "or",
+        "name": "modifyApplications",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "SoftwareVulnerability:4:modify"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareProduct:3"
+    },
+    {
+        "id": "SoftwareProduct:3:denyApplications",
+        "type": "or",
+        "name": "denyApplications",
+        "ttc": null,
+        "children": [],
+        "parents": [
+            "SoftwareVulnerability:4:deny"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareProduct:3"
+    },
+    {
+        "id": "SoftwareVulnerability:4:notPresent",
+        "type": "defense",
+        "name": "notPresent",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:4:abuse"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4",
+        "defense_status": "0.0",
+        "mitre_info": "Used for M1049:Antivirus/Antimalware, M1050: Exploit Protection, M1040: Behavior Prevention on Endpoint, M1038: Execution Prevention, M1051: Update Software, M1016: Vulnerability Scanning, M1021: Restrict Web-Based Content, M1042: Disable or Remove Feature or Program, M1013: Application Developer Guidance"
+    },
+    {
+        "id": "SoftwareVulnerability:4:attemptAbuse",
+        "type": "or",
+        "name": "attemptAbuse",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:4:abuse",
+            "SoftwareVulnerability:4:inherentUserInteraction",
+            "SoftwareVulnerability:4:inherentUserInteraction"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:abuse",
+        "type": "and",
+        "name": "abuse",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:4:attemptExploit"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:notPresent",
+            "SoftwareVulnerability:4:attemptAbuse",
+            "SoftwareVulnerability:4:networkAccessAchieved",
+            "SoftwareVulnerability:4:localAccessAchieved",
+            "SoftwareVulnerability:4:physicalAccessAchieved",
+            "SoftwareVulnerability:4:lowPrivilegesAchieved",
+            "SoftwareVulnerability:4:highPrivilegesAchieved",
+            "SoftwareVulnerability:4:userInteractionAchieved"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:attemptExploit",
+        "type": "or",
+        "name": "attemptExploit",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:4:exploitTrivially",
+            "SoftwareVulnerability:4:exploitWithEffort"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:abuse"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:exploit",
+        "type": "or",
+        "name": "exploit",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:4:impact"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:exploitTrivially",
+            "SoftwareVulnerability:4:exploitWithEffort"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:impact",
+        "type": "or",
+        "name": "impact",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:4:read",
+            "SoftwareVulnerability:4:modify",
+            "SoftwareVulnerability:4:deny"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:exploit"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:networkAccessRequired",
+        "type": "defense",
+        "name": "networkAccessRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:4:networkAccessAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4",
+        "defense_status": "1.0"
+    },
+    {
+        "id": "SoftwareVulnerability:4:localAccessRequired",
+        "type": "defense",
+        "name": "localAccessRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:4:localAccessAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:4:physicalAccessRequired",
+        "type": "defense",
+        "name": "physicalAccessRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:4:physicalAccessAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:4:lowPrivilegesRequired",
+        "type": "defense",
+        "name": "lowPrivilegesRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:4:lowPrivilegesAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4",
+        "defense_status": "1.0"
+    },
+    {
+        "id": "SoftwareVulnerability:4:highPrivilegesRequired",
+        "type": "defense",
+        "name": "highPrivilegesRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:4:highPrivilegesAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:4:userInteractionRequired",
+        "type": "defense",
+        "name": "userInteractionRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:4:userInteractionAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:4:confidentialityImpactLimitations",
+        "type": "defense",
+        "name": "confidentialityImpactLimitations",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:4:read"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:4:availabilityImpactLimitations",
+        "type": "defense",
+        "name": "availabilityImpactLimitations",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:4:deny"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:4:integrityImpactLimitations",
+        "type": "defense",
+        "name": "integrityImpactLimitations",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:4:modify"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:4:highComplexityExploitRequired",
+        "type": "defense",
+        "name": "highComplexityExploitRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:4:exploitTrivially"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:4:inherentUserInteraction",
+        "type": "or",
+        "name": "inherentUserInteraction",
+        "ttc": {
+            "type": "function",
+            "name": "HardAndUncertain",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:4:userInteractionAchieved"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:attemptAbuse",
+            "SoftwareVulnerability:4:attemptAbuse"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:networkAccessAchieved",
+        "type": "or",
+        "name": "networkAccessAchieved",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:4:abuse"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:networkAccessRequired"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:localAccessAchieved",
+        "type": "or",
+        "name": "localAccessAchieved",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:4:abuse"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:localAccessRequired"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:physicalAccessAchieved",
+        "type": "or",
+        "name": "physicalAccessAchieved",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:4:abuse"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:physicalAccessRequired"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:lowPrivilegesAchieved",
+        "type": "or",
+        "name": "lowPrivilegesAchieved",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:4:abuse"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:lowPrivilegesRequired"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:highPrivilegesAchieved",
+        "type": "or",
+        "name": "highPrivilegesAchieved",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:4:abuse"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:highPrivilegesRequired"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:userInteractionAchieved",
+        "type": "or",
+        "name": "userInteractionAchieved",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:4:abuse"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:userInteractionRequired",
+            "SoftwareVulnerability:4:inherentUserInteraction"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:read",
+        "type": "and",
+        "name": "read",
+        "ttc": null,
+        "children": [
+            "SoftwareProduct:3:readApplications"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:impact",
+            "SoftwareVulnerability:4:confidentialityImpactLimitations"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:modify",
+        "type": "and",
+        "name": "modify",
+        "ttc": null,
+        "children": [
+            "SoftwareProduct:3:modifyApplications"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:impact",
+            "SoftwareVulnerability:4:integrityImpactLimitations"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:deny",
+        "type": "and",
+        "name": "deny",
+        "ttc": null,
+        "children": [
+            "SoftwareProduct:3:denyApplications"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:impact",
+            "SoftwareVulnerability:4:availabilityImpactLimitations"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:exploitTrivially",
+        "type": "and",
+        "name": "exploitTrivially",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:4:exploit"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:attemptExploit",
+            "SoftwareVulnerability:4:highComplexityExploitRequired"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:4:exploitWithEffort",
+        "type": "and",
+        "name": "exploitWithEffort",
+        "ttc": {
+            "type": "function",
+            "name": "Exponential",
+            "arguments": [
+                0.01
+            ]
+        },
+        "children": [
+            "SoftwareVulnerability:4:exploit"
+        ],
+        "parents": [
+            "SoftwareVulnerability:4:attemptExploit"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:4"
+    },
+    {
+        "id": "SoftwareVulnerability:5:notPresent",
+        "type": "defense",
+        "name": "notPresent",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:5:abuse"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5",
+        "defense_status": "0.0",
+        "mitre_info": "Used for M1049:Antivirus/Antimalware, M1050: Exploit Protection, M1040: Behavior Prevention on Endpoint, M1038: Execution Prevention, M1051: Update Software, M1016: Vulnerability Scanning, M1021: Restrict Web-Based Content, M1042: Disable or Remove Feature or Program, M1013: Application Developer Guidance"
+    },
+    {
+        "id": "SoftwareVulnerability:5:attemptAbuse",
+        "type": "or",
+        "name": "attemptAbuse",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:5:abuse",
+            "SoftwareVulnerability:5:inherentUserInteraction",
+            "SoftwareVulnerability:5:inherentUserInteraction"
+        ],
+        "parents": [
+            "Application:2:useVulnerability"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:abuse",
+        "type": "and",
+        "name": "abuse",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:5:attemptExploit"
+        ],
+        "parents": [
+            "SoftwareVulnerability:5:notPresent",
+            "SoftwareVulnerability:5:attemptAbuse",
+            "SoftwareVulnerability:5:networkAccessAchieved",
+            "SoftwareVulnerability:5:localAccessAchieved",
+            "SoftwareVulnerability:5:physicalAccessAchieved",
+            "SoftwareVulnerability:5:lowPrivilegesAchieved",
+            "SoftwareVulnerability:5:highPrivilegesAchieved",
+            "SoftwareVulnerability:5:userInteractionAchieved"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:attemptExploit",
+        "type": "or",
+        "name": "attemptExploit",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:5:exploitTrivially",
+            "SoftwareVulnerability:5:exploitWithEffort"
+        ],
+        "parents": [
+            "SoftwareVulnerability:5:abuse"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:exploit",
+        "type": "or",
+        "name": "exploit",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:5:impact"
+        ],
+        "parents": [
+            "SoftwareVulnerability:5:exploitTrivially",
+            "SoftwareVulnerability:5:exploitWithEffort"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:impact",
+        "type": "or",
+        "name": "impact",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:5:read",
+            "SoftwareVulnerability:5:modify",
+            "SoftwareVulnerability:5:deny"
+        ],
+        "parents": [
+            "SoftwareVulnerability:5:exploit"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:networkAccessRequired",
+        "type": "defense",
+        "name": "networkAccessRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:5:networkAccessAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:5:localAccessRequired",
+        "type": "defense",
+        "name": "localAccessRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:5:localAccessAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:5:physicalAccessRequired",
+        "type": "defense",
+        "name": "physicalAccessRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:5:physicalAccessAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:5:lowPrivilegesRequired",
+        "type": "defense",
+        "name": "lowPrivilegesRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:5:lowPrivilegesAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:5:highPrivilegesRequired",
+        "type": "defense",
+        "name": "highPrivilegesRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:5:highPrivilegesAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:5:userInteractionRequired",
+        "type": "defense",
+        "name": "userInteractionRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:5:userInteractionAchieved"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:5:confidentialityImpactLimitations",
+        "type": "defense",
+        "name": "confidentialityImpactLimitations",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:5:read"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:5:availabilityImpactLimitations",
+        "type": "defense",
+        "name": "availabilityImpactLimitations",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:5:deny"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:5:integrityImpactLimitations",
+        "type": "defense",
+        "name": "integrityImpactLimitations",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:5:modify"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:5:highComplexityExploitRequired",
+        "type": "defense",
+        "name": "highComplexityExploitRequired",
+        "ttc": {
+            "type": "function",
+            "name": "Disabled",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:5:exploitTrivially"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5",
+        "defense_status": "0.0"
+    },
+    {
+        "id": "SoftwareVulnerability:5:inherentUserInteraction",
+        "type": "or",
+        "name": "inherentUserInteraction",
+        "ttc": {
+            "type": "function",
+            "name": "HardAndUncertain",
+            "arguments": []
+        },
+        "children": [
+            "SoftwareVulnerability:5:userInteractionAchieved"
+        ],
+        "parents": [
+            "SoftwareVulnerability:5:attemptAbuse",
+            "SoftwareVulnerability:5:attemptAbuse"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:networkAccessAchieved",
+        "type": "or",
+        "name": "networkAccessAchieved",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:5:abuse"
+        ],
+        "parents": [
+            "Application:2:networkConnectUninspected",
+            "SoftwareVulnerability:5:networkAccessRequired"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:localAccessAchieved",
+        "type": "or",
+        "name": "localAccessAchieved",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:5:abuse"
+        ],
+        "parents": [
+            "Application:2:localConnect",
+            "SoftwareVulnerability:5:localAccessRequired"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:physicalAccessAchieved",
+        "type": "or",
+        "name": "physicalAccessAchieved",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:5:abuse"
+        ],
+        "parents": [
+            "Application:2:physicalAccessAchieved",
+            "SoftwareVulnerability:5:physicalAccessRequired"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:lowPrivilegesAchieved",
+        "type": "or",
+        "name": "lowPrivilegesAchieved",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:5:abuse"
+        ],
+        "parents": [
+            "Application:2:specificAccessAuthenticate",
+            "SoftwareVulnerability:5:lowPrivilegesRequired"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:highPrivilegesAchieved",
+        "type": "or",
+        "name": "highPrivilegesAchieved",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:5:abuse"
+        ],
+        "parents": [
+            "Application:2:authenticate",
+            "SoftwareVulnerability:5:highPrivilegesRequired"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:userInteractionAchieved",
+        "type": "or",
+        "name": "userInteractionAchieved",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:5:abuse"
+        ],
+        "parents": [
+            "Application:2:unsafeUserActivity",
+            "SoftwareVulnerability:5:userInteractionRequired",
+            "SoftwareVulnerability:5:inherentUserInteraction"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:read",
+        "type": "and",
+        "name": "read",
+        "ttc": null,
+        "children": [
+            "Application:2:read"
+        ],
+        "parents": [
+            "SoftwareVulnerability:5:impact",
+            "SoftwareVulnerability:5:confidentialityImpactLimitations"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:modify",
+        "type": "and",
+        "name": "modify",
+        "ttc": null,
+        "children": [
+            "Application:2:modify"
+        ],
+        "parents": [
+            "SoftwareVulnerability:5:impact",
+            "SoftwareVulnerability:5:integrityImpactLimitations"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:deny",
+        "type": "and",
+        "name": "deny",
+        "ttc": null,
+        "children": [
+            "Application:2:deny"
+        ],
+        "parents": [
+            "SoftwareVulnerability:5:impact",
+            "SoftwareVulnerability:5:availabilityImpactLimitations"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:exploitTrivially",
+        "type": "and",
+        "name": "exploitTrivially",
+        "ttc": null,
+        "children": [
+            "SoftwareVulnerability:5:exploit"
+        ],
+        "parents": [
+            "SoftwareVulnerability:5:attemptExploit",
+            "SoftwareVulnerability:5:highComplexityExploitRequired"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "SoftwareVulnerability:5:exploitWithEffort",
+        "type": "and",
+        "name": "exploitWithEffort",
+        "ttc": {
+            "type": "function",
+            "name": "Exponential",
+            "arguments": [
+                0.01
+            ]
+        },
+        "children": [
+            "SoftwareVulnerability:5:exploit"
+        ],
+        "parents": [
+            "SoftwareVulnerability:5:attemptExploit"
+        ],
+        "compromised_by": [],
+        "asset": "SoftwareVulnerability:5"
+    },
+    {
+        "id": "Attacker:6:firstSteps",
+        "type": "or",
+        "name": "firstSteps",
+        "ttc": null,
+        "children": [
+            "Application:0:modify",
+            "Application:0:read",
+            "Application:1:modify",
+            "Application:1:read"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Attacker"
+    },
+    {
+        "id": "Attacker:7:firstSteps",
+        "type": "or",
+        "name": "firstSteps",
+        "ttc": null,
+        "children": [
+            "Application:2:modify",
+            "Application:2:read"
+        ],
+        "parents": [],
+        "compromised_by": [],
+        "asset": "Attacker"
+    }
+]

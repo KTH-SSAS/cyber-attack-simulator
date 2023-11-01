@@ -473,7 +473,7 @@ mod tests {
         runtime::SimulatorRuntime,
     };
 
-    const FILENAME: &str = "graphs/four_ways_mod.json";
+    const FILENAME: &str = "attack_simulator/graphs/four_ways_mod.json";
 
     #[test]
     fn test_sim_fnr() {
@@ -603,7 +603,7 @@ mod tests {
 
     #[test]
     fn test_test_graph() {
-        let filename = "graphs/test_graph.json";
+        let filename = "attack_simulator/graphs/test_graph.json";
         let graph = load_graph_from_json(filename, None, 0.0, 0.0).unwrap();
         let config = config::SimulatorConfig::default();
         let sim = SimulatorRuntime::new(graph, config).unwrap();

@@ -25,7 +25,7 @@ class EnvConfig(Config):
     """Config class for RL environment."""
 
     sim_config: SimulatorConfig
-    graph_filename: str
+    graph_name: str
     seed: Optional[int] = None
     vocab_filename: str = None
     attacker_only: bool = False

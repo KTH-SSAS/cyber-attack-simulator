@@ -1,0 +1,209 @@
+[
+    {
+        "id": "h:2:connect",
+        "type": "or",
+        "asset": "h:2",
+        "name": "connect",
+        "ttc": null,
+        "children": [
+            "h:3:connect",
+            "h:2:exploit",
+            "h:1:connect"
+        ],
+        "parents": null,
+        "defense_status": null,
+        "existence_status": null,
+        "is_viable": true,
+        "is_necessary": true,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null,
+        "observations": null
+    },
+    {
+        "id": "h:3:connect",
+        "type": "or",
+        "asset": "h:3",
+        "name": "connect",
+        "ttc": null,
+        "children": [],
+        "parents": null,
+        "defense_status": null,
+        "existence_status": null,
+        "is_viable": true,
+        "is_necessary": true,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null,
+        "observations": null
+    },
+    {
+        "id": "h:2:exploit",
+        "type": "or",
+        "asset": "h:2",
+        "name": "exploit",
+        "ttc": null,
+        "children": [
+            "h:2:read"
+        ],
+        "parents": null,
+        "defense_status": null,
+        "existence_status": null,
+        "is_viable": true,
+        "is_necessary": true,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null,
+        "observations": null
+    },
+    {
+        "id": "h:1:connect",
+        "type": "or",
+        "asset": "h:1",
+        "name": "connect",
+        "ttc": null,
+        "children": [
+            "h:1:exploit"
+        ],
+        "parents": null,
+        "defense_status": null,
+        "existence_status": null,
+        "is_viable": true,
+        "is_necessary": true,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null,
+        "observations": null
+    },
+    {
+        "id": "h:1:exploit",
+        "type": "or",
+        "asset": "h:1",
+        "name": "exploit",
+        "ttc": null,
+        "children": [
+            "h:1:read"
+        ],
+        "parents": null,
+        "defense_status": null,
+        "existence_status": null,
+        "is_viable": true,
+        "is_necessary": true,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null,
+        "observations": null
+    },
+    {
+        "id": "h:1:read",
+        "type": "or",
+        "asset": "h:1",
+        "name": "read",
+        "ttc": null,
+        "children": [],
+        "parents": null,
+        "defense_status": null,
+        "existence_status": null,
+        "is_viable": true,
+        "is_necessary": true,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null,
+        "observations": null
+    },
+    {
+        "id": "h:2:read",
+        "type": "or",
+        "asset": "h:2",
+        "name": "read",
+        "ttc": null,
+        "children": [],
+        "parents": null,
+        "defense_status": null,
+        "existence_status": null,
+        "is_viable": true,
+        "is_necessary": true,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null,
+        "observations": null
+    },
+    {
+        "id": "h:1:defend",
+        "type": "defense",
+        "asset": "h:1",
+        "name": "defend",
+        "ttc": null,
+        "children": [
+            "h:1:exploit",
+            "h:1:read"
+        ],
+        "parents": null,
+        "defense_status": null,
+        "existence_status": null,
+        "is_viable": true,
+        "is_necessary": true,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null,
+        "observations": null
+    },
+    {
+        "id": "h:3:defend",
+        "type": "defense",
+        "asset": "h:3",
+        "name": "defend",
+        "ttc": null,
+        "children": [
+            "h:3:connect"
+        ],
+        "parents": null,
+        "defense_status": null,
+        "existence_status": null,
+        "is_viable": true,
+        "is_necessary": true,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null,
+        "observations": null
+    },
+    {
+        "id": "h:2:defend",
+        "type": "defense",
+        "asset": "h:2",
+        "name": "defend",
+        "ttc": null,
+        "children": [
+            "h:2:exploit",
+            "h:2:read"
+        ],
+        "parents": null,
+        "defense_status": null,
+        "existence_status": null,
+        "is_viable": true,
+        "is_necessary": true,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null,
+        "observations": null
+    },
+    {
+        "id": "attacker:1:firstSteps",
+        "type": "or",
+        "asset": "attacker:1",
+        "name": "firstSteps",
+        "ttc": null,
+        "children": [
+            "h:2:connect"
+        ],
+        "parents": null,
+        "defense_status": null,
+        "existence_status": null,
+        "is_viable": true,
+        "is_necessary": true,
+        "compromised_by": [],
+        "extra": null,
+        "mitre_info": null,
+        "observations": null
+    }
+]

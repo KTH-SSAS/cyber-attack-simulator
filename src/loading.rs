@@ -219,7 +219,7 @@ mod tests {
 
     #[test]
     fn load_mal_graph() {
-        let filename = "graphs/corelang.json";
+        let filename = "attack_simulator/graphs/corelang.json";
         let vocab_filename = "mal/corelang_vocab_merged.json";
         let attack_graph = load_graph_from_json(filename, Some(vocab_filename), 0.0, 0.0).unwrap();
 

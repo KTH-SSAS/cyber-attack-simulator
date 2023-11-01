@@ -79,11 +79,11 @@ sim_config = attack_simulator.SimulatorConfig(
     false_negative_rate=0.0, false_positive_rate=0.0, seed=0, randomize_ttc=False, log=False, show_false=False
 )
 
-attacker_only = True
+attacker_only = False
 
 env_config = attack_simulator.EnvConfig(
     sim_config=sim_config,
-    graph_filename="graphs/four_ways_mod.json",
+    graph_name="four_ways_mod",
     seed=0,
     attacker_only=attacker_only,
 )
