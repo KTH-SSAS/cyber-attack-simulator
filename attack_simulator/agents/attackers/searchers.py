@@ -7,9 +7,12 @@ from ...constants import UINT
 from ..agent import Agent
 
 
-def get_new_targets(attack_surface: Set[int], discovered_targets: Set[int]) -> List[int]:
-    new_targets = attack_surface.difference(discovered_targets)
-    return list(sorted(new_targets))
+def get_new_targets(observation, discovered_targets: Set[int]) -> List[int]:
+    attack_surface = observation["node_surface"]
+    surface_indexes = set(np.flatnonzero(attack_surface))
+    new_targets = [idx for idx in surface_indexes if idx not in discovered_targets]
+    return new_targets, surface_indexes
+
 
 
 class BreadthFirstAttacker(Agent):
@@ -21,9 +24,7 @@ class BreadthFirstAttacker(Agent):
         self.rng = np.random.default_rng(seed) if agent_config.get("randomize", False) else None
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        attack_surface = observation["node_surface"]
-        surface_indexes = set(np.flatnonzero(attack_surface))
-        new_targets = [idx for idx in surface_indexes if idx not in self.targets]
+        new_targets, surface_indexes = get_new_targets(observation, self.targets)
 
         # Add new targets to the back of the queue
         # if desired, shuffle the new targets to make the attacker more unpredictable
@@ -36,10 +37,8 @@ class BreadthFirstAttacker(Agent):
             self.current_target, self.targets, surface_indexes
         )
 
-        action = observation["nop_index"] if done else 1
         self.current_target = None if done else self.current_target
-
-        # Offset the action by the number of special actions
+        action = observation["nop_index"] if done else 1
         return (action, self.current_target)
 
     @staticmethod
@@ -71,24 +70,20 @@ class DepthFirstAttacker(Agent):
         self.rng = np.random.default_rng(seed)
 
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        attack_surface = observation["action_mask"].reshape(-1)[observation["action_offset"] :]
-        surface_indexes = set(np.flatnonzero(attack_surface))
-        new_targets = [idx for idx in surface_indexes if idx not in self.targets]
+        new_targets, surface_indexes = get_new_targets(observation, self.targets)
 
         # Add new targets to the top of the stack
         self.rng.shuffle(new_targets)
         for c in new_targets:
             self.targets.append(c)
 
-        self.current_target = self.select_next_target(
+        self.current_target, done = self.select_next_target(
             self.current_target, self.targets, surface_indexes
         )
 
-        if self.current_target == STOP:
-            return observation["nop_index"]
-
-        # Offset the action by the number of special actions
-        return self.current_target + observation["action_offset"]
+        self.current_target = None if done else self.current_target
+        action = observation["nop_index"] if done else 1
+        return (action, self.current_target)
 
     @staticmethod
     def select_next_target(
@@ -101,8 +96,8 @@ class DepthFirstAttacker(Agent):
         while current_target not in attack_surface:
 
             if len(targets) == 0:
-                return STOP
+                return None, True
 
             current_target = targets.pop()
 
-        return current_target
+        return current_target, False
