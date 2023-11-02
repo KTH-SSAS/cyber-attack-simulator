@@ -62,7 +62,7 @@ class DefenderEnv(gym.Env):
         self, *, seed: int | None = None, options: dict[str, Any] | None = None
     ) -> tuple[Any, dict[str, Any]]:
         super().reset(seed=seed, options=options)
-        self.attacker = self.attacker_class({})
+        self.attacker = self.attacker_class({"seed": seed, "randomize": True})
         obs, info = self.env.reset(seed=seed, options=options)
         self.attacker_obs = obs[AGENT_ATTACKER]
         return obs[AGENT_DEFENDER], info[AGENT_DEFENDER]
