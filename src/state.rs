@@ -239,23 +239,17 @@ where
         graph: &AttackGraph<I>,
         attacker_step: Option<&I>,
         defender_step: Option<&I>,
-    ) -> StateResult<(SimulatorState<I>, (i64, i64))> {
+    ) -> StateResult<SimulatorState<I>> {
         let rng = self.rng.clone();
-        Ok((
-            SimulatorState {
-                enabled_defenses: self.enabled_defenses(graph, defender_step),
-                remaining_ttc: self.remaining_ttc(graph, attacker_step, defender_step),
-                compromised_steps: self.compromised_steps(graph, attacker_step, defender_step),
-                time: self.time + 1,
-                rng,
-                _attacker_action: attacker_step.copied(),
-                _defender_action: defender_step.copied(),
-            },
-            (
-                self.attacker_reward(graph, attacker_step),
-                self.defender_reward(graph, defender_step),
-            ),
-        ))
+        Ok(SimulatorState {
+            enabled_defenses: self.enabled_defenses(graph, defender_step),
+            remaining_ttc: self.remaining_ttc(graph, attacker_step, defender_step),
+            compromised_steps: self.compromised_steps(graph, attacker_step, defender_step),
+            time: self.time + 1,
+            rng,
+            _attacker_action: attacker_step.copied(),
+            _defender_action: defender_step.copied(),
+        })
     }
 
     pub fn defender_reward(&self, graph: &AttackGraph<I>, defense_step: Option<&I>) -> i64 {

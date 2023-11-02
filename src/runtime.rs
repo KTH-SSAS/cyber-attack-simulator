@@ -401,7 +401,7 @@ where
     )> {
         log::info!("Step with action dict {:?}", action_dict);
 
-        let (new_state, rewards) = self.calculate_next_state(action_dict)?;
+        let (rewards, new_state) = self.calculate_next_state(action_dict)?;
 
         log::info!("New state:\n{:?}", new_state);
 
@@ -439,7 +439,7 @@ where
     fn calculate_next_state(
         &self,
         action_dict: HashMap<String, ParameterAction>,
-    ) -> SimResult<(SimulatorState<I>, (i64, i64))> {
+    ) -> SimResult<((i64, i64), SimulatorState<I>)> {
         // Attacker selects and attack step from the attack surface
         // Defender selects a defense step from the defense surface, which is
         // the vector of all defense steps that are not disabled
@@ -447,8 +447,14 @@ where
         let attacker_selected_step = self.get_step_from_action(action_dict.get("attacker"));
         let old_state = self.state.borrow();
         match old_state.get_new_state(&self.g, attacker_selected_step, defender_selected_step) {
-            Ok((new_state, rewards)) => {
-                return Ok((new_state, rewards));
+            Ok(new_state) => {
+                return Ok((
+                    (
+                        new_state.attacker_reward(&self.g, attacker_selected_step),
+                        new_state.defender_reward(&self.g, defender_selected_step),
+                    ),
+                    new_state,
+                ));
             }
             Err(e) => {
                 return Err(SimError {
