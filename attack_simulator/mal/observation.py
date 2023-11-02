@@ -64,7 +64,7 @@ class Info:
 
 def obs_to_dict(obs: Observation) -> dict:
     return {
-        "ids_observation": np.array(obs.defender_observation),
+        "observation": np.array(obs.defender_observation),
         "node_surface": np.array(obs.attacker_possible_objects),
         "defense_state": np.array(obs.defense_state),
         "ttc_remaining": np.array(obs.ttc_remaining),

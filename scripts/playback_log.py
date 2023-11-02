@@ -24,7 +24,7 @@ for line in lines:
 
     defense_nodes = line["obs"]["defender"]["defense_indices"]
     action_dist = line["action_distributions"]["defender"]
-    node_states = line["obs"]["defender"]["ids_observation"]
+    node_states = line["obs"]["defender"]["observation"]
     colors = ["r" if i == 1 and (i not in defense_nodes) else "b" for i in node_states]
 
     layout = nx.nx_pydot.graphviz_layout(graph, prog="dot")
