@@ -1,7 +1,7 @@
 import dataclasses
 import json
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, SupportsFloat, Tuple
 
 import numpy as np
 from gymnasium import spaces
@@ -23,68 +23,59 @@ from ..rusty_sim import RustAttackSimulator  # noqa: E402
 
 logger = logging.getLogger("simulator")
 
-def defender_reward(obs):
+
+def defender_reward(obs: Observation) -> int:
     return np.sum(obs.defender_reward)
 
-def attacker_reward(obs):
+
+def attacker_reward(obs: Observation) -> int:
     return np.sum(obs.attacker_reward)
 
-def get_agent_obs(agents, sim_obs: Observation) -> Dict[str, Any]:
 
-    obs_funcs = {
-        AGENT_DEFENDER : Defender.get_obs,
-        AGENT_ATTACKER : Attacker.get_obs
-    }
+def get_agent_obs(agents: list, sim_obs: Observation) -> Dict[str, Any]:
+    obs_funcs = {AGENT_DEFENDER: Defender.get_obs, AGENT_ATTACKER: Attacker.get_obs}
 
     return {key: obs_funcs[key](sim_obs) for key in agents}
 
 
 class EnvironmentState:
-    def __init__(self, agent_ids):
+    def __init__(self, agent_ids: list) -> None:
         self.cumulative_rewards = {k: 0.0 for k in agent_ids}
-        self.reward = {k : 0.0 for k in agent_ids}
-        self.terminated = {k : False for k in agent_ids}
+        self.reward: Dict[str, int] = {k: 0 for k in agent_ids}
+        self.terminated: Dict[str, bool] = {k: False for k in agent_ids}
         self.terminated["__all__"] = False
-        self.truncated = {k : False for k in agent_ids}
+        self.truncated: Dict[str, bool] = {k: False for k in agent_ids}
         self.truncated["__all__"] = False
 
 
-class AttackSimulationEnv():
+class AttackSimulationEnv:
     """Handles reinforcement learning matters."""
 
     NO_ACTION = "no action"
 
     # attacker: Agent
-    last_obs: Observation
+    last_obs: Dict[str, Any]
 
     def __init__(self, config: EnvConfig, render_mode: str | None = None):
-
         sim_config = (
             config.sim_config
             if isinstance(config.sim_config, SimulatorConfig)
             else SimulatorConfig(**config.sim_config)
         )
 
-        # Set the seed for the simulator.
-        sim_config = dataclasses.replace(sim_config, seed=config.seed)
-
         graph_filename = examplemanager.get_paths_to_graphs()[config.graph_name]
 
         self.sim = RustAttackSimulator(
             json.dumps(sim_config.to_dict()), graph_filename, config.vocab_filename
         )  # noqa: F821
-        self.rng, self.env_seed = get_rng(config.seed)
         self.config = config
         self.render_mode = render_mode
 
         x: Tuple[Observation, Info] = self.sim.reset()
         obs: Observation = Observation.from_rust(x[0])
-        info: Info = x[1]
 
         actions = self.sim.actions
         num_actions = len(actions)
-        # terminate_action_idx = actions["terminate"]
-        wait_action_idx = actions["wait"]
 
         num_nodes = len(obs.state)
         num_edges = len(obs.edges)
@@ -92,11 +83,11 @@ class AttackSimulationEnv():
         self.observation_space: spaces.Dict = self.define_observation_space(
             num_nodes, num_edges, num_actions
         )
-        self.action_space: spaces.Dict = self.define_action_space(
-            num_nodes, num_actions
-        )
+        self.action_space: spaces.Dict = self.define_action_space(num_nodes, num_actions)
 
-        self._agent_ids = [AGENT_DEFENDER, AGENT_ATTACKER] if not config.attacker_only else [AGENT_ATTACKER]
+        self._agent_ids = (
+            [AGENT_DEFENDER, AGENT_ATTACKER] if not config.attacker_only else [AGENT_ATTACKER]
+        )
         self.state = EnvironmentState(self._agent_ids)
         self._action_space_in_preferred_format = True
         self._observation_space_in_preferred_format = True
@@ -104,13 +95,7 @@ class AttackSimulationEnv():
         self.episode_count = (
             -1
         )  # Start episode count at -1 since it will be incremented the first time reset is called.
-        #self.renderer: Optional[AttackSimulationRenderer] = None
-        self.reset_render = True
-        self.n_nodes = num_nodes
-        self.n_actions = num_actions
-        # self.terminate_action_idx = terminate_action_idx
-        self.wait_action_idx = wait_action_idx
-        self.screen = None
+        self.screen: Optional[Any] = None
         self.vocab = self.sim.vocab
         self.reverse_vocab = [None] * len(self.vocab)
         for key, value in self.vocab.items():
@@ -118,7 +103,7 @@ class AttackSimulationEnv():
         super().__init__()
 
     @staticmethod
-    def define_action_space(n_nodes, num_actions) -> spaces.Discrete:
+    def define_action_space(n_nodes: int, num_actions: int) -> spaces.Dict:
         return spaces.Dict(
             {
                 AGENT_DEFENDER: spaces.MultiDiscrete([num_actions, n_nodes]),
@@ -127,9 +112,7 @@ class AttackSimulationEnv():
         )
 
     @staticmethod
-    def define_observation_space(
-        n_nodes: int, n_edges, num_actions: int
-    ) -> spaces.Dict:
+    def define_observation_space(n_nodes: int, n_edges: int, num_actions: int) -> spaces.Dict:
         return spaces.Dict(
             {
                 AGENT_DEFENDER: Defender.obs_space(num_actions, n_nodes, n_edges),
@@ -137,57 +120,41 @@ class AttackSimulationEnv():
             }
         )
 
-    def get_observation_shapes(self):
+    def get_observation_shapes(self) -> Dict[str, Any]:
         return {
             agent: {obs_key: space.shape}
             for agent, a_space in self.observation_space.spaces.items()
             for obs_key, space in a_space.spaces.items()
         }
 
-    def reset(self, *, seed=None, options=None):
-        if seed is None:
-            seed = self.config.seed
-
-        episode_count = self.episode_count + 1
-
-        rng, env_seed = get_rng(seed)
-        sim_obs, info = self.sim.reset(env_seed + episode_count)
+    def reset(
+        self, *, seed: Optional[int] = None, options: Optional[dict] = None
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        sim_obs, info = self.sim.reset(seed)
         sim_obs = Observation.from_rust(sim_obs)
-
-        self.episode_count = episode_count
-        self.reset_render = True
         self.state = EnvironmentState(self._agent_ids)
-        self.rng = rng
-        self.env_seed = env_seed
-
-        # Reset the simulator
-
-        self.last_obs = sim_obs
-
         agent_obs = get_agent_obs(self._agent_ids, sim_obs)
         agent_info = self.get_agent_info(self._agent_ids, info)
-
+        self.last_obs = agent_obs
         return agent_obs, agent_info
 
-    def observation_space_sample(self, agent_ids: list = None):
-
+    def observation_space_sample(self, agent_ids: list = None) -> Dict[str, Any]:
         agent_ids = self._agent_ids if agent_ids is None else agent_ids
 
         return {agent_id: self.observation_space[agent_id].sample() for agent_id in agent_ids}
 
-    def action_space_sample(self, agent_ids: list = None):
-
+    def action_space_sample(self, agent_ids: list = None) -> Dict[str, Any]:
         agent_ids = self._agent_ids if agent_ids is None else agent_ids
 
         return {agent_id: self.action_space[agent_id].sample() for agent_id in agent_ids}
 
-    def action_space_contains(self, x) -> bool:
+    def action_space_contains(self, x: list) -> bool:
         return all(self.action_space[agent_id].contains(x[agent_id]) for agent_id in x)
 
-    def observation_space_contains(self, x) -> bool:
+    def observation_space_contains(self, x: list) -> bool:
         return all(self.observation_space[agent_id].contains(x[agent_id]) for agent_id in x)
 
-    def get_agent_info(self, agent_ids, info: Info) -> Dict[str, Any]:
+    def get_agent_info(self, agent_ids: list, info: Info) -> Dict[str, Dict[str, Any]]:
         info_funcs = {
             AGENT_DEFENDER: Defender.get_info,
             AGENT_ATTACKER: Attacker.get_info,
@@ -198,11 +165,17 @@ class AttackSimulationEnv():
         for key, entry in infos.items():
             entry[f"{key}_cumulative_reward"] = self.state.cumulative_rewards[key]
 
-
         return infos
 
-    def step(self, action_dict) -> Tuple[Dict, float, bool, dict]:
-
+    def step(
+        self, action_dict: dict
+    ) -> tuple[
+        Dict[str, Any],
+        Dict[str, SupportsFloat],
+        Dict[str, bool],
+        Dict[str, bool],
+        dict[str, dict[str, Any]],
+    ]:
         truncated = {agent_id: False for agent_id in self._agent_ids}
 
         truncated["__all__"] = False
@@ -226,7 +199,6 @@ class AttackSimulationEnv():
 
         rewards = {key: reward_funcs[key](sim_obs) for key in self._agent_ids}
 
-
         terminated = self.state.terminated
         terminated[AGENT_ATTACKER] = Attacker.done(sim_obs)
         terminated["__all__"] = Attacker.done(sim_obs)
@@ -236,15 +208,15 @@ class AttackSimulationEnv():
             self.state.cumulative_rewards[key] += value
         self.state.terminated = terminated
         self.state.truncated = truncated
-        self.last_obs = sim_obs
+        self.last_obs = obs
 
         return obs, rewards, terminated, truncated, infos
 
     @property
-    def done(self):
+    def done(self) -> bool:
         return self.state.terminated["__all__"] or self.state.truncated["__all__"]
 
-    def close(self):
+    def close(self) -> None:
         if self.screen is not None:
             import pygame
 
@@ -253,7 +225,6 @@ class AttackSimulationEnv():
             self.isopen = False
 
     def render(self) -> bytes:
-
         # """Render a frame of the environment."""
         # if not self.render_env:
         #     return True
@@ -275,20 +246,15 @@ class AttackSimulationEnv():
             import PIL.Image
             import io
         except ImportError as e:
-            raise RuntimeError(
-                "Missing render dependency"
-            ) from e
-        
+            raise RuntimeError("Missing render dependency") from e
+
         if self.screen is None:
             pygame.init()
             if self.render_mode == "human":
                 pygame.display.init()
-                self.screen = pygame.display.set_mode(
-                    (screen_width, screen_height)
-                )
+                self.screen = pygame.display.set_mode((screen_width, screen_height))
             else:  # mode == "rgb_array"
                 self.screen = pygame.Surface((screen_width, screen_height))
-
 
         self.screen.fill((255, 255, 255))
         pygame.display.set_caption("Attack Simulation")
@@ -299,26 +265,24 @@ class AttackSimulationEnv():
         graphviz_graph.format = "png"
         graphviz_graph.renderer = "cairo"
         graphviz_graph.formatter = "cairo"
-        #graphviz_graph.render("graphviz_graph")
+        # graphviz_graph.render("graphviz_graph")
         graphviz_graph = PIL.Image.open(io.BytesIO(graphviz_graph.pipe()))
         graphviz_graph = graphviz_graph.resize((screen_width, screen_height))
         graphviz_graph = pygame.image.fromstring(
             graphviz_graph.tobytes(), graphviz_graph.size, graphviz_graph.mode
         )
-        
+
         self.screen.blit(graphviz_graph, (0, 0))
 
         if self.render_mode == "human":
             pygame.event.pump()
             pygame.display.flip()
         elif self.render_mode == "rgb_array":
-            return np.transpose(
-                np.array(pygame.surfarray.pixels3d(self.screen)), axes=(1, 0, 2)
-            ) 
+            return np.transpose(np.array(pygame.surfarray.pixels3d(self.screen)), axes=(1, 0, 2))
+        return
 
     def interpret_action_probabilities(
-        self, defense_names, action_probabilities: np.ndarray
+        self, defense_names: list, action_probabilities: np.ndarray
     ) -> dict:
         keys = [self.NO_ACTION] + defense_names
         return {key: value for key, value in zip(keys, action_probabilities)}
-

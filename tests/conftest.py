@@ -9,7 +9,7 @@ from attack_simulator import examplemanager
 
 from attack_simulator.env.env import AttackSimulationEnv
 from attack_simulator.utils.config import EnvConfig
-
+from attack_simulator.rusty_sim import RustAttackSimulator
 from maturin import import_hook
 
 # install the import hook with default settings
@@ -24,7 +24,12 @@ def fixture_config_filename() -> Path:
 
 @pytest.fixture(scope="session", name="env_config")
 def fixture_env_config(config_yaml: Path) -> EnvConfig:
-    config: EnvConfig = EnvConfig.from_yaml(config_yaml)
+    conf: Dict[str, Any] = {
+        "sim_false_positive_rate": 0.2,
+        "sim_false_negative_rate": 0.2,
+        "graph_name": "test_graph"
+    }
+    config: EnvConfig = EnvConfig.from_dict(conf)
     return config
 
 
@@ -40,26 +45,16 @@ def fixture_env(request) -> AttackSimulationEnv:
     env_config = request.getfixturevalue("env_config")
     return AttackSimulationEnv(env_config)
 
+
 @pytest.fixture(scope="session", name="simulator")
-def fixture_simulator(request):
-    config_yaml = Path("config/test_config.yaml")
-    config: EnvConfig = EnvConfig.from_yaml(config_yaml)
-    graph_filename = examplemanager.get_paths_to_graphs()[config.graph_name]
+def fixture_simulator(request) -> RustAttackSimulator:
+    conf: Dict[str, Any] = {
+        "sim_false_positive_rate": 0.2,
+        "sim_false_negative_rate": 0.2,
+        "graph_name": "test_graph"
+    }
+    config: EnvConfig = EnvConfig.from_dict(conf)
+    graph_filename: str = examplemanager.get_paths_to_graphs()[config.graph_name]
     return RustAttackSimulator(
         json.dumps(dataclasses.asdict(config.sim_config)), graph_filename
     )
-
-@pytest.fixture(scope="session")
-def rllib_config(env_config: EnvConfig) -> Dict[str, Any]:
-    model_config = {"use_lstm": True, "lstm_cell_size": 256}
-
-    config = {
-        "seed": env_config.seed,
-        "framework": "torch",
-        "env": AttackSimulationEnv,
-        "env_config": dataclasses.asdict(env_config),
-        "num_workers": 0,
-        "model": model_config,
-    }
-
-    return config

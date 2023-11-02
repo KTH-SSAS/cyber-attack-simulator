@@ -3,6 +3,8 @@ import functools
 from pettingzoo import ParallelEnv
 from pettingzoo.utils import parallel_to_aec, wrappers
 
+from attack_simulator.utils.config import EnvConfig
+
 from .env import AttackSimulationEnv
 
 def env(config, render_mode=None):
@@ -55,7 +57,8 @@ class parallel_env(ParallelEnv):
         self.agent_name_mapping = dict(
             zip(self.possible_agents, list(range(len(self.possible_agents))))
         )
-        self.simulator = AttackSimulationEnv(config, render_mode)
+        
+        self.simulator = AttackSimulationEnv(EnvConfig.from_dict(config), render_mode)
         self.render_mode = render_mode
         self.agents = self.simulator._agent_ids
         self.vocab = self.simulator.vocab

@@ -26,20 +26,22 @@ class EnvConfig(Config):
 
     sim_config: SimulatorConfig
     graph_name: str
-    seed: Optional[int] = None
     vocab_filename: str = None
     attacker_only: bool = False
+
+    @classmethod
+    def from_dict(cls, dictionary: dict) -> EnvConfig:
+        sim_keys = [key for key in dictionary if key.startswith("sim_")]
+        sim_config = {key[len("sim_"):]: dictionary.pop(key) for key in sim_keys}
+        dictionary["sim_config"] = SimulatorConfig(**sim_config)
+        return cls(**dictionary)
 
     @classmethod
     def from_yaml(cls, filename: str) -> EnvConfig:
         """Load configuration data from YAML file."""
         with open(filename, encoding="utf8") as f:
             dictionary: Dict = yaml.safe_load(f)
-            sim_keys = [key for key in dictionary if key.startswith("sim_")]
-            sim_config = {key[len("sim_"):]: dictionary.pop(key) for key in sim_keys}
-            sim_config["seed"] = dictionary.get("seed")
-            dictionary["sim_config"] = SimulatorConfig(**sim_config)
-            return cls(**dictionary)
+            return cls.from_dict(dictionary)
 
 
 @dataclass(frozen=True)
@@ -48,7 +50,6 @@ class SimulatorConfig(Config):
 
     false_negative_rate: float
     false_positive_rate: float 
-    seed: int # Random seed
     randomize_ttc: bool = False # Randomize time to compromise values
     log: bool = False # Log simulator output to file
     show_false: bool = False # Show false positives in render

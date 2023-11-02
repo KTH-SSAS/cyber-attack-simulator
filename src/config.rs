@@ -6,8 +6,6 @@ use serde_json::Error;
 #[pyclass]
 pub struct SimulatorConfig {
     #[pyo3(get)]
-    pub seed: Option<u64>,
-    #[pyo3(get)]
     pub false_negative_rate: f64,
     #[pyo3(get)]
     pub false_positive_rate: f64,
@@ -33,7 +31,6 @@ impl SimulatorConfig {
 impl Default for SimulatorConfig {
     fn default() -> Self {
         SimulatorConfig {
-            seed: None,
             false_negative_rate: 0.0,
             false_positive_rate: 0.0,
             randomize_ttc: false,

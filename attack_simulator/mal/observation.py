@@ -30,7 +30,7 @@ class Observation:
     defender_reward: int
 
     @classmethod
-    def from_rust(cls, obs):
+    def from_rust(cls, obs) -> "Observation":
         assets, asset_ids, names = zip(*obs.step_info)
         return Observation(
             attacker_observation=np.array(obs.attacker_observation, dtype=np.int8),

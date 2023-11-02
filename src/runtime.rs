@@ -145,7 +145,7 @@ where
             .map(|(i, n)| (n.clone(), i))
             .collect();
 
-        let initial_state = SimulatorState::new(&graph, config.seed, config.randomize_ttc)?;
+        let initial_state = SimulatorState::new(&graph, None, config.randomize_ttc)?;
 
         let attacker_string = "attacker".to_string();
         let defender_string = "defender".to_string();
@@ -479,7 +479,6 @@ mod tests {
     fn test_sim_fnr() {
         let filename = FILENAME;
         let config = config::SimulatorConfig {
-            seed: Some(0),
             randomize_ttc: false,
             false_negative_rate: 1.0,
             false_positive_rate: 0.0,
@@ -523,7 +522,6 @@ mod tests {
     fn test_sim_fpr() {
         let filename = FILENAME;
         let config = config::SimulatorConfig {
-            seed: Some(0),
             randomize_ttc: false,
             false_negative_rate: 0.0,
             false_positive_rate: 1.0,
@@ -567,7 +565,6 @@ mod tests {
         //let num_defenses = graph.number_of_defenses();
         let num_entrypoints = graph.entry_points().len();
         let config = config::SimulatorConfig {
-            seed: Some(0),
             randomize_ttc: false,
             false_negative_rate: 0.0,
             false_positive_rate: 0.0,

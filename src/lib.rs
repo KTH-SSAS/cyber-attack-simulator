@@ -173,7 +173,6 @@ mod tests {
     fn get_sim_from_filename(filename: &str) -> runtime::SimulatorRuntime<(usize, usize, usize)> {
         let graph = load_graph_from_json(filename, TEST_VOCAB, 0.0, 0.0).unwrap();
         let config = SimulatorConfig {
-            seed: Some(0),
             false_negative_rate: 0.0,
             false_positive_rate: 0.0,
             randomize_ttc: false,

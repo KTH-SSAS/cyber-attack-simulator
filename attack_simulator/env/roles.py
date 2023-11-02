@@ -1,12 +1,12 @@
 from ..mal.observation import Info, Observation
 import numpy as np
 from gymnasium import spaces
-
+from typing import Any, Dict
 BIG_INT = 2 ** 63 - 2
 
 class Defender:
     @staticmethod
-    def obs_space(n_actions, n_objects, n_edges):
+    def obs_space(n_actions: int, n_objects: int, n_edges: int) -> spaces.Dict:
         return spaces.Dict(
             {
                 "action_mask": spaces.Box(0, 1, shape=(n_actions,), dtype=np.int8),
@@ -25,13 +25,13 @@ class Defender:
         )
 
     @staticmethod
-    def get_info(info: Info):
+    def get_info(info: Info) -> Dict[str, Any]:
         return {
             "perc_defenses_activated": info.perc_defenses_activated,
         }
 
     @staticmethod
-    def get_obs(obs: Observation):
+    def get_obs(obs: Observation) -> Dict[str, Any]:
         #state = np.array(obs.nodes, dtype=np.int8)
         #edges = np.array(obs.edges, dtype=np.int64)
         # defense_indices = np.flatnonzero(obs.defense_surface)
@@ -81,7 +81,7 @@ class Defender:
 
 class Attacker:
     @staticmethod
-    def get_info(info: Info):
+    def get_info(info: Info) -> Dict[str, Any]:
         return {
             "num_compromised_steps": info.num_compromised_steps,
             "perc_compromised_steps": info.perc_compromised_steps,
@@ -90,7 +90,7 @@ class Attacker:
         }
 
     @staticmethod
-    def obs_space(n_actions, n_nodes):
+    def obs_space(n_actions:int, n_nodes:int) -> spaces.Dict:
         return spaces.Dict(
             {
                 "action_mask": spaces.Box(
@@ -120,7 +120,7 @@ class Attacker:
         )
 
     @staticmethod
-    def get_obs(obs: Observation):
+    def get_obs(obs: Observation) -> Dict[str, Any]:
         return {
             "action_mask": obs.attacker_possible_actions,
             "node_surface": obs.attacker_possible_objects,
@@ -133,6 +133,6 @@ class Attacker:
         }
 
     @staticmethod
-    def done(obs: Observation):
+    def done(obs: Observation) -> bool:
         attack_surface = obs.attacker_possible_objects
         return not any(attack_surface)

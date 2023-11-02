@@ -11,16 +11,6 @@ def test_sim_reset(simulator) -> None:
     assert info.time == 0
 
 
-@pytest.mark.skip(reason="Not implemented")
-def test_sim_defender_action(simulator) -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Not implemented")
-def test_sim_attacker_action(simulator) -> None:
-    pass
-
-
 def test_sim_step(simulator) -> None:
     # Take a step
     actions = {AGENT_ATTACKER: (simulator.actions["wait"], None), AGENT_DEFENDER: (simulator.actions["wait"], None)}
