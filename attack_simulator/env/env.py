@@ -162,8 +162,8 @@ class AttackSimulationEnv:
 
         infos = {key: info_funcs[key](info) for key in agent_ids}
 
-        for key, entry in infos.items():
-            entry["return"] = self.state.cumulative_rewards[key]
+        # for key, entry in infos.items():
+        #     entry["return"] = self.state.cumulative_rewards[key]
 
         return infos
 
