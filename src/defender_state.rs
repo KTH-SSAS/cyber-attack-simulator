@@ -24,9 +24,10 @@ impl<I> DefenderObs<I>
 where
     I: Eq + Hash + Ord + Copy + Debug,
 {
-    pub(crate) fn steps_observed_as_compromised(&self) -> HashSet<I> {
+    pub(crate) fn steps_observed_as_compromised(&self, graph: &AttackGraph<I>) -> HashSet<I> {
         self.observed_steps
             .iter()
+            .filter(|(k, v)| !graph.is_defense(*k))
             .filter_map(|(k, v)| match v {
                 true => Some(*k),
                 false => None,

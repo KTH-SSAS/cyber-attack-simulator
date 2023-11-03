@@ -212,7 +212,7 @@ where
     fn get_color(&self, id: &I, state: &SimulatorState<I>, show_false: bool) -> String {
         let defender_obs = DefenderObs::new(state, &self.g);
         let attacker_obs = AttackerObs::new(state, &self.g);
-        let steps_observed_as_compromised = defender_obs.steps_observed_as_compromised();
+        let steps_observed_as_compromised = defender_obs.steps_observed_as_compromised(&self.g);
         let false_negatives: HashSet<&I> = state
             .compromised_steps
             .difference(&steps_observed_as_compromised)
@@ -504,7 +504,7 @@ mod tests {
         let sim = SimulatorRuntime::new(graph, config).unwrap();
 
         let (initial_state, _info) = sim.reset(None).unwrap();
-        let steps_observed_as_compromised = initial_state.2.steps_observed_as_compromised();
+        let steps_observed_as_compromised = initial_state.2.steps_observed_as_compromised(&sim.g);
         //println!("Confusion: {:?}", sim.confusion_per_step);
         let false_negatives: HashSet<&_> = initial_state
             .0
@@ -549,7 +549,7 @@ mod tests {
         let (initial_state, _info) = sim.reset(None).unwrap();
 
         //println!("Confusion: {:?}", sim.confusion_per_step);
-        let steps_observed_as_compromised = initial_state.2.steps_observed_as_compromised();
+        let steps_observed_as_compromised = initial_state.2.steps_observed_as_compromised(&sim.g);
         let false_negatives: HashSet<&_> = initial_state
             .0
             .compromised_steps
@@ -589,7 +589,7 @@ mod tests {
             num_entrypoints + attacker_obs.possible_objects.len()
         );
         assert_eq!(
-            defender_obs.steps_observed_as_compromised().len(),
+            defender_obs.steps_observed_as_compromised(&sim.g).len(),
             num_entrypoints
         );
         assert_eq!(initial_state.enabled_defenses.len(), 0);

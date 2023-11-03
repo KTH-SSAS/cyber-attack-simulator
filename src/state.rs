@@ -379,7 +379,8 @@ where
             .iter()
             .filter_map(|step| {
                 let already_compromised = compromised_steps.contains(step);
-                match already_compromised
+                match !graph.is_defended(step, enabled_defenses) &&
+                (already_compromised
                     || graph.can_step_be_compromised(
                         compromised_steps,
                         enabled_defenses,
@@ -387,7 +388,7 @@ where
                         step,
                         attacker_step,
                         defender_step,
-                    ) {
+                    )) {
                     true => Some(*step),
                     false => None,
                 }

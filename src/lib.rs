@@ -167,7 +167,7 @@ mod tests {
     use rand::{seq::SliceRandom, SeedableRng};
     use rand_chacha::ChaChaRng;
 
-    const TEST_FILENAME: &str = "attack_simulator/graphs/corelang.json";
+    const TEST_FILENAME: &str = "attack_simulator/graphs/four_ways_mod.json";
     const TEST_VOCAB: Option<&str> = None; // Some("mal/corelang_vocab_merged.json");
 
     fn get_sim_from_filename(filename: &str) -> runtime::SimulatorRuntime<(usize, usize, usize)> {
@@ -275,12 +275,20 @@ mod tests {
         let num_entrypoints = observation.state.iter().filter(|&x| *x).count();
         let num_defense = defense_surface.iter().filter(|&x| *x).count();
         let mut available_defenses = available_actions(&defense_surface);
+        let mut time = 0;
         while available_defenses.len() > 0 {
             let step = random_step(&defense_surface, &mut rng).unwrap();
             let action_dict = HashMap::from([("defender".to_string(), (action, Some(step)))]);
+
+            let graphviz = sim.to_graphviz(false);
+            let file = std::fs::File::create(format!("test_defender_{:0>2}.dot", time)).unwrap();
+            std::io::Write::write_all(&mut std::io::BufWriter::new(file), graphviz.as_bytes())
+                .unwrap();
+
             (observation, _) = sim.step_vec(action_dict).unwrap();
             defense_surface = observation.defender_possible_objects.clone();
             available_defenses = available_actions(&defense_surface);
+            time += 1;
         }
 
         assert_eq!(

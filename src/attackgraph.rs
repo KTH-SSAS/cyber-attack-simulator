@@ -453,6 +453,10 @@ where
     pub(crate) fn is_entry(&self, id: &I) -> bool {
         return self.entry_points.contains(id);
     }
+
+    pub(crate) fn is_defense(&self, id: &I) -> bool {
+        return self.defense_steps.contains(id);
+    }
 }
 
 // fn traverse<'a>(entrypoint: &'a AttackStep) -> Vec<&'a AttackStep> {
