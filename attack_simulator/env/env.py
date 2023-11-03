@@ -92,9 +92,8 @@ class AttackSimulationEnv:
         self._action_space_in_preferred_format = True
         self._observation_space_in_preferred_format = True
         self._obs_space_in_preferred_format = True
-        self.episode_count = (
-            -1
-        )  # Start episode count at -1 since it will be incremented the first time reset is called.
+        # Start episode count at -1 since it will be incremented the first time reset is called.
+        self.episode_count = -1
         self.screen: Optional[Any] = None
         self.vocab = self.sim.vocab
         self.reverse_vocab = [None] * len(self.vocab)
@@ -136,6 +135,7 @@ class AttackSimulationEnv:
         agent_obs = get_agent_obs(self._agent_ids, sim_obs)
         agent_info = self.get_agent_info(self._agent_ids, info)
         self.last_obs = agent_obs
+        self.episode_count += 1
         return agent_obs, agent_info
 
     def observation_space_sample(self, agent_ids: list = None) -> Dict[str, Any]:
@@ -163,7 +163,8 @@ class AttackSimulationEnv:
         infos = {key: info_funcs[key](info) for key in agent_ids}
 
         for key, entry in infos.items():
-            entry[f"{key}_cumulative_reward"] = self.state.cumulative_rewards[key]
+            entry["return"] = self.state.cumulative_rewards[key]
+            entry['episode'] = self.episode_count
 
         return infos
 
