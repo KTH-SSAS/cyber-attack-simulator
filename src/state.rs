@@ -254,8 +254,8 @@ where
 
     pub fn defender_reward(&self, graph: &AttackGraph<I>, defense_step: Option<&I>) -> i64 {
         let downtime_value = -1;
-        let restoration_cost = -2;
-        let flag_value = -3;
+        //let restoration_cost = -2;
+        let flag_value = -2;
 
         // If a flag is compromised, it costs to keep it compromised
         let r1: i64 = self
@@ -277,7 +277,7 @@ where
             .sum();
 
         // If a step is compromised, it costs more to enable a defense for it
-        let r3: i64 = match defense_step {
+/*         let r3: i64 = match defense_step {
             Some(step) => graph
                 .children(step)
                 .iter()
@@ -287,7 +287,7 @@ where
                 })
                 .sum(),
             None => 0,
-        };
+        }; */
 
         return r1 + r2 + r3;
     }
