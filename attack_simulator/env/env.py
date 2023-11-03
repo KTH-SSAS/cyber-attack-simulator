@@ -192,19 +192,21 @@ class AttackSimulationEnv:
         infos = self.get_agent_info(self._agent_ids, info)
         rewards = {}
 
-        reward_funcs = {
-            AGENT_DEFENDER: defender_reward,
-            AGENT_ATTACKER: attacker_reward,
-        }
-
-        rewards = {key: reward_funcs[key](sim_obs) for key in self._agent_ids}
-
         done_funcs = {
             AGENT_DEFENDER: Attacker.done, # Defender is done when attacker is done
             AGENT_ATTACKER: Attacker.done,
         }
 
+        reward_funcs = {
+            AGENT_DEFENDER: defender_reward,
+            AGENT_ATTACKER: attacker_reward,
+        }
+
         terminated = {key: done_funcs[key](sim_obs) for key in self._agent_ids}
+
+        rewards = {key: reward_funcs[key](sim_obs) if not terminated[key] else 0 for key in self._agent_ids}
+
+
         terminated["__all__"] = Attacker.done(sim_obs)
         self.state.reward = rewards
         for key, value in rewards.items():
