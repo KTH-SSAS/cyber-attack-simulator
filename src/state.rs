@@ -289,7 +289,7 @@ where
             None => 0,
         }; */
 
-        return r1 + r2 + r3;
+        return r1 + r2;
     }
 
     fn remaining_ttc(
