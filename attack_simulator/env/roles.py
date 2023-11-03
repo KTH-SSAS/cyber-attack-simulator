@@ -7,11 +7,12 @@ BIG_INT = 2 ** 63 - 2
 class Defender:
     @staticmethod
     def obs_space(n_actions: int, n_objects: int, n_edges: int) -> spaces.Dict:
+        n_features = 1 # TODO maybe merge some of the dict fields into a single array
         return spaces.Dict(
             {
                 "action_mask": spaces.Box(0, 1, shape=(n_actions,), dtype=np.int8),
                 "node_surface": spaces.Box(0, 1, shape=(n_objects,), dtype=np.int8),
-                "observation": spaces.Box(0, 1, shape=(n_objects,), dtype=np.int8),
+                "observation": spaces.Box(0, 1, shape=(n_objects, n_features), dtype=np.int8),
                 "asset": spaces.Box(0, BIG_INT, shape=(n_objects,), dtype=np.int64),
                 "asset_id": spaces.Box(0, BIG_INT, shape=(n_objects,), dtype=np.int64),
                 "step_name": spaces.Box(0, BIG_INT, shape=(n_objects,), dtype=np.int64),
@@ -71,7 +72,7 @@ class Defender:
         return {
             "action_mask": obs.defender_possible_actions,
             "node_surface": obs.defender_possible_objects,
-            "observation": obs.state,
+            "observation": obs.defender_observation.reshape(-1, 1),
             "asset": obs.assets,
             "asset_id": obs.asset_ids,
             "step_name": obs.names,
@@ -91,6 +92,7 @@ class Attacker:
 
     @staticmethod
     def obs_space(n_actions:int, n_nodes:int) -> spaces.Dict:
+        n_features = 1
         return spaces.Dict(
             {
                 "action_mask": spaces.Box(
@@ -111,7 +113,7 @@ class Attacker:
                     shape=(n_nodes,),
                     dtype=np.int64,
                 ),
-                "observation": spaces.Box(-1, 1, shape=(n_nodes,), dtype=np.int8), # -1 = unknown, 0 = not compromised, 1 = compromised
+                "observation": spaces.Box(-1, 1, shape=(n_nodes,n_features), dtype=np.int8), # -1 = unknown, 0 = not compromised, 1 = compromised
                 "asset": spaces.Box(0, BIG_INT, shape=(n_nodes,), dtype=np.int64),
                 "asset_id": spaces.Box(0, BIG_INT, shape=(n_nodes,), dtype=np.int64),
                 "step_name": spaces.Box(0, BIG_INT, shape=(n_nodes,), dtype=np.int64),
@@ -124,7 +126,7 @@ class Attacker:
         return {
             "action_mask": obs.attacker_possible_actions,
             "node_surface": obs.attacker_possible_objects,
-            "observation": obs.attacker_observation,
+            "observation": obs.attacker_observation.reshape(-1, 1),
             "asset": obs.assets,
             "asset_id": obs.asset_ids,
             "step_name": obs.names,
