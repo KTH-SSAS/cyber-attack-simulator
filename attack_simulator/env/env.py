@@ -200,10 +200,13 @@ class AttackSimulationEnv:
 
         rewards = {key: reward_funcs[key](sim_obs) for key in self._agent_ids}
 
-        terminated = self.state.terminated
-        terminated[AGENT_ATTACKER] = Attacker.done(sim_obs)
-        terminated["__all__"] = Attacker.done(sim_obs)
+        done_funcs = {
+            AGENT_DEFENDER: Attacker.done, # Defender is done when attacker is done
+            AGENT_ATTACKER: Attacker.done,
+        }
 
+        terminated = {key: done_funcs[key](sim_obs) for key in self._agent_ids}
+        terminated["__all__"] = Attacker.done(sim_obs)
         self.state.reward = rewards
         for key, value in rewards.items():
             self.state.cumulative_rewards[key] += value
