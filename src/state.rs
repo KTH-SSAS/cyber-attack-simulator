@@ -63,13 +63,18 @@ where
 
         match (attack_step, defense_step) {
             (Some(a), Some(d)) => {
-                parent_conditions_fulfilled
-                    && a == step
-                    && ttc_remaining[a] == 0
-                    && !self.is_defended(step, enabled_defenses)
-                    && !self.step_is_defended_by(a, d)
+                parent_conditions_fulfilled // Parent step(s) are compromised
+                    && a == step // Attacker selects this step
+                    && ttc_remaining[a] == 0 // TTC is 0
+                    && !self.is_defended(step, enabled_defenses) // It is not defended
+                    && !self.step_is_defended_by(a, d) // It is not defended by the defense selected by the defender
             }
-            (Some(a), None) => parent_conditions_fulfilled && a == step && ttc_remaining[a] == 0,
+            (Some(a), None) => {
+                    parent_conditions_fulfilled // Parent step(s) are compromised 
+                    && a == step // Attacker selects this step
+                    && ttc_remaining[a] == 0 // TTC is 0
+                    && !self.is_defended(step, enabled_defenses) // It is not defended
+            }
             (None, _) => false,
         }
     }
