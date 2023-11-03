@@ -164,7 +164,6 @@ class AttackSimulationEnv:
 
         for key, entry in infos.items():
             entry["return"] = self.state.cumulative_rewards[key]
-            entry['episode'] = self.episode_count
 
         return infos
 
