@@ -182,6 +182,9 @@ class AttackSimulationEnv:
 
         # Convert numpy arrays to python tuples
         action_dict = {agent_id: tuple(action) for agent_id, action in action_dict.items()}
+        action_dict = {
+            agent_id: (a, None) if a == 0 else (a, n) for agent_id, (a, n) in action_dict.items()
+        }
         # terminated = {key: value == self.terminate_action_idx for key, value in action_dict.items()}
         # terminated["__all__"] = all(terminated.values())
 
@@ -193,7 +196,7 @@ class AttackSimulationEnv:
         rewards = {}
 
         done_funcs = {
-            AGENT_DEFENDER: Attacker.done, # Defender is done when attacker is done
+            AGENT_DEFENDER: Attacker.done,  # Defender is done when attacker is done
             AGENT_ATTACKER: Attacker.done,
         }
 
@@ -204,8 +207,9 @@ class AttackSimulationEnv:
 
         terminated = {key: done_funcs[key](sim_obs) for key in self._agent_ids}
 
-        rewards = {key: reward_funcs[key](sim_obs) if not terminated[key] else 0 for key in self._agent_ids}
-
+        rewards = {
+            key: reward_funcs[key](sim_obs) if not terminated[key] else 0 for key in self._agent_ids
+        }
 
         terminated["__all__"] = Attacker.done(sim_obs)
         self.state.reward = rewards

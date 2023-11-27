@@ -1,11 +1,12 @@
 import torch
 from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
-from attack_simulator.agents.attackers.searchers import BreadthFirstAttacker
+from attack_simulator.agents.attackers.searchers import BreadthFirstAttacker, DepthFirstAttacker
 import attack_simulator
 import json
 from json import JSONEncoder
 import numpy as np
 
+null_action = (0, -1)
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, o):
@@ -25,7 +26,7 @@ class KeyboardAgent:
     def compute_action_from_dict(self, obs):
         def valid_action(user_input):
             if user_input == "":
-                return (0, None)
+                return null_action
 
             try:
                 node = int(user_input)
@@ -72,21 +73,18 @@ class KeyboardAgent:
         node, a = get_action_object(user_input)
         print(f"Selected action: {action_strings[node]}")
 
-        return (a, available_objects[node] if a != 0 else None)
+        return (a, available_objects[node] if a != 0 else -1)
 
 
-sim_config = attack_simulator.SimulatorConfig(
-    false_negative_rate=0.0, false_positive_rate=0.0, seed=0, randomize_ttc=False, log=False, show_false=False
-)
+
 
 attacker_only = False
 
-env_config = attack_simulator.EnvConfig(
-    sim_config=sim_config,
-    graph_name="four_ways_mod",
-    seed=0,
-    attacker_only=attacker_only,
-)
+env_config = {
+    "sim_false_positive_rate": 0.0,
+    "sim_false_negative_rate": 0.0,
+    "graph_name": "four_ways_mod",
+}
 env = attack_simulator.parallel_env(env_config, render_mode="human")
 
 control_attacker = False
@@ -106,7 +104,7 @@ total_reward_attacker = 0
 with torch.no_grad():
     while not done:
         env.render()
-        defender_action = defender.compute_action_from_dict(obs["defender"]) if not attacker_only else (0, None)
+        defender_action = defender.compute_action_from_dict(obs["defender"]) if not attacker_only else null_action
         attacker_action = attacker.compute_action_from_dict(obs["attacker"])
         action_dict = {AGENT_ATTACKER: attacker_action, AGENT_DEFENDER: defender_action}
         obs, rewards, terminated, truncated, infos = env.step(action_dict)
