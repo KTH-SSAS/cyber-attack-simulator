@@ -74,19 +74,18 @@ where
         // graph meaning that the
         let parent_states = graph.get_attack_parents(node_id).map(|p| {
             compromised_steps.contains(p) // If the parent is compromised
-                    || match attacker_step { // If the parent will be compromised by the attacker
-                        Some(a) => {
-                            a == p
-                                && graph.can_step_be_compromised(
-                                    compromised_steps,
-                                    enabled_defenses,
-                                    ttc_remaining,
-                                    a,
-                                    attacker_step,
-                                    defender_step,
-                                )
-                        }
-                        None => false,
+                    || if let Some(a) = attacker_step {
+                        a == p
+                            && graph.can_step_be_compromised(
+                                compromised_steps,
+                                enabled_defenses,
+                                ttc_remaining,
+                                a,
+                                attacker_step,
+                                defender_step,
+                            )
+                    } else {
+                        false
                     }
         });
 
@@ -98,14 +97,16 @@ where
         let compromised = compromised_steps.contains(node_id);
         let defended = graph.is_defended(node_id, enabled_defenses);
 
-        let will_be_defended = match defender_step {
-            Some(d) => graph.step_is_defended_by(node_id, d),
-            None => false,
+        let will_be_defended = if let Some(d) = defender_step {
+            graph.step_is_defended_by(node_id, d)
+        } else {
+            false
         };
 
-        let will_be_attacked = match attacker_step {
-            Some(a) => a == node_id,
-            None => false,
+        let will_be_attacked = if let Some(a) = attacker_step {
+            a == node_id
+        } else {
+            false
         };
 
         return parent_conditions_fulfilled
@@ -123,19 +124,18 @@ where
     ) -> bool {
         let parent_states = graph.get_attack_parents(node_id).map(|p| {
             compromised_steps.contains(p)
-                || match attacker_step {
-                    Some(a) => {
-                        a == p
-                            && graph.can_step_be_compromised(
-                                compromised_steps,
-                                enabled_defenses,
-                                ttc_remaining,
-                                a,
-                                attacker_step,
-                                defender_step,
-                            )
-                    }
-                    None => false,
+                || if let Some(a) = attacker_step {
+                    a == p
+                        && graph.can_step_be_compromised(
+                            compromised_steps,
+                            enabled_defenses,
+                            ttc_remaining,
+                            a,
+                            attacker_step,
+                            defender_step,
+                        )
+                } else {
+                    false
                 }
         });
         let parent_conditions_fulfilled = graph

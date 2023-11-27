@@ -27,11 +27,8 @@ where
     pub(crate) fn steps_observed_as_compromised(&self, graph: &AttackGraph<I>) -> HashSet<I> {
         self.observed_steps
             .iter()
-            .filter(|(k, v)| !graph.is_defense(*k))
-            .filter_map(|(k, v)| match v {
-                true => Some(*k),
-                false => None,
-            })
+            .filter(|(k, _)| !graph.is_defense(*k)) // Do not consider enabled defenses as compromised
+            .filter_map(|(k, v)| if *v { Some(*k) } else { None })
             .collect()
     }
 
@@ -48,10 +45,7 @@ where
             possible_objects: Self::_defense_surface(&graph, &s.enabled_defenses, None),
             possible_actions: all_actions
                 .iter()
-                .filter_map(|(k, v)| match v {
-                    true => Some(k.clone()),
-                    false => None,
-                })
+                .filter_map(|(k, v)| if *v { Some(k.clone()) } else { None })
                 .collect(),
             observed_steps: Self::_defender_steps_observered(
                 &graph,
@@ -70,9 +64,7 @@ where
         enabled_defenses: &HashSet<I>,
         rng: &mut ChaChaRng,
     ) -> HashMap<I, bool> {
-        // Defender observes all steps with potential false positives
-
-        let is_obs = true;
+        let is_observable = { |s| true }; // Defender observes all steps, but the states may be false
         let is_false_obs = |(p, rate)| p < rate;
 
         graph
@@ -85,21 +77,16 @@ where
                 )
             })
             .zip(rng.sample_iter::<f64, Standard>(Standard))
-            .filter_map(|s| match is_obs {
-                true => Some(s),
-                false => None,
-            }) // Step is observed
-            .map(|((i, step_state), p)| match step_state {
-                true => match is_false_obs((p, graph.confusion_for_step(i).fnr)) {
-                    // Sample Bernoulli(fnr_prob)
-                    true => (*i, false), // We observe the step, but it is reported as a false negative
-                    false => (*i, step_state),
-                },
-                false => match is_false_obs((p, graph.confusion_for_step(i).fpr)) {
-                    // Sample Bernoulli(fpr_prob)
-                    true => (*i, true), // We observe the step, but it is reported as a false positive
-                    false => (*i, step_state),
-                },
+            .filter_map(|s| if is_observable(s) { Some(s) } else { None }) // Step is observed
+            .map(|((i, step_state), p)| {
+                let cause_false_negative = is_false_obs((p, graph.confusion_for_step(i).fnr));
+                let cause_false_positive = is_false_obs((p, graph.confusion_for_step(i).fpr));
+                match (step_state, cause_false_negative, cause_false_positive) {
+                    (true, true, _) => (*i, false),   // False negative
+                    (true, false, _) => (*i, true),   // True positive
+                    (false, _, true) => (*i, true),   // False positive
+                    (false, _, false) => (*i, false), // True negative
+                }
             })
             .collect()
     }
@@ -110,9 +97,10 @@ where
         defender_step: Option<&I>,
     ) -> bool {
         !enabled_defenses.contains(step)
-            && match defender_step {
-                Some(d) => d != step,
-                None => true,
+            && if let Some(d) = defender_step {
+                d != step
+            } else {
+                true
             }
     }
 
@@ -124,12 +112,13 @@ where
         graph
             .defense_steps
             .iter()
-            .filter_map(
-                |d| match Self::defense_available(d, enabled_defenses, defender_step) {
-                    true => Some(*d),
-                    false => None,
-                },
-            )
+            .filter_map(|d| {
+                if Self::defense_available(d, enabled_defenses, defender_step) {
+                    Some(*d)
+                } else {
+                    None
+                }
+            })
             .collect()
     }
 
