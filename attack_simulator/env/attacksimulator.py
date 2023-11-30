@@ -7,6 +7,7 @@ from attack_simulator.utils.config import EnvConfig
 
 from .env import AttackSimulationEnv
 
+
 def env(config, render_mode=None):
     """
     The env function often wraps the environment in wrappers by default.
@@ -57,7 +58,7 @@ class parallel_env(ParallelEnv):
         self.agent_name_mapping = dict(
             zip(self.possible_agents, list(range(len(self.possible_agents))))
         )
-        
+
         self.simulator = AttackSimulationEnv(EnvConfig.from_dict(config), render_mode)
         self.render_mode = render_mode
         self.agents = self.simulator._agent_ids

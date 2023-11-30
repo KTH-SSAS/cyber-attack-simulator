@@ -14,7 +14,6 @@ def get_new_targets(observation, discovered_targets: Set[int]) -> List[int]:
     return new_targets, surface_indexes
 
 
-
 class BreadthFirstAttacker(Agent):
     def __init__(self, agent_config: dict) -> None:
         super().__init__(agent_config)
@@ -45,7 +44,6 @@ class BreadthFirstAttacker(Agent):
     def select_next_target(
         current_target: int, targets: Union[List[int], Deque[int]], attack_surface: Set[int]
     ) -> int:
-
         # If the current target was not compromised, put it
         # back, but on the bottom of the stack.
         if current_target in attack_surface:
@@ -89,18 +87,17 @@ class DepthFirstAttacker(Agent):
     def select_next_target(
         current_target: int, targets: Union[List[int], Deque[int]], attack_surface: Set[int]
     ) -> int:
-
         if current_target in attack_surface:
             return current_target
 
         while current_target not in attack_surface:
-
             if len(targets) == 0:
                 return None, True
 
             current_target = targets.pop()
 
         return current_target, False
+
 
 agents = {
     "BreadthFirstAttacker": BreadthFirstAttacker,

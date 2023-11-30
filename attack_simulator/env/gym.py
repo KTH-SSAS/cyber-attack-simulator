@@ -13,6 +13,7 @@ from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.env.env import AttackSimulationEnv
 from attack_simulator.utils.config import EnvConfig
 
+
 class AttackerEnv(gym.Env):
     def __init__(self, **kwargs) -> None:
         config = {
@@ -33,12 +34,14 @@ class AttackerEnv(gym.Env):
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
         obs: Dict[str, Any]
-        obs, rewards, terminated, truncated, infos = self.env.step(
-            {AGENT_ATTACKER: action}
+        obs, rewards, terminated, truncated, infos = self.env.step({AGENT_ATTACKER: action})
+        return (
+            obs[AGENT_ATTACKER],
+            rewards[AGENT_ATTACKER],
+            terminated[AGENT_ATTACKER],
+            truncated[AGENT_ATTACKER],
+            infos[AGENT_ATTACKER],
         )
-        return obs[AGENT_ATTACKER], rewards[AGENT_ATTACKER], terminated[AGENT_ATTACKER], truncated[
-            AGENT_ATTACKER
-        ], infos[AGENT_ATTACKER]
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
         return super().render()
@@ -74,9 +77,13 @@ class DefenderEnv(gym.Env):
             {AGENT_DEFENDER: action, AGENT_ATTACKER: attacker_action}
         )
         self.attacker_obs = obs[AGENT_ATTACKER]
-        return obs[AGENT_DEFENDER], rewards[AGENT_DEFENDER], terminated[AGENT_DEFENDER], truncated[
-            AGENT_DEFENDER
-        ], infos[AGENT_DEFENDER]
+        return (
+            obs[AGENT_DEFENDER],
+            rewards[AGENT_DEFENDER],
+            terminated[AGENT_DEFENDER],
+            truncated[AGENT_DEFENDER],
+            infos[AGENT_DEFENDER],
+        )
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
         return super().render()

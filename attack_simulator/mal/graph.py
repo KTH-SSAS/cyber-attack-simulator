@@ -12,22 +12,26 @@ from enum import Enum
 from ..constants import UINT
 from ..utils.config import GraphConfig
 
+
 class STEP(Enum):
     AND = "and"
     OR = "or"
 
+
 DPI = 100
 NODE_SIZE = 100
 
+
 class GraphColors(Enum):
-	NODE = "#ffffff"
-	EDGE = "#000000"
-	NODE_TEXT = "#000000"
-	EDGE_TEXT = "#000000"
-	FLAG = "#00ff00"
-	DEFENSE = "#cbc3e3"
-	DEFENSE_ACTIVATE = "#800080"
-	ENTRY = "#ff0000"
+    NODE = "#ffffff"
+    EDGE = "#000000"
+    NODE_TEXT = "#000000"
+    EDGE_TEXT = "#000000"
+    FLAG = "#00ff00"
+    DEFENSE = "#cbc3e3"
+    DEFENSE_ACTIVATE = "#800080"
+    ENTRY = "#ff0000"
+
 
 @dataclass
 class AttackStep:
@@ -117,7 +121,6 @@ class AttackGraph:
         # Add parents for attack steps.
         # Defense steps are not included as parents
         for step in self.attack_steps.values():
-
             step.parents = sorted(
                 [
                     other_step.id

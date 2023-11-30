@@ -28,7 +28,6 @@ class ProbabilityIDS(IDS):
     def __call__(
         self, attack_state: NDArray[np.int8], probs: NDArray[np.float64]
     ) -> Tuple[NDArray, NDArray, NDArray]:
-
         noisy_obs = list(starmap(self.ids_function, zip(attack_state, probs)))
 
         fp = probs <= self.fpr

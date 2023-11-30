@@ -8,7 +8,7 @@ from ..constants import UINT
 
 @dataclass
 class Observation:
-    #attacker role
+    # attacker role
     attacker_observation: NDArray[np.int8]
     attacker_possible_actions: NDArray[np.int8]
     attacker_possible_objects: NDArray[np.int8]

@@ -32,7 +32,7 @@ class EnvConfig(Config):
     @classmethod
     def from_dict(cls, dictionary: dict) -> EnvConfig:
         sim_keys = [key for key in dictionary if key.startswith("sim_")]
-        sim_config = {key[len("sim_"):]: dictionary.pop(key) for key in sim_keys}
+        sim_config = {key[len("sim_") :]: dictionary.pop(key) for key in sim_keys}
         dictionary["sim_config"] = SimulatorConfig(**sim_config)
         return cls(**dictionary)
 
@@ -49,10 +49,10 @@ class SimulatorConfig(Config):
     """Config class for attack simulator."""
 
     false_negative_rate: float
-    false_positive_rate: float 
-    randomize_ttc: bool = False # Randomize time to compromise values
-    log: bool = False # Log simulator output to file
-    show_false: bool = False # Show false positives in render
+    false_positive_rate: float
+    randomize_ttc: bool = False  # Randomize time to compromise values
+    log: bool = False  # Log simulator output to file
+    show_false: bool = False  # Show false positives in render
 
     @classmethod
     def from_yaml(cls, filename: str) -> SimulatorConfig:

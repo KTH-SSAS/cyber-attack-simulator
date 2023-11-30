@@ -362,9 +362,7 @@ class AttackSimulationRenderer:
             writer: HTMLWriter = self.graph_writer
             writer.grab_frame()
             if self.add_tooltips:
-                postprocess_frame(
-                    writer._temp_paths[-1], list(self.pos.keys())
-                )  # pylint: disable=protected-access
+                postprocess_frame(writer._temp_paths[-1], list(self.pos.keys()))  # pylint: disable=protected-access
 
         if done:
             self.finish(state)

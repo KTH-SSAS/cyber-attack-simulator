@@ -112,7 +112,9 @@ class AttackSimulationEnv:
         )
 
     @staticmethod
-    def define_observation_space(n_nodes: int, n_edges: int, num_actions: int, vocab_size: int) -> spaces.Dict:
+    def define_observation_space(
+        n_nodes: int, n_edges: int, num_actions: int, vocab_size: int
+    ) -> spaces.Dict:
         return spaces.Dict(
             {
                 AGENT_DEFENDER: Defender.obs_space(num_actions, n_nodes, n_edges, vocab_size),

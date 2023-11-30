@@ -164,7 +164,6 @@ class PathFinderAttacker(Agent):
         # Go through the available paths in order of decreasing cost
         # and select the first viable one.
         for path_to_target, _ in sorted(paths, key=itemgetter(1)):
-
             if not path_to_target:
                 continue
 

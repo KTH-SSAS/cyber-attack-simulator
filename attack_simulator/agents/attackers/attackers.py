@@ -25,11 +25,7 @@ class RandomAttacker(Agent):
     def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
         attack_surface = observation["node_surface"]
         surface_indexes = np.flatnonzero(attack_surface)
-        return (
-            (1, self.rng.choice(surface_indexes))
-            if len(surface_indexes) > 0
-            else (0, 0)
-        )
+        return (1, self.rng.choice(surface_indexes)) if len(surface_indexes) > 0 else (0, 0)
 
 
 class RandomNoActionAttacker(Agent):
