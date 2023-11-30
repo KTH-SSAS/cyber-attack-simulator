@@ -2,7 +2,7 @@ from typing import Any, List, Tuple
 from attack_simulator.env.attacksimulator import env, raw_env, parallel_env
 from attack_simulator.utils.config import EnvConfig, SimulatorConfig
 from attack_simulator.env.gym import DefenderEnv, AttackerEnv
-from .examplemanager import available_graphs
+from .examplemanager import available_graphs, show_graph
 import gymnasium as gym
 
 def register_envs() -> Tuple[str, str]:
@@ -18,10 +18,7 @@ def defender_gym(**kwargs: Any) -> gym.Env:
 def attacker_gym(**kwargs: Any) -> gym.Env:
     return gym.make("AttackerEnv-v0", **kwargs)
 
-def list_available_graph() -> List[str]:
-    return available_graphs()
-
 def list_available_attackers() -> List[str]:
     return ["BreadthFirstAttacker", "DepthFirstAttacker"]
 
-__all__ = ["env", "raw_env", "parallel_env", "EnvConfig", "SimulatorConfig"]
+__all__ = ["env", "raw_env", "parallel_env", "EnvConfig", "SimulatorConfig", "available_graphs", "show_graph"]
