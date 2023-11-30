@@ -6,7 +6,7 @@ import torch
 from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.env.env import AttackSimulationEnv
 from attack_simulator.utils.config import EnvConfig
-
+import attack_simulator
 
 def test_env_reset(env: AttackSimulationEnv) -> None:
     obs = np.array(env.reset())
@@ -69,6 +69,23 @@ def test_env_multiple_steps(env: AttackSimulationEnv) -> None:
         assert "defender" in obs
         if terminated["__all__"] or truncated["__all__"]:
             break
+
+def test_all_graphs_multiple_steps() -> None:
+    available_graphs = attack_simulator.list_available_graph()
+    import gymnasium as gym
+    attack_simulator.register_envs()
+
+
+    for graph in available_graphs:
+        env = gym.make("AttackerEnv-v0", graph_name=graph)
+        obs, _ = env.reset()
+        for _ in range(100):
+            action = env.action_space.sample()
+            obs, reward, terminated, truncated, info = env.step(action)
+            #assert "attacker" in obs
+            #assert "defender" in obs
+            #if terminated["__all__"] or truncated["__all__"]:
+            #    break
 
 
 @pytest.mark.parametrize("agent", ["attacker", "defender"])

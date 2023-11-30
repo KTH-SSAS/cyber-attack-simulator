@@ -1,6 +1,6 @@
 [
     {
-        "id": "attacker:0:enter",
+        "id": "attacker:0:firstSteps",
         "type": "or",
         "asset": "attacker",
         "name": "firstSteps",
@@ -201,7 +201,7 @@
         "mitre_info": null
     },
     {
-        "id": "flag:15:take",
+        "id": "flag:15:gather",
         "type": "or",
         "asset": "flag",
         "name": "gather",
@@ -224,7 +224,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "flag:15:take"
+            "flag:15:gather"
         ],
         "parents": null,
         "existence_status": null,
@@ -296,7 +296,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "flag:22:take"
+            "flag:22:gather"
         ],
         "parents": null,
         "existence_status": null,
@@ -307,7 +307,7 @@
         "mitre_info": null
     },
     {
-        "id": "flag:22:take",
+        "id": "flag:22:gather",
         "type": "or",
         "asset": "flag",
         "name": "gather",
@@ -330,7 +330,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "flag:26:take"
+            "flag:26:gather"
         ],
         "parents": null,
         "existence_status": null,
@@ -348,7 +348,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "flag:28:take"
+            "flag:28:gather"
         ],
         "parents": null,
         "existence_status": null,
@@ -359,7 +359,7 @@
         "mitre_info": null
     },
     {
-        "id": "flag:26:take",
+        "id": "flag:26:gather",
         "type": "or",
         "asset": "flag",
         "name": "gather",
@@ -375,7 +375,7 @@
         "mitre_info": null
     },
     {
-        "id": "flag:27:take",
+        "id": "flag:27:gather",
         "type": "or",
         "asset": "flag",
         "name": "gather",
@@ -391,7 +391,7 @@
         "mitre_info": null
     },
     {
-        "id": "flag:28:take",
+        "id": "flag:28:gather",
         "type": "or",
         "asset": "flag",
         "name": "gather",
@@ -410,7 +410,7 @@
         "id": "firewall:6:defend",
         "type": "defense",
         "asset": "firewall",
-        "name": "enable",
+        "name": "defend",
         "ttc": null,
         "defense_status": null,
         "children": [
@@ -419,9 +419,9 @@
             "host:19:connect",
             "firewall:20:connect",
             "host:21:connect",
-            "flag:22:take",
+            "flag:22:gather",
             "firewall:25:connect",
-            "flag:28:take"
+            "flag:28:gather"
         ],
         "parents": null,
         "existence_status": null,
@@ -435,12 +435,12 @@
         "id": "firewall:13:defend",
         "type": "defense",
         "asset": "firewall",
-        "name": "enable",
+        "name": "defend",
         "ttc": null,
         "defense_status": null,
         "children": [
             "firewall:13:connect",
-            "flag:27:take",
+            "flag:27:gather",
             "host:35:connect"
         ],
         "parents": null,
@@ -455,12 +455,12 @@
         "id": "firewall:16:defend",
         "type": "defense",
         "asset": "firewall",
-        "name": "enable",
+        "name": "defend",
         "ttc": null,
         "defense_status": null,
         "children": [
             "firewall:16:connect",
-            "flag:15:take"
+            "flag:15:gather"
         ],
         "parents": null,
         "existence_status": null,
@@ -474,13 +474,13 @@
         "id": "firewall:20:defend",
         "type": "defense",
         "asset": "firewall",
-        "name": "enable",
+        "name": "defend",
         "ttc": null,
         "defense_status": null,
         "children": [
             "firewall:20:connect",
             "host:21:connect",
-            "flag:22:take"
+            "flag:22:gather"
         ],
         "parents": null,
         "existence_status": null,
@@ -494,12 +494,12 @@
         "id": "firewall:23:defend",
         "type": "defense",
         "asset": "firewall",
-        "name": "enable",
+        "name": "defend",
         "ttc": null,
         "defense_status": null,
         "children": [
             "firewall:23:connect",
-            "flag:26:take"
+            "flag:26:gather"
         ],
         "parents": null,
         "existence_status": null,
@@ -513,12 +513,12 @@
         "id": "firewall:25:defend",
         "type": "defense",
         "asset": "firewall",
-        "name": "enable",
+        "name": "defend",
         "ttc": null,
         "defense_status": null,
         "children": [
             "firewall:25:connect",
-            "flag:28:take"
+            "flag:28:gather"
         ],
         "parents": null,
         "existence_status": null,
@@ -536,7 +536,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "flag:27:take"
+            "flag:27:gather"
         ],
         "parents": null,
         "existence_status": null,

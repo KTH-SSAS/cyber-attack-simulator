@@ -1,6 +1,6 @@
 [
     {
-        "id": "flag:4:take",
+        "id": "flag:4:gather",
         "type": "and",
         "asset": "flag:4",
         "name": "gather",
@@ -31,7 +31,7 @@
         },
         "defense_status": null,
         "children": [
-            "flag:4:take"
+            "flag:4:gather"
         ],
         "parents": null,
         "existence_status": null,
@@ -64,7 +64,7 @@
         "mitre_info": null
     },
     {
-        "id": "attacker:1:enter",
+        "id": "attacker:1:firstSteps",
         "type": "or",
         "asset": "attacker:1",
         "name": "firstSteps",
@@ -131,7 +131,7 @@
         "mitre_info": null
     },
     {
-        "id": "flag:2:take",
+        "id": "flag:2:gather",
         "type": "and",
         "asset": "flag:2",
         "name": "gather",
@@ -154,7 +154,7 @@
         "id": "firewall:2:defend",
         "type": "defense",
         "asset": "firewall:2",
-        "name": "enable",
+        "name": "defend",
         "ttc": {
             "type": "function",
             "name": "VeryHardAndUncertain",
@@ -176,7 +176,7 @@
         "id": "firewall:3:defend",
         "type": "defense",
         "asset": "firewall:3",
-        "name": "enable",
+        "name": "defend",
         "ttc": {
             "type": "function",
             "name": "VeryHardAndUncertain",
@@ -185,7 +185,7 @@
         "defense_status": null,
         "children": [
             "host:33:connect",
-            "flag:2:take"
+            "flag:2:gather"
         ],
         "parents": null,
         "existence_status": null,
@@ -207,7 +207,7 @@
         },
         "defense_status": null,
         "children": [
-            "flag:2:take"
+            "flag:2:gather"
         ],
         "parents": null,
         "existence_status": null,

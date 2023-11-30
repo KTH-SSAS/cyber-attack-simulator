@@ -1,6 +1,6 @@
 [
     {
-        "id": "flag:0:take",
+        "id": "flag:0:gather",
         "type": "and",
         "asset": "flag:0",
         "name": "gather",
@@ -23,7 +23,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "flag:0:take"
+            "flag:0:gather"
         ],
         "parents": null,
         "existence_status": null,
@@ -143,7 +143,7 @@
         "mitre_info": null
     },
     {
-        "id": "attacker:8:enter",
+        "id": "attacker:8:firstSteps",
         "type": "or",
         "asset": "attacker:8",
         "name": "firstSteps",
@@ -236,12 +236,12 @@
         "id": "firewall:1:defend",
         "type": "defense",
         "asset": "firewall:1",
-        "name": "enable",
+        "name": "defend",
         "ttc": null,
         "defense_status": null,
         "children": [
             "firewall:1:connect",
-            "flag:0:take"
+            "flag:0:gather"
         ],
         "parents": null,
         "existence_status": null,
