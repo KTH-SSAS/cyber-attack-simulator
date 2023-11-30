@@ -75,13 +75,14 @@ class AttackSimulationEnv:
         obs: Observation = Observation.from_rust(x[0])
 
         actions = self.sim.actions
+        vocab = self.sim.vocab
         num_actions = len(actions)
 
         num_nodes = len(obs.state)
         num_edges = len(obs.edges)
 
         self.observation_space: spaces.Dict = self.define_observation_space(
-            num_nodes, num_edges, num_actions
+            num_nodes, num_edges, num_actions, len(vocab)
         )
         self.action_space: spaces.Dict = self.define_action_space(num_nodes, num_actions)
 
@@ -95,7 +96,7 @@ class AttackSimulationEnv:
         # Start episode count at -1 since it will be incremented the first time reset is called.
         self.episode_count = -1
         self.screen: Optional[Any] = None
-        self.vocab = self.sim.vocab
+        self.vocab = vocab
         self.reverse_vocab = [None] * len(self.vocab)
         for key, value in self.vocab.items():
             self.reverse_vocab[value] = key
@@ -111,11 +112,11 @@ class AttackSimulationEnv:
         )
 
     @staticmethod
-    def define_observation_space(n_nodes: int, n_edges: int, num_actions: int) -> spaces.Dict:
+    def define_observation_space(n_nodes: int, n_edges: int, num_actions: int, vocab_size: int) -> spaces.Dict:
         return spaces.Dict(
             {
-                AGENT_DEFENDER: Defender.obs_space(num_actions, n_nodes, n_edges),
-                AGENT_ATTACKER: Attacker.obs_space(num_actions, n_nodes),
+                AGENT_DEFENDER: Defender.obs_space(num_actions, n_nodes, n_edges, vocab_size),
+                AGENT_ATTACKER: Attacker.obs_space(num_actions, n_nodes, vocab_size),
             }
         )
 
