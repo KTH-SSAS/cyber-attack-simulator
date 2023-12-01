@@ -44,7 +44,7 @@ class AttackerEnv(gym.Env):
         )
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
-        return super().render()
+        return self.env.render()
 
 
 class DefenderEnv(gym.Env):
@@ -86,7 +86,7 @@ class DefenderEnv(gym.Env):
         )
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
-        return super().render()
+        return self.env.render()
 
 
 if __name__ == "__main__":

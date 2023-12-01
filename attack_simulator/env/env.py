@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, SupportsFloat, Tuple
 
 import numpy as np
 from gymnasium import spaces
+from gymnasium.core import RenderFrame
 from numpy.typing import NDArray
 
 from .. import examplemanager
@@ -231,7 +232,7 @@ class AttackSimulationEnv:
             pygame.quit()
             self.isopen = False
 
-    def render(self) -> bytes:
+    def render(self) -> RenderFrame | list[RenderFrame] | None:
         # """Render a frame of the environment."""
         # if not self.render_env:
         #     return True
