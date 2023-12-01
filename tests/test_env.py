@@ -71,7 +71,7 @@ def test_env_multiple_steps(env: AttackSimulationEnv) -> None:
             break
 
 def test_all_graphs_multiple_steps() -> None:
-    available_graphs = attack_simulator.list_available_graph()
+    available_graphs = attack_simulator.available_graphs()
     import gymnasium as gym
     attack_simulator.register_envs()
 

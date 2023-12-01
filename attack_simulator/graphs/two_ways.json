@@ -75,8 +75,8 @@
         },
         "defense_status": null,
         "children": [
-            "host:16:connect",
-            "host:34:connect"
+            "host:1:connect",
+            "host:2:connect"
         ],
         "parents": null,
         "existence_status": null,
@@ -87,9 +87,9 @@
         "mitre_info": null
     },
     {
-        "id": "host:16:connect",
+        "id": "host:1:connect",
         "type": "or",
-        "asset": "host:16",
+        "asset": "host:1",
         "name": "connect",
         "ttc": {
             "type": "function",
@@ -98,7 +98,7 @@
         },
         "defense_status": null,
         "children": [
-            "firewall:3:connect"
+            "firewall:1:connect"
         ],
         "parents": null,
         "existence_status": null,
@@ -109,9 +109,9 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:3:connect",
+        "id": "firewall:1:connect",
         "type": "or",
-        "asset": "firewall:3",
+        "asset": "firewall:1",
         "name": "connect",
         "ttc": {
             "type": "function",
@@ -173,9 +173,9 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:3:defend",
+        "id": "firewall:1:defend",
         "type": "defense",
-        "asset": "firewall:3",
+        "asset": "firewall:1",
         "name": "defend",
         "ttc": {
             "type": "function",
@@ -218,9 +218,9 @@
         "mitre_info": null
     },
     {
-        "id": "host:34:connect",
+        "id": "host:2:connect",
         "type": "or",
-        "asset": "host:34",
+        "asset": "host:2",
         "name": "connect",
         "ttc": {
             "type": "function",
