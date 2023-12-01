@@ -6,7 +6,6 @@ from typing import Any, Dict, Optional, SupportsFloat, Tuple
 import numpy as np
 from gymnasium import spaces
 from numpy.typing import NDArray
-from maturin import import_hook
 
 from .. import examplemanager
 from .roles import Defender, Attacker
@@ -14,10 +13,6 @@ from ..constants import AGENT_ATTACKER, AGENT_DEFENDER
 from ..mal.observation import Info, Observation
 from ..utils.config import EnvConfig, SimulatorConfig
 from ..utils.rng import get_rng
-
-
-# install the import hook with default settings
-import_hook.install(bindings="pyo3")
 
 from ..rusty_sim import RustAttackSimulator  # noqa: E402
 
