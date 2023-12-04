@@ -1,5 +1,4 @@
-
-from typing import Any
+from typing import Any, SupportsFloat
 
 import gymnasium as gym
 from gymnasium.core import RenderFrame
@@ -11,8 +10,8 @@ import numpy as np
 
 from attack_simulator.env.env import AttackSimulationEnv
 
-class GraphWrapper(Wrapper):
 
+class GraphWrapper(Wrapper):
     def __init__(self, env: AttackSimulationEnv) -> None:
         super().__init__(env)
 
@@ -23,15 +22,23 @@ class GraphWrapper(Wrapper):
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
         return self._graph.render()
-    
 
     def reset(self, **kwargs: Any) -> tuple[Any, dict[str, Any]]:
         obs, info = self.env.reset(**kwargs)
-        graph_obs = GraphInstance(obs["observation"], None, obs["edges"])
+        graph_obs = self._to_graph(obs)
         return graph_obs, info
-    
-class LabeledGraphWrapper(Wrapper):
 
+    def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        graph_obs = self._to_graph(obs)
+        return graph_obs, reward, terminated, truncated, info
+
+    @staticmethod
+    def _to_graph(obs: dict[str, Any]) -> GraphInstance:
+        return GraphInstance(obs["observation"], None, obs["edges"])
+
+
+class LabeledGraphWrapper(Wrapper):
     def __init__(self, env: AttackSimulationEnv) -> None:
         super().__init__(env)
 
@@ -42,14 +49,18 @@ class LabeledGraphWrapper(Wrapper):
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
         return self._graph.render()
-    
 
     def reset(self, **kwargs: Any) -> tuple[Any, dict[str, Any]]:
         obs, info = self.env.reset(**kwargs)
+        return self._to_graph(obs), info
 
-        full_nodes = np.concatenate([obs["observation"], obs["asset"], obs["asset_id"], obs["step_name"]], axis=1)
+    def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        return self._to_graph(obs), reward, terminated, truncated, info
 
-        graph_obs = GraphInstance(full_nodes, None, obs["edges"])
-        return graph_obs, info
-
-
+    @staticmethod
+    def _to_graph(obs: dict[str, Any]) -> GraphInstance:
+        nodes = np.concatenate(
+            [obs["observation"], obs["asset"], obs["asset_id"], obs["step_name"]], axis=1
+        )
+        return GraphInstance(nodes, None, obs["edges"])
