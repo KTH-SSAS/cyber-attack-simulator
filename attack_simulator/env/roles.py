@@ -16,7 +16,7 @@ class Defender:
                 "node_surface": spaces.Box(0, 1, shape=(n_objects,), dtype=np.int8),
                 "observation": spaces.Box(0, 1, shape=(n_objects, n_features), dtype=np.int8),
                 "asset": spaces.Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
-                "asset_id": spaces.Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
+                "asset_id": spaces.Box(0, BIG_INT, shape=(n_objects, 1), dtype=np.int64), #TODO this should the max number of assets
                 "step_name": spaces.Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
                 "edges": spaces.Box(
                     0,
@@ -119,7 +119,7 @@ class Attacker:
                     -1, 1, shape=(n_nodes, n_features), dtype=np.int8
                 ),  # -1 = unknown, 0 = not compromised, 1 = compromised
                 "asset": spaces.Box(0, vocab_size, shape=(n_nodes,1), dtype=np.int64),
-                "asset_id": spaces.Box(0, vocab_size, shape=(n_nodes,1), dtype=np.int64),
+                "asset_id": spaces.Box(0, BIG_INT, shape=(n_nodes,1), dtype=np.int64), #TODO this should the max number of assets
                 "step_name": spaces.Box(0, vocab_size, shape=(n_nodes,1), dtype=np.int64),
                 "nop_index": spaces.Discrete(n_actions),
                 "edges": spaces.Box(
