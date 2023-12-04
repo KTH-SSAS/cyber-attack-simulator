@@ -114,7 +114,7 @@ class AttackSimulationEnv:
         return spaces.Dict(
             {
                 AGENT_DEFENDER: Defender.obs_space(num_actions, n_nodes, n_edges, vocab_size),
-                AGENT_ATTACKER: Attacker.obs_space(num_actions, n_nodes, vocab_size),
+                AGENT_ATTACKER: Attacker.obs_space(num_actions, n_nodes, n_edges, vocab_size),
             }
         )
 

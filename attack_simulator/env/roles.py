@@ -15,9 +15,9 @@ class Defender:
                 "action_mask": spaces.Box(0, 1, shape=(n_actions,), dtype=np.int8),
                 "node_surface": spaces.Box(0, 1, shape=(n_objects,), dtype=np.int8),
                 "observation": spaces.Box(0, 1, shape=(n_objects, n_features), dtype=np.int8),
-                "asset": spaces.Box(0, vocab_size, shape=(n_objects,), dtype=np.int64),
-                "asset_id": spaces.Box(0, vocab_size, shape=(n_objects,), dtype=np.int64),
-                "step_name": spaces.Box(0, vocab_size, shape=(n_objects,), dtype=np.int64),
+                "asset": spaces.Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
+                "asset_id": spaces.Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
+                "step_name": spaces.Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
                 "edges": spaces.Box(
                     0,
                     n_objects,
@@ -75,9 +75,9 @@ class Defender:
             "action_mask": obs.defender_possible_actions,
             "node_surface": obs.defender_possible_objects,
             "observation": obs.defender_observation.reshape(-1, 1),
-            "asset": obs.assets,
-            "asset_id": obs.asset_ids,
-            "step_name": obs.names,
+            "asset": obs.assets.reshape(-1, 1),
+            "asset_id": obs.asset_ids.reshape(-1, 1),
+            "step_name": obs.names.reshape(-1, 1),
             "edges": obs.edges.T,
         }
 
@@ -93,7 +93,7 @@ class Attacker:
         }
 
     @staticmethod
-    def obs_space(n_actions: int, n_nodes: int, vocab_size: int) -> spaces.Dict:
+    def obs_space(n_actions: int, n_nodes: int, n_edges: int, vocab_size: int) -> spaces.Dict:
         n_features = 1
         return spaces.Dict(
             {
@@ -118,10 +118,16 @@ class Attacker:
                 "observation": spaces.Box(
                     -1, 1, shape=(n_nodes, n_features), dtype=np.int8
                 ),  # -1 = unknown, 0 = not compromised, 1 = compromised
-                "asset": spaces.Box(0, vocab_size, shape=(n_nodes,), dtype=np.int64),
-                "asset_id": spaces.Box(0, vocab_size, shape=(n_nodes,), dtype=np.int64),
-                "step_name": spaces.Box(0, vocab_size, shape=(n_nodes,), dtype=np.int64),
+                "asset": spaces.Box(0, vocab_size, shape=(n_nodes,1), dtype=np.int64),
+                "asset_id": spaces.Box(0, vocab_size, shape=(n_nodes,1), dtype=np.int64),
+                "step_name": spaces.Box(0, vocab_size, shape=(n_nodes,1), dtype=np.int64),
                 "nop_index": spaces.Discrete(n_actions),
+                "edges": spaces.Box(
+                    0,
+                    n_nodes,
+                    shape=(2, n_edges),
+                    dtype=np.int64,
+                ),
             }
         )
 
@@ -131,10 +137,11 @@ class Attacker:
             "action_mask": obs.attacker_possible_actions,
             "node_surface": obs.attacker_possible_objects,
             "observation": obs.attacker_observation.reshape(-1, 1),
-            "asset": obs.assets,
-            "asset_id": obs.asset_ids,
-            "step_name": obs.names,
+            "asset": obs.assets.reshape(-1, 1),
+            "asset_id": obs.asset_ids.reshape(-1, 1),
+            "step_name": obs.names.reshape(-1, 1),
             "ttc_remaining": obs.ttc_remaining,
+            "edges": obs.edges.T,
             "nop_index": 0,
         }
 

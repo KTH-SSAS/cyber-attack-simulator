@@ -7,6 +7,7 @@ from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.env.env import AttackSimulationEnv
 from attack_simulator.utils.config import EnvConfig
 import attack_simulator
+import attack_simulator.wrappers
 
 def test_env_reset(env: AttackSimulationEnv) -> None:
     obs = np.array(env.reset())
@@ -87,9 +88,29 @@ def test_all_graphs_multiple_steps() -> None:
             #if terminated["__all__"] or truncated["__all__"]:
             #    break
 
+def test_wrappers() -> None:
+    import gymnasium as gym
+    attack_simulator.register_envs()
+
+    env = gym.make("DefenderEnv-v0", graph_name="test_graph")
+
+    wrapped_env = attack_simulator.wrappers.GraphWrapper(env)
+
+    obs, _ = wrapped_env.reset()
+
+    assert isinstance(obs, gym.spaces.GraphInstance)
+    assert obs.nodes.shape == (8, 1)
+
+    wrapped_env = attack_simulator.wrappers.LabeledGraphWrapper(env)
+    obs, _ = wrapped_env.reset()
+    assert isinstance(obs, gym.spaces.GraphInstance)
+    assert obs.nodes.shape == (8, 4)
+
+    pass
+
 
 @pytest.mark.parametrize("agent", ["attacker", "defender"])
-def test_env_multiple_steps_single(env: AttackSimulationEnv, agent) -> None:
+def test_env_multiple_steps_single(env: AttackSimulationEnv, agent: str) -> None:
     obs = env.reset()
     for _ in range(100):
         action = env.action_space.sample()

@@ -1,8 +1,6 @@
 import functools
-from typing import Any, Dict, SupportsFloat
+from typing import Any, Dict, SupportsFloat, List
 
-from pettingzoo import ParallelEnv
-from pettingzoo.utils import parallel_to_aec, wrappers
 import gymnasium as gym
 from gymnasium.core import RenderFrame
 import gymnasium.utils.env_checker as env_checker
@@ -46,6 +44,14 @@ class AttackerEnv(gym.Env):
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
         return self.env.render()
+    
+    @property
+    def vocab(self) -> Dict[str, int]:
+        return self.env.vocab
+    
+    @property
+    def reverse_vocab(self) -> List[str]:
+        return self.env.reverse_vocab
 
 
 class DefenderEnv(gym.Env):
@@ -88,6 +94,14 @@ class DefenderEnv(gym.Env):
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
         return self.env.render()
+    
+    @property
+    def vocab(self) -> Dict[str, int]:
+        return self.env.vocab
+    
+    @property
+    def reverse_vocab(self) -> List[str]:
+        return self.env.reverse_vocab
 
 
 if __name__ == "__main__":
