@@ -137,23 +137,23 @@ class AttackSimulationEnv:
         self.episode_count += 1
         return agent_obs, agent_info
 
-    def observation_space_sample(self, agent_ids: list = None) -> Dict[str, Any]:
+    def observation_space_sample(self, agent_ids: tuple = ()) -> Dict[str, Any]:
         agent_ids = self._agent_ids if agent_ids is None else agent_ids
 
         return {agent_id: self.observation_space[agent_id].sample() for agent_id in agent_ids}
 
-    def action_space_sample(self, agent_ids: list = None) -> Dict[str, Any]:
+    def action_space_sample(self, agent_ids: tuple = ()) -> Dict[str, Any]:
         agent_ids = self._agent_ids if agent_ids is None else agent_ids
 
         return {agent_id: self.action_space[agent_id].sample() for agent_id in agent_ids}
 
-    def action_space_contains(self, x: list) -> bool:
+    def action_space_contains(self, x: tuple) -> bool:
         return all(self.action_space[agent_id].contains(x[agent_id]) for agent_id in x)
 
-    def observation_space_contains(self, x: list) -> bool:
+    def observation_space_contains(self, x: tuple) -> bool:
         return all(self.observation_space[agent_id].contains(x[agent_id]) for agent_id in x)
 
-    def get_agent_info(self, agent_ids: list, info: Info) -> Dict[str, Dict[str, Any]]:
+    def get_agent_info(self, agent_ids: tuple, info: Info) -> Dict[str, Dict[str, Any]]:
         info_funcs = {
             AGENT_DEFENDER: Defender.get_info,
             AGENT_ATTACKER: Attacker.get_info,
