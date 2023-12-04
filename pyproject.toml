@@ -47,7 +47,6 @@ docformatter = ">=1.4"
 poetry = ">=1.1.13"
 gymnasium = "^0.29.1"
 scipy = ">=1.10.0"
-dm-tree = ">=0.1.8"
 tabulate = ">=0.9.0"
 scikit-image = ">=0.19.3"
 lz4 = ">=4.3.2"
@@ -61,8 +60,9 @@ pyrsistent = "^0.19.3"
 pygame = "^2.5.2"
 pillow = "^10.1.0"
 
+
 [tool.poetry.group.dev.dependencies]
-ruff = ">=0.0.257"
+ruff = "^0.1.6"
 tox = ">=3.24.4"
 tox-poetry-dev-dependencies = "*"
 black = {version = ">=22.12.0", extras = ["jupyter"]}
