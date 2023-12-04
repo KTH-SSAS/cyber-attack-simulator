@@ -15,7 +15,7 @@ from attack_simulator.utils.config import EnvConfig
 
 
 class AttackerEnv(gym.Env):
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         config = {
             "graph_name": kwargs.get("graph_name", "four_ways_mod"),
             "sim_false_negative_rate": 0.0,
@@ -24,6 +24,7 @@ class AttackerEnv(gym.Env):
         self.env = AttackSimulationEnv(EnvConfig.from_dict(config))
         self.observation_space = self.env.observation_space[AGENT_ATTACKER]
         self.action_space = self.env.action_space[AGENT_ATTACKER]
+        self.render_mode = kwargs.get("render_mode", None)
 
     def reset(
         self, *, seed: int | None = None, options: dict[str, Any] | None = None
