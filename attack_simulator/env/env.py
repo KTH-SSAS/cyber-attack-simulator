@@ -59,6 +59,8 @@ class AttackSimulationEnv:
             else SimulatorConfig(**config.sim_config)
         )
 
+        self.metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 1}
+
         graph_filename = examplemanager.get_paths_to_graphs()[config.graph_name]
 
         self.sim = RustAttackSimulator(
@@ -93,6 +95,7 @@ class AttackSimulationEnv:
         self.episode_count = -1
         self.screen: Optional[Any] = None
         self.vocab = vocab
+        self.clock = None
         self.reverse_vocab = [None] * len(self.vocab)
         for key, value in self.vocab.items():
             self.reverse_vocab[value] = key
@@ -264,6 +267,9 @@ class AttackSimulationEnv:
             else:  # mode == "rgb_array"
                 self.screen = pygame.Surface((screen_width, screen_height))
 
+        if self.clock is None:
+            self.clock = pygame.time.Clock()
+
         self.screen.fill((255, 255, 255))
         pygame.display.set_caption("Attack Simulation")
         ## Render the graph
@@ -284,6 +290,7 @@ class AttackSimulationEnv:
 
         if self.render_mode == "human":
             pygame.event.pump()
+            self.clock.tick(self.metadata["render_fps"])
             pygame.display.flip()
         elif self.render_mode == "rgb_array":
             return np.transpose(np.array(pygame.surfarray.pixels3d(self.screen)), axes=(1, 0, 2))
