@@ -12,7 +12,7 @@ from attack_simulator.env.env import AttackSimulationEnv
 
 
 class GraphWrapper(Wrapper):
-    def __init__(self, env: AttackSimulationEnv) -> None:
+    def __init__(self, env: gym.Env) -> None:
         super().__init__(env)
 
         self.observation_space = spaces.Graph(
@@ -39,11 +39,11 @@ class GraphWrapper(Wrapper):
 
 
 class LabeledGraphWrapper(Wrapper):
-    def __init__(self, env: AttackSimulationEnv) -> None:
+    def __init__(self, env: gym.Env) -> None:
         super().__init__(env)
 
         self.observation_space = spaces.Graph(
-            spaces.Box(0, len(env.vocab), shape=(1, 4), dtype=np.int8),
+            spaces.Box(0, len(env.unwrapped.vocab), shape=(1, 4), dtype=np.int8),
             spaces.Discrete(1),
         )
 

@@ -13,6 +13,9 @@ from attack_simulator.utils.config import EnvConfig
 
 
 class AttackerEnv(gym.Env):
+
+    metadata = AttackSimulationEnv.metadata
+
     def __init__(self, **kwargs: Any) -> None:
         config = {
             "graph_name": kwargs.get("graph_name", "four_ways_mod"),
@@ -23,7 +26,7 @@ class AttackerEnv(gym.Env):
         self.observation_space = self.env.observation_space[AGENT_ATTACKER]
         self.action_space = self.env.action_space[AGENT_ATTACKER]
         self.render_mode = kwargs.get("render_mode", None)
-        self.metadata = self.env.metadata
+        self.env.render_mode = self.render_mode
         super().__init__()
 
     def reset(
@@ -57,6 +60,9 @@ class AttackerEnv(gym.Env):
 
 
 class DefenderEnv(gym.Env):
+    
+    metadata = AttackSimulationEnv.metadata
+    attacker = None
     def __init__(self, **kwargs: Dict[str, Any]) -> None:
         config = {
             "graph_name": kwargs.get("graph_name", "four_ways_mod"),
@@ -66,16 +72,17 @@ class DefenderEnv(gym.Env):
         self.env = AttackSimulationEnv(EnvConfig.from_dict(config))
         attacker_class = kwargs.get("attacker_class", "BreadthFirstAttacker")
         self.attacker_class = searchers.agents[attacker_class]
-        self.attacker = self.attacker_class({})
         self.observation_space = self.env.observation_space[AGENT_DEFENDER]
         self.action_space = self.env.action_space[AGENT_DEFENDER]
-        self.metadata = self.env.metadata
+        self.randomize = kwargs.get("randomize_attacker_behavior", False)
+        self.render_mode = kwargs.get("render_mode", None)
+        self.env.render_mode = self.render_mode
 
     def reset(
         self, *, seed: int | None = None, options: dict[str, Any] | None = None
     ) -> tuple[Any, dict[str, Any]]:
         super().reset(seed=seed, options=options)
-        self.attacker = self.attacker_class({"seed": seed, "randomize": True})
+        self.attacker = self.attacker_class({"seed": seed, "randomize": self.randomize})
         obs, info = self.env.reset(seed=seed, options=options)
         self.attacker_obs = obs[AGENT_ATTACKER]
         return obs[AGENT_DEFENDER], info[AGENT_DEFENDER]
@@ -108,12 +115,11 @@ class DefenderEnv(gym.Env):
 
 
 if __name__ == "__main__":
-    env_checker.check_env(DefenderEnv())
     gym.register("DefenderEnv-v0", entry_point=DefenderEnv)
-    env = gym.make("DefenderEnv-v0")
-    env_checker.check_env(env)
+    env = gym.make("DefenderEnv-v0", render_mode="human")
+    env_checker.check_env(env.unwrapped)
 
-    env_checker.check_env(AttackerEnv())
+
     gym.register("AttackerEnv-v0", entry_point=AttackerEnv)
     env = gym.make("AttackerEnv-v0")
-    env_checker.check_env(env)
+    env_checker.check_env(env.unwrapped)

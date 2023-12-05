@@ -92,7 +92,7 @@ def test_wrappers() -> None:
     import gymnasium as gym
     attack_simulator.register_envs()
 
-    env = gym.make("DefenderEnv-v0", graph_name="test_graph")
+    env = gym.make("DefenderEnv-v0", graph_name="test_graph", render_mode="human")
 
     wrapped_env = attack_simulator.wrappers.GraphWrapper(env)
 
