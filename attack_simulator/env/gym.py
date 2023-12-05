@@ -23,6 +23,7 @@ class AttackerEnv(gym.Env):
         self.observation_space = self.env.observation_space[AGENT_ATTACKER]
         self.action_space = self.env.action_space[AGENT_ATTACKER]
         self.render_mode = kwargs.get("render_mode", None)
+        self.metadata = self.env.metadata
 
     def reset(
         self, *, seed: int | None = None, options: dict[str, Any] | None = None
@@ -67,6 +68,7 @@ class DefenderEnv(gym.Env):
         self.attacker = self.attacker_class({})
         self.observation_space = self.env.observation_space[AGENT_DEFENDER]
         self.action_space = self.env.action_space[AGENT_DEFENDER]
+        self.metadata = self.env.metadata
 
     def reset(
         self, *, seed: int | None = None, options: dict[str, Any] | None = None
