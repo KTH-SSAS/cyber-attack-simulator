@@ -48,9 +48,15 @@ class AttackSimulationEnv:
     """Handles reinforcement learning matters."""
 
     NO_ACTION = "no action"
-
-    # attacker: Agent
+    clock = None
+    # Start episode count at -1 since it will be incremented the first time reset is called.
+    episode_count = -1
+    _action_space_in_preferred_format = True
+    _observation_space_in_preferred_format = True
+    _obs_space_in_preferred_format = True
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 1}
     last_obs: Dict[str, Any]
+    screen: Optional[Any] = None
 
     def __init__(self, config: EnvConfig, render_mode: str | None = None):
         sim_config = (
@@ -58,8 +64,6 @@ class AttackSimulationEnv:
             if isinstance(config.sim_config, SimulatorConfig)
             else SimulatorConfig(**config.sim_config)
         )
-
-        self.metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 1}
 
         graph_filename = examplemanager.get_paths_to_graphs()[config.graph_name]
 
@@ -88,14 +92,7 @@ class AttackSimulationEnv:
             [AGENT_DEFENDER, AGENT_ATTACKER] if not config.attacker_only else [AGENT_ATTACKER]
         )
         self.state = EnvironmentState(self._agent_ids)
-        self._action_space_in_preferred_format = True
-        self._observation_space_in_preferred_format = True
-        self._obs_space_in_preferred_format = True
-        # Start episode count at -1 since it will be incremented the first time reset is called.
-        self.episode_count = -1
-        self.screen: Optional[Any] = None
         self.vocab = vocab
-        self.clock = None
         self.reverse_vocab = [None] * len(self.vocab)
         for key, value in self.vocab.items():
             self.reverse_vocab[value] = key

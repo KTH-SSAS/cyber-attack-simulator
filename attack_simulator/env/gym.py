@@ -24,6 +24,7 @@ class AttackerEnv(gym.Env):
         self.action_space = self.env.action_space[AGENT_ATTACKER]
         self.render_mode = kwargs.get("render_mode", None)
         self.metadata = self.env.metadata
+        super().__init__()
 
     def reset(
         self, *, seed: int | None = None, options: dict[str, Any] | None = None
