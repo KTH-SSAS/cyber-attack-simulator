@@ -3056,13 +3056,13 @@ files = [
 
 [[package]]
 name = "pettingzoo"
-version = "1.24.1"
+version = "1.24.2"
 description = "Gymnasium for multi-agent reinforcement learning."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pettingzoo-1.24.1-py3-none-any.whl", hash = "sha256:110ab96cdd1bcc013994712b2e2a2e4fee3f1ba93d17c58652bdf2348e74c2bf"},
-    {file = "pettingzoo-1.24.1.tar.gz", hash = "sha256:6c4ee9487002883fba3ca1f87c58617a4a24dbd461aacbee90a69c09e3d6b79a"},
+    {file = "pettingzoo-1.24.2-py3-none-any.whl", hash = "sha256:00268cf990d243654c2bbbbf8c88322c12b041dc0a879b74747f14ee8aa93dd6"},
+    {file = "pettingzoo-1.24.2.tar.gz", hash = "sha256:0a5856d47de78ab20feddfdac4940959dc892f6becc92107247b1c3a210c0984"},
 ]
 
 [package.dependencies]
@@ -5180,4 +5180,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.10"
-content-hash = "bd1ad9106190ddb331c8c8035063b3c5915b89dc3caebe45a2c4aff8e002b493"
+content-hash = "40ccba7d495754fee40e2a10ce0adf7436d95236e0f8704a3c0969e3d899c2e3"
