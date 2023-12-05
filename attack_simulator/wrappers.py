@@ -21,7 +21,7 @@ class GraphWrapper(Wrapper):
         )
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
-        return self._graph.render()
+        return self.env.render()
 
     def reset(self, **kwargs: Any) -> tuple[Any, dict[str, Any]]:
         obs, info = self.env.reset(**kwargs)
@@ -48,7 +48,7 @@ class LabeledGraphWrapper(Wrapper):
         )
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
-        return self._graph.render()
+        return self.env.render()
 
     def reset(self, **kwargs: Any) -> tuple[Any, dict[str, Any]]:
         obs, info = self.env.reset(**kwargs)
