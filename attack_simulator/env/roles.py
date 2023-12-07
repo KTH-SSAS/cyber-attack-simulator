@@ -2,6 +2,7 @@ from ..mal.observation import Info, Observation
 import numpy as np
 from gymnasium import spaces
 from typing import Any, Dict
+from gymnasium.spaces import Box
 
 BIG_INT = 2**63 - 2
 
@@ -12,13 +13,15 @@ class Defender:
         n_features = 1  # TODO maybe merge some of the dict fields into a single array
         return spaces.Dict(
             {
-                "action_mask": spaces.Box(0, 1, shape=(n_actions,), dtype=np.int8),
-                "node_surface": spaces.Box(0, 1, shape=(n_objects,), dtype=np.int8),
-                "observation": spaces.Box(0, 1, shape=(n_objects, n_features), dtype=np.int8),
-                "asset": spaces.Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
-                "asset_id": spaces.Box(0, BIG_INT, shape=(n_objects, 1), dtype=np.int64), #TODO this should the max number of assets
-                "step_name": spaces.Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
-                "edges": spaces.Box(
+                "action_mask": Box(0, 1, shape=(n_actions,), dtype=np.int8),
+                "node_surface": Box(0, 1, shape=(n_objects,), dtype=np.int8),
+                "observation": Box(0, 1, shape=(n_objects, n_features), dtype=np.int8),
+                "asset": Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
+                "asset_id": Box(
+                    0, BIG_INT, shape=(n_objects, 1), dtype=np.int64
+                ),  # TODO this should the max number of assets
+                "step_name": Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
+                "edges": Box(
                     0,
                     n_objects,
                     shape=(2, n_edges),
@@ -35,42 +38,6 @@ class Defender:
 
     @staticmethod
     def get_obs(obs: Observation) -> Dict[str, Any]:
-        # state = np.array(obs.nodes, dtype=np.int8)
-        # edges = np.array(obs.edges, dtype=np.int64)
-        # defense_indices = np.flatnonzero(obs.defense_surface)
-
-        # wait_index = len(state)
-        # new_state = np.concatenate([state, np.array([1], dtype=np.int8)])
-        # Add edges for wait action
-
-        # wait_edges = [[i, wait_index] for i in defense_indices]
-
-        # defense_indices = np.concatenate([np.array([wait_index], dtype=np.int64), defense_indices])
-
-        # Flip the edges for defense steps
-        # flipped_edges = [edge[::-1] for edge in edges if edge[0] in defense_indices]
-
-        # remove old edges
-        # edges_without_defense = [edge for edge in edges if edge[0] not in defense_indices]
-
-        # new_edges = np.concatenate([edges_without_defense, flipped_edges], axis=0)
-        # new_edges = np.concatenate([edges_without_defense, wait_edges, flipped_edges], axis=0)
-
-        # import networkx as nx
-        # G = nx.DiGraph()
-
-        # for i, node in enumerate(state):
-        #     G.add_node(i, label=node)
-
-        # G.add_edges_from(new_edges)
-        # node_colors = ["red" if node in defense_indices else "blue" for node in G.nodes()]
-        # pos = nx.nx_pydot.graphviz_layout(G, prog="dot")
-        # nx.draw_networkx_nodes(G, pos=pos, node_color=node_colors)
-        # nx.draw_networkx_edges(G, pos=pos)
-        # nx.draw_networkx_labels(G, pos=pos, labels=dict(zip(range(len(state)), state)))
-        # import matplotlib.pyplot as plt
-        # plt.show()
-
         return {
             "action_mask": obs.defender_possible_actions,
             "node_surface": obs.defender_possible_objects,
@@ -93,38 +60,40 @@ class Attacker:
         }
 
     @staticmethod
-    def obs_space(n_actions: int, n_nodes: int, n_edges: int, vocab_size: int) -> spaces.Dict:
+    def obs_space(n_actions: int, n_objects: int, n_edges: int, vocab_size: int) -> spaces.Dict:
         n_features = 1
         return spaces.Dict(
             {
-                "action_mask": spaces.Box(
+                "action_mask": Box(
                     0,
                     1,
                     shape=(n_actions,),
                     dtype=np.int8,
                 ),
-                "node_surface": spaces.Box(
+                "node_surface": Box(
                     0,
                     1,
-                    shape=(n_nodes,),
+                    shape=(n_objects,),
                     dtype=np.int8,
                 ),
-                "ttc_remaining": spaces.Box(
+                "ttc_remaining": Box(
                     0,
                     BIG_INT,
-                    shape=(n_nodes,),
+                    shape=(n_objects,),
                     dtype=np.int64,
                 ),
-                "observation": spaces.Box(
-                    -1, 1, shape=(n_nodes, n_features), dtype=np.int8
+                "observation": Box(
+                    -1, 1, shape=(n_objects, n_features), dtype=np.int8
                 ),  # -1 = unknown, 0 = not compromised, 1 = compromised
-                "asset": spaces.Box(0, vocab_size, shape=(n_nodes,1), dtype=np.int64),
-                "asset_id": spaces.Box(0, BIG_INT, shape=(n_nodes,1), dtype=np.int64), #TODO this should the max number of assets
-                "step_name": spaces.Box(0, vocab_size, shape=(n_nodes,1), dtype=np.int64),
+                "asset": Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
+                "asset_id": Box(
+                    0, BIG_INT, shape=(n_objects, 1), dtype=np.int64
+                ),  # TODO this should the max number of assets
+                "step_name": Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
                 "nop_index": spaces.Discrete(n_actions),
-                "edges": spaces.Box(
+                "edges": Box(
                     0,
-                    n_nodes,
+                    n_objects,
                     shape=(2, n_edges),
                     dtype=np.int64,
                 ),
