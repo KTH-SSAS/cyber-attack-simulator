@@ -26,11 +26,13 @@ class GraphWrapper(Wrapper):
     def reset(self, **kwargs: Any) -> tuple[Any, dict[str, Any]]:
         obs, info = self.env.reset(**kwargs)
         graph_obs = self._to_graph(obs)
+        info["action_mask"] = obs["action_mask"]
         return graph_obs, info
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
         obs, reward, terminated, truncated, info = self.env.step(action)
         graph_obs = self._to_graph(obs)
+        info["action_mask"] = obs["action_mask"]
         return graph_obs, reward, terminated, truncated, info
 
     @staticmethod
@@ -52,10 +54,12 @@ class LabeledGraphWrapper(Wrapper):
 
     def reset(self, **kwargs: Any) -> tuple[Any, dict[str, Any]]:
         obs, info = self.env.reset(**kwargs)
+        info["action_mask"] = obs["action_mask"]
         return self._to_graph(obs), info
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
         obs, reward, terminated, truncated, info = self.env.step(action)
+        info["action_mask"] = obs["action_mask"]
         return self._to_graph(obs), reward, terminated, truncated, info
 
     @staticmethod
