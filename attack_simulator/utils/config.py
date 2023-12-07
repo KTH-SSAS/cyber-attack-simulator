@@ -48,8 +48,8 @@ class EnvConfig(Config):
 class SimulatorConfig(Config):
     """Config class for attack simulator."""
 
-    false_negative_rate: float
-    false_positive_rate: float
+    false_negative_rate: float = 0.0
+    false_positive_rate: float = 0.0
     randomize_ttc: bool = False  # Randomize time to compromise values
     log: bool = False  # Log simulator output to file
     show_false: bool = False  # Show false positives in render

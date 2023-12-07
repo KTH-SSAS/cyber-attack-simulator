@@ -8,7 +8,7 @@ from ..agent import Agent
 
 
 def get_new_targets(observation, discovered_targets: Set[int]) -> List[int]:
-    attack_surface = observation["node_surface"]
+    attack_surface = observation["action_mask"][1]
     surface_indexes = set(np.flatnonzero(attack_surface))
     new_targets = [idx for idx in surface_indexes if idx not in discovered_targets]
     return new_targets, surface_indexes
@@ -37,7 +37,7 @@ class BreadthFirstAttacker(Agent):
         )
 
         self.current_target = None if done else self.current_target
-        action = observation["nop_index"] if done else 1
+        action = 0 if done else 1
         return (action, self.current_target)
 
     @staticmethod
@@ -80,7 +80,7 @@ class DepthFirstAttacker(Agent):
         )
 
         self.current_target = None if done else self.current_target
-        action = observation["nop_index"] if done else 1
+        action = 0 if done else 1
         return (action, self.current_target)
 
     @staticmethod

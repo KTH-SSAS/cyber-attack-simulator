@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, SupportsFloat, Tuple
 
 import numpy as np
 from gymnasium import spaces
+from gymnasium.spaces import Box
 from gymnasium.core import RenderFrame
 from numpy.typing import NDArray
 
@@ -34,14 +35,59 @@ def get_agent_obs(agents: list, sim_obs: Observation) -> Dict[str, Any]:
     return {key: obs_funcs[key](sim_obs) for key in agents}
 
 
+BIG_INT = 2**63 - 2
+
+
+def obs_space(n_actions: int, n_objects: int, n_edges: int, vocab_size: int) -> spaces.Dict:
+    n_features = 1  # TODO maybe merge some of the dict fields into a single array
+    return spaces.Dict(
+        {
+            "action_mask": spaces.Tuple(
+                (
+                    Box(
+                        0,
+                        1,
+                        shape=(n_actions,),
+                        dtype=np.int8,
+                    ),
+                    Box(
+                        0,
+                        1,
+                        shape=(n_objects,),
+                        dtype=np.int8,
+                    ),
+                )
+            ),
+            "observation": Box(-1, 1, shape=(n_objects, n_features), dtype=np.int8),
+            "asset": Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
+            "ttc_remaining": Box(
+                0,
+                BIG_INT,
+                shape=(n_objects,),
+                dtype=np.int64,
+            ),
+            "asset_id": Box(
+                0, BIG_INT, shape=(n_objects, 1), dtype=np.int64
+            ),  # TODO this should the max number of assets
+            "step_name": Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
+            "edges": Box(
+                0,
+                n_objects,
+                shape=(2, n_edges),
+                dtype=np.int64,
+            ),
+        }
+    )
+
+
 class EnvironmentState:
     def __init__(self, agent_ids: list) -> None:
         self.cumulative_rewards = {k: 0.0 for k in agent_ids}
         self.reward: Dict[str, int] = {k: 0 for k in agent_ids}
         self.terminated: Dict[str, bool] = {k: False for k in agent_ids}
-        self.terminated["__all__"] = False
+        # self.terminated["__all__"] = False
         self.truncated: Dict[str, bool] = {k: False for k in agent_ids}
-        self.truncated["__all__"] = False
+        # self.truncated["__all__"] = False
 
 
 class AttackSimulationEnv:
@@ -88,6 +134,7 @@ class AttackSimulationEnv:
         )
         self.action_space: spaces.Dict = self.define_action_space(num_nodes, num_actions)
 
+        self.possible_agents = [AGENT_ATTACKER, AGENT_DEFENDER]
         self._agent_ids = (
             [AGENT_DEFENDER, AGENT_ATTACKER] if not config.attacker_only else [AGENT_ATTACKER]
         )
@@ -113,8 +160,8 @@ class AttackSimulationEnv:
     ) -> spaces.Dict:
         return spaces.Dict(
             {
-                AGENT_DEFENDER: Defender.obs_space(num_actions, n_nodes, n_edges, vocab_size),
-                AGENT_ATTACKER: Attacker.obs_space(num_actions, n_nodes, n_edges, vocab_size),
+                AGENT_DEFENDER: obs_space(num_actions, n_nodes, n_edges, vocab_size),
+                AGENT_ATTACKER: obs_space(num_actions, n_nodes, n_edges, vocab_size),
             }
         )
 
@@ -128,6 +175,9 @@ class AttackSimulationEnv:
     def reset(
         self, *, seed: Optional[int] = None, options: Optional[dict] = None
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        self._agent_ids = (
+            [AGENT_DEFENDER, AGENT_ATTACKER] if not self.config.attacker_only else [AGENT_ATTACKER]
+        )
         sim_obs, info = self.sim.reset(seed)
         sim_obs = Observation.from_rust(sim_obs)
         self.state = EnvironmentState(self._agent_ids)
@@ -175,9 +225,7 @@ class AttackSimulationEnv:
         Dict[str, bool],
         dict[str, dict[str, Any]],
     ]:
-        truncated = {agent_id: False for agent_id in self._agent_ids}
-
-        truncated["__all__"] = False
+        # truncated["__all__"] = False
 
         # Convert numpy arrays to python tuples
         action_dict = {agent_id: tuple(action) for agent_id, action in action_dict.items()}
@@ -192,7 +240,6 @@ class AttackSimulationEnv:
 
         obs = get_agent_obs(self._agent_ids, sim_obs)
         infos = self.get_agent_info(self._agent_ids, info)
-        rewards = {}
 
         done_funcs = {
             AGENT_DEFENDER: Attacker.done,  # Defender is done when attacker is done
@@ -204,13 +251,11 @@ class AttackSimulationEnv:
             AGENT_ATTACKER: attacker_reward,
         }
 
+        truncated = {agent_id: False for agent_id in self._agent_ids}
         terminated = {key: done_funcs[key](sim_obs) for key in self._agent_ids}
+        rewards = {key: reward_funcs[key](sim_obs) for key in self._agent_ids}
 
-        rewards = {
-            key: reward_funcs[key](sim_obs) if not terminated[key] else 0 for key in self._agent_ids
-        }
-
-        terminated["__all__"] = Attacker.done(sim_obs)
+        # terminated["__all__"] = Attacker.done(sim_obs)
         self.state.reward = rewards
         for key, value in rewards.items():
             self.state.cumulative_rewards[key] += value
@@ -218,11 +263,29 @@ class AttackSimulationEnv:
         self.state.truncated = truncated
         self.last_obs = obs
 
+        translated = {key: self.translate_obs(value) for key, value in obs.items()}
+
+        for k, v in translated.items():
+            infos[k]["translated"] = v
+
+        self._agent_ids = [k for k in self._agent_ids if not terminated[k] and not truncated[k]]
+
         return obs, rewards, terminated, truncated, infos
 
-    @property
-    def done(self) -> bool:
-        return self.state.terminated["__all__"] or self.state.truncated["__all__"]
+    def translate_obs(self, obs: dict) -> dict:
+        edges = [i for i in zip(obs["edges"][0], obs["edges"][1])]
+        nodes = [
+            f"{self.reverse_vocab[int(a)]}:{int(i)}:{self.reverse_vocab[int(n)]}"
+            for a, i, n in zip(obs["asset"], obs["asset_id"], obs["step_name"])
+        ]
+        return {
+            "nodes": nodes,
+            "edges": [(nodes[i], nodes[j]) for i, j in edges],
+        }
+
+    # @property
+    # def done(self) -> bool:
+    #    return self.state.terminated["__all__"] or self.state.truncated["__all__"]
 
     def close(self) -> None:
         if self.screen is not None:
