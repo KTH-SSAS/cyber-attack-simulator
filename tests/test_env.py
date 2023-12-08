@@ -123,7 +123,7 @@ def test_wrappers() -> None:
     obs, _ = wrapped_env.reset()
 
     assert isinstance(obs, gym.spaces.GraphInstance)
-    assert obs.nodes.shape == (8, 1)
+    assert obs.nodes.shape == (8,)
 
     wrapped_env = attack_simulator.wrappers.LabeledGraphWrapper(env)
     obs, _ = wrapped_env.reset()

@@ -39,7 +39,7 @@ BIG_INT = 2**63 - 2
 
 
 def obs_space(n_actions: int, n_objects: int, n_edges: int, vocab_size: int) -> spaces.Dict:
-    n_features = 1  # TODO maybe merge some of the dict fields into a single array
+    #n_features = 1  # TODO maybe merge some of the dict fields into a single array
     return spaces.Dict(
         {
             "action_mask": spaces.Tuple(
@@ -58,8 +58,8 @@ def obs_space(n_actions: int, n_objects: int, n_edges: int, vocab_size: int) -> 
                     ),
                 )
             ),
-            "observation": Box(-1, 1, shape=(n_objects, n_features), dtype=np.int8),
-            "asset": Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
+            "observation": Box(-1, 1, shape=(n_objects,), dtype=np.int8),
+            "asset": Box(0, vocab_size, shape=(n_objects,), dtype=np.int64),
             "ttc_remaining": Box(
                 0,
                 BIG_INT,
@@ -67,9 +67,9 @@ def obs_space(n_actions: int, n_objects: int, n_edges: int, vocab_size: int) -> 
                 dtype=np.int64,
             ),
             "asset_id": Box(
-                0, BIG_INT, shape=(n_objects, 1), dtype=np.int64
+                0, BIG_INT, shape=(n_objects,), dtype=np.int64
             ),  # TODO this should the max number of assets
-            "step_name": Box(0, vocab_size, shape=(n_objects, 1), dtype=np.int64),
+            "step_name": Box(0, vocab_size, shape=(n_objects,), dtype=np.int64),
             "edges": Box(
                 0,
                 n_objects,

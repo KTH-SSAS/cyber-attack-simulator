@@ -22,11 +22,11 @@ class Defender:
         )
         return {
             "action_mask": action_mask,
-            "observation": obs.defender_observation.reshape(-1, 1),
-            "asset": obs.assets.reshape(-1, 1),
-            "asset_id": obs.asset_ids.reshape(-1, 1),
+            "observation": obs.defender_observation,
+            "asset": obs.assets,
+            "asset_id": obs.asset_ids,
             "ttc_remaining": obs.ttc_remaining,
-            "step_name": obs.names.reshape(-1, 1),
+            "step_name": obs.names,
             "edges": obs.edges.T,
         }
 
@@ -49,10 +49,10 @@ class Attacker:
         )
         return {
             "action_mask": action_mask,
-            "observation": obs.attacker_observation.reshape(-1, 1),
-            "asset": obs.assets.reshape(-1, 1),
-            "asset_id": obs.asset_ids.reshape(-1, 1),
-            "step_name": obs.names.reshape(-1, 1),
+            "observation": obs.attacker_observation,
+            "asset": obs.assets,
+            "asset_id": obs.asset_ids,
+            "step_name": obs.names,
             "ttc_remaining": obs.ttc_remaining,
             "edges": obs.edges.T,
         }

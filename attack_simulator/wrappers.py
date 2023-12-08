@@ -10,6 +10,7 @@ import numpy as np
 
 from attack_simulator.env.env import AttackSimulationEnv
 
+BIG_INT = 2**63 - 2
 
 class GraphWrapper(Wrapper):
     def __init__(self, env: gym.Env) -> None:
@@ -45,7 +46,7 @@ class LabeledGraphWrapper(Wrapper):
         super().__init__(env)
 
         self.observation_space = spaces.Graph(
-            spaces.Box(0, len(env.unwrapped.vocab), shape=(1, 4), dtype=np.int8),
+            spaces.Box(0, BIG_INT, shape=(4,), dtype=np.int64),
             spaces.Discrete(1),
         )
 
@@ -64,7 +65,7 @@ class LabeledGraphWrapper(Wrapper):
 
     @staticmethod
     def _to_graph(obs: dict[str, Any]) -> GraphInstance:
-        nodes = np.concatenate(
-            [obs["observation"], obs["asset"], obs["asset_id"], obs["step_name"]], axis=1
-        )
+        nodes = np.stack(
+            [obs["observation"], obs["asset"], obs["asset_id"], obs["step_name"]]
+        ).T
         return GraphInstance(nodes, None, obs["edges"])
