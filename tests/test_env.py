@@ -88,6 +88,30 @@ def test_all_graphs_multiple_steps() -> None:
                 break
             #    break
 
+def test_gym_api() -> None:
+    import gymnasium as gym
+    import gymnasium.utils.env_checker as env_checker
+    from attack_simulator.env.gym import DefenderEnv, AttackerEnv
+    gym.register("DefenderEnv-v0", entry_point=DefenderEnv)
+    env = gym.make("DefenderEnv-v0", render_mode="human")
+    env_checker.check_env(env.unwrapped, skip_render_check=True)
+
+
+    gym.register("AttackerEnv-v0", entry_point=AttackerEnv)
+    env = gym.make("AttackerEnv-v0")
+    env_checker.check_env(env.unwrapped, skip_render_check=True)
+
+
+def test_pettingzoo_api() -> None:
+    from attack_simulator import parallel_env, env
+    from pettingzoo.test.api_test import api_test
+    from pettingzoo.test import parallel_api_test
+
+    p_env = parallel_env({})
+    parallel_api_test(p_env, num_cycles=50)
+    aec_env = env({})
+    api_test(aec_env, num_cycles=50)
+
 def test_wrappers() -> None:
     import gymnasium as gym
     attack_simulator.register_envs()

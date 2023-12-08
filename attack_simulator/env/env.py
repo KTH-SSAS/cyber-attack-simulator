@@ -140,7 +140,7 @@ class AttackSimulationEnv:
         )
         self.state = EnvironmentState(self._agent_ids)
         self.vocab = vocab
-        self.reverse_vocab = [None] * len(self.vocab)
+        self.reverse_vocab = [""] * len(self.vocab)
         for key, value in self.vocab.items():
             self.reverse_vocab[value] = key
         super().__init__()
@@ -269,6 +269,10 @@ class AttackSimulationEnv:
             infos[k]["translated"] = v
 
         self._agent_ids = [k for k in self._agent_ids if not terminated[k] and not truncated[k]]
+
+        if not self._agent_ids:
+            for k, v in self.state.cumulative_rewards.items():
+                infos[k]["return"] = v
 
         return obs, rewards, terminated, truncated, infos
 
