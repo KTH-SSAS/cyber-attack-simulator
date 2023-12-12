@@ -20,25 +20,39 @@ class GraphWrapper(Wrapper):
             spaces.Discrete(2),
             spaces.Discrete(1),
         )
+        self.defense_steps = None
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
         return self.env.render()
 
     def reset(self, **kwargs: Any) -> tuple[Any, dict[str, Any]]:
         obs, info = self.env.reset(**kwargs)
-        graph_obs = self._to_graph(obs)
         info["action_mask"] = obs["action_mask"]
+        defense_steps = set(np.flatnonzero(info["action_mask"][1]))
+        graph_obs = self._to_graph(obs, defense_steps)
+        self.defense_steps = defense_steps
         return graph_obs, info
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
         obs, reward, terminated, truncated, info = self.env.step(action)
-        graph_obs = self._to_graph(obs)
+        graph_obs = self._to_graph(obs, self.defense_steps)
         info["action_mask"] = obs["action_mask"]
         return graph_obs, reward, terminated, truncated, info
 
     @staticmethod
-    def _to_graph(obs: dict[str, Any]) -> GraphInstance:
-        return GraphInstance(obs["observation"], None, obs["edges"])
+    def _to_graph(obs: dict[str, Any], defense_steps: set = None) -> GraphInstance:
+        edges = obs["edges"]
+
+        # Add reverse edges from the defense steps children to the defense steps
+        # themselves
+        if defense_steps is not None:
+            for p, c in zip(edges[0, :], edges[1, :]):
+                if p in defense_steps:
+                    new_edge = np.array([c, p]).reshape((2, 1))
+                    edges = np.concatenate((edges, new_edge), axis=1)
+
+
+        return GraphInstance(obs["observation"], None, edges)
 
 
 class LabeledGraphWrapper(Wrapper):
