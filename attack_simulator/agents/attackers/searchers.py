@@ -9,7 +9,7 @@ from ..agent import Agent
 
 def get_new_targets(observation, discovered_targets: Set[int]) -> List[int]:
     attack_surface = observation["action_mask"][1]
-    surface_indexes = set(np.flatnonzero(attack_surface))
+    surface_indexes = np.flatnonzero(attack_surface)
     new_targets = [idx for idx in surface_indexes if idx not in discovered_targets]
     return new_targets, surface_indexes
 
