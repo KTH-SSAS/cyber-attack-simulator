@@ -62,10 +62,10 @@ where
         compromised_steps.contains(step)
             || match attack_step {
                 Some(a) => {
-                    self.parent_conditions_fulfilled(compromised_steps, step) // Parent step(s) are compromised
-                    && a == step                                                  // Attacker selects this step
+                    a == step                                                  // Attacker selects this step
                     && ttc_remaining[a] == 0                                      // TTC is 0
                     && !self.step_will_be_defended(a, enabled_defenses, defense_step)
+                    && self.parent_conditions_fulfilled(compromised_steps, step) // Parent step(s) are compromised
                     // It is not defended by a defense
                 }
                 None => false,
