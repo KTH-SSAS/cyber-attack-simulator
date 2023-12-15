@@ -64,8 +64,7 @@ where
                 self.parent_conditions_fulfilled(compromised_steps, step) // Parent step(s) are compromised
                     && a == step // Attacker selects this step
                     && ttc_remaining[a] == 0 // TTC is 0
-                    && !self.is_defended(step, enabled_defenses) // It is not defended
-                    && !self.step_will_be_defended(a, defense_step) // It is not defended by the defense selected by the defender
+                    && !self.step_will_be_defended(a, enabled_defenses, defense_step) // It is not defended by the defense selected by the defender
             }
             None => false,
         }
@@ -159,7 +158,7 @@ where
         Ok(SimulatorState {
             time: 0,
             enabled_defenses: Self::_enabled_defenses(graph, &enabled_defenses, None),
-            remaining_ttc: Self::_remaining_ttc(graph, &remaining_ttc, None, None),
+            remaining_ttc: Self::_remaining_ttc(graph, &remaining_ttc, &enabled_defenses, None, None),
             compromised_steps: Self::_compromised_steps(
                 graph,
                 &remaining_ttc,
@@ -298,6 +297,7 @@ where
         Self::_remaining_ttc(
             graph,
             &self.remaining_ttc,
+            &self.enabled_defenses,
             selected_attack,
             selected_defense,
         )
@@ -307,11 +307,12 @@ where
         graph: &AttackGraph<I>,
         node: &I,
         ttc: u64,
+        enabled_defenses: &HashSet<I>,
         selected_attack: Option<&I>,
         selected_defense: Option<&I>,
     ) -> bool {
         match selected_attack {
-            Some(a) => a == node && ttc > 0 && !graph.step_will_be_defended(node, selected_defense),
+            Some(a) => a == node && ttc > 0 && !graph.step_will_be_defended(node, enabled_defenses, selected_defense),
             None => false,
         }
     }
@@ -335,6 +336,7 @@ where
     fn _remaining_ttc(
         graph: &AttackGraph<I>,
         remaining_ttc: &HashMap<I, TTCType>,
+        enabled_defenses: &HashSet<I>,
         selected_attack: Option<&I>,
         selected_defense: Option<&I>,
     ) -> HashMap<I, TTCType> {
@@ -345,6 +347,7 @@ where
                     graph,
                     id,
                     *ttc,
+                    enabled_defenses,
                     selected_attack,
                     selected_defense,
                 ) {
@@ -368,10 +371,8 @@ where
             .attack_steps
             .iter()
             .filter_map(|step| {
-                let already_compromised = compromised_steps.contains(step);
-                match !(graph.is_defended(step, enabled_defenses)
-                    || graph.step_will_be_defended(step, defender_step))
-                    && (already_compromised
+                match !graph.step_will_be_defended(step, enabled_defenses, defender_step)
+                    && (compromised_steps.contains(step)
                         || graph.step_will_be_compromised(
                             compromised_steps,
                             enabled_defenses,

@@ -95,9 +95,8 @@ where
             .can_be_compromised(parent_states);
 
         let compromised = compromised_steps.contains(node_id);
-        let defended = graph.is_defended(node_id, enabled_defenses);
 
-        let will_be_defended = graph.step_will_be_defended(node_id, defender_step);
+        let will_be_defended = graph.step_will_be_defended(node_id, enabled_defenses, defender_step);
 
         let will_be_attacked = if let Some(a) = attacker_step {
             a == node_id
@@ -106,7 +105,7 @@ where
         };
 
         return parent_conditions_fulfilled
-            && !(compromised || defended || will_be_defended || will_be_attacked);
+            && !(compromised || will_be_defended || will_be_attacked);
     }
 
     pub(crate) fn _step_is_observable(
