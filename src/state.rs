@@ -47,7 +47,7 @@ where
             || self.is_entry(node_id);
     }
 
-    pub(crate) fn can_step_be_compromised(
+    pub(crate) fn step_will_be_compromised(
         &self,
         compromised_steps: &HashSet<I>,
         enabled_defenses: &HashSet<I>,
@@ -59,23 +59,15 @@ where
     where
         I: Eq + Hash + Ord + Copy + Debug,
     {
-        let parent_conditions_fulfilled = self.parent_conditions_fulfilled(compromised_steps, step);
-
-        match (attack_step, defense_step) {
-            (Some(a), Some(d)) => {
-                parent_conditions_fulfilled // Parent step(s) are compromised
+        match attack_step {
+            Some(a) => {
+                self.parent_conditions_fulfilled(compromised_steps, step) // Parent step(s) are compromised
                     && a == step // Attacker selects this step
                     && ttc_remaining[a] == 0 // TTC is 0
                     && !self.is_defended(step, enabled_defenses) // It is not defended
-                    && !self.step_is_defended_by(a, d) // It is not defended by the defense selected by the defender
+                    && !self.step_will_be_defended(a, defense_step) // It is not defended by the defense selected by the defender
             }
-            (Some(a), None) => {
-                    parent_conditions_fulfilled // Parent step(s) are compromised 
-                    && a == step // Attacker selects this step
-                    && ttc_remaining[a] == 0 // TTC is 0
-                    && !self.is_defended(step, enabled_defenses) // It is not defended
-            }
-            (None, _) => false,
+            None => false,
         }
     }
 }
@@ -282,7 +274,7 @@ where
             .sum();
 
         // If a step is compromised, it costs more to enable a defense for it
-/*         let r3: i64 = match defense_step {
+        /*         let r3: i64 = match defense_step {
             Some(step) => graph
                 .children(step)
                 .iter()
@@ -311,18 +303,16 @@ where
         )
     }
 
-    fn should_ttc_be_decreased(
+    fn ttc_will_be_decreased(
         graph: &AttackGraph<I>,
         node: &I,
         ttc: u64,
         selected_attack: Option<&I>,
         selected_defense: Option<&I>,
     ) -> bool {
-        match (selected_attack, selected_defense) {
-            (Some(a), Some(d)) => a == node && ttc > 0 && !graph.step_is_defended_by(node, d),
-            (Some(a), None) => a == node && ttc > 0,
-            (None, Some(_)) => false,
-            (None, None) => false,
+        match selected_attack {
+            Some(a) => a == node && ttc > 0 && !graph.step_will_be_defended(node, selected_defense),
+            None => false,
         }
     }
 
@@ -351,7 +341,7 @@ where
         remaining_ttc
             .iter()
             .map(|(id, ttc)| {
-                let ttc = match Self::should_ttc_be_decreased(
+                let ttc = match Self::ttc_will_be_decreased(
                     graph,
                     id,
                     *ttc,
@@ -379,22 +369,17 @@ where
             .iter()
             .filter_map(|step| {
                 let already_compromised = compromised_steps.contains(step);
-                match 
-                !graph.is_defended(step, enabled_defenses) 
-                && match defender_step {
-                    Some(s) => !graph.step_is_defended_by(step, s),
-                    None => true,
-                }
-                && (already_compromised
-                    || graph.can_step_be_compromised(
-                        compromised_steps,
-                        enabled_defenses,
-                        remaining_ttc,
-                        step,
-                        attacker_step,
-                        defender_step,
-                    )
-                ) {
+                match !(graph.is_defended(step, enabled_defenses)
+                    || graph.step_will_be_defended(step, defender_step))
+                    && (already_compromised
+                        || graph.step_will_be_compromised(
+                            compromised_steps,
+                            enabled_defenses,
+                            remaining_ttc,
+                            step,
+                            attacker_step,
+                            defender_step,
+                        )) {
                     true => Some(*step),
                     false => None,
                 }

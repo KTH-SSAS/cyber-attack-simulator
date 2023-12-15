@@ -76,7 +76,7 @@ where
             compromised_steps.contains(p) // If the parent is compromised
                     || if let Some(a) = attacker_step {
                         a == p
-                            && graph.can_step_be_compromised(
+                            && graph.step_will_be_compromised(
                                 compromised_steps,
                                 enabled_defenses,
                                 ttc_remaining,
@@ -97,11 +97,7 @@ where
         let compromised = compromised_steps.contains(node_id);
         let defended = graph.is_defended(node_id, enabled_defenses);
 
-        let will_be_defended = if let Some(d) = defender_step {
-            graph.step_is_defended_by(node_id, d)
-        } else {
-            false
-        };
+        let will_be_defended = graph.step_will_be_defended(node_id, defender_step);
 
         let will_be_attacked = if let Some(a) = attacker_step {
             a == node_id
@@ -126,7 +122,7 @@ where
             compromised_steps.contains(p)
                 || if let Some(a) = attacker_step {
                     a == p
-                        && graph.can_step_be_compromised(
+                        && graph.step_will_be_compromised(
                             compromised_steps,
                             enabled_defenses,
                             ttc_remaining,

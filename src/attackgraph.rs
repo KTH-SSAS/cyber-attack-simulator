@@ -431,8 +431,11 @@ where
             })
     }
 
-    pub(crate) fn step_is_defended_by(&self, step_id: &I, defense_id: &I) -> bool {
-        return self.get_defense_parents(step_id).any(|p| p == defense_id);
+    pub(crate) fn step_will_be_defended(&self, step_id: &I, defense_id: Option<&I>) -> bool {
+        match defense_id {
+            Some(d) => self.get_defense_parents(step_id).any(|p| p == d),
+            None => false,
+        }
     }
 
     pub(crate) fn ttc_params(&self) -> Vec<(I, TTCType)> {
