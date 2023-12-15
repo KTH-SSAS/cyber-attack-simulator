@@ -61,7 +61,7 @@ where
         }
     }
 
-    fn is_in_attack_surface(
+    fn step_will_be_in_attack_surface(
         graph: &AttackGraph<I>,
         compromised_steps: &HashSet<I>,
         ttc_remaining: &HashMap<I, TTCType>,
@@ -100,7 +100,7 @@ where
             ));
     }
 
-    pub(crate) fn _step_is_observable(
+    pub(crate) fn _step_will_be_observed(
         graph: &AttackGraph<I>,
         compromised_steps: &HashSet<I>,
         enabled_defenses: &HashSet<I>,
@@ -142,7 +142,7 @@ where
             .attack_steps
             .iter()
             .filter_map(|n| {
-                match Self::is_in_attack_surface(
+                match Self::step_will_be_in_attack_surface(
                     graph,
                     compromised_steps,
                     ttc_remaining,
@@ -173,7 +173,7 @@ where
             .attack_steps
             .iter()
             .filter_map(|s| {
-                match Self::_step_is_observable(
+                match Self::_step_will_be_observed(
                     graph,
                     compromised_steps,
                     enabled_defenses,
