@@ -59,6 +59,7 @@ where
     where
         I: Eq + Hash + Ord + Copy + Debug,
     {
+        compromised_steps.contains(step) ||
         match attack_step {
             Some(a) => {
                 self.parent_conditions_fulfilled(compromised_steps, step) // Parent step(s) are compromised
