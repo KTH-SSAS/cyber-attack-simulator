@@ -91,7 +91,7 @@ where
             .collect()
     }
 
-    fn defense_available(
+    fn defense_will_be_available(
         step: &I,
         enabled_defenses: &HashSet<I>,
         defender_step: Option<&I>,
@@ -112,13 +112,8 @@ where
         graph
             .defense_steps
             .iter()
-            .filter_map(|d| {
-                if Self::defense_available(d, enabled_defenses, defender_step) {
-                    Some(*d)
-                } else {
-                    None
-                }
-            })
+            .filter(|d| Self::defense_will_be_available(d, enabled_defenses, defender_step))
+            .map(|d| *d)
             .collect()
     }
 
