@@ -59,16 +59,17 @@ where
     where
         I: Eq + Hash + Ord + Copy + Debug,
     {
-        compromised_steps.contains(step) ||
-        match attack_step {
-            Some(a) => {
-                self.parent_conditions_fulfilled(compromised_steps, step) // Parent step(s) are compromised
-                    && a == step // Attacker selects this step
-                    && ttc_remaining[a] == 0 // TTC is 0
-                    && !self.step_will_be_defended(a, enabled_defenses, defense_step) // It is not defended by the defense selected by the defender
+        compromised_steps.contains(step)
+            || match attack_step {
+                Some(a) => {
+                    self.parent_conditions_fulfilled(compromised_steps, step) // Parent step(s) are compromised
+                    && a == step                                                  // Attacker selects this step
+                    && ttc_remaining[a] == 0                                      // TTC is 0
+                    && !self.step_will_be_defended(a, enabled_defenses, defense_step)
+                    // It is not defended by a defense
+                }
+                None => false,
             }
-            None => false,
-        }
     }
 }
 
@@ -159,7 +160,13 @@ where
         Ok(SimulatorState {
             time: 0,
             enabled_defenses: Self::_enabled_defenses(graph, &enabled_defenses, None),
-            remaining_ttc: Self::_remaining_ttc(graph, &remaining_ttc, &enabled_defenses, None, None),
+            remaining_ttc: Self::_remaining_ttc(
+                graph,
+                &remaining_ttc,
+                &enabled_defenses,
+                None,
+                None,
+            ),
             compromised_steps: Self::_compromised_steps(
                 graph,
                 &remaining_ttc,
@@ -194,8 +201,8 @@ where
         Self::_enabled_defenses(graph, &self.enabled_defenses, selected_defense)
     }
 
-    fn should_defense_be_enabled(
-        enabled_defenses: HashSet<&I>,
+    fn defense_will_be_enabled(
+        enabled_defenses: &HashSet<I>,
         node: &I,
         selected_node: Option<&I>,
     ) -> bool {
@@ -214,16 +221,8 @@ where
         graph
             .defense_steps
             .iter()
-            .filter_map(|x| {
-                match Self::should_defense_be_enabled(
-                    enabled_defenses.iter().collect(),
-                    x,
-                    selected_defense,
-                ) {
-                    true => Some(x.clone()),
-                    false => None,
-                }
-            })
+            .filter(|x| Self::defense_will_be_enabled(enabled_defenses, x, selected_defense))
+            .map(|x| *x)
             .collect::<HashSet<I>>()
     }
 
@@ -313,7 +312,11 @@ where
         selected_defense: Option<&I>,
     ) -> bool {
         match selected_attack {
-            Some(a) => a == node && ttc > 0 && !graph.step_will_be_defended(node, enabled_defenses, selected_defense),
+            Some(a) => {
+                a == node
+                    && ttc > 0
+                    && !graph.step_will_be_defended(node, enabled_defenses, selected_defense)
+            }
             None => false,
         }
     }
@@ -371,21 +374,18 @@ where
         graph
             .attack_steps
             .iter()
-            .filter_map(|step| {
-                match !graph.step_will_be_defended(step, enabled_defenses, defender_step)
-                    && (compromised_steps.contains(step)
-                        || graph.step_will_be_compromised(
-                            compromised_steps,
-                            enabled_defenses,
-                            remaining_ttc,
-                            step,
-                            attacker_step,
-                            defender_step,
-                        )) {
-                    true => Some(*step),
-                    false => None,
-                }
+            .filter(|step| {
+                !graph.step_will_be_defended(step, enabled_defenses, defender_step)
+                    && graph.step_will_be_compromised(
+                        compromised_steps,
+                        enabled_defenses,
+                        remaining_ttc,
+                        step,
+                        attacker_step,
+                        defender_step,
+                    )
             })
+            .map(|s| *s)
             .collect()
     }
 
