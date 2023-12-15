@@ -436,6 +436,29 @@ where
         }
     }
 
+    fn check_action(
+        selected_step: Option<&I>,
+        valid_steps: HashSet<I>,
+        agent_name: String,
+    ) -> SimResult<()> {
+        match selected_step {
+            Some(step) => {
+                if !valid_steps.contains(step) {
+                    return Err(SimError {
+                        error: format!(
+                            "Invalid step for {}: {:?} not in {:?}",
+                            agent_name, step, valid_steps
+                        ),
+                    });
+                }
+                return Ok(());
+            }
+            None => {
+                return Ok(());
+            }
+        }
+    }
+
     fn calculate_next_state(
         &self,
         action_dict: HashMap<String, ParameterAction>,
@@ -446,6 +469,17 @@ where
         let defender_selected_step = self.get_step_from_action(action_dict.get("defender"));
         let attacker_selected_step = self.get_step_from_action(action_dict.get("attacker"));
         let old_state = self.state.borrow();
+
+        if self.config.strict {
+            // Be strict about agents selecting valid actions
+            let attacker_obs = AttackerObs::new(&old_state, &self.g);
+            let valid_steps = attacker_obs.possible_objects.clone();
+            Self::check_action(attacker_selected_step, valid_steps, "attacker".to_string())?;
+            let defender_obs = DefenderObs::new(&old_state, &self.g);
+            let valid_steps = defender_obs.possible_objects.clone();
+            Self::check_action(defender_selected_step, valid_steps, "defender".to_string())?;
+        }
+
         match old_state.get_new_state(&self.g, attacker_selected_step, defender_selected_step) {
             Ok(new_state) => {
                 return Ok((
@@ -490,6 +524,7 @@ mod tests {
             false_positive_rate: 0.0,
             log: false,
             show_false: true,
+            strict: true,
         };
         let graph = load_graph_from_json(
             filename,
@@ -533,6 +568,7 @@ mod tests {
             false_positive_rate: 1.0,
             log: false,
             show_false: true,
+            strict: true,
         };
         let graph = load_graph_from_json(
             filename,
@@ -576,6 +612,7 @@ mod tests {
             false_positive_rate: 0.0,
             log: false,
             show_false: true,
+            strict: true,
         };
         let sim = SimulatorRuntime::new(graph, config).unwrap();
 

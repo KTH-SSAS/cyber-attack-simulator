@@ -178,6 +178,7 @@ mod tests {
             randomize_ttc: false,
             log: false,
             show_false: false,
+            strict: true,
         };
         let sim = runtime::SimulatorRuntime::new(graph, config).unwrap();
         return sim;

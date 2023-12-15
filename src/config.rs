@@ -15,6 +15,8 @@ pub struct SimulatorConfig {
     pub log: bool,
     #[pyo3(get)]
     pub show_false: bool,
+    #[pyo3(get)]
+    pub strict: bool,
 }
 
 impl SimulatorConfig {
@@ -36,6 +38,7 @@ impl Default for SimulatorConfig {
             randomize_ttc: false,
             log: false,
             show_false: false,
+            strict: false,
         }
     }
 }

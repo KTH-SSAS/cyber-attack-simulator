@@ -65,7 +65,8 @@ where
                     a == step                                                  // Attacker selects this step
                     && ttc_remaining[a] == 0                                      // TTC is 0
                     && !self.step_will_be_defended(a, enabled_defenses, defense_step)
-                    && self.parent_conditions_fulfilled(compromised_steps, step) // Parent step(s) are compromised
+                    && self.parent_conditions_fulfilled(compromised_steps, step)
+                    // Parent step(s) are compromised
                     // It is not defended by a defense
                 }
                 None => false,

@@ -431,12 +431,17 @@ where
             })
     }
 
-    pub(crate) fn step_will_be_defended(&self, step_id: &I, enabled_defenses: &HashSet<I>, defense_id: Option<&I>) -> bool {
-        self.is_defended(step_id, enabled_defenses) ||
-        match defense_id {
-            Some(d) => self.get_defense_parents(step_id).any(|p| p == d),
-            None => false,
-        }
+    pub(crate) fn step_will_be_defended(
+        &self,
+        step_id: &I,
+        enabled_defenses: &HashSet<I>,
+        defense_id: Option<&I>,
+    ) -> bool {
+        self.is_defended(step_id, enabled_defenses)
+            || match defense_id {
+                Some(d) => self.get_defense_parents(step_id).any(|p| p == d),
+                None => false,
+            }
     }
 
     pub(crate) fn ttc_params(&self) -> Vec<(I, TTCType)> {

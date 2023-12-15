@@ -88,7 +88,6 @@ where
             .unwrap()
             .can_be_compromised(parent_states);
 
-
         return parent_conditions_fulfilled
             && !(graph.step_will_be_compromised(
                 compromised_steps,
