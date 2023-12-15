@@ -88,7 +88,7 @@ class DepthFirstAttacker(Agent):
         current_target: int, targets: Union[List[int], Deque[int]], attack_surface: Set[int]
     ) -> int:
         if current_target in attack_surface:
-            return current_target
+            return current_target, False
 
         while current_target not in attack_surface:
             if len(targets) == 0:
