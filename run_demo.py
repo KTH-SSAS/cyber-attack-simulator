@@ -50,7 +50,7 @@ class KeyboardAgent:
         assets = obs["asset"]
         asset_ids = obs["asset_id"]
         step_names = obs["step_name"]
-        available_objects = np.flatnonzero(obs["node_surface"])
+        available_objects = np.flatnonzero(obs["action_mask"][1])
         assets = [self.vocab[i] for i in assets[available_objects]]
         asset_ids = asset_ids[available_objects]
         step_names = [self.vocab[i] for i in step_names[available_objects]]
@@ -114,7 +114,7 @@ with torch.no_grad():
         total_reward_defender += rewards[AGENT_DEFENDER] if not attacker_only else 0
         total_reward_attacker += rewards[AGENT_ATTACKER]
 
-        done = terminated["__all__"]
+        done = terminated[AGENT_ATTACKER]
 
         log = {
             "obs": obs,
