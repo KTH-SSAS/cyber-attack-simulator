@@ -52,8 +52,8 @@ def test_check_spaces(env: AttackSimulationEnv) -> None:
 
 
 def test_env_step(env: AttackSimulationEnv) -> None:
-    obs, _ = env.reset()
-    action = env.action_space.sample({"defender":obs["defender"]["action_mask"], "attacker":obs["attacker"]["action_mask"]})
+    obs, info = env.reset()
+    action = env.action_space.sample({"defender":info["defender"]["action_mask"], "attacker":info["attacker"]["action_mask"]})
     obs, reward, terminated, truncated, info = env.step(action)
     assert env._agent_ids
     assert "attacker" in obs
@@ -61,9 +61,9 @@ def test_env_step(env: AttackSimulationEnv) -> None:
 
 
 def test_env_multiple_steps(env: AttackSimulationEnv) -> None:
-    obs, _ = env.reset()
+    obs, info = env.reset()
     for _ in range(100):
-        action = env.action_space.sample({"defender":obs["defender"]["action_mask"], "attacker":obs["attacker"]["action_mask"]})
+        action = env.action_space.sample({"defender":info["defender"]["action_mask"], "attacker":info["attacker"]["action_mask"]})
         obs, reward, terminated, truncated, info = env.step(action)
         assert "attacker" in obs
         assert "defender" in obs
@@ -78,9 +78,9 @@ def test_all_graphs_multiple_steps() -> None:
 
     for graph in available_graphs:
         env = gym.make("AttackerEnv-v0", graph_name=graph)
-        obs, _ = env.reset()
+        obs, info = env.reset()
         for _ in range(100):
-            action = env.action_space.sample(obs["action_mask"])
+            action = env.action_space.sample(info["action_mask"])
             obs, reward, terminated, truncated, info = env.step(action)
             #assert "attacker" in obs
             #assert "defender" in obs

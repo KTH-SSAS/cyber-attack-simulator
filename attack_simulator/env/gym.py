@@ -85,6 +85,7 @@ class DefenderEnv(gym.Env):
         self.attacker = self.attacker_class({"seed": seed, "randomize": self.randomize})
         obs, info = self.env.reset(seed=seed, options=options)
         self.attacker_obs = obs[AGENT_ATTACKER]
+        self.attacker_obs["action_mask"] = info[AGENT_ATTACKER]["action_mask"]
         return obs[AGENT_DEFENDER], info[AGENT_DEFENDER]
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:

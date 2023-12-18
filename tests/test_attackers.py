@@ -44,13 +44,13 @@ def test_attacker_actions(env: AttackSimulationEnv, attacker_class) -> None:
     steps = 0
     sum_rewards = 0
     while not done:
-
+        obs[AGENT_ATTACKER]["action_mask"] = info[AGENT_ATTACKER]["action_mask"]
         (action, step) = attacker.compute_action_from_dict(obs[AGENT_ATTACKER])
         assert action != ACTION_TERMINATE
         assert action != ACTION_WAIT
 
-        attack_surface = obs[AGENT_ATTACKER]["action_mask"][1]
-        action_mask = obs[AGENT_ATTACKER]["action_mask"][0]
+        attack_surface = info[AGENT_ATTACKER]["action_mask"][1]
+        action_mask = info[AGENT_ATTACKER]["action_mask"][0]
         # assert all(attack_surface == obs.attack_surface)
         valid_steps = np.flatnonzero(attack_surface)
         valid_actions = np.flatnonzero(action_mask)

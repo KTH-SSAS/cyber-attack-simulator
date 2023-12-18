@@ -42,22 +42,22 @@ def obs_space(n_actions: int, n_objects: int, n_edges: int, vocab_size: int) -> 
     #n_features = 1  # TODO maybe merge some of the dict fields into a single array
     return spaces.Dict(
         {
-            "action_mask": spaces.Tuple(
-                (
-                    Box(
-                        0,
-                        1,
-                        shape=(n_actions,),
-                        dtype=np.int8,
-                    ),
-                    Box(
-                        0,
-                        1,
-                        shape=(n_objects,),
-                        dtype=np.int8,
-                    ),
-                )
-            ),
+            # "action_mask": spaces.Tuple(
+            #     (
+            #         Box(
+            #             0,
+            #             1,
+            #             shape=(n_actions,),
+            #             dtype=np.int8,
+            #         ),
+            #         Box(
+            #             0,
+            #             1,
+            #             shape=(n_objects,),
+            #             dtype=np.int8,
+            #         ),
+            #     )
+            # ),
             "observation": Box(-1, 1, shape=(n_objects,), dtype=np.int8),
             "asset": Box(0, vocab_size, shape=(n_objects,), dtype=np.int64),
             "ttc_remaining": Box(
@@ -182,7 +182,7 @@ class AttackSimulationEnv:
         sim_obs = Observation.from_rust(sim_obs)
         self.state = EnvironmentState(self._agent_ids)
         agent_obs = get_agent_obs(self._agent_ids, sim_obs)
-        agent_info = self.get_agent_info(self._agent_ids, info)
+        agent_info = self.get_agent_info(self._agent_ids, info, sim_obs)
         self.last_obs = agent_obs
         self.episode_count += 1
         return agent_obs, agent_info
@@ -203,13 +203,13 @@ class AttackSimulationEnv:
     def observation_space_contains(self, x: tuple) -> bool:
         return all(self.observation_space[agent_id].contains(x[agent_id]) for agent_id in x)
 
-    def get_agent_info(self, agent_ids: tuple, info: Info) -> Dict[str, Dict[str, Any]]:
+    def get_agent_info(self, agent_ids: tuple, info: Info, obs: Observation) -> Dict[str, Dict[str, Any]]:
         info_funcs = {
             AGENT_DEFENDER: Defender.get_info,
             AGENT_ATTACKER: Attacker.get_info,
         }
 
-        infos = {key: info_funcs[key](info) for key in agent_ids}
+        infos = {key: info_funcs[key](info, obs) for key in agent_ids}
 
         # for key, entry in infos.items():
         #     entry["return"] = self.state.cumulative_rewards[key]
@@ -239,7 +239,7 @@ class AttackSimulationEnv:
         sim_obs = Observation.from_rust(sim_obs)
 
         obs = get_agent_obs(self._agent_ids, sim_obs)
-        infos = self.get_agent_info(self._agent_ids, info)
+        infos = self.get_agent_info(self._agent_ids, info, sim_obs)
 
         done_funcs = {
             AGENT_DEFENDER: Attacker.done,  # Defender is done when attacker is done

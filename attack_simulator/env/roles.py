@@ -9,19 +9,19 @@ BIG_INT = 2**63 - 2
 
 class Defender:
     @staticmethod
-    def get_info(info: Info) -> Dict[str, Any]:
-        return {
-            "perc_defenses_activated": info.perc_defenses_activated,
-        }
-
-    @staticmethod
-    def get_obs(obs: Observation) -> Dict[str, Any]:
+    def get_info(info: Info, obs: Observation) -> Dict[str, Any]:
         action_mask = (
             obs.defender_possible_actions,
             obs.defender_possible_objects,
         )
         return {
             "action_mask": action_mask,
+            "perc_defenses_activated": info.perc_defenses_activated,
+        }
+
+    @staticmethod
+    def get_obs(obs: Observation) -> Dict[str, Any]:
+        return {
             "observation": obs.defender_observation,
             "asset": obs.assets,
             "asset_id": obs.asset_ids,
@@ -33,8 +33,13 @@ class Defender:
 
 class Attacker:
     @staticmethod
-    def get_info(info: Info) -> Dict[str, Any]:
+    def get_info(info: Info, obs: Observation) -> Dict[str, Any]:
+        action_mask = (
+            obs.attacker_possible_actions,
+            obs.attacker_possible_objects,
+        )
         return {
+            "action_mask": action_mask,
             "num_compromised_steps": info.num_compromised_steps,
             "perc_compromised_steps": info.perc_compromised_steps,
             "perc_compromised_flags": info.perc_compromised_flags,
@@ -43,12 +48,7 @@ class Attacker:
 
     @staticmethod
     def get_obs(obs: Observation) -> Dict[str, Any]:
-        action_mask = (
-            obs.attacker_possible_actions,
-            obs.attacker_possible_objects,
-        )
         return {
-            "action_mask": action_mask,
             "observation": obs.attacker_observation,
             "asset": obs.assets,
             "asset_id": obs.asset_ids,
