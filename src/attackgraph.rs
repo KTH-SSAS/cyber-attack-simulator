@@ -331,13 +331,8 @@ where
         return &self.graph.edges;
     }
 
-    pub(crate) fn get_step(&self, id: &I) -> GraphResult<&AttackStep> {
-        match self.graph.nodes.get(id) {
-            Some(step) => Ok(&step.data),
-            None => Err(GraphError {
-                message: format!("No such step: {:?}", id),
-            }),
-        }
+    pub(crate) fn get_step(&self, id: &I) -> Option<&AttackStep> {
+        self.graph.nodes.get(id).map(|n| &n.data)
     }
 
     pub(crate) fn name_of_step(&self, id: &I) -> String {

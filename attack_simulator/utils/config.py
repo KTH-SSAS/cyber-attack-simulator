@@ -53,6 +53,7 @@ class SimulatorConfig(Config):
     randomize_ttc: bool = False  # Randomize time to compromise values
     log: bool = False  # Log simulator output to file
     show_false: bool = False  # Show false positives in render
+    strict: bool = False  # Restrict actions to valid ones
 
     @classmethod
     def from_yaml(cls, filename: str) -> SimulatorConfig:

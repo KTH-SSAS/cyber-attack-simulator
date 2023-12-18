@@ -125,8 +125,8 @@ where
         Self::_defense_surface(graph, enabled_defenses, defender_step)
             .iter()
             .filter_map(|x| match graph.get_step(x) {
-                Ok(step) => Some(step.asset()),
-                Err(_e) => None,
+                Some(step) => Some(step.asset()),
+                None => None,
             })
             .collect::<HashSet<String>>()
     }
@@ -139,8 +139,8 @@ where
         Self::_defense_surface(graph, enabled_defenses, defender_step)
             .iter()
             .filter_map(|x| match graph.get_step(x) {
-                Ok(step) => Some(step.name.clone()),
-                Err(_e) => None,
+                Some(step) => Some(step.name.clone()),
+                None => None,
             })
             .collect::<HashSet<String>>()
             .union(&HashSet::from_iter(vec!["wait".to_string()]))

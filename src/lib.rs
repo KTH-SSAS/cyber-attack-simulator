@@ -265,6 +265,72 @@ mod tests {
     }
 
     #[test]
+    fn test_attacker_with_defenses() {
+        let filename = TEST_FILENAME;
+        let sim = get_sim_from_filename(filename);
+
+        let mut observation: VectorizedObservation;
+
+        (observation, _) = sim.reset_vec(None).unwrap();
+
+        let mut rng = ChaChaRng::seed_from_u64(0);
+        let action = sim.action2idx["use"];
+        let mut attack_surface = observation.attacker_possible_objects.clone();
+        let mut defense_surface = observation.defender_possible_objects.clone();
+        let mut available_attacks = available_actions(&attack_surface);
+        while available_attacks.len() > 0 {
+            let step = random_step(&attack_surface, &mut rng).unwrap();
+            let defense = random_step(&defense_surface, &mut rng);
+            let defender_action = match defense {
+                Some(x) => (action, Some(x)),
+                None => (sim.action2idx["wait"], None),
+            };
+            //assert!(action != sim.actions["terminate"]); // We should never terminate, for now
+            assert!(action != sim.action2idx["wait"]); // We should never NOP, for now
+
+            let action_dict = HashMap::from([("attacker".to_string(), (action, Some(step))), 
+            ("defender".to_string(), defender_action)
+            ]);
+            
+            let (new_observation, _) = sim.step_vec(action_dict).unwrap();
+
+            assert_eq!(new_observation.state[step], true);
+
+            //let graphviz = sim.to_graphviz();
+            //let file = std::fs::File::create(format!("test_attacker_{:0>2}.dot", time)).unwrap();
+            //std::io::Write::write_all(&mut std::io::BufWriter::new(file), graphviz.as_bytes())
+            //    .unwrap();
+
+            let a = new_observation.ttc_remaining[step];
+            let b = observation.ttc_remaining[step];
+            assert_eq!(a, max(b as i64 - 1, 0) as u64);
+            let old_ttc_sum = observation.ttc_remaining.iter().sum::<u64>();
+            let new_ttc_sum = new_observation.ttc_remaining.iter().sum::<u64>();
+            if observation.state == new_observation.state {
+                assert_eq!(old_ttc_sum - 1, new_ttc_sum);
+            } else {
+                assert_eq!(old_ttc_sum, new_ttc_sum);
+            }
+
+            observation = new_observation;
+            attack_surface = observation.attacker_possible_objects.clone();
+            defense_surface = observation.defender_possible_objects.clone();
+            available_attacks = available_actions(&attack_surface);
+        }
+
+        assert_eq!(
+            observation
+                .attacker_possible_objects
+                .iter()
+                .filter(|&x| *x)
+                .count(),
+            0
+        );
+
+        //sim.step(action_dict)
+    }
+
+    #[test]
     fn test_defender() {
         let filename = TEST_FILENAME;
         let sim = get_sim_from_filename(filename);

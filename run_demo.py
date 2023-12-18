@@ -83,14 +83,14 @@ attacker_only = False
 env_config = {
     "sim_false_positive_rate": 0.0,
     "sim_false_negative_rate": 0.0,
-    "graph_name": "four_ways_mod",
+    "graph_name": "two_ways",
 }
 env = attack_simulator.parallel_env(env_config, render_mode="human")
 
 control_attacker = False
 
 defender = KeyboardAgent(env.reverse_vocab)
-attacker = KeyboardAgent(env.reverse_vocab) if control_attacker else BreadthFirstAttacker({})
+attacker = KeyboardAgent(env.reverse_vocab) if control_attacker else DepthFirstAttacker({})
 
 obs, info = env.reset()
 done = False

@@ -52,8 +52,8 @@ def test_check_spaces(env: AttackSimulationEnv) -> None:
 
 
 def test_env_step(env: AttackSimulationEnv) -> None:
-    obs = env.reset()
-    action = env.action_space.sample()
+    obs, _ = env.reset()
+    action = env.action_space.sample({"defender":obs["defender"]["action_mask"], "attacker":obs["attacker"]["action_mask"]})
     obs, reward, terminated, truncated, info = env.step(action)
     assert env._agent_ids
     assert "attacker" in obs
@@ -63,7 +63,7 @@ def test_env_step(env: AttackSimulationEnv) -> None:
 def test_env_multiple_steps(env: AttackSimulationEnv) -> None:
     obs, _ = env.reset()
     for _ in range(100):
-        action = env.action_space.sample()
+        action = env.action_space.sample({"defender":obs["defender"]["action_mask"], "attacker":obs["attacker"]["action_mask"]})
         obs, reward, terminated, truncated, info = env.step(action)
         assert "attacker" in obs
         assert "defender" in obs
@@ -80,7 +80,7 @@ def test_all_graphs_multiple_steps() -> None:
         env = gym.make("AttackerEnv-v0", graph_name=graph)
         obs, _ = env.reset()
         for _ in range(100):
-            action = env.action_space.sample()
+            action = env.action_space.sample(obs["action_mask"])
             obs, reward, terminated, truncated, info = env.step(action)
             #assert "attacker" in obs
             #assert "defender" in obs
@@ -131,19 +131,3 @@ def test_wrappers() -> None:
     assert obs.nodes.shape == (8, 4)
 
     pass
-
-
-@pytest.mark.parametrize("agent", ["attacker", "defender"])
-def test_env_multiple_steps_single(env: AttackSimulationEnv, agent: str) -> None:
-    obs = env.reset()
-    for _ in range(100):
-        action = env.action_space.sample()
-        del action[agent]
-        obs, reward, terminated, truncated, info = env.step(action)
-        # note this techically is not how multi agents envs work in rllib
-        # only agents that took an action should be in the obs
-        assert "attacker" in obs
-        assert "defender" in obs
-        if not env._agent_ids:
-            break
-

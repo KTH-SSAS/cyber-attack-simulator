@@ -83,20 +83,19 @@ where
             )
         });
 
-        let parent_conditions_fulfilled = graph
-            .get_step(node_id)
-            .unwrap()
-            .can_be_compromised(parent_states);
-
-        return parent_conditions_fulfilled
-            && !(graph.step_will_be_compromised(
+        return !(graph.step_will_be_defended(node_id, enabled_defenses, defender_step)
+            || graph.step_will_be_compromised(
                 compromised_steps,
                 enabled_defenses,
                 ttc_remaining,
                 node_id,
                 attacker_step,
                 defender_step,
-            ));
+            ))
+            && graph
+                .get_step(node_id)
+                .unwrap()
+                .can_be_compromised(parent_states); // Evaluate this last since it's the most expensive
     }
 
     pub(crate) fn _step_will_be_observed(
@@ -195,8 +194,8 @@ where
         attack_surface
             .iter()
             .filter_map(|x| match graph.get_step(x) {
-                Ok(step) => Some(step.asset()),
-                Err(_e) => None,
+                Some(step) => Some(step.asset()),
+                None => None,
             })
             .collect::<HashSet<String>>()
     }
@@ -208,8 +207,8 @@ where
         attack_surface
             .iter()
             .filter_map(|x| match graph.get_step(x) {
-                Ok(step) => Some(step.name.clone()),
-                Err(_e) => None,
+                Some(step) => Some(step.name.clone()),
+                None => None,
             })
             .collect::<HashSet<String>>()
             .union(&HashSet::from_iter(vec!["wait".to_string()]))
