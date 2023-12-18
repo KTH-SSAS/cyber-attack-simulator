@@ -1,7 +1,7 @@
 from typing import Any, SupportsFloat
 
 import gymnasium as gym
-from gymnasium.core import RenderFrame
+from gymnasium.core import Env, RenderFrame
 
 from gymnasium import Wrapper
 from gymnasium import spaces
@@ -79,3 +79,44 @@ class LabeledGraphWrapper(Wrapper):
             [obs["observation"], obs["asset"], obs["asset_id"], obs["step_name"]]
         ).T
         return GraphInstance(nodes, None, obs["edges"])
+
+class BoxWrapper(Wrapper):
+    def __init__(self, env: Env):
+        super().__init__(env)
+        self.observation_space = self.env.observation_space["observation"]
+
+    def render(self) -> RenderFrame | list[RenderFrame] | None:
+        return super().render()
+    
+    def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[Any, dict[str, Any]]:
+        obs, info = self.env.reset(seed=seed, options=options)
+        obs = obs["observation"]
+        return obs, info
+    
+    def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        obs = obs["observation"]
+        return obs, reward, terminated, truncated, info
+    
+class LabeledBoxWrapper(Wrapper):
+    def __init__(self, env: Env):
+        super().__init__(env)
+        num_nodes = self.env.observation_space["observation"].shape[0]
+        self.observation_space = spaces.Box(0, BIG_INT, shape=(num_nodes, 4), dtype=np.int64)
+
+    def render(self) -> RenderFrame | list[RenderFrame] | None:
+        return super().render()
+    
+    def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[Any, dict[str, Any]]:
+        obs, info = self.env.reset(seed=seed, options=options)
+        obs = np.stack(
+            [obs["observation"], obs["asset"], obs["asset_id"], obs["step_name"]]
+        ).T
+        return obs, info
+    
+    def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        obs = np.stack(
+            [obs["observation"], obs["asset"], obs["asset_id"], obs["step_name"]]
+        ).T
+        return obs, reward, terminated, truncated, info

@@ -130,4 +130,13 @@ def test_wrappers() -> None:
     assert isinstance(obs, gym.spaces.GraphInstance)
     assert obs.nodes.shape == (8, 4)
 
+    wrapped_env = attack_simulator.wrappers.BoxWrapper(env)
+    obs, _ = wrapped_env.reset()
+    assert obs.shape == (8,)
+
+
+    wrapped_env = attack_simulator.wrappers.LabeledBoxWrapper(env)
+    obs, _ = wrapped_env.reset()
+    assert obs.shape == (8, 4)
+
     pass
