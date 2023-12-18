@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Any, Deque, Dict, List, Set, Union
+from typing import Any, Deque, Dict, List, Set, Type, Union
 
 import numpy as np
 
@@ -99,7 +99,7 @@ class DepthFirstAttacker(Agent):
         return current_target, False
 
 
-agents = {
+agents: Dict[str, Type[Agent]] = {
     "BreadthFirstAttacker": BreadthFirstAttacker,
     "DepthFirstAttacker": DepthFirstAttacker,
 }

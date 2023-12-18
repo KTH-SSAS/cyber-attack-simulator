@@ -40,16 +40,6 @@ class GraphWrapper(Wrapper):
     @staticmethod
     def _to_graph(obs: dict[str, Any], defense_steps: set = None) -> GraphInstance:
         edges = obs["edges"]
-
-        # Add reverse edges from the defense steps children to the defense steps
-        # themselves
-        if defense_steps is not None:
-            for p, c in zip(edges[0, :], edges[1, :]):
-                if p in defense_steps:
-                    new_edge = np.array([c, p]).reshape((2, 1))
-                    edges = np.concatenate((edges, new_edge), axis=1)
-
-
         return GraphInstance(obs["observation"], None, edges)
 
 

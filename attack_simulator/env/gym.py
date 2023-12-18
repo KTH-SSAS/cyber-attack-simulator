@@ -4,13 +4,14 @@ from typing import Any, Dict, SupportsFloat, List
 import gymnasium as gym
 from gymnasium.core import RenderFrame
 import gymnasium.utils.env_checker as env_checker
+from attack_simulator.agents.agent import Agent
 import attack_simulator.agents.attackers.searchers as searchers
 
 from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
 
 from attack_simulator.env.env import AttackSimulationEnv
 from attack_simulator.utils.config import EnvConfig
-
+import numpy as np
 
 class AttackerEnv(gym.Env):
 
@@ -62,7 +63,7 @@ class AttackerEnv(gym.Env):
 class DefenderEnv(gym.Env):
     
     metadata = AttackSimulationEnv.metadata
-    attacker = None
+    attacker: Agent
     def __init__(self, **kwargs: Dict[str, Any]) -> None:
         config = {
             "graph_name": kwargs.get("graph_name", "four_ways_mod"),
@@ -70,12 +71,14 @@ class DefenderEnv(gym.Env):
             "sim_false_positive_rate": kwargs.get("false_positive_rate", 0.0),
         }
         self.env = AttackSimulationEnv(EnvConfig.from_dict(config))
-        attacker_class = kwargs.get("attacker_class", "BreadthFirstAttacker")
+        attacker_class: str = kwargs.get("attacker_class", "BreadthFirstAttacker")
         self.attacker_class = searchers.agents[attacker_class]
         self.observation_space = self.env.observation_space[AGENT_DEFENDER]
         self.action_space = self.env.action_space[AGENT_DEFENDER]
         self.randomize = kwargs.get("randomize_attacker_behavior", False)
         self.render_mode = kwargs.get("render_mode", None)
+        self.undirected_defenses = kwargs.get("undirected_defenses", False)
+        self.defense_steps: set = set()
         self.env.render_mode = self.render_mode
 
     def reset(
@@ -86,6 +89,12 @@ class DefenderEnv(gym.Env):
         obs, info = self.env.reset(seed=seed, options=options)
         self.attacker_obs = obs[AGENT_ATTACKER]
         self.attacker_obs["action_mask"] = info[AGENT_ATTACKER]["action_mask"]
+        self.defense_steps = set(np.flatnonzero(info["action_mask"][1]))
+
+        if self.undirected_defenses:
+            edges = self.add_reverse_edges(obs["edges"], self.defense_steps)
+            obs["edges"] = edges
+
         return obs[AGENT_DEFENDER], info[AGENT_DEFENDER]
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
@@ -96,6 +105,11 @@ class DefenderEnv(gym.Env):
         )
         self.attacker_obs = obs[AGENT_ATTACKER]
         self.attacker_obs["action_mask"] = infos[AGENT_ATTACKER]["action_mask"]
+
+        if self.undirected_defenses:
+            edges = self.add_reverse_edges(obs["edges"], self.defense_steps)
+            obs["edges"] = edges
+
         return (
             obs[AGENT_DEFENDER],
             rewards[AGENT_DEFENDER],
@@ -114,6 +128,17 @@ class DefenderEnv(gym.Env):
     @property
     def reverse_vocab(self) -> List[str]:
         return self.env.reverse_vocab
+    
+    @staticmethod
+    def add_reverse_edges(edges: np.ndarray, defense_steps: set) -> np.ndarray:
+        # Add reverse edges from the defense steps children to the defense steps
+        # themselves
+        if defense_steps is not None:
+            for p, c in zip(edges[0, :], edges[1, :]):
+                if p in defense_steps:
+                    new_edge = np.array([c, p]).reshape((2, 1))
+                    edges = np.concatenate((edges, new_edge), axis=1)
+        return edges
 
 
 if __name__ == "__main__":
