@@ -95,6 +95,7 @@ class DefenderEnv(gym.Env):
             {AGENT_DEFENDER: action, AGENT_ATTACKER: attacker_action}
         )
         self.attacker_obs = obs[AGENT_ATTACKER]
+        self.attacker_obs["action_mask"] = infos[AGENT_ATTACKER]["action_mask"]
         return (
             obs[AGENT_DEFENDER],
             rewards[AGENT_DEFENDER],
