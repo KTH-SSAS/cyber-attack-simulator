@@ -27,7 +27,7 @@ class Defender:
             "asset_id": obs.asset_ids,
             "ttc_remaining": obs.ttc_remaining,
             "step_name": obs.names,
-            "edges": obs.edges.T,
+            "edges": obs.edges,
         }
 
 
@@ -54,7 +54,7 @@ class Attacker:
             "asset_id": obs.asset_ids,
             "step_name": obs.names,
             "ttc_remaining": obs.ttc_remaining,
-            "edges": obs.edges.T,
+            "edges": obs.edges,
         }
 
     @staticmethod

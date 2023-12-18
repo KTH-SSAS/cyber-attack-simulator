@@ -73,7 +73,7 @@ def obs_space(n_actions: int, n_objects: int, n_edges: int, vocab_size: int) -> 
             "edges": Box(
                 0,
                 n_objects,
-                shape=(2, n_edges),
+                shape=(n_edges, 2),
                 dtype=np.int64,
             ),
         }
@@ -128,9 +128,11 @@ class AttackSimulationEnv:
 
         num_nodes = len(obs.state)
         num_edges = len(obs.edges)
-        num_defenses = len(np.flatnonzero(obs.defender_possible_objects))
-
-        num_edges = num_edges + num_defenses if config.undirected_defenses else num_edges
+        
+        defenses = np.flatnonzero(obs.defender_possible_objects)
+        if config.undirected_defenses:
+            new_edges = self.get_reverse_edges(obs.edges, defenses)
+            num_edges = num_edges + len(new_edges)
 
         self.observation_space: spaces.Dict = self.define_observation_space(
             num_nodes, num_edges, num_actions, len(vocab)
@@ -144,9 +146,21 @@ class AttackSimulationEnv:
         self.state = EnvironmentState(self._agent_ids)
         self.vocab = vocab
         self.reverse_vocab = [""] * len(self.vocab)
+        self.defense_steps = defenses
         for key, value in self.vocab.items():
             self.reverse_vocab[value] = key
         super().__init__()
+
+    @staticmethod
+    def get_reverse_edges(edges: np.ndarray, defense_steps: set) -> np.ndarray:
+    # Add reverse edges from the defense steps children to the defense steps
+    # themselves
+        new_edges = [
+            np.array([c, p])
+            for p, c in edges
+            if p in defense_steps
+        ]
+        return np.stack(new_edges)
 
     @staticmethod
     def define_action_space(n_nodes: int, num_actions: int) -> spaces.Dict:
@@ -184,11 +198,16 @@ class AttackSimulationEnv:
         sim_obs, info = self.sim.reset(seed)
         sim_obs = Observation.from_rust(sim_obs)
         self.state = EnvironmentState(self._agent_ids)
-        agent_obs = get_agent_obs(self._agent_ids, sim_obs)
+        obs = get_agent_obs(self._agent_ids, sim_obs)
+        if self.config.undirected_defenses:
+            edges = obs[AGENT_DEFENDER]["edges"]
+            new_edges = self.get_reverse_edges(edges, self.defense_steps)
+            edges = np.concatenate((edges, new_edges))
+            obs[AGENT_DEFENDER]["edges"] = edges
         agent_info = self.get_agent_info(self._agent_ids, info, sim_obs)
-        self.last_obs = agent_obs
+        self.last_obs = obs
         self.episode_count += 1
-        return agent_obs, agent_info
+        return obs, agent_info
 
     def observation_space_sample(self, agent_ids: tuple = ()) -> Dict[str, Any]:
         agent_ids = self._agent_ids if agent_ids is None else agent_ids
@@ -243,6 +262,12 @@ class AttackSimulationEnv:
 
         obs = get_agent_obs(self._agent_ids, sim_obs)
         infos = self.get_agent_info(self._agent_ids, info, sim_obs)
+
+        if self.config.undirected_defenses:
+            edges = obs[AGENT_DEFENDER]["edges"]
+            new_edges = self.get_reverse_edges(edges, self.defense_steps)
+            edges = np.concatenate((edges, new_edges))
+            obs[AGENT_DEFENDER]["edges"] = edges
 
         done_funcs = {
             AGENT_DEFENDER: Attacker.done,  # Defender is done when attacker is done

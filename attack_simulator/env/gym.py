@@ -79,7 +79,7 @@ class DefenderEnv(gym.Env):
         self.action_space = self.env.action_space[AGENT_DEFENDER]
         self.randomize = kwargs.get("randomize_attacker_behavior", False)
         self.render_mode = kwargs.get("render_mode", None)
-        self.undirected_defenses = undirected_defenses
+        
         self.defense_steps: set = set()
         self.env.render_mode = self.render_mode
 
@@ -92,11 +92,6 @@ class DefenderEnv(gym.Env):
         self.attacker_obs = obs[AGENT_ATTACKER]
         self.attacker_obs["action_mask"] = info[AGENT_ATTACKER]["action_mask"]
         self.defense_steps = set(np.flatnonzero(info[AGENT_DEFENDER]["action_mask"][1]))
-
-        if self.undirected_defenses:
-            edges = self.add_reverse_edges(obs[AGENT_DEFENDER]["edges"], self.defense_steps)
-            obs[AGENT_DEFENDER]["edges"] = edges
-
         return obs[AGENT_DEFENDER], info[AGENT_DEFENDER]
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
@@ -108,9 +103,6 @@ class DefenderEnv(gym.Env):
         self.attacker_obs = obs[AGENT_ATTACKER]
         self.attacker_obs["action_mask"] = infos[AGENT_ATTACKER]["action_mask"]
 
-        if self.undirected_defenses:
-            edges = self.add_reverse_edges(obs["edges"], self.defense_steps)
-            obs["edges"] = edges
 
         return (
             obs[AGENT_DEFENDER],
