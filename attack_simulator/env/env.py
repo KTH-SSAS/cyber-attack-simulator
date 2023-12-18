@@ -128,6 +128,9 @@ class AttackSimulationEnv:
 
         num_nodes = len(obs.state)
         num_edges = len(obs.edges)
+        num_defenses = len(np.flatnonzero(obs.defender_possible_objects))
+
+        num_edges = num_edges + num_defenses if config.undirected_defenses else num_edges
 
         self.observation_space: spaces.Dict = self.define_observation_space(
             num_nodes, num_edges, num_actions, len(vocab)

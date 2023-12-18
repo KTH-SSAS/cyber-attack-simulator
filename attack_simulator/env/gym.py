@@ -65,10 +65,12 @@ class DefenderEnv(gym.Env):
     metadata = AttackSimulationEnv.metadata
     attacker: Agent
     def __init__(self, **kwargs: Dict[str, Any]) -> None:
+        undirected_defenses = kwargs.get("undirected_defenses", False)
         config = {
             "graph_name": kwargs.get("graph_name", "four_ways_mod"),
             "sim_false_negative_rate": kwargs.get("false_negative_rate", 0.0),
             "sim_false_positive_rate": kwargs.get("false_positive_rate", 0.0),
+            "undirected_defenses": undirected_defenses,
         }
         self.env = AttackSimulationEnv(EnvConfig.from_dict(config))
         attacker_class: str = kwargs.get("attacker_class", "BreadthFirstAttacker")
@@ -77,7 +79,7 @@ class DefenderEnv(gym.Env):
         self.action_space = self.env.action_space[AGENT_DEFENDER]
         self.randomize = kwargs.get("randomize_attacker_behavior", False)
         self.render_mode = kwargs.get("render_mode", None)
-        self.undirected_defenses = kwargs.get("undirected_defenses", False)
+        self.undirected_defenses = undirected_defenses
         self.defense_steps: set = set()
         self.env.render_mode = self.render_mode
 
@@ -89,11 +91,11 @@ class DefenderEnv(gym.Env):
         obs, info = self.env.reset(seed=seed, options=options)
         self.attacker_obs = obs[AGENT_ATTACKER]
         self.attacker_obs["action_mask"] = info[AGENT_ATTACKER]["action_mask"]
-        self.defense_steps = set(np.flatnonzero(info["action_mask"][1]))
+        self.defense_steps = set(np.flatnonzero(info[AGENT_DEFENDER]["action_mask"][1]))
 
         if self.undirected_defenses:
-            edges = self.add_reverse_edges(obs["edges"], self.defense_steps)
-            obs["edges"] = edges
+            edges = self.add_reverse_edges(obs[AGENT_DEFENDER]["edges"], self.defense_steps)
+            obs[AGENT_DEFENDER]["edges"] = edges
 
         return obs[AGENT_DEFENDER], info[AGENT_DEFENDER]
 

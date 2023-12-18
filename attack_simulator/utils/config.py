@@ -28,6 +28,7 @@ class EnvConfig(Config):
     graph_name: str
     vocab_filename: str = None
     attacker_only: bool = False
+    undirected_defenses: bool = False
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> EnvConfig:
