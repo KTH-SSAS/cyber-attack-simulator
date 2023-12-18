@@ -93,7 +93,7 @@ def test_gym_api() -> None:
     import gymnasium.utils.env_checker as env_checker
     from attack_simulator.env.gym import DefenderEnv, AttackerEnv
     gym.register("DefenderEnv-v0", entry_point=DefenderEnv)
-    env = gym.make("DefenderEnv-v0", render_mode="human")
+    env = gym.make("DefenderEnv-v0", render_mode="human", undirected_defenses=True)
     env_checker.check_env(env.unwrapped, skip_render_check=True)
 
 
