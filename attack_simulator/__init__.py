@@ -44,7 +44,7 @@ def get_baselines_for_env(env: gym.Env, episodes: int=100) -> dict:
             ret = 0
             while not done:
                 o["action_mask"] = i["action_mask"]
-                o, r, term, trunc, i = env.step(agent.compute_action_from_dict(o))
+                o, r, term, trunc, i = env.step(agent.compute_action_from_dict(o, i["action_mask"]))
                 ret += r
                 done = term or trunc
 
