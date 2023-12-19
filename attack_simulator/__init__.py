@@ -1,10 +1,12 @@
 from typing import Any, List, Tuple
+from attack_simulator.agents.agent import RandomAgent, RandomActiveAgent, NothingAgent
 from attack_simulator.env.attacksimulator import env, raw_env, parallel_env
 from attack_simulator.utils.config import EnvConfig, SimulatorConfig
 from attack_simulator.env.gym import DefenderEnv, AttackerEnv
-from .examplemanager import available_graphs, show_graph
+from attack_simulator.examplemanager import available_graphs, show_graph
 import gymnasium as gym
-
+from collections import defaultdict
+import numpy as np
 
 def register_envs() -> Tuple[str, str]:
     defend_env_name = "DefenderEnv-v0"
@@ -25,6 +27,34 @@ def attacker_gym(**kwargs: Any) -> gym.Env:
 def list_available_attackers() -> List[str]:
     return ["BreadthFirstAttacker", "DepthFirstAttacker"]
 
+def get_baselines_for_env(env: gym.Env, episodes: int=100) -> dict:
+
+    agents = {
+        "random" : RandomAgent({}),
+        "random_without_wait" : RandomActiveAgent({}), 
+        "nop" :NothingAgent({})
+    }
+
+    results = defaultdict(list)
+    
+    for name, agent in agents.items():
+        for _ in range(episodes):
+            o, i = env.reset()
+            done = False
+            ret = 0
+            while not done:
+                o["action_mask"] = i["action_mask"]
+                o, r, term, trunc, i = env.step(agent.compute_action_from_dict(o))
+                ret += r
+                done = term or trunc
+
+            results[name].append(ret)
+
+    final_results = {}
+    for name, rets in results.items():
+        final_results[name] = {"mean": np.mean(rets), "std": np.std(rets)}
+        
+    return final_results
 
 __all__ = [
     "env",

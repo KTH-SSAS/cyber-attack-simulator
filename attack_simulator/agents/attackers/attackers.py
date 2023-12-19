@@ -12,20 +12,13 @@ import numpy as np
 
 from ...constants import UINT
 from ...utils.rng import get_rng
-from ..agent import Agent
+from ..agent import Agent, RandomActiveAgent
 
 logger = logging.getLogger("simulator")
 
 
-class RandomAttacker(Agent):
-    def __init__(self, agent_config: dict) -> None:
-        super().__init__(agent_config)
-        self.rng, _ = get_rng(agent_config.get("seed"))
-
-    def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        attack_surface = observation["action_mask"][1]
-        surface_indexes = np.flatnonzero(attack_surface)
-        return (1, self.rng.choice(surface_indexes)) if len(surface_indexes) > 0 else (0, 0)
+class RandomAttacker(RandomActiveAgent):
+    ...
 
 
 class RandomNoActionAttacker(Agent):

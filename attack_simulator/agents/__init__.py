@@ -9,14 +9,6 @@ from .attackers.attackers import (
 )
 from .attackers.pathfinder import PathFinderAttacker
 from .attackers.searchers import BreadthFirstAttacker, DepthFirstAttacker
-from .defenders.baseline_defender import (
-    DisableProbabilityAgent,
-    NewRuleBasedAgent,
-    RandomAgent,
-    RiskAwareAgent,
-    RuleBasedAgent,
-    SkipAgent,
-)
 
 ATTACKERS: Dict[str, Type[Agent]] = {
     # "well-informed": WellInformedAttacker,
@@ -28,15 +20,6 @@ ATTACKERS: Dict[str, Type[Agent]] = {
     "pathplanner": PathFinderAttacker,
     "depth-first": DepthFirstAttacker,
     "breadth-first": BreadthFirstAttacker,
-}
-
-DEFENDERS = {
-    "no-action": SkipAgent,
-    "random": RandomAgent,
-    "disable-probability": DisableProbabilityAgent,
-    "rule-based": RuleBasedAgent,
-    "new-rule-based": NewRuleBasedAgent,
-    "risk-aware": RiskAwareAgent,
 }
 
 __all__ = [
