@@ -80,7 +80,6 @@ class DefenderEnv(gym.Env):
         self.randomize = kwargs.get("randomize_attacker_behavior", False)
         self.render_mode = kwargs.get("render_mode", None)
         
-        self.defense_steps: set = set()
         self.env.render_mode = self.render_mode
 
     def reset(
@@ -90,20 +89,17 @@ class DefenderEnv(gym.Env):
         self.attacker = self.attacker_class({"seed": seed, "randomize": self.randomize})
         obs, info = self.env.reset(seed=seed, options=options)
         self.attacker_obs = obs[AGENT_ATTACKER]
-        self.attacker_obs["action_mask"] = info[AGENT_ATTACKER]["action_mask"]
-        self.defense_steps = set(np.flatnonzero(info[AGENT_DEFENDER]["action_mask"][1]))
+        self.attacker_mask = info[AGENT_ATTACKER]["action_mask"]
         return obs[AGENT_DEFENDER], info[AGENT_DEFENDER]
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
-        attacker_action = self.attacker.compute_action_from_dict(self.attacker_obs)
+        attacker_action = self.attacker.compute_action_from_dict(self.attacker_obs, self.attacker_mask)
         obs: Dict[str, Any]
         obs, rewards, terminated, truncated, infos = self.env.step(
             {AGENT_DEFENDER: action, AGENT_ATTACKER: attacker_action}
         )
         self.attacker_obs = obs[AGENT_ATTACKER]
-        self.attacker_obs["action_mask"] = infos[AGENT_ATTACKER]["action_mask"]
-
-
+        self.attacker_mask = infos[AGENT_ATTACKER]["action_mask"]
         return (
             obs[AGENT_DEFENDER],
             rewards[AGENT_DEFENDER],

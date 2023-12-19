@@ -43,9 +43,9 @@ def test_attacker_actions(env: AttackSimulationEnv, attacker_class) -> None:
 
     steps = 0
     sum_rewards = 0
-    while not done:
-        obs[AGENT_ATTACKER]["action_mask"] = info[AGENT_ATTACKER]["action_mask"]
-        (action, step) = attacker.compute_action_from_dict(obs[AGENT_ATTACKER])
+    step_limit = 1000000
+    while not done and steps < step_limit:
+        (action, step) = attacker.compute_action_from_dict(obs[AGENT_ATTACKER], info[AGENT_ATTACKER]["action_mask"])
         assert action != ACTION_TERMINATE
         assert action != ACTION_WAIT
 

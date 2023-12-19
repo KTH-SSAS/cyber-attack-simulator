@@ -207,6 +207,12 @@ class AttackSimulationEnv:
         agent_info = self.get_agent_info(self._agent_ids, info, sim_obs)
         self.last_obs = obs
         self.episode_count += 1
+
+        translated = {key: self.translate_obs(value) for key, value in obs.items()}
+
+        for k, v in translated.items():
+            agent_info[k]["translated"] = v
+
         return obs, agent_info
 
     def observation_space_sample(self, agent_ids: tuple = ()) -> Dict[str, Any]:

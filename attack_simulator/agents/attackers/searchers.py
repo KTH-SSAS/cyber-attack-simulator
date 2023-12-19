@@ -7,8 +7,8 @@ from ...constants import UINT
 from ..agent import Agent
 
 
-def get_new_targets(observation, discovered_targets: Set[int]) -> List[int]:
-    attack_surface = observation["action_mask"][1]
+def get_new_targets(observation: dict, discovered_targets: Set[int], mask: tuple) -> List[int]:
+    attack_surface = mask[1]
     surface_indexes = list(np.flatnonzero(attack_surface))
     new_targets = [idx for idx in surface_indexes if idx not in discovered_targets]
     return new_targets, surface_indexes
@@ -22,8 +22,8 @@ class BreadthFirstAttacker(Agent):
         seed = agent_config["seed"] if "seed" in agent_config else np.random.SeedSequence().entropy
         self.rng = np.random.default_rng(seed) if agent_config.get("randomize", False) else None
 
-    def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        new_targets, surface_indexes = get_new_targets(observation, self.targets)
+    def compute_action_from_dict(self, observation: Dict[str, Any], mask: tuple) -> UINT:
+        new_targets, surface_indexes = get_new_targets(observation, self.targets, mask)
 
         # Add new targets to the back of the queue
         # if desired, shuffle the new targets to make the attacker more unpredictable
@@ -67,8 +67,8 @@ class DepthFirstAttacker(Agent):
         seed = agent_config["seed"] if "seed" in agent_config else np.random.SeedSequence().entropy
         self.rng = np.random.default_rng(seed)
 
-    def compute_action_from_dict(self, observation: Dict[str, Any]) -> UINT:
-        new_targets, surface_indexes = get_new_targets(observation, self.targets)
+    def compute_action_from_dict(self, observation: Dict[str, Any], mask: tuple) -> UINT:
+        new_targets, surface_indexes = get_new_targets(observation, self.targets, mask)
 
         # Add new targets to the top of the stack
         self.rng.shuffle(new_targets)

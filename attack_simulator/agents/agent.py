@@ -12,7 +12,7 @@ class Agent(ABC):
         pass
 
     @abstractmethod
-    def compute_action_from_dict(self, observation: Dict[str, Any]) -> tuple:
+    def compute_action_from_dict(self, observation: Dict[str, Any], mask: tuple) -> tuple:
         ...  # pragma: no cover
 
 
@@ -24,8 +24,8 @@ class RandomActiveAgent(Agent):
         seed = agent_config["seed"] if "seed" in agent_config else np.random.SeedSequence().entropy
         self.rng = np.random.default_rng(seed)
 
-    def compute_action_from_dict(self, observation: Dict[str, Any]) -> tuple:
-        available_objects = observation["action_mask"][1]
+    def compute_action_from_dict(self, observation: Dict[str, Any], mask) -> tuple:
+        available_objects = mask[1]
         object_indexes = np.flatnonzero(available_objects)
         return (1, self.rng.choice(object_indexes)) if len(object_indexes) > 0 else (0, 0)
 
@@ -38,9 +38,9 @@ class RandomAgent(Agent):
         seed = agent_config["seed"] if "seed" in agent_config else np.random.SeedSequence().entropy
         self.rng = np.random.default_rng(seed)
 
-    def compute_action_from_dict(self, observation: Dict[str, Any]) -> tuple:
-        available_objects = observation["action_mask"][1]
-        available_actions = observation["action_mask"][0]
+    def compute_action_from_dict(self, observation: Dict[str, Any], mask: tuple) -> tuple:
+        available_objects = mask[1]
+        available_actions = mask[0]
         object_indexes = np.flatnonzero(available_objects)
         action_indexes = np.flatnonzero(available_actions)
         return (

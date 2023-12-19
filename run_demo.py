@@ -1,4 +1,5 @@
 import torch
+from attack_simulator.agents.agent import Agent
 from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.agents.attackers.searchers import BreadthFirstAttacker, DepthFirstAttacker
 import attack_simulator
@@ -6,7 +7,7 @@ import json
 from json import JSONEncoder
 import numpy as np
 
-null_action = (0, -1)
+null_action = (0, None)
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, o):
@@ -19,14 +20,14 @@ class NumpyArrayEncoder(JSONEncoder):
         return JSONEncoder.default(self, o)
 
 
-class KeyboardAgent:
+class KeyboardAgent(Agent):
     def __init__(self, vocab):
         self.vocab = vocab
 
-    def compute_action_from_dict(self, obs):
-        def valid_action(user_input):
+    def compute_action_from_dict(self, obs: dict, mask: tuple) -> tuple:
+        def valid_action(user_input: str) -> bool:
             if user_input == "":
-                return null_action
+                return True
 
             try:
                 node = int(user_input)
@@ -42,15 +43,15 @@ class KeyboardAgent:
                 return True  # wait is always valid
             return node < len(available_objects) and node >= 0
 
-        def get_action_object(user_input):
-            node = int(user_input) if user_input != "" else 0
+        def get_action_object(user_input: str) -> tuple:
+            node = int(user_input) if user_input != "" else None
             action = associated_action[action_strings[node]] if user_input != "" else 0
             return node, action
 
         assets = obs["asset"]
         asset_ids = obs["asset_id"]
         step_names = obs["step_name"]
-        available_objects = np.flatnonzero(obs["action_mask"][1])
+        available_objects = np.flatnonzero(mask[1])
         assets = [self.vocab[i] for i in assets[available_objects]]
         asset_ids = asset_ids[available_objects]
         step_names = [self.vocab[i] for i in step_names[available_objects]]
@@ -71,7 +72,7 @@ class KeyboardAgent:
                 print("Invalid action.")
 
         node, a = get_action_object(user_input)
-        print(f"Selected action: {action_strings[node]}")
+        print(f"Selected action: {action_strings[node] if node is not None else 'wait'}")
 
         return (a, available_objects[node] if a != 0 else -1)
 
@@ -90,9 +91,9 @@ env = attack_simulator.parallel_env(env_config, render_mode="human")
 control_attacker = False
 
 defender = KeyboardAgent(env.reverse_vocab)
-attacker = KeyboardAgent(env.reverse_vocab) if control_attacker else DepthFirstAttacker({})
+attacker = KeyboardAgent(env.reverse_vocab) if control_attacker else BreadthFirstAttacker({})
 
-obs, info = env.reset()
+obs, infos = env.reset()
 done = False
 
 with open("sim_obs_log.jsonl", "w", encoding="utf8") as f:
@@ -104,8 +105,9 @@ total_reward_attacker = 0
 with torch.no_grad():
     while not done:
         env.render()
-        defender_action = defender.compute_action_from_dict(obs["defender"]) if not attacker_only else null_action
-        attacker_action = attacker.compute_action_from_dict(obs["attacker"])
+        defender_action = defender.compute_action_from_dict(obs["defender"], infos["defender"]["action_mask"]) if not attacker_only else null_action
+        attacker_action = attacker.compute_action_from_dict(obs["attacker"], infos["attacker"]["action_mask"])
+        print("Attacker Action: ", infos["attacker"]["translated"]["nodes"][attacker_action[1]])
         action_dict = {AGENT_ATTACKER: attacker_action, AGENT_DEFENDER: defender_action}
         obs, rewards, terminated, truncated, infos = env.step(action_dict)
         print("Attacker Reward: ", rewards[AGENT_ATTACKER])
