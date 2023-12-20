@@ -52,8 +52,8 @@ class RandomAgent(Agent):
 class NothingAgent(Agent):
     """Agent that will always do nothing"""
 
-    def __init__(self, agent_config: dict, mask) -> None:
+    def __init__(self, agent_config: dict) -> None:
         super().__init__(agent_config)
 
-    def compute_action_from_dict(self, observation: Dict[str, Any]) -> tuple:
+    def compute_action_from_dict(self, observation: Dict[str, Any], mask) -> tuple:
         return (0, 0)
