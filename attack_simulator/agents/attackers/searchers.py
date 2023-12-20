@@ -19,7 +19,7 @@ class BreadthFirstAttacker(Agent):
         super().__init__(agent_config)
         self.targets: Deque[int] = deque([])
         self.current_target: int = None
-        seed = agent_config["seed"] if "seed" in agent_config else np.random.SeedSequence().entropy
+        seed = agent_config["seed"] if agent_config.get("seed", None) else np.random.SeedSequence().entropy
         self.rng = np.random.default_rng(seed) if agent_config.get("randomize", False) else None
 
     def compute_action_from_dict(self, observation: Dict[str, Any], mask: tuple) -> UINT:
@@ -64,14 +64,15 @@ class DepthFirstAttacker(Agent):
         super().__init__(agent_config)
         self.current_target = -1
         self.targets: List[int] = []
-        seed = agent_config["seed"] if "seed" in agent_config else np.random.SeedSequence().entropy
-        self.rng = np.random.default_rng(seed)
+        seed = agent_config["seed"] if agent_config.get("seed", None) else np.random.SeedSequence().entropy
+        self.rng = np.random.default_rng(seed) if agent_config.get("randomize", False) else None
 
     def compute_action_from_dict(self, observation: Dict[str, Any], mask: tuple) -> UINT:
         new_targets, surface_indexes = get_new_targets(observation, self.targets, mask)
 
         # Add new targets to the top of the stack
-        self.rng.shuffle(new_targets)
+        if self.rng:
+            self.rng.shuffle(new_targets)
         for c in new_targets:
             self.targets.append(c)
 
