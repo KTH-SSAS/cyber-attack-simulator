@@ -199,7 +199,7 @@ class AttackSimulationEnv:
         sim_obs = Observation.from_rust(sim_obs)
         self.state = EnvironmentState(self._agent_ids)
         obs = get_agent_obs(self._agent_ids, sim_obs)
-        if self.config.undirected_defenses:
+        if self.config.undirected_defenses and AGENT_DEFENDER in obs:
             edges = obs[AGENT_DEFENDER]["edges"]
             new_edges = self.get_reverse_edges(edges, self.defense_steps)
             edges = np.concatenate((edges, new_edges))
@@ -269,7 +269,7 @@ class AttackSimulationEnv:
         obs = get_agent_obs(self._agent_ids, sim_obs)
         infos = self.get_agent_info(self._agent_ids, info, sim_obs)
 
-        if self.config.undirected_defenses:
+        if self.config.undirected_defenses and AGENT_DEFENDER in obs:
             edges = obs[AGENT_DEFENDER]["edges"]
             new_edges = self.get_reverse_edges(edges, self.defense_steps)
             edges = np.concatenate((edges, new_edges))
