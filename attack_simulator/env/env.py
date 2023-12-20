@@ -304,10 +304,6 @@ class AttackSimulationEnv:
 
         self._agent_ids = [k for k in self._agent_ids if not terminated[k] and not truncated[k]]
 
-        if not self._agent_ids:
-            for k, v in self.state.cumulative_rewards.items():
-                infos[k]["return"] = v
-
         return obs, rewards, terminated, truncated, infos
 
     def translate_obs(self, obs: dict) -> dict:
