@@ -4,7 +4,7 @@ from typing import Dict, Tuple, Any
 import torch
 from torch import nn
 from ray import rllib
-
+from typing import Union
 from crate.foi_wazuh_lib import query_wazuh, send_action_to_wazuh
 from crate.mapping import convert_to_wazuh_action, convert_wazuh_response_to_obs
 import crate.mapping
@@ -14,11 +14,12 @@ poll_time = 10
 num_hosts = crate.mapping.num_hosts
 num_actions = crate.mapping.num_actions
 
-async def step(action: int) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+async def step(action: Union[int, tuple]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Execute an action and return the new state
         Args:
-                action (int): The action index
+                action (int or tuple): A singular action index, or a tuple of
+                action indices for joint actions, e.g. ("block", "host 1")
         Returns:
                 Tuple[Dict[str, Any], Dict[str, Any]]: A tuple containing the new state and the info dictionary
     """
@@ -32,7 +33,7 @@ async def step(action: int) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     return obs, info
 
 
-async def main():
+async def main() -> None:
     with torch.no_grad():
         model = torch.load("model.pt")
         wazuh_data = await query_wazuh(wazuh_hostname)
