@@ -21,12 +21,12 @@ from ..rusty_sim import RustAttackSimulator  # noqa: E402
 logger = logging.getLogger("simulator")
 
 
-def defender_reward(obs: Observation) -> int:
-    return np.sum(obs.defender_reward)
+def defender_reward(obs: Observation) -> float:
+    return float(obs.defender_reward)
 
 
-def attacker_reward(obs: Observation) -> int:
-    return np.sum(obs.attacker_reward)
+def attacker_reward(obs: Observation) -> float:
+    return float(obs.attacker_reward)
 
 
 def get_agent_obs(agents: list, sim_obs: Observation) -> Dict[str, Any]:
@@ -83,7 +83,7 @@ def obs_space(n_actions: int, n_objects: int, n_edges: int, vocab_size: int) -> 
 class EnvironmentState:
     def __init__(self, agent_ids: list) -> None:
         self.cumulative_rewards = {k: 0.0 for k in agent_ids}
-        self.reward: Dict[str, int] = {k: 0 for k in agent_ids}
+        self.reward: Dict[str, float] = {k: 0.0 for k in agent_ids}
         self.terminated: Dict[str, bool] = {k: False for k in agent_ids}
         # self.terminated["__all__"] = False
         self.truncated: Dict[str, bool] = {k: False for k in agent_ids}
@@ -129,7 +129,7 @@ class AttackSimulationEnv:
         num_nodes = len(obs.state)
         num_edges = len(obs.edges)
         
-        defenses = np.flatnonzero(obs.defender_possible_objects)
+        defenses = set(np.flatnonzero(obs.defender_possible_objects))
         if config.undirected_defenses:
             new_edges = self.get_reverse_edges(obs.edges, defenses)
             num_edges = num_edges + len(new_edges)
@@ -231,7 +231,7 @@ class AttackSimulationEnv:
     def observation_space_contains(self, x: tuple) -> bool:
         return all(self.observation_space[agent_id].contains(x[agent_id]) for agent_id in x)
 
-    def get_agent_info(self, agent_ids: tuple, info: Info, obs: Observation) -> Dict[str, Dict[str, Any]]:
+    def get_agent_info(self, agent_ids: list, info: Info, obs: Observation) -> Dict[str, Dict[str, Any]]:
         info_funcs = {
             AGENT_DEFENDER: Defender.get_info,
             AGENT_ATTACKER: Attacker.get_info,
@@ -248,7 +248,7 @@ class AttackSimulationEnv:
         self, action_dict: dict
     ) -> tuple[
         Dict[str, Any],
-        Dict[str, SupportsFloat],
+        Dict[str, float],
         Dict[str, bool],
         Dict[str, bool],
         dict[str, dict[str, Any]],
