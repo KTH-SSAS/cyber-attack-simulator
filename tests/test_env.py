@@ -140,3 +140,21 @@ def test_wrappers() -> None:
     assert obs.shape == (8, 4)
 
     pass
+
+
+def test_obs_render() -> None:
+    import gymnasium as gym
+    import gymnasium.utils.env_checker as env_checker
+    from attack_simulator.env.gym import DefenderEnv, AttackerEnv
+    from attack_simulator.env.env import obs_to_graphviz
+    gym.register("DefenderEnv-v0", entry_point=DefenderEnv)
+    env = gym.make("DefenderEnv-v0", render_mode="human", undirected_defenses=True)
+    obs, info = env.reset()
+
+    graphviz = obs_to_graphviz(obs)
+    assert graphviz
+
+    graphviz = obs_to_graphviz(obs, info)
+    assert graphviz
+    #with open("test_graph.dot", "w") as f:
+    #    f.write(graphviz)

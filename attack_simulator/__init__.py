@@ -3,6 +3,7 @@ from attack_simulator.agents.agent import RandomAgent, RandomActiveAgent, Nothin
 from attack_simulator.env.attacksimulator import env, raw_env, parallel_env
 from attack_simulator.utils.config import EnvConfig, SimulatorConfig
 from attack_simulator.env.gym import DefenderEnv, AttackerEnv
+from attack_simulator.env.env import obs_to_graphviz
 from attack_simulator.examplemanager import available_graphs, show_graph
 import gymnasium as gym
 from collections import defaultdict
@@ -57,6 +58,7 @@ def get_baselines_for_env(env: gym.Env, episodes: int=100) -> dict:
     return final_results
 
 __all__ = [
+    "obs_to_graphviz",
     "env",
     "raw_env",
     "parallel_env",

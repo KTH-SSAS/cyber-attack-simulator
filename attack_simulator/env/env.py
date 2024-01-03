@@ -21,6 +21,23 @@ from ..rusty_sim import RustAttackSimulator  # noqa: E402
 logger = logging.getLogger("simulator")
 
 
+def obs_to_graphviz(obs: dict, info: Optional[dict] = None) -> str:
+    translations = info.get("translated", {}) if info is not None else {}
+    graphviz_code = "digraph G {\n"
+    for i, (state, asset, asset_id, step_name) in enumerate(
+        zip(obs["observation"], obs["asset"], obs["asset_id"], obs["step_name"])
+    ):
+        color = "red" if state == 1 else "white"
+        node_label = (
+            f"{asset}:{asset_id}:{step_name}" if translations == {} else translations["nodes"][i]
+        )
+        graphviz_code += f'\t"{i}" [label="{node_label}", style="filled", fillcolor="{color}"]\n'  # has-type: ignore
+    for parent, child in obs["edges"]:
+        graphviz_code += f'\t"{parent}" -> "{child}"\n'
+    graphviz_code += "}"
+    return graphviz_code
+
+
 def defender_reward(obs: Observation) -> float:
     return float(obs.defender_reward)
 
@@ -39,7 +56,7 @@ BIG_INT = 2**63 - 2
 
 
 def obs_space(n_actions: int, n_objects: int, n_edges: int, vocab_size: int) -> spaces.Dict:
-    #n_features = 1  # TODO maybe merge some of the dict fields into a single array
+    # n_features = 1  # TODO maybe merge some of the dict fields into a single array
     return spaces.Dict(
         {
             # "action_mask": spaces.Tuple(
@@ -128,7 +145,7 @@ class AttackSimulationEnv:
 
         num_nodes = len(obs.state)
         num_edges = len(obs.edges)
-        
+
         defenses = set(np.flatnonzero(obs.defender_possible_objects))
         if config.undirected_defenses:
             new_edges = self.get_reverse_edges(obs.edges, defenses)
@@ -153,13 +170,9 @@ class AttackSimulationEnv:
 
     @staticmethod
     def get_reverse_edges(edges: np.ndarray, defense_steps: set) -> np.ndarray:
-    # Add reverse edges from the defense steps children to the defense steps
-    # themselves
-        new_edges = [
-            np.array([c, p])
-            for p, c in edges
-            if p in defense_steps
-        ]
+        # Add reverse edges from the defense steps children to the defense steps
+        # themselves
+        new_edges = [np.array([c, p]) for p, c in edges if p in defense_steps]
         return np.stack(new_edges)
 
     @staticmethod
@@ -231,7 +244,9 @@ class AttackSimulationEnv:
     def observation_space_contains(self, x: tuple) -> bool:
         return all(self.observation_space[agent_id].contains(x[agent_id]) for agent_id in x)
 
-    def get_agent_info(self, agent_ids: list, info: Info, obs: Observation) -> Dict[str, Dict[str, Any]]:
+    def get_agent_info(
+        self, agent_ids: list, info: Info, obs: Observation
+    ) -> Dict[str, Dict[str, Any]]:
         info_funcs = {
             AGENT_DEFENDER: Defender.get_info,
             AGENT_ATTACKER: Attacker.get_info,
@@ -307,14 +322,13 @@ class AttackSimulationEnv:
         return obs, rewards, terminated, truncated, infos
 
     def translate_obs(self, obs: dict) -> dict:
-        edges = [i for i in zip(obs["edges"][0], obs["edges"][1])]
         nodes = [
             f"{self.reverse_vocab[int(a)]}:{int(i)}:{self.reverse_vocab[int(n)]}"
             for a, i, n in zip(obs["asset"], obs["asset_id"], obs["step_name"])
         ]
         return {
             "nodes": nodes,
-            "edges": [(nodes[i], nodes[j]) for i, j in edges],
+            "edges": [(nodes[i], nodes[j]) for i, j in obs["edges"]],
         }
 
     # @property
