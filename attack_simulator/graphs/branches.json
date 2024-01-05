@@ -27,7 +27,7 @@
         "children": [
             "host:4:connect",
             "host:5:connect",
-            "firewall:6:connect"
+            "credentials:6:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -110,9 +110,9 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:6:connect",
+        "id": "credentials:6:read",
         "type": "or",
-        "asset": "firewall",
+        "asset": "credentials",
         "name": "connect",
         "ttc": null,
         "defense_status": null,
@@ -153,7 +153,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "firewall:13:connect"
+            "credentials:13:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -171,7 +171,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "firewall:16:connect",
+            "credentials:16:read",
             "host:17:connect"
         ],
         "parents": null,
@@ -183,9 +183,9 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:13:connect",
+        "id": "credentials:13:read",
         "type": "or",
-        "asset": "firewall",
+        "asset": "credentials",
         "name": "connect",
         "ttc": null,
         "defense_status": null,
@@ -201,10 +201,10 @@
         "mitre_info": null
     },
     {
-        "id": "flag:15:gather",
+        "id": "flag:15:read",
         "type": "or",
         "asset": "flag",
-        "name": "gather",
+        "name": "read",
         "ttc": null,
         "defense_status": null,
         "children": [],
@@ -217,14 +217,14 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:16:connect",
+        "id": "credentials:16:read",
         "type": "or",
-        "asset": "firewall",
+        "asset": "credentials",
         "name": "connect",
         "ttc": null,
         "defense_status": null,
         "children": [
-            "flag:15:gather"
+            "flag:15:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -242,7 +242,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "firewall:23:connect"
+            "credentials:23:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -260,7 +260,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "firewall:25:connect"
+            "credentials:25:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -271,9 +271,9 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:20:connect",
+        "id": "credentials:20:read",
         "type": "or",
-        "asset": "firewall",
+        "asset": "credentials",
         "name": "connect",
         "ttc": null,
         "defense_status": null,
@@ -296,7 +296,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "flag:22:gather"
+            "flag:22:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -307,10 +307,10 @@
         "mitre_info": null
     },
     {
-        "id": "flag:22:gather",
+        "id": "flag:22:read",
         "type": "or",
         "asset": "flag",
-        "name": "gather",
+        "name": "read",
         "ttc": null,
         "defense_status": null,
         "children": [],
@@ -323,14 +323,14 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:23:connect",
+        "id": "credentials:23:read",
         "type": "or",
-        "asset": "firewall",
+        "asset": "credentials",
         "name": "connect",
         "ttc": null,
         "defense_status": null,
         "children": [
-            "flag:26:gather"
+            "flag:26:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -341,14 +341,14 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:25:connect",
+        "id": "credentials:25:read",
         "type": "or",
-        "asset": "firewall",
+        "asset": "credentials",
         "name": "connect",
         "ttc": null,
         "defense_status": null,
         "children": [
-            "flag:28:gather"
+            "flag:28:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -359,10 +359,10 @@
         "mitre_info": null
     },
     {
-        "id": "flag:26:gather",
+        "id": "flag:26:read",
         "type": "or",
         "asset": "flag",
-        "name": "gather",
+        "name": "read",
         "ttc": null,
         "defense_status": null,
         "children": [],
@@ -375,10 +375,10 @@
         "mitre_info": null
     },
     {
-        "id": "flag:27:gather",
+        "id": "flag:27:read",
         "type": "or",
         "asset": "flag",
-        "name": "gather",
+        "name": "read",
         "ttc": null,
         "defense_status": null,
         "children": [],
@@ -391,10 +391,10 @@
         "mitre_info": null
     },
     {
-        "id": "flag:28:gather",
+        "id": "flag:28:read",
         "type": "or",
         "asset": "flag",
-        "name": "gather",
+        "name": "read",
         "ttc": null,
         "defense_status": null,
         "children": [],
@@ -414,14 +414,14 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "firewall:6:connect",
+            "credentials:6:read",
             "host:36:connect",
             "host:19:connect",
-            "firewall:20:connect",
+            "credentials:20:read",
             "host:21:connect",
-            "flag:22:gather",
-            "firewall:25:connect",
-            "flag:28:gather"
+            "flag:22:read",
+            "credentials:25:read",
+            "flag:28:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -439,8 +439,8 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "firewall:13:connect",
-            "flag:27:gather",
+            "credentials:13:read",
+            "flag:27:read",
             "host:35:connect"
         ],
         "parents": null,
@@ -459,8 +459,8 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "firewall:16:connect",
-            "flag:15:gather"
+            "credentials:16:read",
+            "flag:15:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -478,9 +478,9 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "firewall:20:connect",
+            "credentials:20:read",
             "host:21:connect",
-            "flag:22:gather"
+            "flag:22:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -498,8 +498,8 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "firewall:23:connect",
-            "flag:26:gather"
+            "credentials:23:read",
+            "flag:26:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -517,8 +517,8 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "firewall:25:connect",
-            "flag:28:gather"
+            "credentials:25:read",
+            "flag:28:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -536,7 +536,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "flag:27:gather"
+            "flag:27:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -554,7 +554,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "firewall:20:connect",
+            "credentials:20:read",
             "host:19:connect"
         ],
         "parents": null,

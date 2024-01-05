@@ -1,14 +1,14 @@
 [
     {
-        "id": "a:1:firstSteps",
+        "id": "attacker:1:firstSteps",
         "type": "or",
-        "asset": "a:1",
+        "asset": "attacker:1",
         "name": "firstSteps",
         "ttc": null,
         "defense_status": null,
         "children": [
-            "b:1:attack",
-            "c:1:attack"
+            "host:1:exploit",
+            "host:2:exploit"
         ],
         "parents": null,
         "existence_status": null,
@@ -19,15 +19,15 @@
         "mitre_info": null
     },
     {
-        "id": "b:1:attack",
+        "id": "host:1:exploit",
         "type": "or",
-        "asset": "b:1",
-        "name": "attack",
+        "asset": "host:1",
+        "name": "exploit",
         "ttc": null,
         "defense_status": null,
         "children": [
-            "b:1:read",
-            "d:1:attack"
+            "flag:1:read",
+            "host:3:exploit"
         ],
         "parents": null,
         "existence_status": null,
@@ -38,9 +38,9 @@
         "mitre_info": null
     },
     {
-        "id": "b:1:read",
+        "id": "flag:1:read",
         "type": "or",
-        "asset": "b:1",
+        "asset": "flag:1",
         "name": "read",
         "ttc": null,
         "defense_status": null,
@@ -54,14 +54,14 @@
         "mitre_info": null
     },
     {
-        "id": "c:1:attack",
+        "id": "host:2:exploit",
         "type": "and",
-        "asset": "c:1",
-        "name": "attack",
+        "asset": "host:2",
+        "name": "exploit",
         "ttc": null,
         "defense_status": null,
         "children": [
-            "d:1:attack"
+            "host:3:exploit"
         ],
         "parents": null,
         "existence_status": null,
@@ -72,14 +72,14 @@
         "mitre_info": null
     },
     {
-        "id": "d:1:attack",
+        "id": "host:3:exploit",
         "type": "and",
-        "asset": "d:1",
-        "name": "attack",
+        "asset": "host:3",
+        "name": "exploit",
         "ttc": null,
         "defense_status": null,
         "children": [
-            "d:1:read"
+            "flag:2:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -90,9 +90,9 @@
         "mitre_info": null
     },
     {
-        "id": "d:1:read",
+        "id": "flag:2:read",
         "type": "or",
-        "asset": "d:1",
+        "asset": "flag:3",
         "name": "read",
         "ttc": null,
         "defense_status": null,
@@ -106,14 +106,14 @@
         "mitre_info": null
     },
     {
-        "id": "c:1:defend",
+        "id": "host:2:defend",
         "type": "defense",
-        "asset": "c:1",
+        "asset": "host:2",
         "name": "defend",
         "ttc": null,
         "defense_status": null,
         "children": [
-            "c:1:attack"
+            "host:2:exploit"
         ],
         "parents": null,
         "existence_status": null,
@@ -124,15 +124,15 @@
         "mitre_info": null
     },
     {
-        "id": "b:1:defend",
+        "id": "host:1:defend",
         "type": "defense",
-        "asset": "b:1",
+        "asset": "host:1",
         "name": "defend",
         "ttc": null,
         "defense_status": null,
         "children": [
-            "b:1:attack",
-            "b:1:read"
+            "host:1:exploit",
+            "flag:1:read"
         ],
         "parents": null,
         "existence_status": null,

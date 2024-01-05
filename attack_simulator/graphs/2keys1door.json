@@ -1,9 +1,9 @@
 [
     {
-        "id": "flag:0:gather",
+        "id": "flag:0:read",
         "type": "and",
         "asset": "flag:0",
-        "name": "gather",
+        "name": "read",
         "ttc": null,
         "defense_status": null,
         "children": [],
@@ -16,14 +16,14 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:1:connect",
+        "id": "credentials:1:read",
         "type": "and",
         "asset": "firewall:1",
         "name": "connect",
         "ttc": null,
         "defense_status": null,
         "children": [
-            "flag:0:gather"
+            "flag:0:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -34,14 +34,14 @@
         "mitre_info": null
     },
     {
-        "id": "authenticator:2:unlock",
+        "id": "authenticator:2:connect",
         "type": "and",
         "asset": "authenticator:2",
-        "name": "unlock",
+        "name": "connect",
         "ttc": null,
         "defense_status": null,
         "children": [
-            "firewall:1:connect"
+            "credentials:1:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -77,7 +77,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "authenticator:2:credentials_gathered"
+            "authenticator:2:credentialsGathered"
         ],
         "parents": null,
         "existence_status": null,
@@ -170,7 +170,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "authenticator:2:credentials_gathered"
+            "authenticator:2:credentialsGathered"
         ],
         "parents": null,
         "existence_status": null,
@@ -204,7 +204,7 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "authenticator:2:unlock"
+            "authenticator:2:connect"
         ],
         "parents": null,
         "existence_status": null,
@@ -215,14 +215,14 @@
         "mitre_info": null
     },
     {
-        "id": "authenticator:2:credentials_gathered",
+        "id": "authenticator:2:credentialsGathered",
         "type": "or",
         "asset": "authenticator:2",
-        "name": "credentials_gathered",
+        "name": "credentialsGathered",
         "ttc": null,
         "defense_status": null,
         "children": [
-            "authenticator:2:unlock"
+            "authenticator:2:connect"
         ],
         "parents": null,
         "existence_status": null,
@@ -240,8 +240,8 @@
         "ttc": null,
         "defense_status": null,
         "children": [
-            "firewall:1:connect",
-            "flag:0:gather"
+            "credentials:1:read",
+            "flag:0:read"
         ],
         "parents": null,
         "existence_status": null,

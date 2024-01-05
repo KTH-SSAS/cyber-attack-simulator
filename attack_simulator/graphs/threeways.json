@@ -1,14 +1,14 @@
 [
     {
-        "id": "h:2:connect",
+        "id": "host:2:connect",
         "type": "or",
-        "asset": "h:2",
+        "asset": "host:2",
         "name": "connect",
         "ttc": null,
         "children": [
-            "h:3:connect",
-            "h:2:exploit",
-            "h:1:connect"
+            "host:3:connect",
+            "host:2:exploit",
+            "host:1:connect"
         ],
         "parents": null,
         "defense_status": null,
@@ -21,9 +21,9 @@
         "observations": null
     },
     {
-        "id": "h:3:connect",
+        "id": "host:3:connect",
         "type": "or",
-        "asset": "h:3",
+        "asset": "host:3",
         "name": "connect",
         "ttc": null,
         "children": [],
@@ -38,13 +38,13 @@
         "observations": null
     },
     {
-        "id": "h:2:exploit",
+        "id": "host:2:exploit",
         "type": "or",
-        "asset": "h:2",
+        "asset": "host:2",
         "name": "exploit",
         "ttc": null,
         "children": [
-            "h:2:read"
+            "flag:2:read"
         ],
         "parents": null,
         "defense_status": null,
@@ -57,13 +57,13 @@
         "observations": null
     },
     {
-        "id": "h:1:connect",
+        "id": "host:1:connect",
         "type": "or",
-        "asset": "h:1",
+        "asset": "host:1",
         "name": "connect",
         "ttc": null,
         "children": [
-            "h:1:exploit"
+            "host:1:exploit"
         ],
         "parents": null,
         "defense_status": null,
@@ -76,13 +76,13 @@
         "observations": null
     },
     {
-        "id": "h:1:exploit",
+        "id": "host:1:exploit",
         "type": "or",
-        "asset": "h:1",
+        "asset": "host:1",
         "name": "exploit",
         "ttc": null,
         "children": [
-            "h:1:read"
+            "flag:1:read"
         ],
         "parents": null,
         "defense_status": null,
@@ -95,9 +95,9 @@
         "observations": null
     },
     {
-        "id": "h:1:read",
+        "id": "flag:1:read",
         "type": "or",
-        "asset": "h:1",
+        "asset": "flag:1",
         "name": "read",
         "ttc": null,
         "children": [],
@@ -112,9 +112,9 @@
         "observations": null
     },
     {
-        "id": "h:2:read",
+        "id": "flag:2:read",
         "type": "or",
-        "asset": "h:2",
+        "asset": "flag:2",
         "name": "read",
         "ttc": null,
         "children": [],
@@ -129,14 +129,14 @@
         "observations": null
     },
     {
-        "id": "h:1:defend",
+        "id": "host:1:defend",
         "type": "defense",
-        "asset": "h:1",
+        "asset": "host:1",
         "name": "defend",
         "ttc": null,
         "children": [
-            "h:1:exploit",
-            "h:1:read"
+            "host:1:exploit",
+            "flag:1:read"
         ],
         "parents": null,
         "defense_status": null,
@@ -149,13 +149,13 @@
         "observations": null
     },
     {
-        "id": "h:3:defend",
+        "id": "host:3:defend",
         "type": "defense",
-        "asset": "h:3",
+        "asset": "host:3",
         "name": "defend",
         "ttc": null,
         "children": [
-            "h:3:connect"
+            "host:3:connect"
         ],
         "parents": null,
         "defense_status": null,
@@ -168,14 +168,14 @@
         "observations": null
     },
     {
-        "id": "h:2:defend",
+        "id": "host:2:defend",
         "type": "defense",
-        "asset": "h:2",
+        "asset": "host:2",
         "name": "defend",
         "ttc": null,
         "children": [
-            "h:2:exploit",
-            "h:2:read"
+            "host:2:exploit",
+            "flag:2:read"
         ],
         "parents": null,
         "defense_status": null,
@@ -194,7 +194,7 @@
         "name": "firstSteps",
         "ttc": null,
         "children": [
-            "h:2:connect"
+            "host:2:connect"
         ],
         "parents": null,
         "defense_status": null,

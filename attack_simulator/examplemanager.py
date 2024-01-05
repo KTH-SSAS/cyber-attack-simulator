@@ -56,4 +56,4 @@ def get_graphviz_for_graph(graph_name: str) -> str:
 
 
 if __name__ == "__main__":
-    show_graph("four_ways_mod")
+    show_graph("four_ways")

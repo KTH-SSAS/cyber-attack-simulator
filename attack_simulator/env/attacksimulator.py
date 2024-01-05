@@ -53,7 +53,7 @@ class parallel_env(ParallelEnv):
             {
                 "sim_false_positive_rate": config.get("sim_false_positive_rate", 0.0),
                 "sim_false_negative_rate": config.get("sim_false_negative_rate", 0.0),
-                "graph_name": config.get("graph_name", "four_ways_mod"),
+                "graph_name": config.get("graph_name", "four_ways"),
             }
         )
         self.env = AttackSimulationEnv(env_config, render_mode)

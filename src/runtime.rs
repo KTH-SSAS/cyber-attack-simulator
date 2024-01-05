@@ -513,7 +513,7 @@ mod tests {
         runtime::SimulatorRuntime,
     };
 
-    const FILENAME: &str = "attack_simulator/graphs/four_ways_mod.json";
+    const FILENAME: &str = "attack_simulator/graphs/four_ways.json";
 
     #[test]
     fn test_sim_fnr() {

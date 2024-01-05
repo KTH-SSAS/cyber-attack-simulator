@@ -167,7 +167,7 @@ mod tests {
     use rand::{seq::SliceRandom, SeedableRng};
     use rand_chacha::ChaChaRng;
 
-    const TEST_FILENAME: &str = "attack_simulator/graphs/four_ways_mod.json";
+    const TEST_FILENAME: &str = "attack_simulator/graphs/four_ways.json";
     const TEST_VOCAB: Option<&str> = None; // Some("mal/corelang_vocab_merged.json");
 
     fn get_sim_from_filename(filename: &str) -> runtime::SimulatorRuntime<(usize, usize, usize)> {

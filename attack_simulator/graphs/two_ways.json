@@ -1,9 +1,9 @@
 [
     {
-        "id": "flag:4:gather",
+        "id": "flag:4:read",
         "type": "and",
         "asset": "flag:4",
-        "name": "gather",
+        "name": "read",
         "ttc": {
             "type": "function",
             "name": "VeryHardAndUncertain",
@@ -31,7 +31,7 @@
         },
         "defense_status": null,
         "children": [
-            "flag:4:gather"
+            "flag:4:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -42,9 +42,9 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:2:connect",
+        "id": "credentials:2:read",
         "type": "or",
-        "asset": "firewall:2",
+        "asset": "credentials:2",
         "name": "connect",
         "ttc": {
             "type": "function",
@@ -98,7 +98,7 @@
         },
         "defense_status": null,
         "children": [
-            "firewall:1:connect"
+            "credentials:1:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -109,9 +109,9 @@
         "mitre_info": null
     },
     {
-        "id": "firewall:1:connect",
+        "id": "credentials:1:read",
         "type": "or",
-        "asset": "firewall:1",
+        "asset": "credentials:1",
         "name": "connect",
         "ttc": {
             "type": "function",
@@ -131,10 +131,10 @@
         "mitre_info": null
     },
     {
-        "id": "flag:2:gather",
+        "id": "flag:2:read",
         "type": "and",
         "asset": "flag:2",
-        "name": "gather",
+        "name": "read",
         "ttc": {
             "type": "function",
             "name": "VeryHardAndUncertain",
@@ -185,7 +185,7 @@
         "defense_status": null,
         "children": [
             "host:33:connect",
-            "flag:2:gather"
+            "flag:2:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -207,7 +207,7 @@
         },
         "defense_status": null,
         "children": [
-            "flag:2:gather"
+            "flag:2:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -229,7 +229,7 @@
         },
         "defense_status": null,
         "children": [
-            "firewall:2:connect"
+            "credentials:2:read"
         ],
         "parents": null,
         "existence_status": null,

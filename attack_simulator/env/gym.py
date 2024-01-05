@@ -19,7 +19,7 @@ class AttackerEnv(gym.Env):
 
     def __init__(self, **kwargs: Any) -> None:
         config = {
-            "graph_name": kwargs.get("graph_name", "four_ways_mod"),
+            "graph_name": kwargs.get("graph_name", "four_ways"),
             "sim_false_negative_rate": 0.0,
             "sim_false_positive_rate": 0.0,
         }
@@ -67,7 +67,7 @@ class DefenderEnv(gym.Env):
     def __init__(self, **kwargs: Dict[str, Any]) -> None:
         undirected_defenses = kwargs.get("undirected_defenses", False)
         config = {
-            "graph_name": kwargs.get("graph_name", "four_ways_mod"),
+            "graph_name": kwargs.get("graph_name", "four_ways"),
             "sim_false_negative_rate": kwargs.get("false_negative_rate", 0.0),
             "sim_false_positive_rate": kwargs.get("false_positive_rate", 0.0),
             "undirected_defenses": undirected_defenses,
