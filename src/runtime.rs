@@ -656,13 +656,13 @@ mod tests {
 
         assert!(attacker_obs
             .possible_objects
-            .contains(&graph.translate_id("b:1:attack")));
+            .contains(&graph.translate_id("host:1:exploit")));
         //assert!(attacker_obs.possible_objects.contains(&graph.translate_id("c:1:attack")));
 
         let expected_obs = HashMap::from([
-            (graph.translate_id("a:1:firstSteps"), true),
-            (graph.translate_id("b:1:attack"), false),
-            (graph.translate_id("c:1:attack"), false),
+            (graph.translate_id("attacker:1:firstSteps"), true),
+            (graph.translate_id("host:1:exploit"), false),
+            (graph.translate_id("host:2:exploit"), false),
         ]);
         assert_eq!(attacker_obs.observed_steps, expected_obs);
 
