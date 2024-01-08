@@ -278,6 +278,7 @@ mod tests {
         let mut attack_surface = observation.attacker_possible_objects.clone();
         let mut defense_surface = observation.defender_possible_objects.clone();
         let mut available_attacks = available_actions(&attack_surface);
+        let mut time = 0;
         while available_attacks.len() > 0 {
             let step = random_step(&attack_surface, &mut rng).unwrap();
             let defense = random_step(&defense_surface, &mut rng);
@@ -285,21 +286,37 @@ mod tests {
                 Some(x) => (action, Some(x)),
                 None => (sim.action2idx["wait"], None),
             };
+
+            // let graphviz = sim.to_graphviz(false);
+            // let file = std::fs::File::create(format!("test_attacker_defender_{:0>2}.dot", time)).unwrap();
+            // std::io::Write::write_all(&mut std::io::BufWriter::new(file), graphviz.as_bytes())
+            //    .unwrap();
             //assert!(action != sim.actions["terminate"]); // We should never terminate, for now
             assert!(action != sim.action2idx["wait"]); // We should never NOP, for now
 
-            let action_dict = HashMap::from([("attacker".to_string(), (action, Some(step))), 
-            ("defender".to_string(), defender_action)
+            let action_dict = HashMap::from([
+                ("attacker".to_string(), (action, Some(step))),
+                ("defender".to_string(), defender_action),
             ]);
-            
+
             let (new_observation, _) = sim.step_vec(action_dict).unwrap();
 
-            assert_eq!(new_observation.state[step], true);
+            let edges = observation.edges;
+            let defended_children = match defense {
+                Some(x) => edges
+                    .iter()
+                    .filter(|&e| e.0 == x)
+                    .map(|e| e.1)
+                    .collect::<Vec<usize>>(),
+                None => vec![],
+            };
 
-            //let graphviz = sim.to_graphviz();
-            //let file = std::fs::File::create(format!("test_attacker_{:0>2}.dot", time)).unwrap();
-            //std::io::Write::write_all(&mut std::io::BufWriter::new(file), graphviz.as_bytes())
-            //    .unwrap();
+            if defense.is_some_and(|d| d == step) || defended_children.contains(&step) {
+                // If the step gets defended the attacker will not be able to use it
+                assert_eq!(new_observation.state[step], false);
+            } else {
+                assert_eq!(new_observation.state[step], true);
+            }
 
             let a = new_observation.ttc_remaining[step];
             let b = observation.ttc_remaining[step];
@@ -316,6 +333,7 @@ mod tests {
             attack_surface = observation.attacker_possible_objects.clone();
             defense_surface = observation.defender_possible_objects.clone();
             available_attacks = available_actions(&attack_surface);
+            time += 1;
         }
 
         assert_eq!(
