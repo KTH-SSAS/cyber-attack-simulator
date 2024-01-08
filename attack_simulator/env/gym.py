@@ -22,6 +22,7 @@ class AttackerEnv(gym.Env):
             "graph_name": kwargs.get("graph_name", "four_ways"),
             "sim_false_negative_rate": 0.0,
             "sim_false_positive_rate": 0.0,
+            "vocab_filename": kwargs.get("vocab_file", None),
         }
         self.env = AttackSimulationEnv(EnvConfig.from_dict(config))
         self.observation_space = self.env.observation_space[AGENT_ATTACKER]
@@ -71,6 +72,7 @@ class DefenderEnv(gym.Env):
             "sim_false_negative_rate": kwargs.get("false_negative_rate", 0.0),
             "sim_false_positive_rate": kwargs.get("false_positive_rate", 0.0),
             "undirected_defenses": undirected_defenses,
+            "vocab_filename": kwargs.get("vocab_file", None),
         }
         self.env = AttackSimulationEnv(EnvConfig.from_dict(config))
         attacker_class: str = kwargs.get("attacker_class", "BreadthFirstAttacker")

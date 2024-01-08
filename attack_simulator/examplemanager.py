@@ -20,16 +20,32 @@ def show_graph(graph_name: str) -> None:
     graph.render(filename=graph_name, format="png", cleanup=True)
     graph.view()
 
+def get_vocab_for_graphs() -> list:
+    vocab = set()
+
+    for name, path in get_paths_to_graphs().items():
+
+        if name == "corelang":
+            continue
+        
+        with open(path, "r") as f:
+            graph = json.load(f)
+
+            for n in graph:
+                vocab.add(n["name"])
+                vocab.add(n["asset"].split(":")[0])
+
+    sorted_vocab = sorted(vocab)
+    return sorted_vocab
+
 
 def get_paths_to_graphs() -> Dict[str, str]:
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "graphs")
+
+    path = Path(__file__).parent.absolute() / "graphs"
     examples = {}
 
-    # walk through current folder to find valid domains
-    for dirpath, _, filenames in os.walk(path):
-        for f in filenames:
-            if f.endswith(".json"):
-                examples[Path(f).stem] = os.path.join(dirpath, f)
+    for file in path.glob("*.json"):
+        examples[file.stem] = str(file)
 
     return examples
 
@@ -56,4 +72,4 @@ def get_graphviz_for_graph(graph_name: str) -> str:
 
 
 if __name__ == "__main__":
-    show_graph("four_ways")
+    vocab = get_vocab_for_graphs()

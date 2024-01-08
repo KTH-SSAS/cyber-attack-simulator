@@ -4,7 +4,7 @@ from attack_simulator.env.attacksimulator import env, raw_env, parallel_env
 from attack_simulator.utils.config import EnvConfig, SimulatorConfig
 from attack_simulator.env.gym import DefenderEnv, AttackerEnv
 from attack_simulator.env.env import obs_to_graphviz
-from attack_simulator.examplemanager import available_graphs, show_graph
+from attack_simulator.examplemanager import available_graphs, get_vocab_for_graphs, show_graph
 import gymnasium as gym
 from collections import defaultdict
 import numpy as np
@@ -66,4 +66,5 @@ __all__ = [
     "SimulatorConfig",
     "available_graphs",
     "show_graph",
+    "get_vocab_for_graphs"
 ]
