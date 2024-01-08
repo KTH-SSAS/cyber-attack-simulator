@@ -45,7 +45,7 @@
         "id": "host:9:exploit",
         "type": "and",
         "asset": "host:9",
-        "name": "connect",
+        "name": "exploit",
         "ttc": {
             "type": "function",
             "name": "VeryHardAndUncertain",
