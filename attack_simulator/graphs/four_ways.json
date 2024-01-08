@@ -42,7 +42,7 @@
         "mitre_info": null
     },
     {
-        "id": "host:9:connect",
+        "id": "host:9:exploit",
         "type": "and",
         "asset": "host:9",
         "name": "connect",
@@ -75,28 +75,6 @@
         },
         "defense_status": null,
         "children": [],
-        "parents": null,
-        "existence_status": null,
-        "is_reachable": null,
-        "is_traversable": null,
-        "compromised_by": [],
-        "extra": null,
-        "mitre_info": null
-    },
-    {
-        "id": "credentials:2:read",
-        "type": "or",
-        "asset": "credentials:2",
-        "name": "connect",
-        "ttc": {
-            "type": "function",
-            "name": "VeryHardAndUncertain",
-            "arguments": []
-        },
-        "defense_status": null,
-        "children": [
-            "host:9:connect"
-        ],
         "parents": null,
         "existence_status": null,
         "is_reachable": null,
@@ -294,7 +272,7 @@
         "defense_status": null,
         "children": [
             "flag:4:read",
-            "host:9:connect"
+            "host:9:exploit"
         ],
         "parents": null,
         "existence_status": null,
@@ -316,8 +294,7 @@
         },
         "defense_status": null,
         "children": [
-            "credentials:4:read",
-            "flag:3:read"
+            "credentials:4:read"
         ],
         "parents": null,
         "existence_status": null,
@@ -384,7 +361,7 @@
         },
         "defense_status": null,
         "children": [
-            "credentials:2:read"
+            "host:9:exploit"
         ],
         "parents": null,
         "existence_status": null,

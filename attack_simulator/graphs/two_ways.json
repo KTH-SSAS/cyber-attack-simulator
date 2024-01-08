@@ -20,7 +20,7 @@
         "mitre_info": null
     },
     {
-        "id": "host:9:connect",
+        "id": "host:9:exploit",
         "type": "and",
         "asset": "host:9",
         "name": "connect",
@@ -53,7 +53,7 @@
         },
         "defense_status": null,
         "children": [
-            "host:9:connect"
+            "host:9:exploit"
         ],
         "parents": null,
         "existence_status": null,
@@ -162,7 +162,7 @@
         },
         "defense_status": null,
         "children": [
-            "host:9:connect"
+            "host:9:exploit"
         ],
         "parents": null,
         "existence_status": null,
