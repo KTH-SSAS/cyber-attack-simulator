@@ -128,7 +128,11 @@ class AttackSimulationEnv:
             else SimulatorConfig(**config.sim_config)
         )
 
-        graph_filename = examplemanager.get_paths_to_graphs()[config.graph_name]
+        try:
+            graph_filename = examplemanager.get_paths_to_graphs()[config.graph_name]
+        except KeyError:
+            available_graphs = ", ".join(list(examplemanager.get_paths_to_graphs().keys()))
+            raise ValueError(f"Graph '{config.graph_name}' not found. Available graphs are: {available_graphs}")
 
         self.sim = RustAttackSimulator(
             json.dumps(sim_config.to_dict()), graph_filename, config.vocab_filename
