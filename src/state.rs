@@ -183,19 +183,25 @@ where
     }
 
     pub fn attacker_reward(&self, graph: &AttackGraph<I>, selected_step: Option<&I>) -> i64 {
-        match selected_step {
-            None => return 0,
-            Some(_) => (),
+        let wait_penalty = -1;
+
+        if selected_step.is_none() {
+            return wait_penalty;
         };
 
         let flag_value = 1;
-        self.compromised_steps
+        let flag_reward = self.compromised_steps
             .iter()
             .filter_map(|x| match graph.flags.contains(&x) {
                 true => Some(flag_value),
                 false => None,
             })
-            .sum()
+            .sum();
+
+        match flag_reward {
+            0 => wait_penalty,
+            _ => flag_reward,
+        }
     }
 
     fn enabled_defenses(&self, graph: &AttackGraph<I>, selected_defense: Option<&I>) -> HashSet<I> {
