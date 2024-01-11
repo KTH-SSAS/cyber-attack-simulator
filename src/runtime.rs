@@ -68,6 +68,9 @@ where
     //state_cache : RefCell<HashMap<CacheIndex, SimulatorState<I>>>,
     //pub defender_action_to_graph: Vec<I>,
     //pub attacker_action_to_graph: Vec<I>,
+    last_sim_obs: RefCell<SimulatorObs<I>>,
+    last_attacker_obs: RefCell<AttackerObs<I>>,
+    last_defender_obs: RefCell<DefenderObs<I>>,
 }
 
 /*
@@ -175,8 +178,6 @@ where
         }
 
         let sim = SimulatorRuntime {
-            state: RefCell::new(initial_state),
-            g: graph,
             config,
             id_to_index,
             index_to_id,
@@ -185,6 +186,11 @@ where
             action2idx,
             idx2action,
             actors,
+            last_sim_obs: RefCell::new(SimulatorObs::from(&initial_state)),
+            last_attacker_obs: RefCell::new(AttackerObs::new(&initial_state, &graph)),
+            last_defender_obs: RefCell::new(DefenderObs::new(&initial_state, &graph)),
+            state: RefCell::new(initial_state),
+            g: graph,
         };
 
         return Ok(sim);
@@ -409,6 +415,11 @@ where
         let sim_obs = SimulatorObs::from(&new_state);
         let attacker_obs = AttackerObs::new(&new_state, &self.g);
         let defender_obs = DefenderObs::new(&new_state, &self.g);
+
+        self.last_sim_obs.replace(sim_obs.clone());
+        self.last_attacker_obs.replace(attacker_obs.clone());
+        self.last_defender_obs.replace(defender_obs.clone());
+
         let info = new_state.to_info(
             self.g.number_of_attacks(),
             self.g.number_of_defenses(),
@@ -469,6 +480,7 @@ where
         let defender_selected_step = self.get_step_from_action(action_dict.get("defender"));
         let attacker_selected_step = self.get_step_from_action(action_dict.get("attacker"));
         let old_state = self.state.borrow();
+        let attacker_obs = self.last_attacker_obs.borrow();
 
         if self.config.strict {
             // Be strict about agents selecting valid actions
@@ -484,7 +496,7 @@ where
             Ok(new_state) => {
                 return Ok((
                     (
-                        new_state.attacker_reward(&self.g, attacker_selected_step),
+                        new_state.attacker_reward(&self.g, &attacker_obs.possible_objects, attacker_selected_step),
                         new_state.defender_reward(&self.g, defender_selected_step),
                     ),
                     new_state,

@@ -5,6 +5,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;
 
+#[derive(Clone)]
 pub struct AttackerObs<I> {
     // Possible actions in the given state
     pub possible_objects: HashSet<I>,
@@ -56,7 +57,7 @@ where
             possible_assets: Self::_attacker_possible_assets(&graph, &attack_surface),
 
             possible_steps: Self::_attacker_possible_actions(&graph, &attack_surface),
-            reward: s.attacker_reward(&graph, None),
+            reward: s.attacker_reward(&graph, &attack_surface, None),
             possible_objects: attack_surface,
         }
     }

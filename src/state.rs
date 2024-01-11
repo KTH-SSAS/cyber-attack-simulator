@@ -102,6 +102,7 @@ where
     }
 }
 
+#[derive(Clone)]
 pub struct SimulatorObs<I> {
     pub time: u64,
     pub compromised_steps: HashSet<I>,
@@ -182,12 +183,18 @@ where
         })
     }
 
-    pub fn attacker_reward(&self, graph: &AttackGraph<I>, selected_step: Option<&I>) -> i64 {
+    pub fn attacker_reward(&self, graph: &AttackGraph<I>, valid_steps: &HashSet<I>, selected_step: Option<&I>) -> i64 {
         let wait_penalty = -1;
 
         if selected_step.is_none() {
             return wait_penalty;
         };
+
+        if let Some(step) = selected_step {
+            if !valid_steps.contains(step) {
+                return wait_penalty;
+            }
+        }
 
         let flag_value = 1;
         let flag_reward = self.compromised_steps

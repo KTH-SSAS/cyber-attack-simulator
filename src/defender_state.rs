@@ -9,6 +9,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;
 
+#[derive(Clone)]
 pub struct DefenderObs<I> {
     // Possible actions in the given state
     pub possible_objects: HashSet<I>,
