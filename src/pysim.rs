@@ -38,7 +38,10 @@ impl RustAttackSimulator {
         graph_filename: String,
         vocab_filename: Option<&str>,
     ) -> PyResult<RustAttackSimulator> {
-        let config = SimulatorConfig::from_json(&config_str).unwrap();
+        let config = match SimulatorConfig::from_json(&config_str) {
+            Ok(config) => config,
+            Err(e) => return pyresult_with(Err(e), "Failed to parse config"),
+        };
         let graph = match load_graph_from_json(
             &graph_filename,
             vocab_filename,
@@ -46,12 +49,12 @@ impl RustAttackSimulator {
             config.false_positive_rate,
         ) {
             Ok(graph) => graph,
-            Err(e) => return pyresult_with(Err(e), "Error in rust_sim"),
+            Err(e) => return pyresult_with(Err(e), "Failed to load graph"),
         };
 
         let runtime = match SimulatorRuntime::new(graph, config) {
             Ok(runtime) => runtime,
-            Err(e) => return pyresult_with(Err(e), "Error in rust_sim"),
+            Err(e) => return pyresult_with(Err(e), "Failed to create runtime"),
         };
         let config = runtime.config.clone();
         Ok(RustAttackSimulator {

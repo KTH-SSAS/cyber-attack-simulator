@@ -94,8 +94,7 @@ where
                 defender_step,
             ))
             && graph
-                .get_step(node_id)
-                .unwrap()
+                .get_step_err(node_id)
                 .can_be_compromised(parent_states); // Evaluate this last since it's the most expensive
     }
 
@@ -120,8 +119,7 @@ where
         });
 
         let parent_conditions_fulfilled = graph
-            .get_step(node_id)
-            .unwrap()
+            .get_step_err(node_id)
             .can_be_compromised(parent_states);
 
         let compromised = compromised_steps.contains(node_id);

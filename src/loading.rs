@@ -64,11 +64,27 @@ pub struct MALAttackStep {
     existence_status: Option<String>,
 }
 
-fn load_vocab_from_json(filename: &str) -> Vocab {
-    let contents = std::fs::read_to_string(filename).unwrap();
-    let words: Vec<String> = serde_json::from_str(&contents).unwrap();
-    let vocab = Vocab::from(words);
-    return vocab;
+fn load_vocab_from_json(filename: &str) -> Result<Vocab, IOError> {
+    let contents = std::fs::read_to_string(filename);
+
+    let contents = match contents {
+        Ok(c) => c,
+        Err(e) => {
+            return Err(IOError {
+                error: format!("Could not read vocab file: {}. {}", filename, e),
+            })
+        }
+    };
+
+    let vocab =
+        serde_json::from_str(&contents).and_then(|words: Vec<String>| Ok(Vocab::from(words)));
+
+    match vocab {
+        Ok(v) => Ok(v),
+        Err(e) => Err(IOError {
+            error: format!("Could not parse json in vocab file: {}", e),
+        }),
+    }
 }
 
 fn create_vocab_from_steps(steps: &Vec<MALAttackStep>) -> Vocab {
@@ -84,14 +100,37 @@ fn create_vocab_from_steps(steps: &Vec<MALAttackStep>) -> Vocab {
 
     let unique_words: Vec<String> = unique_words.iter().sorted().cloned().collect();
 
-    let vocab = Vocab::from(unique_words);
+    return Vocab::from(unique_words);
+}
 
+fn save_vocab_to_file(vocab: &Vocab, vocab_filename: Option<&str>) -> IOResult<()> {
     // Save the vocab to a file
     let vocab_filename = "generated_vocab.json";
-    let vocab_json = serde_json::to_string_pretty(&vocab).unwrap();
-    std::fs::write(vocab_filename, vocab_json).unwrap();
+    let vocab_json = match serde_json::to_string_pretty(&vocab) {
+        Ok(v) => v,
+        Err(e) => {
+            return Err(IOError {
+                error: format!("Could not serialize vocab to json: {}", e),
+            });
+        }
+    };
 
-    return vocab;
+    match std::fs::write(vocab_filename, vocab_json) {
+        Ok(_) => (),
+        Err(e) => {
+            return Err(IOError {
+                error: format!("Could not write vocab to file: {}", e),
+            });
+        }
+    };
+
+    return Ok(());
+}
+
+fn create_and_save_vocab_from_steps(steps: &Vec<MALAttackStep>) -> IOResult<Vocab> {
+    let vocab = create_vocab_from_steps(steps);
+    save_vocab_to_file(&vocab, None)?;
+    return Ok(vocab);
 }
 
 pub(crate) fn load_graph_from_json(
@@ -150,7 +189,7 @@ pub(crate) fn load_graph_from_json(
         .map(|(parent, child)| (parent.clone(), child.clone()))
         .collect::<HashSet<(String, String)>>();
 
-    //writeln!(std::io::stdout(), "{:?}", edges).unwrap();
+
 
     let nonexistant_nodes = attack_steps
         .iter()
@@ -201,8 +240,17 @@ pub(crate) fn load_graph_from_json(
     }
 
     let vocab = match vocab_filename {
-        None => create_vocab_from_steps(&attack_steps),
-        Some(f) => load_vocab_from_json(f),
+        None => create_and_save_vocab_from_steps(&attack_steps),
+        Some(f) => load_vocab_from_json(f)
+    };
+
+    let vocab = match vocab {
+        Ok(v) => v,
+        Err(e) => {
+            return Err(IOError {
+                error: format!("Could not load vocab: {}", e),
+            });
+        }
     };
 
     let attack_graph =

@@ -1,4 +1,5 @@
 use core::fmt::Debug;
+use std::str::FromStr;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -101,10 +102,17 @@ impl Display for AttackStep {
 
 fn split_asset_name(asset_name: &str) -> (String, usize) {
     let (asset, asset_id) = match asset_name.split_once(":") {
-        Some((asset, asset_id)) => (asset.to_string(), asset_id.parse::<usize>().unwrap()),
+        Some((asset, asset_id)) => (asset.to_string(), parse_asset_id(asset_id)),
         None => (asset_name.to_string(), 0),
     };
     return (asset, asset_id);
+}
+
+fn parse_asset_id(asset_id: &str) -> usize {
+    match asset_id.parse::<usize>() {
+        Ok(asset_id) => asset_id,
+        Err(e) => panic!("Invalid asset id: {}", e),
+    }
 }
 
 fn split_id(mal_id: &str) -> (String, usize, String) {
@@ -112,7 +120,7 @@ fn split_id(mal_id: &str) -> (String, usize, String) {
         Some((asset, rest)) => match rest.split_once(":") {
             Some((asset_id, name)) => (
                 asset.to_string(),
-                asset_id.parse::<usize>().unwrap(),
+                parse_asset_id(asset_id),
                 name.to_string(),
             ),
             None => panic!("Invalid part: {} in {}", rest, mal_id),
@@ -277,7 +285,7 @@ where
     }
 
     pub(crate) fn confusion_for_step(&self, i: &I) -> Confusion {
-        self.get_step(i).unwrap().confusion.clone()
+        self.get_step_err(i).confusion.clone()
     }
 }
 
@@ -333,6 +341,10 @@ where
 
     pub(crate) fn get_step(&self, id: &I) -> Option<&AttackStep> {
         self.graph.nodes.get(id).map(|n| &n.data)
+    }
+
+    pub(crate) fn get_step_err(&self, id: &I) -> &AttackStep {
+        self.get_step(id).unwrap()
     }
 
     pub(crate) fn name_of_step(&self, id: &I) -> String {

@@ -67,12 +67,19 @@ where
         }
     }
 
+    fn get_node(&self, id: &I) -> &Node<T, I> {
+        match self.nodes.get(id) {
+            Some(node) => node,
+            None => panic!("Node {:?} does not exist", id),
+        }
+    }
+
     pub fn children(&self, id: &I) -> Vec<&Node<T, I>> {
         return self
             .edges
             .iter()
             .filter_map(|(parent, child)| match parent == id {
-                true => Some(self.nodes.get(child).unwrap()),
+                true => Some(self.get_node(child)),
                 false => None,
             })
             .collect();
@@ -90,12 +97,14 @@ where
     }
     */
     pub fn parents<'a>(&'a self, id: &'a I) -> impl Iterator<Item = &'a Node<T, I>> {
-        return self
+        match self
             .parents
             .get(id)
-            .unwrap()
-            .iter()
-            .map(move |x| self.nodes.get(x).unwrap());
+            .and_then(|parents| Some(parents.iter().map(move |x| self.get_node(x))))
+        {
+            Some(parents) => parents,
+            None => panic!("Node {:?} does not exist", id),
+        }
     }
 
     pub fn edges_to_graphviz(&self) -> String {

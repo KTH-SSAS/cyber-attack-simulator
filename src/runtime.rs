@@ -119,17 +119,38 @@ where
 
             let _ = std::fs::remove_file("log/output.log");
 
-            let logfile = FileAppender::builder()
+            let logfile = match FileAppender::builder()
                 .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
                 .build("log/output.log")
-                .unwrap();
+            {
+                Ok(x) => x,
+                Err(e) => {
+                    return Err(SimError {
+                        error: format!("Could not create log file: {}", e),
+                    })
+                }
+            };
 
-            let log_config = Config::builder()
+            let log_config = match Config::builder()
                 .appender(Appender::builder().build("logfile", Box::new(logfile)))
                 .build(Root::builder().appender("logfile").build(LevelFilter::Info))
-                .unwrap();
-
-            log4rs::init_config(log_config).unwrap();
+            {
+                Ok(x) => x,
+                Err(e) => {
+                    return Err(SimError {
+                        error: format!("Could not create log config: {}", e),
+                    })
+                }
+            };
+            
+            match log4rs::init_config(log_config) {
+                Ok(_) => (),
+                Err(e) => {
+                    return Err(SimError {
+                        error: format!("Could not initialize log config: {}", e),
+                    })
+                }
+            }
         }
 
         log::info!("Simulator initiated.");
@@ -327,7 +348,7 @@ where
             .index_to_id
             .iter()
             .map(|id| {
-                let step = self.g.get_step(id).unwrap();
+                let step = self.g.get_step_err(id);
                 step.to_info_tuple()
             })
             .map(|x| (self.g.word2idx(x.0), x.1, self.g.word2idx(x.2)))
@@ -496,7 +517,11 @@ where
             Ok(new_state) => {
                 return Ok((
                     (
-                        new_state.attacker_reward(&self.g, &attacker_obs.possible_objects, attacker_selected_step),
+                        new_state.attacker_reward(
+                            &self.g,
+                            &attacker_obs.possible_objects,
+                            attacker_selected_step,
+                        ),
                         new_state.defender_reward(&self.g, defender_selected_step),
                     ),
                     new_state,

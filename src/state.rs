@@ -41,8 +41,7 @@ where
             .get_attack_parents(node_id)
             .map(|p| compromised_steps.contains(p));
         return self
-            .get_step(node_id)
-            .unwrap()
+            .get_step_err(node_id)
             .can_be_compromised(&mut parent_states)
             || self.is_entry(node_id);
     }
