@@ -1,4 +1,5 @@
 import dataclasses
+from functools import cache
 import json
 import logging
 from typing import Any, Dict, Optional, SupportsFloat, Tuple
@@ -37,6 +38,31 @@ def obs_to_graphviz(obs: dict, info: Optional[dict] = None) -> str:
     graphviz_code += "}"
     return graphviz_code
 
+def reverse_edges(edges: np.ndarray, defense_steps: set) -> np.ndarray:
+    # Add reverse edges from the defense steps children to the defense steps
+    # themselves
+    new_edges = [np.array([c, p]) for p, c in edges if p in defense_steps]
+    return np.stack(new_edges)
+
+
+def action_space(n_nodes: int, num_actions: int) -> spaces.Dict:
+    return spaces.Dict(
+        {
+            AGENT_DEFENDER: spaces.MultiDiscrete([num_actions, n_nodes]),
+            AGENT_ATTACKER: spaces.MultiDiscrete([num_actions, n_nodes]),
+        }
+    )
+
+
+def observation_space(
+    n_nodes: int, n_edges: int, num_actions: int, vocab_size: int
+) -> spaces.Dict:
+    return spaces.Dict(
+        {
+            AGENT_DEFENDER: obs_space(num_actions, n_nodes, n_edges, vocab_size),
+            AGENT_ATTACKER: obs_space(num_actions, n_nodes, n_edges, vocab_size),
+        }
+    )
 
 def defender_reward(obs: Observation) -> float:
     return float(obs.defender_reward)
@@ -132,7 +158,9 @@ class AttackSimulationEnv:
             graph_filename = examplemanager.get_paths_to_graphs()[config.graph_name]
         except KeyError:
             available_graphs = ", ".join(list(examplemanager.get_paths_to_graphs().keys()))
-            raise ValueError(f"Graph '{config.graph_name}' not found. Available graphs are: {available_graphs}")
+            raise ValueError(
+                f"Graph '{config.graph_name}' not found. Available graphs are: {available_graphs}"
+            )
 
         self.sim = RustAttackSimulator(
             json.dumps(sim_config.to_dict()), graph_filename, config.vocab_filename
@@ -152,13 +180,13 @@ class AttackSimulationEnv:
 
         defenses = set(np.flatnonzero(obs.defender_possible_objects))
         if config.undirected_defenses:
-            new_edges = self.get_reverse_edges(obs.edges, defenses)
+            new_edges = reverse_edges(obs.edges, defenses)
             num_edges = num_edges + len(new_edges)
 
-        self.observation_space: spaces.Dict = self.define_observation_space(
+        self.observation_space: spaces.Dict = observation_space(
             num_nodes, num_edges, num_actions, len(vocab)
         )
-        self.action_space: spaces.Dict = self.define_action_space(num_nodes, num_actions)
+        self.action_space: spaces.Dict = action_space(num_nodes, num_actions)
 
         self.possible_agents = [AGENT_ATTACKER, AGENT_DEFENDER]
         self._agent_ids = (
@@ -172,40 +200,6 @@ class AttackSimulationEnv:
             self.reverse_vocab[value] = key
         super().__init__()
 
-    @staticmethod
-    def get_reverse_edges(edges: np.ndarray, defense_steps: set) -> np.ndarray:
-        # Add reverse edges from the defense steps children to the defense steps
-        # themselves
-        new_edges = [np.array([c, p]) for p, c in edges if p in defense_steps]
-        return np.stack(new_edges)
-
-    @staticmethod
-    def define_action_space(n_nodes: int, num_actions: int) -> spaces.Dict:
-        return spaces.Dict(
-            {
-                AGENT_DEFENDER: spaces.MultiDiscrete([num_actions, n_nodes]),
-                AGENT_ATTACKER: spaces.MultiDiscrete([num_actions, n_nodes]),
-            }
-        )
-
-    @staticmethod
-    def define_observation_space(
-        n_nodes: int, n_edges: int, num_actions: int, vocab_size: int
-    ) -> spaces.Dict:
-        return spaces.Dict(
-            {
-                AGENT_DEFENDER: obs_space(num_actions, n_nodes, n_edges, vocab_size),
-                AGENT_ATTACKER: obs_space(num_actions, n_nodes, n_edges, vocab_size),
-            }
-        )
-
-    def get_observation_shapes(self) -> Dict[str, Any]:
-        return {
-            agent: {obs_key: space.shape}
-            for agent, a_space in self.observation_space.spaces.items()
-            for obs_key, space in a_space.spaces.items()
-        }
-
     def reset(
         self, *, seed: Optional[int] = None, options: Optional[dict] = None
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -218,7 +212,7 @@ class AttackSimulationEnv:
         obs = get_agent_obs(self._agent_ids, sim_obs)
         if self.config.undirected_defenses and AGENT_DEFENDER in obs:
             edges = obs[AGENT_DEFENDER]["edges"]
-            new_edges = self.get_reverse_edges(edges, self.defense_steps)
+            new_edges = reverse_edges(edges, self.defense_steps)
             edges = np.concatenate((edges, new_edges))
             obs[AGENT_DEFENDER]["edges"] = edges
         agent_info = self.get_agent_info(self._agent_ids, info, sim_obs)
