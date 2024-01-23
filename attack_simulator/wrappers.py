@@ -177,11 +177,77 @@ class BinaryEncodingWrapper(Wrapper):
         obs = self._convert(obs)
         return obs, reward, terminated, truncated, info
 
+def vec_to_one_hot(vec, max_val):
+    return np.array([_to_one_hot(val, max_val) for val in vec])
+
+def _to_one_hot(val, max_val):
+    one_hot = np.zeros(max_val)
+    one_hot[val] = 1
+    return one_hot
+
+
+class OneHotEncodingWrapper(Wrapper):
+    def __init__(self, env: Env):
+        super().__init__(env)
+        self._og_observation_space = self.env.observation_space
+
+        num_assets = len(self.env.unwrapped.vocab)
+        num_steps = len(self.env.unwrapped.vocab)
+        num_nodes = self.env.observation_space["observation"].shape[0]
+
+
+        self.observation_space = spaces.Dict(
+            {
+                "nodes": spaces.Box(
+                    0,
+                    1,
+                    shape=(num_nodes, 3 + num_assets + num_steps),
+                    dtype=np.int64,
+                ),
+                "edges": self.env.observation_space["edges"],
+            }
+        )
+
+    def render(self) -> RenderFrame | list[RenderFrame] | None:
+        return super().render()
+
+    def _convert(self, obs: dict[str, Any]) -> dict[str, Any]:
+        num_assets = len(self.env.unwrapped.vocab)
+        num_steps = len(self.env.unwrapped.vocab)
+        edges = obs["edges"]
+        obs = np.concatenate(
+            [
+                vec_to_one_hot(obs["observation"], 3),
+                vec_to_one_hot(obs["asset"], num_assets),
+                vec_to_one_hot(obs["step_name"], num_steps),
+            ]
+            , axis=1
+        )
+        obs = {
+            "nodes": obs,
+            "edges": edges,
+        }
+        return obs
+    
+    def reset(
+        self, *, seed: int | None = None, options: dict[str, Any] | None = None
+    ) -> tuple[Any, dict[str, Any]]:
+        obs, info = self.env.reset(seed=seed, options=options)
+
+        obs = self._convert(obs)
+        
+        return obs, info
+
+    def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        obs = self._convert(obs)
+        return obs, reward, terminated, truncated, info
+
 
 if __name__ == "__main__":
     gym.register("DefenderEnv-v0", entry_point=DefenderEnv)
     env = gym.make("DefenderEnv-v0", render_mode="human")
-    env = BinaryEncodingWrapper(env)
+    env = OneHotEncodingWrapper(env)
 
     obs = env.reset()
     pass
