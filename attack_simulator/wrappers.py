@@ -124,12 +124,18 @@ class BinaryEncodingWrapper(Wrapper):
     def __init__(self, env: Env):
         super().__init__(env)
         self._og_observation_space = self.env.observation_space
+
+        num_assets = len(self.env.unwrapped.vocab)
+        num_steps = len(self.env.unwrapped.vocab)
+        num_nodes = self.env.observation_space["observation"].shape[0]
+
+
         self.observation_space = spaces.Dict(
             {
                 "nodes": spaces.Box(
                     0,
                     1,
-                    shape=(self.env.observation_space["observation"].shape[0], 4),
+                    shape=(num_nodes, (3).bit_length() + num_assets.bit_length() + num_assets.bit_length()),
                     dtype=np.int64,
                 ),
                 "edges": self.env.observation_space["edges"],
