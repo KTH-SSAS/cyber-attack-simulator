@@ -54,7 +54,7 @@ class LabeledGraphWrapper(Wrapper):
         self.num_steps = len(self.env.unwrapped.vocab)
 
         self.observation_space = spaces.Graph(
-            spaces.Box(0, 1, shape=(3 + self.num_assets + self.num_steps,), dtype=np.int8),
+            spaces.Box(0, 1, shape=((3).bit_length() + self.num_assets.bit_length() + self.num_steps.bit_length(),), dtype=np.int8),
             spaces.Discrete(1),
         )
 
