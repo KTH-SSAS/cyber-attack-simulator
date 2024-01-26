@@ -1,5 +1,13 @@
 # Reinforcement learning on attack simulations
 
+## Installation
+
+```
+pip install -i https://test.pypi.org/simple/ attack-simulator
+```
+
+If you want to run it from the repo then continue with the instructions below.
+
 ## Packaging and dependency managament.
 
 This Python project uses [`poetry`](https://python-poetry.org)
