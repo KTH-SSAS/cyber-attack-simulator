@@ -69,15 +69,15 @@ class LabeledGraphWrapper(Wrapper):
         obs, reward, terminated, truncated, info = self.env.step(action)
         return self._to_graph(obs), reward, terminated, truncated, info
 
-
     def _to_graph(self, obs: dict[str, Any]) -> GraphInstance:
-        nodes = np.stack(
+        nodes = np.concatenate(
             [
                 vec_to_binary(obs["observation"], 3),
                 vec_to_binary(obs["asset"], self.num_assets),
                 vec_to_binary(obs["step_name"], self.num_steps),
-            ]
-        ).T
+            ],
+            axis=1
+        )
         return GraphInstance(nodes, None, obs["edges"])
 
 
