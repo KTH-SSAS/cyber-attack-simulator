@@ -1,3 +1,4 @@
+from functools import cache
 from typing import Any, SupportsFloat
 
 import gymnasium as gym
@@ -19,7 +20,7 @@ class GraphWrapper(Wrapper):
         super().__init__(env)
 
         self.observation_space = spaces.Graph(
-            spaces.Discrete(2),
+            spaces.Discrete(3),
             spaces.Discrete(1),
         )
         self.defense_steps = None
@@ -49,8 +50,11 @@ class LabeledGraphWrapper(Wrapper):
     def __init__(self, env: gym.Env) -> None:
         super().__init__(env)
 
+        self.num_assets = len(self.env.unwrapped.vocab)
+        self.num_steps = len(self.env.unwrapped.vocab)
+
         self.observation_space = spaces.Graph(
-            spaces.Box(0, BIG_INT, shape=(4,), dtype=np.int64),
+            spaces.Box(0, 1, shape=(3 + self.num_assets + self.num_steps,), dtype=np.int8),
             spaces.Discrete(1),
         )
 
@@ -65,9 +69,15 @@ class LabeledGraphWrapper(Wrapper):
         obs, reward, terminated, truncated, info = self.env.step(action)
         return self._to_graph(obs), reward, terminated, truncated, info
 
-    @staticmethod
-    def _to_graph(obs: dict[str, Any]) -> GraphInstance:
-        nodes = np.stack([obs["observation"], obs["asset"], obs["asset_id"], obs["step_name"]]).T
+
+    def _to_graph(self, obs: dict[str, Any]) -> GraphInstance:
+        nodes = np.stack(
+            [
+                vec_to_binary(obs["observation"], 3),
+                vec_to_binary(obs["asset"], self.num_assets),
+                vec_to_binary(obs["step_name"], self.num_steps),
+            ]
+        ).T
         return GraphInstance(nodes, None, obs["edges"])
 
 
@@ -114,11 +124,14 @@ class LabeledBoxWrapper(Wrapper):
         return obs, reward, terminated, truncated, info
 
 
+@cache
 def _to_binary(val, max_val):
     return np.array(list(np.binary_repr(val, width=max_val.bit_length())), dtype=np.int64)
 
+
 def vec_to_binary(vec, max_val):
     return np.array([_to_binary(val, max_val) for val in vec])
+
 
 class BinaryEncodingWrapper(Wrapper):
     def __init__(self, env: Env):
@@ -129,13 +142,15 @@ class BinaryEncodingWrapper(Wrapper):
         num_steps = len(self.env.unwrapped.vocab)
         num_nodes = self.env.observation_space["observation"].shape[0]
 
-
         self.observation_space = spaces.Dict(
             {
                 "nodes": spaces.Box(
                     0,
                     1,
-                    shape=(num_nodes, (3).bit_length() + num_assets.bit_length() + num_assets.bit_length()),
+                    shape=(
+                        num_nodes,
+                        (3).bit_length() + num_assets.bit_length() + num_assets.bit_length(),
+                    ),
                     dtype=np.int64,
                 ),
                 "edges": self.env.observation_space["edges"],
@@ -154,22 +169,22 @@ class BinaryEncodingWrapper(Wrapper):
                 vec_to_binary(obs["observation"], 3),
                 vec_to_binary(obs["asset"], num_assets),
                 vec_to_binary(obs["step_name"], num_steps),
-            ]
-            , axis=1
+            ],
+            axis=1,
         )
         obs = {
             "nodes": obs,
             "edges": edges,
         }
         return obs
-    
+
     def reset(
         self, *, seed: int | None = None, options: dict[str, Any] | None = None
     ) -> tuple[Any, dict[str, Any]]:
         obs, info = self.env.reset(seed=seed, options=options)
 
         obs = self._convert(obs)
-        
+
         return obs, info
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
@@ -177,9 +192,12 @@ class BinaryEncodingWrapper(Wrapper):
         obs = self._convert(obs)
         return obs, reward, terminated, truncated, info
 
+
 def vec_to_one_hot(vec, max_val):
     return np.array([_to_one_hot(val, max_val) for val in vec])
 
+
+@cache
 def _to_one_hot(val, max_val):
     one_hot = np.zeros(max_val)
     one_hot[val] = 1
@@ -191,10 +209,9 @@ class OneHotEncodingWrapper(Wrapper):
         super().__init__(env)
         self._og_observation_space = self.env.observation_space
 
-        num_assets = len(self.env.unwrapped.vocab)
+        self.num_assets = len(self.env.unwrapped.vocab)
         num_steps = len(self.env.unwrapped.vocab)
         num_nodes = self.env.observation_space["observation"].shape[0]
-
 
         self.observation_space = spaces.Dict(
             {
@@ -220,22 +237,22 @@ class OneHotEncodingWrapper(Wrapper):
                 vec_to_one_hot(obs["observation"], 3),
                 vec_to_one_hot(obs["asset"], num_assets),
                 vec_to_one_hot(obs["step_name"], num_steps),
-            ]
-            , axis=1
+            ],
+            axis=1,
         )
         obs = {
             "nodes": obs,
             "edges": edges,
         }
         return obs
-    
+
     def reset(
         self, *, seed: int | None = None, options: dict[str, Any] | None = None
     ) -> tuple[Any, dict[str, Any]]:
         obs, info = self.env.reset(seed=seed, options=options)
 
         obs = self._convert(obs)
-        
+
         return obs, info
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
