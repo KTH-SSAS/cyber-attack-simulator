@@ -17,7 +17,7 @@ authors = [
 
 [project]
 name = "attack-simulator"
-version = "2.11.5"
+version = "2.11.6"
 description = "A MAL based attack simulator"
 requires-python = ">=3.10"
 authors = [{ name = "Jakob Nyberg", email = "jaknyb@kth.se" }]

@@ -284,7 +284,7 @@ class AttackSimulationEnv:
 
         if self.config.undirected_defenses and AGENT_DEFENDER in obs:
             edges = obs[AGENT_DEFENDER]["edges"]
-            new_edges = self.get_reverse_edges(edges, self.defense_steps)
+            new_edges = reverse_edges(edges, self.defense_steps)
             edges = np.concatenate((edges, new_edges))
             obs[AGENT_DEFENDER]["edges"] = edges
 
