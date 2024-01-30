@@ -50,26 +50,28 @@ class LabeledGraphWrapper(Wrapper):
     def __init__(self, env: gym.Env) -> None:
         super().__init__(env)
 
-        self.num_assets = len(self.env.unwrapped.vocab)
-        self.num_steps = len(self.env.unwrapped.vocab)
+        num_assets = len(self.env.unwrapped.vocab)
+        num_steps = len(self.env.unwrapped.vocab)
 
         self.observation_space = spaces.Graph(
-            spaces.Box(0, 1, shape=((3).bit_length() + self.num_assets.bit_length() + self.num_steps.bit_length(),), dtype=np.int8),
+            spaces.Box(0, 1, shape=(num_bits(3) + num_bits(num_assets) + num_bits(num_steps),), dtype=np.int8),
             spaces.Discrete(1),
         )
+        self.num_assets = num_assets
+        self.num_steps = num_steps
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
         return self.env.render()
 
     def reset(self, **kwargs: Any) -> tuple[Any, dict[str, Any]]:
         obs, info = self.env.reset(**kwargs)
-        return self._to_graph(obs), info
+        return self._to_graph(obs, info["action_mask"]), info
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
         obs, reward, terminated, truncated, info = self.env.step(action)
         return self._to_graph(obs), reward, terminated, truncated, info
 
-    def _to_graph(self, obs: dict[str, Any]) -> GraphInstance:
+    def _to_graph(self, obs: dict[str, Any], action_mask) -> GraphInstance:
         nodes = np.concatenate(
             [
                 vec_to_binary(obs["observation"], 3),
@@ -78,7 +80,8 @@ class LabeledGraphWrapper(Wrapper):
             ],
             axis=1
         )
-        return GraphInstance(nodes, None, obs["edges"])
+        graph = GraphInstance(nodes, None, obs["edges"])
+        return graph
 
 
 class BoxWrapper(Wrapper):
@@ -123,15 +126,15 @@ class LabeledBoxWrapper(Wrapper):
         obs = np.stack([obs["observation"], obs["asset"], obs["asset_id"], obs["step_name"]]).T
         return obs, reward, terminated, truncated, info
 
+def num_bits(num_vals):
+    return (num_vals-1).bit_length()
 
 @cache
-def _to_binary(val, max_val):
-    return np.array(list(np.binary_repr(val, width=max_val.bit_length())), dtype=np.int64)
+def _to_binary(val, num_vals):
+    return np.array(list(np.binary_repr(val, width=num_bits(num_vals))), dtype=np.int64)
 
-
-def vec_to_binary(vec, max_val):
-    return np.array([_to_binary(val, max_val) for val in vec])
-
+def vec_to_binary(vec, num_vals):
+    return np.array([_to_binary(val, num_vals) for val in vec])
 
 class BinaryEncodingWrapper(Wrapper):
     def __init__(self, env: Env):
@@ -149,7 +152,7 @@ class BinaryEncodingWrapper(Wrapper):
                     1,
                     shape=(
                         num_nodes,
-                        (3).bit_length() + num_assets.bit_length() + num_assets.bit_length(),
+                        num_bits(3) + num_bits(num_assets) + num_bits(num_steps),
                     ),
                     dtype=np.int64,
                 ),
@@ -218,7 +221,7 @@ class OneHotEncodingWrapper(Wrapper):
                 "nodes": spaces.Box(
                     0,
                     1,
-                    shape=(num_nodes, 3 + num_assets + num_steps),
+                    shape=(num_nodes, 3 + self.num_assets + num_steps),
                     dtype=np.int64,
                 ),
                 "edges": self.env.observation_space["edges"],
@@ -264,7 +267,7 @@ class OneHotEncodingWrapper(Wrapper):
 if __name__ == "__main__":
     gym.register("DefenderEnv-v0", entry_point=DefenderEnv)
     env = gym.make("DefenderEnv-v0", render_mode="human")
-    env = OneHotEncodingWrapper(env)
+    env = LabeledGraphWrapper(env)
 
     obs = env.reset()
     pass
