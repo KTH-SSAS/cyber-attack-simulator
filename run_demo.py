@@ -6,6 +6,7 @@ import attack_simulator
 import json
 from json import JSONEncoder
 import numpy as np
+import os
 
 null_action = (0, None)
 
@@ -84,7 +85,7 @@ attacker_only = False
 env_config = {
     "sim_false_positive_rate": 0.0,
     "sim_false_negative_rate": 0.0,
-    "graph_name": "two_ways",
+    "graph_name": "four_ways",
 }
 env = attack_simulator.parallel_env(env_config, render_mode="human")
 
@@ -96,7 +97,13 @@ attacker = KeyboardAgent(env.reverse_vocab) if control_attacker else BreadthFirs
 obs, infos = env.reset()
 done = False
 
-with open("sim_obs_log.jsonl", "w", encoding="utf8") as f:
+log_filename = "sim_log.jsonl"
+rollout_filename = "sim_rollout.jsonl"
+
+if os.path.exists(log_filename):
+    os.remove(log_filename)
+
+with open(log_filename, "w", encoding="utf8") as f:
     f.write("Game Start!\n")
 
 total_reward_defender = 0
@@ -120,14 +127,26 @@ with torch.no_grad():
 
         log = {
             "obs": obs,
+            "info": infos,
             "actions": {k: (a, s) for k, (a, s) in action_dict.items()},
             "rewards": {k: int(v) for k, v in rewards.items()},
-            "info": infos,
             "terminated": terminated,
             "truncated": truncated,
         }
 
-        with open("sim_log.jsonl", "a", encoding="utf8") as f:
+        with open(log_filename, "w", encoding="utf8") as f:
+            f.write(f"{json.dumps(log, cls=NumpyArrayEncoder)}\n")
+
+        log = {
+            "obs": obs[AGENT_DEFENDER],
+            "info": infos[AGENT_DEFENDER],
+            "action": defender_action,
+            "reward": rewards[AGENT_DEFENDER],
+            "terminated": terminated[AGENT_DEFENDER],
+            "truncated": truncated[AGENT_DEFENDER],
+        }
+
+        with open(rollout_filename, "a+", encoding="utf8") as f:
             f.write(f"{json.dumps(log, cls=NumpyArrayEncoder)}\n")
 
         print("---\n")
