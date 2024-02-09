@@ -1,4 +1,4 @@
-import torch
+
 from attack_simulator.agents.agent import Agent
 from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.agents.attackers.searchers import BreadthFirstAttacker, DepthFirstAttacker
@@ -109,47 +109,47 @@ with open(log_filename, "w", encoding="utf8") as f:
 total_reward_defender = 0
 total_reward_attacker = 0
 
-with torch.no_grad():
-    while not done:
-        env.render()
-        defender_action = defender.compute_action_from_dict(obs["defender"], infos["defender"]["action_mask"]) if not attacker_only else null_action
-        attacker_action = attacker.compute_action_from_dict(obs["attacker"], infos["attacker"]["action_mask"])
-        print("Attacker Action: ", infos["attacker"]["translated"]["nodes"][attacker_action[1]])
-        action_dict = {AGENT_ATTACKER: attacker_action, AGENT_DEFENDER: defender_action}
-        obs, rewards, terminated, truncated, infos = env.step(action_dict)
-        print("Attacker Reward: ", rewards[AGENT_ATTACKER])
-        if not attacker_only:
-            print("Defender Reward: ", rewards[AGENT_DEFENDER])
-        total_reward_defender += rewards[AGENT_DEFENDER] if not attacker_only else 0
-        total_reward_attacker += rewards[AGENT_ATTACKER]
 
-        done = terminated[AGENT_ATTACKER]
+while not done:
+    env.render()
+    defender_action = defender.compute_action_from_dict(obs["defender"], infos["defender"]["action_mask"]) if not attacker_only else null_action
+    attacker_action = attacker.compute_action_from_dict(obs["attacker"], infos["attacker"]["action_mask"])
+    print("Attacker Action: ", infos["attacker"]["translated"]["nodes"][attacker_action[1]])
+    action_dict = {AGENT_ATTACKER: attacker_action, AGENT_DEFENDER: defender_action}
+    obs, rewards, terminated, truncated, infos = env.step(action_dict)
+    print("Attacker Reward: ", rewards[AGENT_ATTACKER])
+    if not attacker_only:
+        print("Defender Reward: ", rewards[AGENT_DEFENDER])
+    total_reward_defender += rewards[AGENT_DEFENDER] if not attacker_only else 0
+    total_reward_attacker += rewards[AGENT_ATTACKER]
 
-        log = {
-            "obs": obs,
-            "info": infos,
-            "actions": {k: (a, s) for k, (a, s) in action_dict.items()},
-            "rewards": {k: int(v) for k, v in rewards.items()},
-            "terminated": terminated,
-            "truncated": truncated,
-        }
+    done = terminated[AGENT_ATTACKER]
 
-        with open(log_filename, "w", encoding="utf8") as f:
-            f.write(f"{json.dumps(log, cls=NumpyArrayEncoder)}\n")
+    log = {
+        "obs": obs,
+        "info": infos,
+        "actions": {k: (a, s) for k, (a, s) in action_dict.items()},
+        "rewards": {k: int(v) for k, v in rewards.items()},
+        "terminated": terminated,
+        "truncated": truncated,
+    }
 
-        log = {
-            "obs": obs[AGENT_DEFENDER],
-            "info": infos[AGENT_DEFENDER],
-            "action": defender_action,
-            "reward": rewards[AGENT_DEFENDER],
-            "terminated": terminated[AGENT_DEFENDER],
-            "truncated": truncated[AGENT_DEFENDER],
-        }
+    with open(log_filename, "w", encoding="utf8") as f:
+        f.write(f"{json.dumps(log, cls=NumpyArrayEncoder)}\n")
 
-        with open(rollout_filename, "a+", encoding="utf8") as f:
-            f.write(f"{json.dumps(log, cls=NumpyArrayEncoder)}\n")
+    log = {
+        "obs": obs[AGENT_DEFENDER],
+        "info": infos[AGENT_DEFENDER],
+        "action": defender_action,
+        "reward": rewards[AGENT_DEFENDER],
+        "terminated": terminated[AGENT_DEFENDER],
+        "truncated": truncated[AGENT_DEFENDER],
+    }
 
-        print("---\n")
+    with open(rollout_filename, "a+", encoding="utf8") as f:
+        f.write(f"{json.dumps(log, cls=NumpyArrayEncoder)}\n")
+
+    print("---\n")
 
 env.render()
 print("Game Over.")

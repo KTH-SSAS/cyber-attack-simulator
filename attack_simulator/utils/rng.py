@@ -4,7 +4,6 @@ import random
 from typing import Optional, Tuple
 
 import numpy as np
-import torch
 
 logger = logging.getLogger("trainer")
 
@@ -55,7 +54,6 @@ def set_seeds_from_bytes(seed: Optional[int] = None) -> Tuple[int, int]:
 
     random.seed(random_bytes)
     np.random.seed(int.from_bytes(random_bytes[:4], "big"))
-    torch.manual_seed(int.from_bytes(random_bytes, "big"))
 
     entropy = np.random.SeedSequence(None).entropy
     assert isinstance(entropy, int)
@@ -66,5 +64,4 @@ def set_seeds_from_bytes(seed: Optional[int] = None) -> Tuple[int, int]:
 def set_seeds(seed: int) -> int:
     random.seed(seed)
     np.random.seed(seed)
-    torch.manual_seed(seed)
     return seed

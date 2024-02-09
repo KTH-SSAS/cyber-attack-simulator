@@ -2,7 +2,6 @@ import dataclasses
 
 import numpy as np
 import pytest
-import torch
 from attack_simulator.constants import AGENT_ATTACKER, AGENT_DEFENDER
 from attack_simulator.env.env import AttackSimulationEnv
 from attack_simulator.utils.config import EnvConfig

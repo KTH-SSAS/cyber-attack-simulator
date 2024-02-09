@@ -2,7 +2,7 @@ import random
 
 import numpy as np
 import pytest
-import torch
+
 
 from attack_simulator.utils.rng import get_rng, set_seeds
 
@@ -21,40 +21,3 @@ def test_rng_get_rng(seed):
 
     assert np.all(samples0 == samples1)
 
-
-@pytest.mark.parametrize("seed", [42, 43])
-def test_rng_set_seeds(seed):
-    set_seeds(seed)
-
-    u = torch.tensor([1 / 11] * 11)
-    samples0 = np.array(
-        (
-            random.uniform(0, 1),
-            random.getrandbits(64),
-            random.choice(range(11)),
-            np.random.uniform(),
-            np.random.bytes(8),
-            np.random.choice(range(11)),
-            torch.distributions.Uniform(0, 1).sample().item(),
-            bytes(torch.randint(256, (8,))),
-            u.multinomial(1).item(),
-        )
-    )
-
-    set_seeds(seed)
-
-    samples1 = np.array(
-        (
-            random.uniform(0, 1),
-            random.getrandbits(64),
-            random.choice(range(11)),
-            np.random.uniform(),
-            np.random.bytes(8),
-            np.random.choice(range(11)),
-            torch.distributions.Uniform(0, 1).sample().item(),
-            bytes(torch.randint(256, (8,))),
-            u.multinomial(1).item(),
-        )
-    )
-
-    assert np.all(samples0 == samples1)
