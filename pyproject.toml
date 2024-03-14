@@ -17,7 +17,7 @@ authors = [
 
 [project]
 name = "attack-simulator"
-version = "2.11.7"
+version = "2.11.8"
 description = "A MAL based attack simulator"
 requires-python = ">=3.10"
 authors = [{ name = "Jakob Nyberg", email = "jaknyb@kth.se" }]
@@ -34,7 +34,7 @@ name = "PyPI"
 priority = "primary"
 
 [tool.poetry.dependencies]
-python = "~3.10"
+python = "~3.11"
 numpy = ">=1.21.4"
 matplotlib = ">=3.4.2"
 pyyaml = ">=6.0"
