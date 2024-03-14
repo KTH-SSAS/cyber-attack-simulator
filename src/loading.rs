@@ -153,7 +153,7 @@ pub(crate) fn load_graph_from_json(
         Ok(steps) => steps,
         Err(e) => {
             return Err(IOError {
-                error: format!("Could not parse json: {}", e),
+                error: format!("Failed to parse list of attack steps: {}", e),
             })
         }
     };

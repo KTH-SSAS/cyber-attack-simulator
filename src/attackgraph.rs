@@ -49,6 +49,7 @@ pub(crate) enum NodeType {
     Or,
     Defense,
     Exists,
+    NotExist,
 }
 
 impl From<&str> for NodeType {
@@ -58,6 +59,7 @@ impl From<&str> for NodeType {
             "or" => NodeType::Or,
             "defense" => NodeType::Defense,
             "exist" => NodeType::Exists,
+            "notExist" => NodeType::NotExist, // TODO add business logic for these two
             _ => panic!("Unknown node type: {}", s),
         }
     }
@@ -76,6 +78,7 @@ impl From<&NodeType> for Logic {
             NodeType::Or => Logic::Or,
             NodeType::Defense => Logic::Or,
             NodeType::Exists => Logic::Or,
+            NodeType::NotExist => Logic::Or,
         }
     }
 }
