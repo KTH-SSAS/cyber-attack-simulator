@@ -197,7 +197,7 @@ class BinaryEncodingWrapper(Wrapper):
 
 
 def vec_to_one_hot(vec, max_val):
-    return np.array([_to_one_hot(val, max_val) for val in vec])
+    return np.array([_to_one_hot(val, max_val) for val in vec], dtype=np.float32)
 
 
 @cache
@@ -222,16 +222,18 @@ class OneHotEncodingWrapper(Wrapper):
                     0,
                     1,
                     shape=(num_nodes, 3 + self.num_assets + num_steps),
-                    dtype=np.int64,
+                    dtype=np.float32,
                 ),
                 "edges": self.env.observation_space["edges"],
+                "possible_objects": spaces.Box(0, 1, shape=(num_nodes,), dtype=np.int8),
+                "possible_actions": spaces.Box(0, 1, shape=(2,), dtype=np.int8),
             }
         )
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
         return super().render()
 
-    def _convert(self, obs: dict[str, Any]) -> dict[str, Any]:
+    def _convert(self, obs: dict[str, Any], info) -> dict[str, Any]:
         num_assets = len(self.env.unwrapped.vocab)
         num_steps = len(self.env.unwrapped.vocab)
         edges = obs["edges"]
@@ -246,6 +248,8 @@ class OneHotEncodingWrapper(Wrapper):
         obs = {
             "nodes": obs,
             "edges": edges,
+            "possible_objects": info["action_mask"][1],
+            "possible_actions": info["action_mask"][0],
         }
         return obs
 
@@ -254,13 +258,13 @@ class OneHotEncodingWrapper(Wrapper):
     ) -> tuple[Any, dict[str, Any]]:
         obs, info = self.env.reset(seed=seed, options=options)
 
-        obs = self._convert(obs)
+        obs = self._convert(obs, info)
 
         return obs, info
 
     def step(self, action: Any) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
         obs, reward, terminated, truncated, info = self.env.step(action)
-        obs = self._convert(obs)
+        obs = self._convert(obs, info)
         return obs, reward, terminated, truncated, info
 
 
