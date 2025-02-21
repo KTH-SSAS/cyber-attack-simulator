@@ -1,5 +1,10 @@
 # Reinforcement learning on attack simulations
 
+Used in these papers: 
+- https://ieeexplore.ieee.org/document/9789835
+- https://www.ndss-symposium.org/wp-content/uploads/2023/09/wosoc2023-23006-paper.pdf
+
+
 Note: A newer version of a MAL-based simulator is available [here](https://github.com/mal-lang/mal-simulator)
 
 ## Installation
