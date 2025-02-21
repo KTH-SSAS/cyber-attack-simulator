@@ -1,5 +1,7 @@
 # Reinforcement learning on attack simulations
 
+Note: A newer version of a MAL-based simulator is available [here](https://github.com/mal-lang/mal-simulator)
+
 ## Installation
 
 ```
